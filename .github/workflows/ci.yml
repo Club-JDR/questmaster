@@ -17,6 +17,7 @@ jobs:
       env:
         QUESTMASTER_DB_PASSWORD: ${{ secrets.QUESTMASTER_DB_PASSWORD }}
       run: docker-compose up -d
+    - run: docker ps
     - name: Ensure API is running
       run:  "curl -X 'GET' 'http://api:8000' -H 'accept: application/json'"
     - name: Stop the stack
