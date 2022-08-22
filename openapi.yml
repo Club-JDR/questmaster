@@ -1,0 +1,175 @@
+openapi: 3.0.1
+info:
+  title: QuestMaster
+  description: This is the API endpoints for the Club JDR Booking app.
+  contact:
+    email: contact@club-jdr.fr
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 0.0.1
+servers:
+  - url: https://questmaster.club-jdr.fr/api/
+tags:
+  - name: user
+    description: Players and DMs.
+  - name: game
+    description: Everything about a RPG game, from the ad posting to the booking.
+paths:
+  /game:
+    get:
+      tags:
+        - game
+      summary: List games.
+      description: List all games.
+      operationId: getGames
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Game'
+    post:
+      tags:
+        - game
+      summary: Create a new game.
+      description: Create a new game.
+      operationId: createGame
+      parameters:
+        - name: game
+          in: query
+          required: true
+          description: Game object to create
+          schema:
+             $ref: '#/components/schemas/Game'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/Game'
+  /game/{game-id}:
+    get:
+      tags:
+        - game
+      summary: Game infos.
+      description: Get game details.
+      operationId: getGameById
+      parameters:
+        - name: game-id
+          in: path
+          description: 'The game id that needs to be fetched.'
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/Game'
+  /user/{username}:
+    get:
+      tags:
+        - user
+      summary: Get user by user name.
+      operationId: getUserByName
+      parameters:
+        - name: username
+          in: path
+          description: 'The name that needs to be fetched. Use user1 for testing.'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid username supplied
+          content: {}
+        '404':
+          description: User not found
+          content: {}
+components:
+  schemas:
+    Game:
+      type: object
+      required:
+      - id
+      - name
+      - type
+      - dm
+      - system
+      - pitch
+      - party-size
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - oneshot
+            - campaign
+        dm:
+          $ref: '#/components/schemas/User'
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        system:
+          type: string
+        pitch:
+          type: string
+        restriction:
+          type: string
+          default: all
+          enum:
+            - all
+            - '16'
+            - '18'
+        restrictionTags:
+          type: array
+          items:
+            type: string
+          maxItems: 3
+        length:
+          type: string
+        partySize:
+          type: integer
+          minimum: 1
+          default: 4
+          maximum: 99
+        selection:
+          type: boolean
+          default: false
+        pregen:
+          type: boolean
+          default: false
+        channel:
+          type: string
+        role:
+          type: string
+    User:
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        isDm:
+          type: boolean
+        pic:
+          type: string
+          format: uri

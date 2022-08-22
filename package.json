@@ -1,0 +1,20 @@
+{
+    "name": "questmaster",
+    "version": "0.0.1",
+    "description": "The event manager used for Club JDR to manage game announcements and schedule.",
+    "main": "server.js",
+    "scripts": {
+        "dev": "nodemon server.js",
+        "start": "node server.js",
+        "test": ""
+    },
+    "dependencies": {
+        "dotenv": "^16.0.1",
+        "express": "^4.18.1"
+    },
+    "author": "Notsag",
+    "license": "MIT",
+    "devDependencies": {
+        "nodemon": "^2.0.19"
+    }
+}
