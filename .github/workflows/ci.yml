@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -11,20 +9,18 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version:
-          - 16
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+    - name: Build the docker images
+      run: docker-compose build api
+    - name: Run the stack
+      env:
+        QUESTMASTER_DB_PASSWORD: ${{ secrets.QUESTMASTER_DB_PASSWORD }}
+      run: docker-compose up -d
+    - name: Ensure API is running
+      run:  "curl -X 'GET' 'http://localhost:8000' -H 'accept: application/json'"
+    - name: Stop the stack
+      run: docker-compose down
 
   sonarcloud:
     name: SonarCloud

@@ -10,5 +10,5 @@ RUN cd /tmp \
 
 COPY . /app
 
-EXPOSE 8080
-CMD [ "node", "server.js" ]
+EXPOSE 8000
+CMD [ "npm", "run", "start"]
