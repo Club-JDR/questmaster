@@ -12,6 +12,8 @@ jobs:
     steps:
     - name: Checlout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Build the docker images
       run: docker-compose build api
     - name: Run the stack
