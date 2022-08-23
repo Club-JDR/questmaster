@@ -6,11 +6,14 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build:
+  ci:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checlout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Build the docker images
       run: docker-compose build api
     - name: Run the stack
@@ -18,19 +21,14 @@ jobs:
         QUESTMASTER_DB_PASSWORD: ${{ secrets.QUESTMASTER_DB_PASSWORD }}
       run: docker-compose up -d
     - name: Ensure API is running
-      run:  "sleep 10 && curl -s -X 'GET' 'http://localhost:8000' -H 'accept: application/json'"
+      run:  "sleep 10 && curl -s -X 'GET' 'http://localhost:8000/health' -H 'accept: application/json'"
+    - name: Run tests
+      run: mkdir -p api/coverage && docker exec -t questmaster_api_1  npm run test
     - name: Stop the stack
       run: docker-compose down
-
-  sonarcloud:
-    name: SonarCloud
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      

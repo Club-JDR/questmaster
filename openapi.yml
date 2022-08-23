@@ -17,7 +17,7 @@ tags:
   - name: game
     description: Everything about a RPG game, from the ad posting to the booking.
 paths:
-  /:
+  /health:
     get:
       summary: API home.
       responses:
@@ -30,8 +30,20 @@ paths:
                 properties:
                   title:
                     type: string
+                    example: QuestMaster API
                   version:
                     type: integer
+                    example: 1
+                  status:
+                    type: string
+                    example: "OK"
+                  uptime:
+                    type: string
+                    example: "8 days, 3 hours, 30 minutes, 10 seconds"
+                  date:
+                    type: string
+                    format: date
+                    example: 2022-08-20T07:00:00.000Z
   /game:
     get:
       tags:
@@ -126,7 +138,7 @@ components:
       - dm
       - system
       - pitch
-      - party-size
+      - partySize
       - channel
       - role
       properties:
@@ -183,6 +195,8 @@ components:
       type: object
       required:
       - id
+      - isDM
+      - pic
       properties:
         id:
           type: string

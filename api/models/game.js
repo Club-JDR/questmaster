@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const gameSchema = new mongoose.Schema({
+const gameSchema = new Schema({
     name: {
         type: String,
         required: true
@@ -12,18 +13,14 @@ const gameSchema = new mongoose.Schema({
         required: true
     },
     dm: {
-        type: {
-            mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
+        type: String,
+        ref: 'User',
         required: true
     },
-    players: {
-        type: [{
-            mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }]
-    },
+    players: [{
+        type: String,
+        ref: 'User'
+    }],
     system: {
         type: String,
         required: true
@@ -65,4 +62,5 @@ const gameSchema = new mongoose.Schema({
         required: true
     }
 });
-const Game = model('Game', gameSchema);
+const Game = mongoose.model('Game', gameSchema);
+module.exports = Game;

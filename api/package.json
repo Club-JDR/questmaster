@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "nodemon app.js",
         "start": "node app.js",
-        "test": ""
+        "test": "nyc --reporter=lcov mocha ./tests/*.spec.js --exit"
     },
     "dependencies": {
         "cookie-parser": "^1.4.6",
@@ -18,6 +18,10 @@
     "author": "Notsag",
     "license": "MIT",
     "devDependencies": {
-        "nodemon": "^2.0.19"
+        "chai": "^4.3.6",
+        "chai-http": "^4.3.0",
+        "mocha": "^10.0.0",
+        "nodemon": "^2.0.19",
+        "nyc": "^15.1.0"
     }
 }
