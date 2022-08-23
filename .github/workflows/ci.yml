@@ -6,7 +6,7 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build:
+  test:
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -19,6 +19,8 @@ jobs:
       run: docker-compose up -d
     - name: Ensure API is running
       run:  "sleep 10 && curl -s -X 'GET' 'http://localhost:8000/health' -H 'accept: application/json'"
+    - name: Run tests
+      run: docker exec -t questmaster_api_1  npm run test
     - name: Stop the stack
       run: docker-compose down
 
