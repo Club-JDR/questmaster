@@ -21,7 +21,7 @@ jobs:
     - name: Ensure API is running
       run:  "sleep 10 && curl -s -X 'GET' 'http://localhost:8000/health' -H 'accept: application/json'"
     - name: Run tests
-      run: docker exec -t questmaster_api_1  npm run test
+      run: mkdir -p api/coverage && docker exec -t questmaster_api_1  npm run test
     - name: Stop the stack
       run: docker-compose down
     - name: SonarCloud Scan

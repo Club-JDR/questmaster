@@ -17,6 +17,8 @@ services:
       QUESTMASTER_DB_USER: ${QUESTMASTER_DB_USER:-root}
       QUESTMASTER_DB_PASSWORD: ${QUESTMASTER_DB_PASSWORD}
       QUESTMASTER_DB_HOST: db
+    volumes:
+      - ./api/coverage:/app/coverage
     depends_on:
       - db
     ports:
