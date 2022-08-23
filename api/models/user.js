@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const discordIdRegex = /^.{3,32}#[0-9]{4}$/
+const discordIdRegex = /^.{3,32}#\d{4}$/
 const userSchema = new Schema({
     id: {
         type: String,

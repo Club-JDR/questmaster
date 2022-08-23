@@ -64,8 +64,8 @@ describe('Test models', () => {
                 expect(err.errors.system.kind == 'required');
                 expect(err.errors.pitch.kind == 'required');
                 expect(games[0].restriction == 'all');
-                expect(games[0].pregen == false);
-                expect(games[0].selection == false);
+                expect(!games[0].pregen);
+                expect(!games[0].selection);
                 expect(games[0].partySize == 4);
                 expect(err.errors.channel.kind == 'required');
                 expect(err.errors.role.kind == 'required');
