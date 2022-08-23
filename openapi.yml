@@ -9,7 +9,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.0.1
 servers:
-  - url: http://api:8000/
+  - url: http://localhost:8000/
   - url: https://questmaster.club-jdr.fr/api/
 tags:
   - name: user
