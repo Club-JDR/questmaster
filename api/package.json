@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "nodemon app.js",
         "start": "node app.js",
-        "test": "mocha ./tests/*.spec.js"
+        "test": "mocha ./tests/*.spec.js --exit"
     },
     "dependencies": {
         "cookie-parser": "^1.4.6",
@@ -19,6 +19,7 @@
     "license": "MIT",
     "devDependencies": {
         "chai": "^4.3.6",
+        "chai-http": "^4.3.0",
         "mocha": "^10.0.0",
         "nodemon": "^2.0.19"
     }

@@ -138,7 +138,7 @@ components:
       - dm
       - system
       - pitch
-      - party-size
+      - partySize
       - channel
       - role
       properties:
@@ -195,6 +195,8 @@ components:
       type: object
       required:
       - id
+      - isDM
+      - pic
       properties:
         id:
           type: string

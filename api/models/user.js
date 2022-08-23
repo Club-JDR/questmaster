@@ -1,18 +1,22 @@
 const mongoose = require("mongoose");
-
-const userSchema = new mongoose.Schema({
+const Schema = mongoose.Schema;
+const discordIdRegex = /^.{3,32}#[0-9]{4}$/
+const userSchema = new Schema({
     id: {
         type: String,
-        required: true
+        required: true,
+        match: discordIdRegex,
+        unique: true
     },
     isDM: {
         type: Boolean,
         required: true,
-        default: false
     },
     pic: {
         type: String,
         required: true
-    }
+    },
+    _id: false
 });
-const User = model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+module.exports = User;

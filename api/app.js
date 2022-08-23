@@ -4,25 +4,24 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const healthRoute = require('./routes/health');
 
 require('dotenv').config();
 const { QUESTMASTER_HOST, QUESTMASTER_PORT, QUESTMASTER_DB_USER, QUESTMASTER_DB_PASSWORD, QUESTMASTER_DB_HOST } = process.env;
 
-const healthRoute = require('./routes/health');
-const app = express();
-
-mongoose.Promise = global.Promise;
-
-
 // Mongo
+mongoose.Promise = global.Promise;
 mongoose.connect(`mongodb://${QUESTMASTER_DB_USER}:${QUESTMASTER_DB_PASSWORD}@${QUESTMASTER_DB_HOST}/`, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-
+// App config
+const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(cors());
+app.disable("x-powered-by");
 
 // Routes
 app.use('/health', healthRoute);
@@ -45,7 +44,6 @@ app.use(function(err, req, res, next) {
     });
 });
 
-app.use(cors());
-app.disable("x-powered-by");
 app.listen(QUESTMASTER_PORT, QUESTMASTER_HOST);
 console.log(`Running on http://${QUESTMASTER_HOST}:${QUESTMASTER_PORT}`);
+module.exports = app; // for testing
