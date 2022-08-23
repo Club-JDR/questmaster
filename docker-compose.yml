@@ -4,7 +4,7 @@ services:
     image: mongo
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_USERNAME: ${QUESTMASTER_DB_USER:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${QUESTMASTER_DB_PASSWORD}
     ports:
     - "27017:27017"
@@ -12,9 +12,9 @@ services:
     build:
       context: api/
     environment:
-      QUESTMASTER_HOST: 0.0.0.0
-      QUESTMASTER_PORT: 8000
-      QUESTMASTER_DB_USER: root
+      QUESTMASTER_HOST: ${QUESTMASTER_HOST:-0.0.0.0}
+      QUESTMASTER_PORT: ${QUESTMASTER_PORT:-8000}
+      QUESTMASTER_DB_USER: ${QUESTMASTER_DB_USER:-root}
       QUESTMASTER_DB_PASSWORD: ${QUESTMASTER_DB_PASSWORD}
       QUESTMASTER_DB_HOST: db
     depends_on:
