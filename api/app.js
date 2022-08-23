@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const healthRoute = require('./routes/health');
 
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { QUESTMASTER_HOST, QUESTMASTER_PORT, QUESTMASTER_DB_USER, QUESTMASTER_DB_PASSWORD, QUESTMASTER_DB_HOST } = process.env;
 
 // Mongo
