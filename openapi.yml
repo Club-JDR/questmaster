@@ -38,8 +38,8 @@ paths:
                     type: string
                     example: "OK"
                   uptime:
-                    type: integer
-                    example: 15
+                    type: string
+                    example: "8 days, 3 hours, 30 minutes, 10 seconds"
                   date:
                     type: string
                     format: date
