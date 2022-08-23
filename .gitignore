@@ -4,6 +4,8 @@
 /dist
 /output
 .eslintcache
+**/coverage
+**/.nyc_output
 
 # dependencies
 **/node_modules
