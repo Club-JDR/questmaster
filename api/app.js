@@ -8,8 +8,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { QUESTMASTER_HOST, QUESTMASTER_PORT, QUESTMASTER_DB_USER, QUESTMASTER_DB_PASSWORD, QUESTMASTER_DB_HOST } = process.env;
 
-const index = require('./routes/index');
-//const api = require('./routes/api/index');
+const healthRoute = require('./routes/health');
 const app = express();
 
 mongoose.Promise = global.Promise;
@@ -26,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // Routes
-app.use('/', index);
+app.use('/health', healthRoute);
 
 // Errors
 app.use(function(req, res, next) {
