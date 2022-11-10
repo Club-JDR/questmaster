@@ -3,10 +3,6 @@
 # compiled output
 /dist
 /output
-.eslintcache
-
-# dependencies
-**/node_modules
 
 # IDEs and editors
 /.idea
@@ -28,9 +24,15 @@
 npm-debug.log
 yarn-error.log
 testem.log
-tests/
 .env
 
 # System Files
 .DS_Store
 Thumbs.db
+
+__pycache__
+.scannerwork
+coverage.xml
+.coverage
+junit.xml
+.pytest_cache

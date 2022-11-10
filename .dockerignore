@@ -1,2 +1,10 @@
-node_modules
-npm-debug.log
+.git
+docker-compose*
+*.pyc
+.env
+Dockerfile
+tests
+.pytest_cache
+__pycache__
+tests*.xml
+sonar-project.properties
