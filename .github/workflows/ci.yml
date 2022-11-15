@@ -44,7 +44,7 @@ jobs:
           sudo update-locale LANG=fr_FR.UTF-8
     - name: Tests with Pytest
       run: |
-        python -m pytest test --cov api --cov-report xml:coverage.xml --junitxml=junit.xml
+        python -m pytest tests/ --cov api --cov-report xml:coverage.xml --junitxml=junit.xml
     - name: Fix code coverage paths
       run: |
         sed -i 's#/home/runner/work/questmaster/questmaster/#/github/workspace/#g' coverage.xml
