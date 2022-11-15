@@ -15,34 +15,23 @@ This app is meant for GMs to create new Games with all the details (name, type, 
 Create a `.env` to set the following variables:
 
 ```yaml
-QUESTMASTER_PORT=8000
-QUESTMASTER_HOST=0.0.0.0
-QUESTMASTER_DB_USER=root
-QUESTMASTER_DB_PASSWORD=topsecret
-QUESTMASTER_DB_HOST=localhost
+FLASK_AUTH_SECRET="topsecret"
+DISCORD_CLIENT_ID="1234567890"
+DISCORD_CLIENT_SECRET="987654321"
+DISCORD_BOT_TOKEN="qwertyuiopasdfghjklzxcvbnm"
+DISCORD_REDIRECT_URI="http://localhost:8000/callback"
+DISCORD_GUILD_NAME="Club JDR TEST"
+POSTGRES_USER="clubjdr"
+POSTGRES_PASSWORD="topsecret"
+POSTGRES_DB="clubjdr"
+UNITTEST_CHANNEL_ID="123456789"
+CATEGORIES_CHANNEL_ID="123456789"
+DISCORD_GUILD_ID="123456789"
 ```
 
 Start the complete stack:
 
 ```sh
-docker-compose build api
+docker-compose build
 docker-compose up -d
-```
-
-Run tests:
-
-```sh
-docker exec -t questmaster_api_1  npm run test
-```
-
-Manually run the api on dev mode:
-
-```sh
-# stop the containerized api
-docker stop questmaster_api_1
-# then
-cd api/
-npm install && npm run dev
-# in another terminal you can run the tests locally too:
-npm run test
 ```

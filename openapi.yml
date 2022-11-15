@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.1.0
 info:
   title: QuestMaster
   description: This is the API endpoints for the Club JDR Booking app.
@@ -7,7 +7,7 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  version: 0.0.1
+  version: 1.0.0
 servers:
   - url: http://localhost:8000/
   - url: https://questmaster.club-jdr.fr/api/
@@ -43,7 +43,7 @@ paths:
                   date:
                     type: string
                     format: date
-                    example: 2022-08-20T07:00:00.000Z
+                    example: 2022-11-01:10:00:00
   /game:
     get:
       tags:
