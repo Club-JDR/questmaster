@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_discord import DiscordOAuth2Session 
+from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect
 import os
 import locale
