@@ -3,12 +3,6 @@
 # compiled output
 /dist
 /output
-.eslintcache
-**/coverage
-**/.nyc_output
-
-# dependencies
-**/node_modules
 
 # IDEs and editors
 /.idea
@@ -35,3 +29,10 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+__pycache__
+.scannerwork
+coverage.xml
+.coverage
+junit.xml
+.pytest_cache

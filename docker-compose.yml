@@ -1,35 +1,18 @@
 version: '3.7'
 services:
   db:
-    image: mongo
+    image: postgres:15
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${QUESTMASTER_DB_USER:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${QUESTMASTER_DB_PASSWORD}
     ports:
-    - "27017:27017"
+    - "5432:5432"
+    env_file:
+      - .env
   api:
     build:
-      context: api/
-    environment:
-      QUESTMASTER_HOST: ${QUESTMASTER_HOST:-0.0.0.0}
-      QUESTMASTER_PORT: ${QUESTMASTER_PORT:-8000}
-      QUESTMASTER_DB_USER: ${QUESTMASTER_DB_USER:-root}
-      QUESTMASTER_DB_PASSWORD: ${QUESTMASTER_DB_PASSWORD}
-      QUESTMASTER_DB_HOST: db
-    volumes:
-      - ./api/coverage:/app/coverage
+      context: .
     depends_on:
       - db
     ports:
       - "8000:8000"
-  swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "8001:8080"
-    volumes:
-      - ./openapi.yml:/openapi.yml
-    environment:
-      SWAGGER_JSON: /openapi.yml
-    depends_on:
-      - api
+    env_file:
+      - .env
