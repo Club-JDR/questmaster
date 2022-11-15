@@ -1,5 +1,6 @@
-from flask import Flask, redirect, url_for
-from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
+from flask import Flask
+from flask_discord import DiscordOAuth2Session 
+from flask_wtf.csrf import CSRFProtect
 import os
 import locale
 
@@ -20,6 +21,9 @@ if "https" not in app.config["DISCORD_REDIRECT_URI"]:
     os.environ[
         "OAUTHLIB_INSECURE_TRANSPORT"
     ] = "true"  # !! Only in development environment.
+
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 from api.views import auth, health
 from api.utils.discord import Discord

@@ -1,4 +1,5 @@
 Flask==2.2.2
 Flask-Discord==0.1.69
+Flask-WTF==1.0.1
 gunicorn==20.1.0
 psutil==5.9.4
