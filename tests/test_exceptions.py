@@ -1,7 +1,7 @@
 from api.utils.exceptions import RateLimited
 
 
-def test_rateLimited():
+def test_rate_limited_exception():
     is_global = False
     message = "You are being rate limited."
     retry_after = 64.57

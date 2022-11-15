@@ -101,4 +101,5 @@ def test_channel_workflow():
     assert response["parent_id"] == parent_id
     # Channel deletion
     response = client.delete_channel(channel_id)
+    assert response["id"] == channel_id
     client.send_message(f"Channel @{channel_name} supprimé.", test_channel_id)
