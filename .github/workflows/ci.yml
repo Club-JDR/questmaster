@@ -53,28 +53,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      
-  docker:
-    name: Build and Run docker images
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
     - name: Build the docker images
       run: docker-compose build
     - name: Run the stack
-      env:
-        FLASK_AUTH_SECRET: ${{ secrets.FLASK_AUTH_SECRET }}
-        DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-        DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-        DISCORD_REDIRECT_URI: ${{ secrets.DISCORD_REDIRECT_URI }}
-        DISCORD_GUILD_NAME: "Club JDR TEST"
-        POSTGRES_USER: "clubjdr"
-        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        POSTGRES_DB: "clubjdr"
-        UNITTEST_CHANNEL_ID: ${{ secrets.UNITTEST_CHANNEL_ID }}
-        CATEGORIES_CHANNEL_ID: ${{ secrets.CATEGORIES_CHANNEL_ID }}
-        DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
       run: docker-compose up -d
     - name: Ensure APP is running
       run:  "sleep 10 && curl -s -X 'GET' 'http://localhost:8000'"
