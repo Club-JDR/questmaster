@@ -29,9 +29,11 @@ jobs:
         POSTGRES_USER: "clubjdr"
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         POSTGRES_DB: "clubjdr"
+        POSTGRES_HOST: "db"
         UNITTEST_CHANNEL_ID: ${{ secrets.UNITTEST_CHANNEL_ID }}
         CATEGORIES_CHANNEL_ID: ${{ secrets.CATEGORIES_CHANNEL_ID }}
         DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+        FLASK_APP: api
     - name: Build the docker images
       run: docker-compose build
     - name: Run the stack
