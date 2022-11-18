@@ -12,6 +12,8 @@ services:
       - db
     links:
       - db
+    networks:
+      - database
   api-test:
     build:
       context: .
@@ -24,15 +26,19 @@ services:
       - db
     links:
       - db
+    networks:
+      - database
   db:
     image: postgres:15
     restart: always
     ports:
-    - "5432:5432"
+      - "5432:5432"
     env_file:
       - .env
     volumes:
-    - db_data:/var/lib/postgresql
+      - db_data:/var/lib/postgresql
+    networks:
+      - database
   pgadmin:
     image: dpage/pgadmin4
     restart: unless-stopped
@@ -42,6 +48,8 @@ services:
       - db
     links:
       - db
+    networks:
+      - database
     environment:
       PGADMIN_DEFAULT_EMAIL: club@jdr.fr
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -61,3 +69,7 @@ services:
 volumes:
     db_data:
     pgadmin_data:
+
+networks:
+  database:
+    driver: bridge
