@@ -34,19 +34,17 @@ FLASK_APP="api"
 Start the complete stack:
 
 ```sh
-mkdir -p db/pg{,admin}
-docker-compose build
-docker-compose up -d
+docker compose up -d --build
 ```
 
 To init the database and run the migrations:
 
 ```sh
-docker exec -it questmaster_api_1 bash -c "flask db init && flask db migrate && flask db upgrade"
+docker exec -it questmaster-api-1 bash -c "flask db init && flask db migrate && flask db upgrade"
 ```
 
 To run the tests:
 
 ```sh
-docker-compose run api-test python -m pytest tests/ api
+docker compose run api-test python -m pytest tests/ api
 ```

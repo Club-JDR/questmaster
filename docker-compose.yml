@@ -34,6 +34,7 @@ services:
     volumes:
     - db_data:/var/lib/postgresql
   pgadmin:
+    container_name: pgadmin
     image: dpage/pgadmin4
     restart: unless-stopped
     ports:
