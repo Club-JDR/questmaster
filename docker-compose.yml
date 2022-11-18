@@ -33,6 +33,11 @@ services:
       - .env
     volumes:
     - db_data:/var/lib/postgresql
+    networks:
+      default:
+        aliases:
+          - db
+          - postgres
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
