@@ -11,7 +11,7 @@ services:
     depends_on:
       - db
     links:
-      - db
+      - db:db
   api-test:
     build:
       context: .
@@ -23,7 +23,7 @@ services:
     depends_on:
       - db
     links:
-      - db
+      - db:db
   db:
     image: postgres:15
     restart: always
@@ -47,7 +47,7 @@ services:
     depends_on:
       - db
     links:
-      - db
+      - db:db
     environment:
       PGADMIN_DEFAULT_EMAIL: club@jdr.fr
       PGADMIN_DEFAULT_PASSWORD: admin
