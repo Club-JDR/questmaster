@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.7
 info:
   title: QuestMaster
   description: This is the API endpoints for the Club JDR Booking app.
@@ -35,6 +35,9 @@ paths:
                     type: integer
                     example: 1
                   status:
+                    type: string
+                    example: "OK"
+                  database:
                     type: string
                     example: "OK"
                   uptime:
@@ -101,19 +104,19 @@ paths:
             application/json:
               schema:
                   $ref: '#/components/schemas/Game'
-  /user/{username}:
+  /user/{id}:
     get:
       tags:
         - user
-      summary: Get user by user name.
-      operationId: getUserByName
+      summary: Get user by user id.
+      operationId: getUserById
       parameters:
-        - name: username
+        - name: id
           in: path
-          description: 'The name that needs to be fetched. Use user1 for testing.'
+          description: 'The id that needs to be fetched.'
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         '200':
           description: successful operation
@@ -153,7 +156,7 @@ components:
             - oneshot
             - campaign
           default: "oneshot"
-        dm:
+        gm:
           $ref: '#/components/schemas/User'
         players:
           type: array
@@ -195,7 +198,7 @@ components:
       type: object
       required:
       - id
-      - isDM
+      - isGM
       - pic
       properties:
         id:

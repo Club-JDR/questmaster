@@ -15,23 +15,38 @@ This app is meant for GMs to create new Games with all the details (name, type, 
 Create a `.env` to set the following variables:
 
 ```yaml
-FLASK_AUTH_SECRET="topsecret"
-DISCORD_CLIENT_ID="1234567890"
-DISCORD_CLIENT_SECRET="987654321"
-DISCORD_BOT_TOKEN="qwertyuiopasdfghjklzxcvbnm"
+FLASK_AUTH_SECRET=""
+DISCORD_CLIENT_ID=""
+DISCORD_CLIENT_SECRET=""
+DISCORD_BOT_TOKEN=""
 DISCORD_REDIRECT_URI="http://localhost:8000/callback"
-DISCORD_GUILD_NAME="Club JDR TEST"
-POSTGRES_USER="clubjdr"
-POSTGRES_PASSWORD="topsecret"
-POSTGRES_DB="clubjdr"
-UNITTEST_CHANNEL_ID="123456789"
-CATEGORIES_CHANNEL_ID="123456789"
-DISCORD_GUILD_ID="123456789"
+DISCORD_GUILD_NAME=""
+POSTGRES_USER="club"
+POSTGRES_PASSWORD=""
+POSTGRES_DB="questmaster"
+POSTGRES_HOST="db"
+UNITTEST_CHANNEL_ID=""
+CATEGORIES_CHANNEL_ID=""
+DISCORD_GUILD_ID=""
+FLASK_APP="api"
 ```
 
 Start the complete stack:
 
 ```sh
+mkdir -p db/pg{,admin}
 docker-compose build
 docker-compose up -d
+```
+
+To init the database and run the migrations:
+
+```sh
+docker exec -it questmaster_api_1 bash -c "flask db init && flask db migrate && flask db upgrade"
+```
+
+To run the tests:
+
+```sh
+docker-compose run api-test python -m pytest tests/ api
 ```

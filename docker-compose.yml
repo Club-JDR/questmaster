@@ -1,18 +1,63 @@
 version: '3.7'
 services:
-  db:
-    image: postgres:15
-    restart: always
-    ports:
-    - "5432:5432"
-    env_file:
-      - .env
   api:
     build:
       context: .
-    depends_on:
-      - db
+      target: api
     ports:
       - "8000:8000"
     env_file:
       - .env
+    depends_on:
+      - db
+    links:
+      - db
+  api-test:
+    build:
+      context: .
+      target: api-test
+    volumes:
+      - ./test-results:/app/test-results/
+    env_file:
+      - .env
+    depends_on:
+      - db
+    links:
+      - db
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    ports:
+    - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+    - db_data:/var/lib/postgresql
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    depends_on:
+      - db
+    links:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: club@jdr.fr
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+       - pgadmin_data:/var/lib/pgadmin
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8002:8080"
+    volumes:
+      - ./openapi.yml:/openapi.yml
+    environment:
+      SWAGGER_JSON: /openapi.yml
+    depends_on:
+      - api
+
+volumes:
+    db_data:
+    pgadmin_data:
