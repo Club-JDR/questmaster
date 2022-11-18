@@ -35,4 +35,5 @@ __pycache__
 coverage.xml
 .coverage
 junit.xml
+test-results
 .pytest_cache

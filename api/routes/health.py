@@ -1,7 +1,7 @@
-from flask import jsonify
-from api import app
+from flask import jsonify, request
+from api import app, db
 from datetime import datetime
-import psutil, os, time
+import psutil, os
 
 
 def dhms_from_seconds(seconds) -> str:
@@ -14,7 +14,7 @@ def dhms_from_seconds(seconds) -> str:
     return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
 
 
-@app.route("/health/")
+@app.route("/health/", methods=["GET"])
 def health():
     """
     Health endpoint
@@ -23,12 +23,18 @@ def health():
     delta = datetime.now() - datetime.fromtimestamp(start_time)
     uptime = dhms_from_seconds(delta.seconds)
     now = datetime.now().strftime("%Y-%m-%d:%H:%M:%S")
+    db_status = "OK"
+    try:
+        db.session.execute("SELECT 1")
+    except:
+        db_status = "ERROR"
     return (
         jsonify(
             {
                 "title": "QuestMaster API",
                 "version": 1,
                 "status": "OK",
+                "database": db_status,
                 "uptime": uptime,
                 "date": now,
             }
