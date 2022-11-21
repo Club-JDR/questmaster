@@ -50,7 +50,7 @@ jobs:
         docker-compose run api-test python -m pytest tests/ --cov api --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
     - name: Fix code coverage paths
       run: |
-        sed -i 's#/home/runner/work/questmaster/questmaster/#/github/workspace/#g' test-results/coverage.xml
+        pwd && ls -al test-results/ && sudo sed -i 's#/home/runner/work/questmaster/questmaster/#/github/workspace/#g' test-results/coverage.xml
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
