@@ -20,24 +20,24 @@ jobs:
     - name: Create dotenv
       uses: iamsauravsharma/create-dotenv@v1.2.1
       env:
-        FLASK_AUTH_SECRET: ${{ secrets.FLASK_AUTH_SECRET }}
-        DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-        DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-        DISCORD_REDIRECT_URI: ${{ secrets.DISCORD_REDIRECT_URI }}
+        FLASK_AUTH_SECRET: "${{ secrets.FLASK_AUTH_SECRET }}"
+        DISCORD_CLIENT_ID: "${{ secrets.DISCORD_CLIENT_ID }}"
+        DISCORD_CLIENT_SECRET: "${{ secrets.DISCORD_CLIENT_SECRET }}"
+        DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
+        DISCORD_REDIRECT_URI: "${{ secrets.DISCORD_REDIRECT_URI }}"
         DISCORD_GUILD_NAME: "Club JDR TEST"
         POSTGRES_USER: "clubjdr"
-        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
         POSTGRES_DB: "clubjdr"
         POSTGRES_HOST: "db"
-        UNITTEST_CHANNEL_ID: ${{ secrets.UNITTEST_CHANNEL_ID }}
-        CATEGORIES_CHANNEL_ID: ${{ secrets.CATEGORIES_CHANNEL_ID }}
-        DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
-        FLASK_APP: api
-    - name: Build the docker images
+        UNITTEST_CHANNEL_ID: "${{ secrets.UNITTEST_CHANNEL_ID }}"
+        CATEGORIES_CHANNEL_ID: "${{ secrets.CATEGORIES_CHANNEL_ID }}"
+        DISCORD_GUILD_ID: "${{ secrets.DISCORD_GUILD_ID }}"
+        FLASK_APP: "api"
+    - name: Build the api
       run: docker-compose build
     - name: Run the stack
-      run: docker-compose up -d
+      run: docker-compose down && docker-compose up -d db api
     - name: Ensure API is running
       run:  "sleep 10 && curl -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json'"
     - name: Init the database and run the migrations
@@ -48,9 +48,8 @@ jobs:
     - name: Tests with Pytest
       run: |
         docker-compose run api-test python -m pytest tests/ --cov api --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
-    - name: Fix code coverage paths
-      run: |
-        sed -i 's#/home/runner/work/questmaster/questmaster/#/github/workspace/#g' coverage.xml
+    - name: Fix code coverage permissions and path
+      run: sudo chmod -R 777 test-results/ && sed -i 's#/app/#/github/workspace/#g' test-results/coverage.xml
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:

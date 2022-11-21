@@ -47,7 +47,6 @@ def test_wrong_token():
 
 def test_get_user():
     response = client.get_user(bot_user_id)
-    print(response)
     assert response["user"]["id"] == bot_user_id
     assert response["user"]["username"] == "QuestMaster"
 
@@ -96,23 +95,15 @@ def test_role_workflow():
     assert role_name == response["name"]
     assert permissions == response["permissions"]
     assert color == response["color"]
-    client.send_message(f"Rôle <@&{role_id}> créé.", test_channel_id)
     # Role attribution
     response = client.add_role_to_user(bot_user_id, role_id)
-    client.send_message(
-        f"Rôle <@&{role_id}> donné à <@{bot_user_id}>.", test_channel_id
-    )
     assert response == "{}"
     # Role de-attribution
     response = client.remove_role_from_user(bot_user_id, role_id)
-    client.send_message(
-        f"Rôle <@&{role_id}> enlevé à <@{bot_user_id}>.", test_channel_id
-    )
     assert response == "{}"
     # Role deletion
     response = client.delete_role(role_id)
     assert response == "{}"
-    client.send_message(f"Rôle @{role_name} supprimé.", test_channel_id)
 
 
 def test_channel_workflow():
@@ -124,10 +115,8 @@ def test_channel_workflow():
     # Channel creation
     response = client.create_channel(channel_name, parent_id)
     channel_id = response["id"]
-    client.send_message(f"Channel <#{channel_id}> créé.", test_channel_id)
     assert response["name"] == channel_name
     assert response["parent_id"] == parent_id
     # Channel deletion
     response = client.delete_channel(channel_id)
     assert response["id"] == channel_id
-    client.send_message(f"Channel @{channel_name} supprimé.", test_channel_id)

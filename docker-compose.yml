@@ -25,15 +25,16 @@ services:
     links:
       - db
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     restart: always
     ports:
     - "5432:5432"
     env_file:
       - .env
     volumes:
-    - db_data:/var/lib/postgresql
+    - db_data:/var/lib/postgresql/data
   pgadmin:
+    container_name: pgadmin
     image: dpage/pgadmin4
     restart: unless-stopped
     ports:
