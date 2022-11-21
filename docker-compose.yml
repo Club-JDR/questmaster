@@ -12,8 +12,6 @@ services:
       - db
     links:
       - db
-    networks:
-      - questmaster
   api-test:
     build:
       context: .
@@ -26,8 +24,6 @@ services:
       - db
     links:
       - db
-    networks:
-      - questmaster
   db:
     image: postgres:15
     restart: always
@@ -36,9 +32,7 @@ services:
     env_file:
       - .env
     volumes:
-    - db_data:/var/lib/postgresql
-    networks:
-      - questmaster
+    - db_data:/var/lib/postgresql/data
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
@@ -49,8 +43,6 @@ services:
       - db
     links:
       - db
-    networks:
-      - questmaster
     environment:
       PGADMIN_DEFAULT_EMAIL: club@jdr.fr
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -66,13 +58,7 @@ services:
       SWAGGER_JSON: /openapi.yml
     depends_on:
       - api
-    networks:
-      - questmaster
 
 volumes:
     db_data:
     pgadmin_data:
-
-
-networks:
-  questmaster:
