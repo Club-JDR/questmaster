@@ -34,7 +34,6 @@ jobs:
         CATEGORIES_CHANNEL_ID: "${{ secrets.CATEGORIES_CHANNEL_ID }}"
         DISCORD_GUILD_ID: "${{ secrets.DISCORD_GUILD_ID }}"
         FLASK_APP: "api"
-        POSTGRES_HOST_AUTH_METHOD: "trust"
     - name: Build the api
       run: docker-compose build
     - name: Run the stack
