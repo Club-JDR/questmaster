@@ -1,6 +1,6 @@
-from flask import redirect, url_for, render_template, request
-from flask import current_app, make_response, session
-from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
+from flask import redirect, url_for
+from flask import current_app
+from flask_discord import Unauthorized
 from api import app
 
 

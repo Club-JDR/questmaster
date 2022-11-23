@@ -14,7 +14,7 @@ This app is meant for GMs to create new Games with all the details (name, type, 
 
 Create a `.env` to set the following variables:
 
-```yaml
+```ini
 FLASK_AUTH_SECRET=""
 DISCORD_CLIENT_ID=""
 DISCORD_CLIENT_SECRET=""
@@ -28,7 +28,9 @@ POSTGRES_HOST="db"
 UNITTEST_CHANNEL_ID=""
 CATEGORIES_CHANNEL_ID=""
 DISCORD_GUILD_ID=""
+DISCORD_GM_ROLE_ID=""
 FLASK_APP="api"
+USER_ID_LIST="{ \"gm1\": \"<id of user with GM role>\", \"gm2\": \"<id of other user with GM role>\", \"notgm\": \"<id of user without GM role>\", \"admin\": \"<id of user with Admin role>\"}"
 ```
 
 Start the complete stack:

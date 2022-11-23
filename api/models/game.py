@@ -18,14 +18,16 @@ class Game(db.Model):
     id = db.Column(db.BigInteger, primary_key=True)
     name = db.Column(db.String())
     type = db.Column("type", Enum(*GAME_TYPES, name="gender_enum", create_type=False))
-    # gm = db.Column(db.Integer(), db.ForeignKey("user.id"))
+    gm = db.Column(db.String(), db.ForeignKey("user.id"))
     # players = db.relationship("User", secondary=players_table, backref='players')
 
     def __repr__(self) -> str:
         return "<id {self.id}>"
 
-    def create_channel() -> str:
-        return ""
-
-    def create_role() -> str:
-        return ""
+    def to_json(self) -> object:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "gm": self.gm,
+            "type": self.type,
+        }

@@ -33,6 +33,8 @@ jobs:
         UNITTEST_CHANNEL_ID: "${{ secrets.UNITTEST_CHANNEL_ID }}"
         CATEGORIES_CHANNEL_ID: "${{ secrets.CATEGORIES_CHANNEL_ID }}"
         DISCORD_GUILD_ID: "${{ secrets.DISCORD_GUILD_ID }}"
+        DISCORD_GM_ROLE_ID: "${{ secrets.DISCORD_GM_ROLE_ID }}"
+        USER_ID_LIST: "${{ secrets.USER_ID_LIST }}"
         FLASK_APP: "api"
     - name: Build the api
       run: docker-compose build

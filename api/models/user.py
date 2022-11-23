@@ -1,5 +1,7 @@
 from api import db, bot
 from sqlalchemy import orm
+from flask import current_app
+
 
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
@@ -7,8 +9,8 @@ AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 class User(db.Model):
     __tablename__ = "user"
 
-    id = db.Column(db.BigInteger, primary_key=True)
-    # games_gm = db.relationship("Game", backref="game")
+    id = db.Column(db.String(), primary_key=True)
+    games_gm = db.relationship("Game", backref="game")
 
     def __init__(self, id):
         self.id = id
@@ -20,20 +22,13 @@ class User(db.Model):
         """
         results = bot.get_user(self.id)
         self.name = results["user"]["username"]
-        self.is_gm = self.get_is_gm()
+        self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in results["roles"]
         self.avatar = AVATAR_BASE_URL.format(self.id, results["user"]["avatar"])
 
     def __repr__(self) -> str:
         return "<id {self.id}>"
 
-    def get_avatar(self) -> str:
-        avatar_id = bot.get_user(self.id)
-        return AVATAR_BASE_URL.format(self.id, avatar_id)
-
-    def get_is_gm(self) -> bool:
-        return False
-
-    def to_json(self):
+    def to_json(self) -> object:
         return {
             "id": self.id,
             "username": self.name,

@@ -16,6 +16,7 @@ app.config["DISCORD_BOT_TOKEN"] = os.environ.get("DISCORD_BOT_TOKEN")
 app.config["DISCORD_REDIRECT_URI"] = os.environ.get("DISCORD_REDIRECT_URI")
 app.config["DISCORD_GUILD_NAME"] = os.environ.get("DISCORD_GUILD_NAME")
 app.config["DISCORD_GUILD_ID"] = os.environ.get("DISCORD_GUILD_ID")
+app.config["DISCORD_GM_ROLE_ID"] = os.environ.get("DISCORD_GM_ROLE_ID")
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
@@ -40,4 +41,4 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 
 # API import
-from api.routes import auth, health, users
+from api.routes import auth, health, users, games

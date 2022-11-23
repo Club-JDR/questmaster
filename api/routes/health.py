@@ -26,7 +26,7 @@ def health():
     db_status = "OK"
     try:
         db.session.execute("SELECT 1")
-    except:
+    except Exception:
         db_status = "ERROR"
     return (
         jsonify(
