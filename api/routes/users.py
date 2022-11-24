@@ -5,7 +5,10 @@ from api.models import User
 
 
 @app.route("/users/", methods=["POST"])
-def create_user():
+def create_user() -> object:
+    """
+    Endpoint to create a user in the database if it doesn't already exist.
+    """
     data = request.get_json()
     if User.query.get(data["id"]) == None:
         try:
@@ -20,18 +23,28 @@ def create_user():
 
 
 @app.route("/users/", methods=["GET"])
-def get_users():
-    results = [user.to_json() for user in User.query.all()]
+def get_users() -> object:
+    """
+    Endpoint to list all users.
+    """
+    results = [user.serialize() for user in User.query.all()]
     return jsonify({"count": len(results), "users": results})
 
 
 @app.route("/users/<user_id>", methods=["GET"])
-def get_user(user_id):
-    return jsonify(User.query.get(user_id).to_json())
+def get_user(user_id) -> object:
+    """
+    Endpoint to get details for a user by it's id.
+    """
+    return jsonify(User.query.get(user_id).serialize())
 
 
 @app.route("/users/<user_id>", methods=["DELETE"])
-def delete_user(user_id):
-    User.query.filter_by(id=user_id).delete()
+def delete_user(user_id) -> object:
+    """
+    Endpoint to delete a user from the database.
+    """
+    user = User.query.get(user_id)
+    db.session.delete(user)
     db.session.commit()
     return jsonify({"user": user_id, "status": "deleted"})

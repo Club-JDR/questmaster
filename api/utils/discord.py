@@ -54,25 +54,7 @@ class Discord:
         )
 
     def send_embed_message(self, embed, channel_id):
-        payload = {
-            "embeds": [embed]
-            #     {
-            #         "title": "Annonce",
-            #         "color": 0x0099FF,
-            #         "fields": [
-            #             {"name": "Name", "value": "Mon OS"},
-            #             {"name": "MJ", "value": "John Bob"},
-            #             {"name": "Description", "value": "blabla"},
-            #             {"name": "Type de session", "value": "OS", "inline": True},
-            #             {"name": "Nombre de sessions", "value": "2", "inline": True},
-            #         ],
-            #         "image": {
-            #             "url": "https://club-jdr.fr/wp-content/uploads/2022/08/cropped-club-jdr-white.png"
-            #         },
-            #         "footer": {},
-            #     }
-            # ],
-        }
+        payload = {"embeds": [embed]}
         return self._request(
             route=f"/channels/{channel_id}/messages", method="POST", payload=payload
         )
@@ -82,6 +64,9 @@ class Discord:
         return self._request(
             route=f"/guilds/{self.guild_id}/channels", method="POST", payload=payload
         )
+
+    def get_channel(self, channel_id):
+        return self._request(route=f"/channels/{channel_id}", method="GET")
 
     def delete_channel(self, channel_id):
         return self._request(route=f"/channels/{channel_id}", method="DELETE")
@@ -96,6 +81,13 @@ class Discord:
         return self._request(
             route=f"/guilds/{self.guild_id}/roles", method="POST", payload=payload
         )
+
+    def get_role(self, role_id):
+        roles = self._request(route=f"/guilds/{self.guild_id}/roles", method="GET")
+        for role in roles:
+            if role["id"] == role_id:
+                return role
+        return {"message": "Unknown Role"}
 
     def delete_role(self, role_id):
         return self._request(

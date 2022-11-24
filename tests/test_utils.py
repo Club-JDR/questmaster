@@ -95,6 +95,11 @@ def test_role_workflow():
     assert role_name == response["name"]
     assert permissions == response["permissions"]
     assert color == response["color"]
+    # Role details
+    response = client.get_role(role_id)
+    assert role_name == response["name"]
+    assert permissions == response["permissions"]
+    assert color == response["color"]
     # Role attribution
     response = client.add_role_to_user(bot_user_id, role_id)
     assert response == "{}"
@@ -115,6 +120,10 @@ def test_channel_workflow():
     # Channel creation
     response = client.create_channel(channel_name, parent_id)
     channel_id = response["id"]
+    assert response["name"] == channel_name
+    assert response["parent_id"] == parent_id
+    # Channel details
+    response = client.get_channel(channel_id)
     assert response["name"] == channel_name
     assert response["parent_id"] == parent_id
     # Channel deletion

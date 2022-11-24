@@ -17,9 +17,11 @@ app.config["DISCORD_REDIRECT_URI"] = os.environ.get("DISCORD_REDIRECT_URI")
 app.config["DISCORD_GUILD_NAME"] = os.environ.get("DISCORD_GUILD_NAME")
 app.config["DISCORD_GUILD_ID"] = os.environ.get("DISCORD_GUILD_ID")
 app.config["DISCORD_GM_ROLE_ID"] = os.environ.get("DISCORD_GM_ROLE_ID")
+app.config["CATEGORIES_CHANNEL_ID"] = os.environ.get("CATEGORIES_CHANNEL_ID")
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
+app.json.compact = False
 
 # Database
 db = SQLAlchemy(app)

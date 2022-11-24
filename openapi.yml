@@ -140,14 +140,13 @@ components:
       - type
       - dm
       - system
-      - pitch
+      - description
       - partySize
       - channel
       - role
       properties:
         id:
           type: string
-          format: uuid
         name:
           type: string
         type:
@@ -164,8 +163,8 @@ components:
             $ref: '#/components/schemas/User'
         system:
           type: string
-        pitch:
-          type: string
+        description:
+          type: text
         restriction:
           type: string
           default: all
@@ -173,18 +172,13 @@ components:
             - all
             - '16+'
             - '18+'
-        restrictionTags:
-          type: array
-          items:
-            type: string
+        restriction_tags:
+          type: string
         length:
           type: string
-        partySize:
+        party_size:
           type: integer
-          minimum: 1
-          default: 4
-          maximum: 99
-        selection:
+        party_selection:
           type: boolean
           default: false
         pregen:
@@ -198,12 +192,12 @@ components:
       type: object
       required:
       - id
-      - isGM
-      - pic
+      - is_gm
+      - avatar
       properties:
         id:
           type: string
-        isDm:
+        is_gm:
           type: boolean
-        pic:
+        avatar:
           type: string
