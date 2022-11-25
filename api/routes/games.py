@@ -19,6 +19,7 @@ def create_game() -> object:
         )
     else:
         try:
+            # Create the Game object
             new_game = Game(
                 name=data["name"],
                 type=data["type"],
@@ -32,17 +33,37 @@ def create_game() -> object:
                 party_selection=data["party_selection"],
                 pregen=data["pregen"],
             )
-            permissions = "3072"
-            color = 15844367
+            # Create channel and update object with channel_id
             new_game.channel = bot.create_channel(
                 channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
                 parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
             )["id"]
+            # Create role and update object with role_id
+            permissions = "3072"
+            color = 15844367
             new_game.role = bot.create_role(
                 role_name=new_game.name, permissions=permissions, color=color
             )["id"]
+            # Save Game in database
             db.session.add(new_game)
             db.session.commit()
+            # Send embed message to Discord
+            embed = {
+                "title": new_game.name,
+                "color": color,
+                "fields": [
+                    {"name": "MJ", "value": new_game.gm.username, "inline": True},
+                    {"name": "Système", "value": new_game.system, "inline": True},
+                    {"name": "Description", "value": new_game.description},
+                    {"name": "Avertissement", "value": f"{new_game.restriction}: {new_game.restriction_tags}"},
+                    {"name": "Type de session", "value":  new_game.type, "inline": True},
+                    {"name": "Nombre de sessions", "value": new_game.length, "inline": True},
+                    {"name": "Nombre de joueur·euses", "value": f"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}"""},
+                    {"name": "Prétirés", "value": f"""{"Oui" if new_game.pregen else "Non"}"""},
+                ],
+                "footer": {},
+            }
+            bot.send_embed_message(embed, new_game.channel)
             return jsonify({"game": new_game.id, "status": "created"})
         except Exception as e:
             return jsonify({"error": e.args}), 500
