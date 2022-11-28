@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify
 from api import app, db
 from datetime import datetime
 import psutil, os

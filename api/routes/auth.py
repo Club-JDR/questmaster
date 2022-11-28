@@ -12,7 +12,7 @@ def login():
 @app.route("/callback/")
 def callback():
     current_app.discord.callback()
-    return redirect(url_for(".me"))
+    return redirect(url_for("health"))
 
 
 @app.errorhandler(Unauthorized)
