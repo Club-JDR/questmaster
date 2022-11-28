@@ -52,7 +52,11 @@ def create_game() -> object:
                 "title": new_game.name,
                 "color": color,
                 "fields": [
-                    {"name": "MJ", "value": new_game.gm.username, "inline": True},
+                    {
+                        "name": "MJ",
+                        "value": new_game.gm.serialize()["username"],
+                        "inline": True,
+                    },
                     {"name": "Système", "value": new_game.system, "inline": True},
                     {"name": "Description", "value": new_game.description},
                     {
@@ -76,7 +80,7 @@ def create_game() -> object:
                 ],
                 "footer": {},
             }
-            bot.send_embed_message(embed, new_game.channel)
+            bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
             return jsonify({"game": new_game.id, "status": "created"})
         except Exception as e:
             return jsonify({"error": e.args}), 500
