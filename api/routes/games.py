@@ -55,11 +55,24 @@ def create_game() -> object:
                     {"name": "MJ", "value": new_game.gm.username, "inline": True},
                     {"name": "Système", "value": new_game.system, "inline": True},
                     {"name": "Description", "value": new_game.description},
-                    {"name": "Avertissement", "value": f"{new_game.restriction}: {new_game.restriction_tags}"},
-                    {"name": "Type de session", "value":  new_game.type, "inline": True},
-                    {"name": "Nombre de sessions", "value": new_game.length, "inline": True},
-                    {"name": "Nombre de joueur·euses", "value": f"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}"""},
-                    {"name": "Prétirés", "value": f"""{"Oui" if new_game.pregen else "Non"}"""},
+                    {
+                        "name": "Avertissement",
+                        "value": f"{new_game.restriction}: {new_game.restriction_tags}",
+                    },
+                    {"name": "Type de session", "value": new_game.type, "inline": True},
+                    {
+                        "name": "Nombre de sessions",
+                        "value": new_game.length,
+                        "inline": True,
+                    },
+                    {
+                        "name": "Nombre de joueur·euses",
+                        "value": f"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}""",
+                    },
+                    {
+                        "name": "Prétirés",
+                        "value": f"""{"Oui" if new_game.pregen else "Non"}""",
+                    },
                 ],
                 "footer": {},
             }
