@@ -90,9 +90,9 @@ def test_games(client):
     """
     # Create GM and false GM(or ensure it is already present)
     data = {"id": users["gm2"]}
-    client.post("/users/", data=json.dumps(data), headers=headers)
+    client.post(users_base_endpoint, data=json.dumps(data), headers=headers)
     data = {"id": users["notgm"]}
-    client.post("/users/", data=json.dumps(data), headers=headers)
+    client.post(users_base_endpoint, data=json.dumps(data), headers=headers)
     # POST NEW GAME
     game_name = "Baldur's Gate: Descent into Avernus"
     game_type = "campaign"
