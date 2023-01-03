@@ -4,24 +4,6 @@ from api import db
 from api.models import User
 
 
-@app.route("/users/", methods=["POST"])
-def create_user() -> object:
-    """
-    Endpoint to create a user in the database if it doesn't already exist.
-    """
-    data = request.get_json()
-    if User.query.get(data["id"]) == None:
-        try:
-            new_user = User(id=data["id"])
-            db.session.add(new_user)
-            db.session.commit()
-            return jsonify({"user": new_user.id, "status": "created"})
-        except Exception as e:
-            return jsonify({"error": e.args}), 500
-    else:
-        return jsonify({"user": data["id"], "status": "exists"})
-
-
 @app.route("/users/", methods=["GET"])
 def get_users() -> object:
     """
@@ -29,6 +11,23 @@ def get_users() -> object:
     """
     results = [user.serialize() for user in User.query.all()]
     return jsonify({"count": len(results), "users": results})
+
+
+@app.route("/users/<user_id>", methods=["POST"])
+def create_user(user_id) -> object:
+    """
+    Endpoint to create a user in the database if it doesn't already exist.
+    """
+    if User.query.get(user_id) == None:
+        try:
+            new_user = User(id=user_id)
+            db.session.add(new_user)
+            db.session.commit()
+            return jsonify({"user": new_user.id, "status": "created"})
+        except Exception as e:
+            return jsonify({"error": e.args}), 500
+    else:
+        return jsonify({"user": user_id, "status": "exists"})
 
 
 @app.route("/users/<user_id>", methods=["GET"])

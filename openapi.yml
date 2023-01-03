@@ -17,9 +17,9 @@ tags:
   - name: game
     description: Everything about a RPG game, from the ad posting to the booking.
 paths:
-  /health:
+  /health/:
     get:
-      summary: API home.
+      summary: API health check.
       responses:
         '200':
           description: successful operation
@@ -47,13 +47,12 @@ paths:
                     type: string
                     format: date
                     example: 2022-11-01:10:00:00
-  /game:
+  /games/:
     get:
       tags:
         - game
       summary: List games.
       description: List all games.
-      operationId: getGames
       responses:
         '200':
           description: successful operation
@@ -68,14 +67,90 @@ paths:
         - game
       summary: Create a new game.
       description: Create a new game.
-      operationId: createGame
       parameters:
-        - name: game
+        - name: game_name
           in: query
           required: true
-          description: Game object to create
+          description: Name of the game
           schema:
-             $ref: '#/components/schemas/Game'
+             type: string
+        - name: game_type
+          in: query
+          required: true
+          description: Type of game
+          schema:
+             type: string
+             enum:
+              - oneshot
+              - campaign
+        - name: length
+          in: query
+          required: true
+          description: Length of the game
+          schema:
+             type: string
+        - name: gm_id
+          in: query
+          required: true
+          description: GM ID of the game
+          schema:
+             type: string
+        - name: system
+          in: query
+          required: true
+          description: Game system of the game
+          schema:
+             type: string
+        - name: description
+          in: query
+          required: true
+          description: Description of the game
+          schema:
+             type: text
+        - name: restriction
+          in: query
+          description: Age restriction for the game
+          schema:
+             type: string
+             default: all
+             enum:
+             - all
+             - 16+
+             - 18+
+        - name: restriction_tags
+          in: query
+          description: Restriction keywords for the game
+          schema:
+             type: string
+        - name: party_size
+          in: query
+          description: Party size for the game
+          schema:
+             type: int
+             default: 4
+        - name: party_selection
+          in: query
+          description: Party selection for the game
+          schema:
+             type: boolean
+             default: False
+        - name: pregen
+          in: query
+          description: Pregen characters for the game
+          schema:
+             type: boolean
+             default: False
+        - name: status
+          in: query
+          description: Status for the game
+          schema:
+            type: string
+            default: draft
+            enum:
+            - draft
+            - open
+            - closed
+            - archived
       responses:
         '200':
           description: successful operation
@@ -83,20 +158,19 @@ paths:
             application/json:
               schema:
                   $ref: '#/components/schemas/Game'
-  /game/{game-id}:
+  /games/{game_id}/:
     get:
+      parameters:
+        - in: path
+          name: game_id
+          schema:
+            type: integer
+          required: true
+          description: ID of the game to get.
       tags:
         - game
-      summary: Game infos.
-      description: Get game details.
-      operationId: getGameById
-      parameters:
-        - name: game-id
-          in: path
-          description: 'The game id that needs to be fetched.'
-          required: true
-          schema:
-            type: integer
+      summary: Get game details by ID.
+      description: Game informations
       responses:
         '200':
           description: successful operation
@@ -104,19 +178,66 @@ paths:
             application/json:
               schema:
                   $ref: '#/components/schemas/Game'
-  /user/{id}:
+  /users/:
     get:
+      summary: List all users.
       tags:
         - user
-      summary: Get user by user id.
-      operationId: getUserById
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /users/{user_id}/:
+    post:
       parameters:
-        - name: id
-          in: path
-          description: 'The id that needs to be fetched.'
-          required: true
+        - in: path
+          name: user_id
           schema:
             type: integer
+          required: true
+          description: ID of the user to create.
+      summary: Create the ID in the DB.
+      tags:
+        - user
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: string
+                    example: 'user#1234'
+                  status:
+                    type: string
+                    example: 'created'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    get:
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+          description: ID of the user to get.
+      tags:
+        - user
+      summary: Get user by ID.
       responses:
         '200':
           description: successful operation
@@ -130,6 +251,30 @@ paths:
         '404':
           description: User not found
           content: {}
+    delete:
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+          description: ID of the user to delete.
+      tags:
+        - user
+      summary: Delete user by ID.
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: string
+                  status:
+                    type: string
+                    example: 'deleted'
 components:
   schemas:
     Game:
@@ -137,16 +282,19 @@ components:
       required:
       - id
       - name
+      - gm
       - type
-      - dm
+      - length
       - system
       - description
-      - partySize
-      - channel
-      - role
+      - restriction
+      - party_size
+      - party_selection
+      - pregen
+      - status
       properties:
         id:
-          type: string
+          type: integer
         name:
           type: string
         type:
@@ -155,6 +303,8 @@ components:
             - oneshot
             - campaign
           default: "oneshot"
+        length:
+          type: string
         gm:
           $ref: '#/components/schemas/User'
         players:
@@ -174,8 +324,6 @@ components:
             - '18+'
         restriction_tags:
           type: string
-        length:
-          type: string
         party_size:
           type: integer
         party_selection:
@@ -188,16 +336,27 @@ components:
           type: string
         role:
           type: string
+        status:
+          type: string
+          enum:
+            - 'draft'
+            - 'open'
+            - 'closed'
+            - 'archived'
     User:
       type: object
       required:
       - id
-      - is_gm
-      - avatar
       properties:
         id:
+          type: string
+        username:
           type: string
         is_gm:
           type: boolean
         avatar:
           type: string
+        gm:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'

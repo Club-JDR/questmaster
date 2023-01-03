@@ -44,16 +44,14 @@ def test_users(client):
     Test /users/ endpoints.
     """
     # POST NEW USER
-    data = {"id": users["gm1"]}
-    response = client.post(users_base_endpoint, data=json.dumps(data), headers=headers)
+    response = client.post(f"{users_base_endpoint}{users['gm1']}", headers=headers)
     data = json.loads(response.data)
     assert response.content_type == mimetype
     assert response.status_code == 200
     assert data["user"] == users["gm1"]
     assert data["status"] == "created"
     # POST EXISTING USER
-    data = {"id": users["gm1"]}
-    response = client.post(users_base_endpoint, data=json.dumps(data), headers=headers)
+    response = client.post(f"{users_base_endpoint}{users['gm1']}", headers=headers)
     data = json.loads(response.data)
     assert response.content_type == mimetype
     assert response.status_code == 200
@@ -89,10 +87,8 @@ def test_games(client):
     Test /games/ endpoints.
     """
     # Create GM and false GM(or ensure it is already present)
-    data = {"id": users["gm2"]}
-    client.post(users_base_endpoint, data=json.dumps(data), headers=headers)
-    data = {"id": users["notgm"]}
-    client.post(users_base_endpoint, data=json.dumps(data), headers=headers)
+    client.post(f"{users_base_endpoint}{users['gm2']}", headers=headers)
+    client.post(f"{users_base_endpoint}{users['notgm']}", headers=headers)
     # POST NEW GAME
     game_name = "Baldur's Gate: Descent into Avernus"
     game_type = "campaign"
@@ -157,6 +153,26 @@ def test_games(client):
     assert response.status_code == 200
     assert isinstance(data["count"], int)
     assert isinstance(data["games"], list)
+    # REGISTER PLAYER TO GAME
+    response = client.post(
+        f"{games_base_endpoint}{game_id}/register/{users['notgm']}", headers=headers
+    )
+    data = json.loads(response.data)
+    assert response.content_type == mimetype
+    assert response.status_code == 200
+    assert data["game"] == game_id
+    assert data["user"] == users["notgm"]
+    assert data["status"] == "registered"
+    # UNREGISTER PLAYER TO GAME
+    response = client.delete(
+        f"{games_base_endpoint}{game_id}/unregister/{users['notgm']}", headers=headers
+    )
+    data = json.loads(response.data)
+    assert response.content_type == mimetype
+    assert response.status_code == 200
+    assert data["game"] == game_id
+    assert data["user"] == users["notgm"]
+    assert data["status"] == "unregistered"
     # GET GAME DETAILS
     response = client.get(f"{games_base_endpoint}{game_id}", headers=headers)
     data = json.loads(response.data)

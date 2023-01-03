@@ -115,3 +115,19 @@ def delete_game(game_id) -> object:
     db.session.delete(game)
     db.session.commit()
     return jsonify({"game": int(game_id), "status": "deleted"})
+
+
+@app.route("/games/<game_id>/register/<user_id>", methods=["POST"])
+def register_player_for_game(game_id, user_id) -> object:
+    game = Game.query.get(game_id)
+    role_id = game.role
+    bot.add_role_to_user(user_id, role_id)
+    return jsonify({"user": user_id, "game": int(game_id), "status": "registered"})
+
+
+@app.route("/games/<game_id>/unregister/<user_id>", methods=["DELETE"])
+def unregister_player_for_game(game_id, user_id) -> object:
+    game = Game.query.get(game_id)
+    role_id = game.role
+    bot.remove_role_from_user(user_id, role_id)
+    return jsonify({"user": user_id, "game": int(game_id), "status": "unregistered"})

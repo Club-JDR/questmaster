@@ -34,6 +34,8 @@ FLASK_APP="api"
 USER_ID_LIST="{ \"gm1\": \"<id of user with GM role>\", \"gm2\": \"<id of other user with GM role>\", \"notgm\": \"<id of user without GM role>\", \"admin\": \"<id of user with Admin role>\"}"
 ```
 
+### Using docker-compose
+
 Start the complete stack:
 
 ```sh
@@ -50,4 +52,42 @@ To run the tests:
 
 ```sh
 docker-compose run api-test python -m pytest tests/ api
+```
+
+### Locally
+
+Edit the `.env` to change the `POSTGRES_HOST` value to `localhost`.
+Run at least the database and eventually pgadmin:
+
+```sh
+docker-compose down && docker compose up -d --build db pgadmin
+```
+
+To init the database and run the migrations:
+
+```sh
+flask db init && flask db migrate && flask db upgrade
+```
+
+Then, you can run the api:
+
+```sh
+flask run -p 8000
+```
+
+To run the tests:
+
+```sh
+python -m pytest tests/ api
+```
+
+### Flask shell
+
+You can connect to a shell (to test your models, interact with the database and so on) by simply running:
+
+```sh
+# if using docker-compose
+docker-compose run api flask shell
+# if running locally
+flask shell
 ```
