@@ -1,4 +1,4 @@
-from api.utils.discord import Discord
+from website.utils.discord import Discord
 import json
 import os
 import re
@@ -36,7 +36,7 @@ def test_health(client):
     assert data["date"] is not None
     assert data["status"] == "OK"
     assert data["database"] == "OK"
-    assert data["title"] == "QuestMaster API"
+    assert data["title"] == "QuestMaster"
 
 
 def test_users(client):

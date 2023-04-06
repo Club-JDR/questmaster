@@ -37,3 +37,4 @@ coverage.xml
 junit.xml
 test-results
 .pytest_cache
+clubjdr.sql

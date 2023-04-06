@@ -1,6 +1,7 @@
 from flask import jsonify
-from api import app, db
+from website import app, db
 from datetime import datetime
+from sqlalchemy.sql import text
 import psutil, os
 
 
@@ -25,13 +26,13 @@ def health():
     now = datetime.now().strftime("%Y-%m-%d:%H:%M:%S")
     db_status = "OK"
     try:
-        db.session.execute("SELECT 1")
+        db.session.execute(text("SELECT 1"))
     except Exception:
         db_status = "ERROR"
     return (
         jsonify(
             {
-                "title": "QuestMaster API",
+                "title": "QuestMaster",
                 "version": 1,
                 "status": "OK",
                 "database": db_status,

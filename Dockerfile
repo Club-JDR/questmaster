@@ -1,5 +1,5 @@
 FROM python:3.11-slim AS base
-WORKDIR /app
+WORKDIR /questmaster
 RUN apt update && apt upgrade -y
 RUN apt install -y locales && \
     sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -8,18 +8,18 @@ RUN apt install -y locales && \
 RUN apt install -y build-essential gcc
 RUN python -m pip install --upgrade pip
 
-ADD requirements.txt /app/requirements.txt
+ADD requirements.txt /questmaster/requirements.txt
 RUN python -m pip install -r requirements.txt
-ADD questmaster.py  /app/questmaster.py
-COPY api/ /app/api
+ADD questmaster.py  /questmaster/questmaster.py
+COPY website/ /questmaster/website
 
-FROM base AS api-test
+FROM base AS app-test
 
-ADD tests/requirements.txt /app/test-requirements.txt
+ADD tests/requirements.txt /questmaster/test-requirements.txt
 RUN python -m pip install -r test-requirements.txt
-COPY tests/ /app/tests
+COPY tests/ /questmaster/tests
 
-FROM base AS api
+FROM base AS app
 
 EXPOSE 8000
 CMD [ "gunicorn",  "--bind",  "0.0.0.0:8000",  "questmaster:app"]

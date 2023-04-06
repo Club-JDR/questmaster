@@ -30,7 +30,7 @@ POSTS_CHANNEL_ID=""
 CATEGORIES_CHANNEL_ID=""
 DISCORD_GUILD_ID=""
 DISCORD_GM_ROLE_ID=""
-FLASK_APP="api"
+FLASK_APP="website"
 USER_ID_LIST="{ \"gm1\": \"<id of user with GM role>\", \"gm2\": \"<id of other user with GM role>\", \"notgm\": \"<id of user without GM role>\", \"admin\": \"<id of user with Admin role>\"}"
 ```
 
@@ -45,13 +45,13 @@ docker-compose up -d --build
 To init the database and run the migrations:
 
 ```sh
-docker exec -it questmaster_api_1 bash -c "flask db init && flask db migrate && flask db upgrade"
+docker exec -it questmaster_app_1 bash -c "flask db init && flask db migrate && flask db upgrade"
 ```
 
 To run the tests:
 
 ```sh
-docker-compose run api-test python -m pytest tests/ api
+docker-compose run app-test python -m pytest tests/ website
 ```
 
 ### Locally
@@ -69,7 +69,7 @@ To init the database and run the migrations:
 flask db init && flask db migrate && flask db upgrade
 ```
 
-Then, you can run the api:
+Then, you can run the app:
 
 ```sh
 flask run -p 8000
@@ -78,7 +78,7 @@ flask run -p 8000
 To run the tests:
 
 ```sh
-python -m pytest tests/ api
+python -m pytest tests/ website
 ```
 
 ### Flask shell
@@ -87,7 +87,7 @@ You can connect to a shell (to test your models, interact with the database and 
 
 ```sh
 # if using docker-compose
-docker-compose run api flask shell
+docker-compose run app flask shell
 # if running locally
 flask shell
 ```

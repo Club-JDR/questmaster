@@ -1,4 +1,4 @@
-from api import db, bot
+from website import db, bot
 from sqlalchemy import Enum
 
 GAME_TYPES = ("oneshot", "campaign")
@@ -39,6 +39,8 @@ class Game(db.Model):
         nullable=False,
         server_default="draft",
     )
+    img = db.Column(db.String())
+    date = db.Column(db.DateTime)
 
     def serialize(self) -> object:
         return {
@@ -58,4 +60,6 @@ class Game(db.Model):
             "channel": bot.get_channel(self.channel),
             "role": bot.get_role(self.role),
             "status": self.status,
+            "img": self.img,
+            "date": self.date
         }
