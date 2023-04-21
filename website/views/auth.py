@@ -4,20 +4,16 @@ from website.models import User
 import functools
 
 
-def populate_session():
+def who():
     """
     Init session with user information from Discord API.
     """
-    uid = current_app.discord.fetch_user().id
-    user = User.query.get(str(uid))
-    if user == None:
-        user = User(id=str(uid))
-        db.session.add(user)
-        db.session.commit()
-    session["user_id"] = user.id
-    session["username"] = user.name
-    session["avatar"] = user.avatar
-    session["is_gm"] = user.is_gm
+    payload = {}
+    if "username" in session:
+        payload["user_id"] = session["user_id"]
+        payload["username"] = session["username"]
+        payload["avatar"] = session["avatar"]
+        payload["is_gm"] = session["is_gm"]
     return session
 
 
@@ -49,12 +45,7 @@ def logout():
     """
     Logout by removing username from session.
     """
-    if current_app.discord.authorized:
-        session.pop("username")
-        session.pop("user_id")
-        session.pop("avatar")
-        session.pop("is_gm")
-    print(session)
+    session.clear()
     current_app.discord.revoke()
     return redirect(url_for("open_games"))
 
@@ -65,5 +56,15 @@ def callback():
     Login callback redirect to homepage.
     """
     current_app.discord.callback()
-    populate_session()
+    if current_app.discord.authorized:
+        uid = current_app.discord.fetch_user().id
+        user = User.query.get(str(uid))
+        if user == None:
+            user = User(id=str(uid))
+            db.session.add(user)
+            db.session.commit()
+        session["user_id"] = user.id
+        session["username"] = user.name
+        session["avatar"] = user.avatar
+        session["is_gm"] = user.is_gm
     return redirect(url_for("open_games"))

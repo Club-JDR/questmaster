@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% block content %}
 
-<h1>Les annonces en cours</h1>
+<h1>{{ title }}</h1>
 <div class="row gy-5 p-4">
     {% for game in games|sort(attribute='date') %}
     <div class="col-sm-4">

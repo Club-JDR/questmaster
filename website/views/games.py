@@ -1,7 +1,7 @@
 from flask import jsonify, request, current_app, render_template
 from website import app, db, bot
-from website.models import Game
-from website.views.auth import populate_session
+from website.models import Game, User, remove_archived
+from website.views.auth import who, login_required
 import re
 
 
@@ -10,11 +10,8 @@ def open_games():
     """
     List all open games.
     """
-    payload = {}
-    if current_app.discord.authorized:
-        payload = populate_session()
     games = Game.query.filter_by(status="open").all()
-    return render_template("games.html", payload=payload, games=games)
+    return render_template("games.html", payload=who(), games=games, title="Les annonces en cours")
 
 
 @app.route("/annonces/<game_id>/", methods=["GET"])
@@ -22,9 +19,7 @@ def get_game_details(game_id) -> object:
     """
     Get details for a given game.
     """
-    payload = {}
-    if current_app.discord.authorized:
-        payload = populate_session()
+    payload = who()
     game = Game.query.get(game_id)
     is_player = False
     for player in game.players:
@@ -32,6 +27,35 @@ def get_game_details(game_id) -> object:
             is_player = True
     return render_template(
         "game_details.html", payload=payload, game=game, is_player=is_player
+    )
+
+
+@app.route("/mes_annonces/", methods=["GET"])
+@login_required
+def my_gm_games() -> object:
+    """
+    List all of games where current user is GM.
+    """
+    payload = who()
+    games_as_gm = User.query.get(payload["user_id"]).games_gm
+    return render_template(
+        "games.html", payload=payload, games=games_as_gm, gm_only=True, title="Mes annonces"
+    )
+
+
+@app.route("/mes_parties/", methods=["GET"])
+@login_required
+def my_games() -> object:
+    """
+    List all of current user games
+    """
+    payload = who()
+    games_as_player = User.query.get(payload["user_id"]).games
+    games_as_gm = User.query.get(payload["user_id"]).games_gm
+    return render_template(
+        "games.html",
+        payload=payload,
+        games=remove_archived(games_as_player) + remove_archived(games_as_gm), title="Mes parties en cours"
     )
 
 
