@@ -68,7 +68,10 @@
             </div>
         </div>
     </nav>
-    {% block content %}{% endblock %} {% block scripts %} {{ bootstrap.load_js() }}
+    <main class="container p-4">
+        {% block content %}{% endblock %}
+    </main>
+    {% block scripts %} {{ bootstrap.load_js() }}
     <script>
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {

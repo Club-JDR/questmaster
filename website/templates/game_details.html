@@ -1,81 +1,80 @@
 {% extends 'base.html' %} {% block content %}
-<main class="container">
-    <div class="container">
-        <div class="row">
-            <h1>{{ game.name }}</h1>
-            <div class="col-lg-4 p-3">
-                <div class="row">
-                    <h4><span class="badge rounded-pill text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span></h4>
-                </div>
-                <div class="row">
-                    <p>{{ game.description }}</p>
+<div class="container">
+    <div class="row">
+        <h1>{{ game.name }}</h1>
+        <div class="col-lg-4 p-3">
+            <div class="row">
+                <h4><span class="badge rounded-pill text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span></h4>
+            </div>
+            <div class="row">
+                <p>{{ game.description }}</p>
+            </div>
+        </div>
+        <div class="col-lg-5 p-3">
+            <div class="row pb-2">
+                <div class="col"><strong>Date</strong></div>
+                <div class="col text-center"> {{ game.date|format_datetime }}</div>
+            </div>
+            <div class="row pb-2">
+                <div class="col"><strong>Durée</strong></div>
+                <div class="col text-center"> {{ game.length }}</div>
+            </div>
+            <div class="row pb-2">
+                <div class="col"><strong>Avertissement</strong></div>
+                <div class="col text-center">
+                    {% if game.restriction == 'all' %}
+                    <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+                    <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
+                    <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %} {% if game.restriction_tags %} {% set tags = game.restriction_tags.split(',') %} {% endif %} {% for tag in tags %}<span class="badge rounded-pill bg-secondary">{{ tag }}</span>                    {% endfor %}
                 </div>
             </div>
-            <div class="col-lg-5 p-3">
-                <div class="row pb-2">
-                    <div class="col"><strong>Date</strong></div>
-                    <div class="col text-center"> {{ game.date|format_datetime }}</div>
-                </div>
-                <div class="row pb-2">
-                    <div class="col"><strong>Durée</strong></div>
-                    <div class="col text-center"> {{ game.length }}</div>
-                </div>
-                <div class="row pb-2">
-                    <div class="col"><strong>Avertissement</strong></div>
-                    <div class="col text-center">
-                        {% if game.restriction == 'all' %}
-                        <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
-                        <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
-                        <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %} {% if game.restriction_tags %} {% set tags = game.restriction_tags.split(',') %} {% endif %} {% for tag in tags %}<span class="badge rounded-pill bg-secondary">{{ tag }}</span>                        {% endfor %}
-                    </div>
-                </div>
-                <div class="row pb-2">
-                    <div class="col"><strong>Maître·sse du Jeu</strong></div>
-                    <div class="col">
-                        <figure class="figure mx-auto d-block">
-                            <div class="text-center">
-                                <img src="{{ game.gm.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ game.gm.name }}" width="30" height="30">
-                            </div>
-                            <figcaption class="figure-caption text-center">{{ game.gm.name }}</figcaption>
-                        </figure>
-                    </div>
-                </div>
-                <div class="row pb-2">
-                    <div class="col"><strong>Joueur·euses</strong></div>
-                    <div class="col"> {% if game.players|length > 0 %}
-                        <div class="row gy-4">
-                            {% for player in game.players %}
-                            <div class="col">
-                                <figure class="figure mx-auto d-block">
-                                    <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
-                                    <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
-                                    {% if payload['user_id'] == game.gm.id %}
-                                    <figcaption class="text-centered">
-                                        <button class="btn btn-danger btn-sm mx-auto d-block">désinscrire</button>
-                                    </figcaption>
-                                    {% endif %}
-                                </figure>
-                            </div>
-                            {% endfor %}
+            <div class="row pb-2">
+                <div class="col"><strong>Maître·sse du Jeu</strong></div>
+                <div class="col">
+                    <figure class="figure mx-auto d-block">
+                        <div class="text-center">
+                            <img src="{{ game.gm.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ game.gm.name }}" width="30" height="30">
                         </div>
-                        {% endif %}
-                    </div>
+                        <figcaption class="figure-caption text-center">{{ game.gm.name }}</figcaption>
+                    </figure>
                 </div>
             </div>
-            <div class="col-lg-3 p-3">
-                <div class="row">
-                    <div class="figure">
-                        <img src="{{ game.img }}" class="figure-img img-fluid rounded" alt="{{ game.name }}">
+            <div class="row pb-2">
+                <div class="col"><strong>Joueur·euses</strong></div>
+                <div class="col"> {% if game.players|length > 0 %}
+                    <div class="row gy-4">
+                        {% for player in game.players %}
+                        <div class="col">
+                            <figure class="figure mx-auto d-block">
+                                <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
+                                <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
+                                {% if payload['user_id'] == game.gm.id %}
+                                <figcaption class="text-centered">
+                                    <button class="btn btn-danger btn-sm mx-auto d-block">désinscrire</button>
+                                </figcaption>
+                                {% endif %}
+                            </figure>
+                        </div>
+                        {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
-                <div class="row">
-                    {% if payload['user_id'] == game.gm.id %}
-                    <div class="btn-group" role="group" aria-label="Actions du MJ">
-                        <button type="button" class="btn btn-outline-secondary">éditer</button>
-                        <button type="button" class="btn btn-danger">supprimer</button>
-                    </div>
-                    {% else %}
-                    <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if payload == {} %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
+            </div>
+        </div>
+        <div class="col-lg-3 p-3">
+            <div class="row">
+                <div class="figure">
+                    <img src="{{ game.img }}" class="figure-img img-fluid rounded" alt="{{ game.name }}">
+                </div>
+            </div>
+            <div class="row">
+                {% if payload['user_id'] == game.gm.id %}
+                <div class="btn-group" role="group" aria-label="Actions du MJ">
+                    <button type="button" class="btn btn-outline-secondary">éditer</button>
+                    <button type="button" class="btn btn-danger">supprimer</button>
+                </div>
+                {% else %}
+                <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if payload == {} %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
                         {% if is_player %}
                         <button type="button" class="btn btn-danger" >
                             se désinscrire
@@ -86,9 +85,8 @@
                         </button>
                         {% endif %}
                     </span> {% endif %}
-                </div>
             </div>
         </div>
     </div>
-</main>
+</div>
 {% endblock %}
