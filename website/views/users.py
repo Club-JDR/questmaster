@@ -14,7 +14,7 @@ def my_gm_games() -> object:
     payload = populate_session()
     games_as_gm = User.query.get(payload["user_id"]).games_gm
     return render_template(
-        "my_games.html", payload=payload, games_as_gm=games_as_gm, gm_only=True
+        "games.html", payload=payload, games=games_as_gm, gm_only=True
     )
 
 
@@ -28,10 +28,9 @@ def my_games() -> object:
     games_as_player = User.query.get(payload["user_id"]).games
     games_as_gm = User.query.get(payload["user_id"]).games_gm
     return render_template(
-        "my_games.html",
+        "games.html",
         payload=payload,
-        games_as_player=remove_archived(games_as_player),
-        games_as_gm=remove_archived(games_as_gm),
+        games=remove_archived(games_as_player) + remove_archived(games_as_gm),
     )
 
 

@@ -12,55 +12,55 @@
                 </div>
             </div>
             <div class="col-lg-5 p-3">
-                <table class="table align-middle text-center">
-                    <tr>
-                        <th>Date</th>
-                        <td>{{ game.date|format_datetime }}</td>
-                        <th>Durée</th>
-                        <td>{{ game.length }}</td>
-                    </tr>
-                    <tr>
-                        <th>Avertissement</th>
-                        <td>
-                            {% if game.restriction == 'all' %}
-                            <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
-                            <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
-                            <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %}
-                        </td>
-                        {% if game.restriction_tags %} {% set tags = game.restriction_tags.split(',') %} {% endif %}
-                        <td colspan="2">
-                            {% for tag in tags %}
-                            <span class="badge rounded-pill bg-secondary">{{ tag }}</span> {% endfor %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <th colspan="1">MJ</th>
-                        <td colspan="3">
-                            <figure class="figure">
-                                <div class="text-center">
-                                    <img src="{{ game.gm.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ game.gm.name }}" width="30" height="30">
-                                </div>
-                                <figcaption class="figure-caption text-center">{{ game.gm.name }}</figcaption>
-                            </figure>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th colspan="1">Joueur·euses</th>
-                        <td colspan="3">
-                            {% if game.players|length > 0 %} {% for player in game.players %}
-                            <figure class="figure">
-                                <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
-                                <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
-                                {% if payload['user_id'] == game.gm.id %}
-                                <figcaption class="text-centered">
-                                    <button class="btn btn-danger btn-sm">désinscrire</button>
-                                </figcaption>
-                                {% endif %}
-                            </figure>
-                            {% endfor %} {% endif %}
-                        </td>
-                    </tr>
-                </table>
+                <div class="row pb-2">
+                    <div class="col"><strong>Date</strong></div>
+                    <div class="col text-center"> {{ game.date|format_datetime }}</div>
+                </div>
+                <div class="row pb-2">
+                    <div class="col"><strong>Durée</strong></div>
+                    <div class="col text-center"> {{ game.length }}</div>
+                </div>
+                <div class="row pb-2">
+                    <div class="col"><strong>Avertissement</strong></div>
+                    <div class="col text-center">
+                        {% if game.restriction == 'all' %}
+                        <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+                        <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
+                        <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %} {% if game.restriction_tags %} {% set tags = game.restriction_tags.split(',') %} {% endif %} {% for tag in tags %}<span class="badge rounded-pill bg-secondary">{{ tag }}</span>                        {% endfor %}
+                    </div>
+                </div>
+                <div class="row pb-2">
+                    <div class="col"><strong>Maître·sse du Jeu</strong></div>
+                    <div class="col">
+                        <figure class="figure mx-auto d-block">
+                            <div class="text-center">
+                                <img src="{{ game.gm.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ game.gm.name }}" width="30" height="30">
+                            </div>
+                            <figcaption class="figure-caption text-center">{{ game.gm.name }}</figcaption>
+                        </figure>
+                    </div>
+                </div>
+                <div class="row pb-2">
+                    <div class="col"><strong>Joueur·euses</strong></div>
+                    <div class="col"> {% if game.players|length > 0 %}
+                        <div class="row gy-4">
+                            {% for player in game.players %}
+                            <div class="col">
+                                <figure class="figure mx-auto d-block">
+                                    <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
+                                    <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
+                                    {% if payload['user_id'] == game.gm.id %}
+                                    <figcaption class="text-centered">
+                                        <button class="btn btn-danger btn-sm mx-auto d-block">désinscrire</button>
+                                    </figcaption>
+                                    {% endif %}
+                                </figure>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             <div class="col-lg-3 p-3">
                 <div class="row">

@@ -27,7 +27,6 @@ app.json.compact = False
 
 # Bootstrap
 bootstrap = Bootstrap5(app)
-# app.config['BOOTSTRAP_BOOTSWATCH_THEME'] = 'sketchy'
 
 # Database
 db = SQLAlchemy(app)
