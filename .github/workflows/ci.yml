@@ -42,7 +42,7 @@ jobs:
     - name: Run the stack
       run: docker-compose down && docker-compose up -d db app
     - name: Ensure API is running
-      run:  "sleep 15 && curl -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json'"
+      run:  "curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json'"
     - name: Init the database and run the migrations
       run: docker exec questmaster_app_1 bash -c "flask db init && flask db migrate && flask db upgrade"
     - name: Lint with Black
