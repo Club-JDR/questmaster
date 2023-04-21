@@ -52,7 +52,7 @@ jobs:
       run: |
         docker-compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
     - name: Fix code coverage permissions and path
-      run: sudo chmod -R 777 test-results/ && sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml && head test-results/coverage.xml
+      run: sudo chmod -R 777 test-results/ && sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
