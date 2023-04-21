@@ -7,10 +7,10 @@
                 <h4><span class="badge rounded-pill text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span></h4>
             </div>
             <div class="row">
-                <p>{{ game.description }}</p>
+                <p class="lh-lg">{{ game.description }}</p>
             </div>
         </div>
-        <div class="col-lg-5 p-3">
+        <div class="col-lg-4 p-3">
             <div class="row pb-2">
                 <div class="col"><strong>Date</strong></div>
                 <div class="col text-center"> {{ game.date|format_datetime }}</div>
@@ -41,9 +41,9 @@
             </div>
             <div class="row pb-2">
                 <div class="col"><strong>Joueur·euses</strong></div>
-                <div class="col"> {% if game.players|length > 0 %}
+                <div class="col">
                     <div class="row gy-4">
-                        {% for player in game.players %}
+                        {% if game.players|length > 0 %} {% for player in game.players %}
                         <div class="col">
                             <figure class="figure mx-auto d-block">
                                 <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
@@ -55,13 +55,15 @@
                                 {% endif %}
                             </figure>
                         </div>
-                        {% endfor %}
+                        {% endfor %} {% else %}
+                        <p class="text-center">Aucun·e joueur·euses pour le moment.</p>
+                        {% endif %}
                     </div>
-                    {% endif %}
+
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 p-3">
+        <div class="col-lg-4 p-3">
             <div class="row">
                 <div class="figure">
                     <img src="{{ game.img }}" class="figure-img img-fluid rounded" alt="{{ game.name }}">
