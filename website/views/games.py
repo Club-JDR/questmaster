@@ -1,11 +1,11 @@
-from flask import jsonify, request, current_app, render_template, session
+from flask import jsonify, request, current_app, render_template
 from website import app, db, bot
-from website.models import Game, User
+from website.models import Game
 from website.views.auth import populate_session
 import re
 
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def open_games():
     """
     List all open games.
@@ -17,7 +17,7 @@ def open_games():
     return render_template("games.html", payload=payload, games=games)
 
 
-@app.route("/games/<game_id>/", methods=["GET"])
+@app.route("/annonces/<game_id>/", methods=["GET"])
 def get_game_details(game_id) -> object:
     """
     Get details for a given game.
@@ -28,9 +28,11 @@ def get_game_details(game_id) -> object:
     game = Game.query.get(game_id)
     is_player = False
     for player in game.players:
-        if payload["user_id"] == player.id:
+        if payload != {} and payload["user_id"] == player.id:
             is_player = True
-    return render_template("game_details.html", payload=payload, game=game, is_player=is_player)
+    return render_template(
+        "game_details.html", payload=payload, game=game, is_player=is_player
+    )
 
 
 @app.route("/games/", methods=["POST"])

@@ -1,7 +1,40 @@
-from flask import jsonify, request
+from flask import jsonify, current_app, render_template
 from website import app
 from website import db
-from website.models import User
+from website.models import User, Game, remove_archived
+from website.views.auth import populate_session, login_required
+
+
+@app.route("/mes_annonces/", methods=["GET"])
+@login_required
+def my_gm_games() -> object:
+    """
+    List all of games where current user is GM.
+    """
+    payload = populate_session()
+    games_as_gm = User.query.get(payload["user_id"]).games_gm
+    return render_template(
+        "my_games.html",
+        payload=payload,
+        games_as_gm=games_as_gm,
+        gm_only=True
+    )
+
+@app.route("/mes_parties/", methods=["GET"])
+@login_required
+def my_games() -> object:
+    """
+    List all of current user games
+    """
+    payload = populate_session()
+    games_as_player = User.query.get(payload["user_id"]).games
+    games_as_gm = User.query.get(payload["user_id"]).games_gm
+    return render_template(
+        "my_games.html",
+        payload=payload,
+        games_as_player=remove_archived(games_as_player),
+        games_as_gm=remove_archived(games_as_gm),
+    )
 
 
 @app.route("/users/", methods=["GET"])

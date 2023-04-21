@@ -13,6 +13,16 @@ players_table = db.Table(
 )
 
 
+def remove_archived(games) -> object:
+    """
+    Remove all closed games from a list of games.
+    """
+    for game in games:
+        if game.status == "archived":
+            games.remove(game)
+    return games
+
+
 class Game(db.Model):
     __tablename__ = "game"
 
@@ -61,5 +71,5 @@ class Game(db.Model):
             "role": bot.get_role(self.role),
             "status": self.status,
             "img": self.img,
-            "date": self.date
+            "date": self.date,
         }

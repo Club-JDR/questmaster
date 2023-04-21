@@ -1,8 +1,12 @@
 {% extends 'base.html' %} {% block content %}
 <main class="container">
-    <h1>Les annonces en cours</h1>
-    <div class="row gy-5">
-        {% for game in games|sort(attribute='date') %}
+    {% if gm_only %}
+    <h1>Mes annonces</h1>
+    {% else %}
+    <h1>Mes parties</h1>
+    {% endif %}
+    <div class="row">
+        {% for game in games_as_gm+games_as_player|sort(attribute='date') %}
         <div class="col-sm-4">
             <div class="card shadow">
                 <div class="card-header {% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %} text-light ">
@@ -17,7 +21,7 @@
                         <li class="list-group-item">Durée : {{ game.length }}</li>
                         <li class="list-group-item">Joueur·euses : {{ game.players|length }}/{{ game.party_size }}</li>
                     </ul>
-                    <a href="/annonces/{{ game.id }}/" class="stretched-link"></a>
+                    <div class="d-grid"><a href="/annonces/{{ game.id }}/" class="btn btn-secondary">Détails</a></div>
                 </div>
 
                 {% if game.restriction_tags %}{% set tags = game.restriction_tags.split(',') %}{% endif %}

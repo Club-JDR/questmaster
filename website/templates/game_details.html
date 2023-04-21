@@ -2,22 +2,17 @@
 <main class="container">
     <div class="container">
         <div class="row">
+            <h1>{{ game.name }}</h1>
             <div class="col-lg-4 p-3">
                 <div class="row">
-                    <h1>{{ game.name }}</h1>
+                    <h4><span class="badge rounded-pill text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span></h4>
                 </div>
                 <div class="row">
                     <p>{{ game.description }}</p>
                 </div>
             </div>
-            <div class="col-lg-4 p-3">
+            <div class="col-lg-5 p-3">
                 <table class="table align-middle text-center">
-                    <tr>
-                        <th>Type de session</th>
-                        <td>{% if game.type == 'campaign' %}Campagne{% else %}One Shot{% endif %}</td>
-                        <th>Système</th>
-                        <td>{{ game.system }}</td>
-                    </tr>
                     <tr>
                         <th>Date</th>
                         <td>{{ game.date|format_datetime }}</td>
@@ -28,19 +23,19 @@
                         <th>Avertissement</th>
                         <td>
                             {% if game.restriction == 'all' %}
-                            <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
-                            <span class="badge text-bg-warning">16+</span> {% else %}
-                            <span class="badge text-bg-danger">18+</span> {% endif %}
+                            <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+                            <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
+                            <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %}
                         </td>
                         {% if game.restriction_tags %} {% set tags = game.restriction_tags.split(',') %} {% endif %}
                         <td colspan="2">
                             {% for tag in tags %}
-                            <span class="badge bg-secondary">{{ tag }}</span> {% endfor %}
+                            <span class="badge rounded-pill bg-secondary">{{ tag }}</span> {% endfor %}
                         </td>
                     </tr>
                     <tr>
-                        <th colspan="2">MJ</th>
-                        <td colspan="2">
+                        <th colspan="1">MJ</th>
+                        <td colspan="3">
                             <figure class="figure">
                                 <div class="text-center">
                                     <img src="{{ game.gm.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ game.gm.name }}" width="30" height="30">
@@ -50,13 +45,9 @@
                         </td>
                     </tr>
                     <tr>
-                        <th colspan="2" {% if game.players|length> 0 %}rowspan="2"{% endif %}>Joueur·euses</th>
-                        <td colspan="2">{{ game.players|length }}/{{ game.party_size }}</td>
-                    </tr>
-                    {% if game.players|length > 0 %}
-                    <tr>
-                        <td colspan="2">
-                            {% for player in game.players %}
+                        <th colspan="1">Joueur·euses</th>
+                        <td colspan="3">
+                            {% if game.players|length > 0 %} {% for player in game.players %}
                             <figure class="figure">
                                 <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
                                 <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
@@ -66,20 +57,25 @@
                                 </figcaption>
                                 {% endif %}
                             </figure>
-                            {% endfor %}
+                            {% endfor %} {% endif %}
                         </td>
                     </tr>
-                    {% endif %}
                 </table>
             </div>
-            <div class="col-lg-4 p-3">
+            <div class="col-lg-3 p-3">
                 <div class="row">
                     <div class="figure">
                         <img src="{{ game.img }}" class="figure-img img-fluid rounded" alt="{{ game.name }}">
                     </div>
                 </div>
                 <div class="row">
-                    <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if payload == {} %}Vous devez vous connecter pour pouvoir vous inscrire.{% elif payload['user_id'] == game.gm.id %}Vous ne pouvez pas vous inscrire à une partie dont vous êtes le MJ.{% endif %}">
+                    {% if payload['user_id'] == game.gm.id %}
+                    <div class="btn-group" role="group" aria-label="Actions du MJ">
+                        <button type="button" class="btn btn-outline-secondary">éditer</button>
+                        <button type="button" class="btn btn-danger">supprimer</button>
+                    </div>
+                    {% else %}
+                    <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if payload == {} %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
                         {% if is_player %}
                         <button type="button" class="btn btn-danger" >
                             se désinscrire
@@ -89,7 +85,7 @@
                             s'inscrire
                         </button>
                         {% endif %}
-                    </span>
+                    </span> {% endif %}
                 </div>
             </div>
         </div>
