@@ -14,11 +14,9 @@ def my_gm_games() -> object:
     payload = populate_session()
     games_as_gm = User.query.get(payload["user_id"]).games_gm
     return render_template(
-        "my_games.html",
-        payload=payload,
-        games_as_gm=games_as_gm,
-        gm_only=True
+        "my_games.html", payload=payload, games_as_gm=games_as_gm, gm_only=True
     )
+
 
 @app.route("/mes_parties/", methods=["GET"])
 @login_required
