@@ -13,12 +13,11 @@ RUN apt install -y --no-install-recommends build-essential gcc
 RUN python -m pip install --upgrade pip
 
 FROM build AS code
-RUN chown -R questmaster: /questmaster
-USER questmaster
 ADD requirements.txt /questmaster/requirements.txt
 RUN python -m pip install -r requirements.txt
 ADD questmaster.py  /questmaster/questmaster.py
 COPY website/ /questmaster/website
+RUN chown -R questmaster: /questmaster
 
 FROM code AS app-test
 ADD tests/requirements.txt /questmaster/test-requirements.txt
@@ -26,5 +25,6 @@ RUN python -m pip install -r test-requirements.txt
 COPY tests/ /questmaster/tests
 
 FROM code AS app
+USER questmaster
 EXPOSE 8000
-CMD [ "/home/questmaster/.local/bin/gunicorn",  "--bind",  "0.0.0.0:8000",  "questmaster:app"]
+CMD [ "gunicorn",  "--bind",  "0.0.0.0:8000",  "questmaster:app"]

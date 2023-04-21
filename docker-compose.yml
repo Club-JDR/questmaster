@@ -12,12 +12,6 @@ services:
       - db
     links:
       - db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-      interval: 5s
-      timeout: 1s
-      retries: 3
-      start_period: 15s
   app-test:
     build:
       context: .
