@@ -1,7 +1,38 @@
-from flask import jsonify, request, current_app
-from api import app, db, bot
-from api.models import Game, User
+from flask import jsonify, request, current_app, render_template
+from website import app, db, bot
+from website.models import Game
+from website.views.auth import populate_session
 import re
+
+
+@app.route("/", methods=["GET"])
+def open_games():
+    """
+    List all open games.
+    """
+    payload = {}
+    if current_app.discord.authorized:
+        payload = populate_session()
+    games = Game.query.filter_by(status="open").all()
+    return render_template("games.html", payload=payload, games=games)
+
+
+@app.route("/annonces/<game_id>/", methods=["GET"])
+def get_game_details(game_id) -> object:
+    """
+    Get details for a given game.
+    """
+    payload = {}
+    if current_app.discord.authorized:
+        payload = populate_session()
+    game = Game.query.get(game_id)
+    is_player = False
+    for player in game.players:
+        if payload != {} and payload["user_id"] == player.id:
+            is_player = True
+    return render_template(
+        "game_details.html", payload=payload, game=game, is_player=is_player
+    )
 
 
 @app.route("/games/", methods=["POST"])
@@ -95,7 +126,7 @@ def get_games() -> object:
     return jsonify({"count": len(results), "games": results})
 
 
-@app.route("/games/<game_id>", methods=["GET"])
+@app.route("/games/<game_id>/", methods=["GET"])
 def get_game(game_id) -> object:
     """
     Endpoint to get details for a game by it's id.
@@ -115,3 +146,19 @@ def delete_game(game_id) -> object:
     db.session.delete(game)
     db.session.commit()
     return jsonify({"game": int(game_id), "status": "deleted"})
+
+
+@app.route("/games/<game_id>/register/<user_id>", methods=["POST"])
+def register_player_for_game(game_id, user_id) -> object:
+    game = Game.query.get(game_id)
+    role_id = game.role
+    bot.add_role_to_user(user_id, role_id)
+    return jsonify({"user": user_id, "game": int(game_id), "status": "registered"})
+
+
+@app.route("/games/<game_id>/unregister/<user_id>", methods=["DELETE"])
+def unregister_player_for_game(game_id, user_id) -> object:
+    game = Game.query.get(game_id)
+    role_id = game.role
+    bot.remove_role_from_user(user_id, role_id)
+    return jsonify({"user": user_id, "game": int(game_id), "status": "unregistered"})

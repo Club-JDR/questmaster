@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> {% block styles %} {{ bootstrap.load_css() }} {% endblock %}
+    <style>
+        figure {
+            margin: 0 0 0;
+        }
+    </style>
+    <title>QuestMaster</title>
+    {% endblock %}
+</head>
+
+<body>
+    {% from 'bootstrap5/nav.html' import render_nav_item %}
+    <nav class="navbar navbar-expand-lg bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><img src="https://club-jdr.fr/wp-content/uploads/2022/08/cropped-club-jdr-white.png" alt="Club JDR" height="30" class="">QuestMaster</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {{ render_nav_item('get_users', 'Users', _use_li=True) }} {{ render_nav_item('get_games', 'Games', _use_li=True) }}
+                </ul>
+                <ul class="nav justify-content-end">
+                    {% if payload[ 'is_gm'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-secondary" href="/annonce/">
+                            Poster une annnonce 
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if payload['username'] %}
+                    <li class="nav-item dropdown">
+                        <div class="d-flex">
+                            <a class="nav-link dropdown-toggle btn-danger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="{{ payload['avatar'] }}" alt="{{ payload['username'] }}" width="30" height="30" class="rounded-circle">
+                                <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% if payload[ 'is_gm'] %}
+                                <li><a class="dropdown-item" href="/mes_annonces/">Mes annonces</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="/mes_parties/">Mes sessions</a></li>
+                                <li><a class="dropdown-item" href="#">Mes badges</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="/logout/">Me déconnecter</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a href="/login/" class="d-flex btn btn-outline-secondary">Me connecter</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <main class="container p-4">
+        {% block content %}{% endblock %}
+    </main>
+    {% block scripts %} {{ bootstrap.load_js() }}
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script> {% endblock %}
+</body>
+
+</html>

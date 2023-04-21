@@ -1,4 +1,4 @@
-from api.utils.exceptions import RateLimited
+from website.utils.exceptions import RateLimited
 from flask_discord import Unauthorized
 import requests
 import json

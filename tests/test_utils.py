@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
-from api.utils.discord import Discord
+from website.utils.discord import Discord
 from flask_discord import Unauthorized
 import os
 import pytest
 
-from api.utils.exceptions import RateLimited
+from website.utils.exceptions import RateLimited
 
 
 def test_rate_limited_exception():

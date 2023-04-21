@@ -1,9 +1,10 @@
-from flask import Flask
+from flask import Flask, render_template
+from flask_bootstrap import Bootstrap5
 from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from api.utils.discord import Discord
+from website.utils.discord import Discord
 import os
 
 app = Flask(__name__)
@@ -23,6 +24,9 @@ app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
 app.json.compact = False
+
+# Bootstrap
+bootstrap = Bootstrap5(app)
 
 # Database
 db = SQLAlchemy(app)
@@ -44,4 +48,4 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 
 # API import
-from api.routes import auth, health, users, games
+from website.views import auth, health, users, games, filters

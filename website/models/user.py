@@ -1,4 +1,4 @@
-from api import db, bot
+from website import db, bot
 from sqlalchemy import orm
 from flask import current_app
 
@@ -19,10 +19,13 @@ class User(db.Model):
         """
         Get informations from Discord API not the database when the oject is loaded.
         """
-        results = bot.get_user(self.id)
-        self.name = results["user"]["username"]
-        self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in results["roles"]
-        self.avatar = AVATAR_BASE_URL.format(self.id, results["user"]["avatar"])
+        result = bot.get_user(self.id)
+        if result["nick"] == None:
+            self.name = result["user"]["username"]
+        else:
+            self.name = result["nick"]
+        self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
+        self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
 
     def serialize(self) -> object:
         return {
