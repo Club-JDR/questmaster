@@ -1,4 +1,4 @@
-from flask import jsonify, request, current_app, render_template
+from flask import jsonify, request, current_app, render_template, redirect, url_for
 from website import app, db, bot
 from website.models import Game, User, remove_archived
 from website.views.auth import who, login_required
@@ -11,7 +11,9 @@ def open_games():
     List all open games.
     """
     games = Game.query.filter_by(status="open").all()
-    return render_template("games.html", payload=who(), games=games, title="Les annonces en cours")
+    return render_template(
+        "games.html", payload=who(), games=games, title="Les annonces en cours"
+    )
 
 
 @app.route("/annonces/<game_id>/", methods=["GET"])
@@ -37,9 +39,15 @@ def my_gm_games() -> object:
     List all of games where current user is GM.
     """
     payload = who()
+    if not payload["is_gm"]:
+        return redirect(url_for("open_games"))
     games_as_gm = User.query.get(payload["user_id"]).games_gm
     return render_template(
-        "games.html", payload=payload, games=games_as_gm, gm_only=True, title="Mes annonces"
+        "games.html",
+        payload=payload,
+        games=games_as_gm,
+        gm_only=True,
+        title="Mes annonces",
     )
 
 
@@ -55,16 +63,14 @@ def my_games() -> object:
     return render_template(
         "games.html",
         payload=payload,
-        games=remove_archived(games_as_player) + remove_archived(games_as_gm), title="Mes parties en cours"
+        games=remove_archived(games_as_player) + remove_archived(games_as_gm),
+        title="Mes parties en cours",
     )
 
 
+"""
 @app.route("/games/", methods=["POST"])
 def create_game() -> object:
-    """
-    Endpoint to create a game.
-    The gm id should point to a user who is gm otherwise the creation is stopped.
-    """
     data = request.get_json()
     # Test if gm has the role or send unauthorized
     if User.query.get(data["gm_id"]).is_gm == False:
@@ -126,11 +132,11 @@ def create_game() -> object:
                     },
                     {
                         "name": "Nombre de joueur·euses",
-                        "value": f"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}""",
+                        "value": f\"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}\""",
                     },
                     {
                         "name": "Prétirés",
-                        "value": f"""{"Oui" if new_game.pregen else "Non"}""",
+                        "value": f\"""{"Oui" if new_game.pregen else "Non"}\""",
                     },
                 ],
                 "footer": {},
@@ -143,27 +149,17 @@ def create_game() -> object:
 
 @app.route("/games/", methods=["GET"])
 def get_games() -> object:
-    """
-    Endpoint to list all games.
-    """
     results = [game.serialize() for game in Game.query.all()]
     return jsonify({"count": len(results), "games": results})
 
 
 @app.route("/games/<game_id>/", methods=["GET"])
 def get_game(game_id) -> object:
-    """
-    Endpoint to get details for a game by it's id.
-    """
     return jsonify(Game.query.get(game_id).serialize())
 
 
 @app.route("/games/<game_id>", methods=["DELETE"])
 def delete_game(game_id) -> object:
-    """
-    Endpoint to delete a game.
-    Deletes the game's channel and role from discord, then the game itself from the database.
-    """
     game = Game.query.get(game_id)
     bot.delete_channel(game.channel)
     bot.delete_role(game.role)
@@ -186,3 +182,5 @@ def unregister_player_for_game(game_id, user_id) -> object:
     role_id = game.role
     bot.remove_role_from_user(user_id, role_id)
     return jsonify({"user": user_id, "game": int(game_id), "status": "unregistered"})
+
+"""

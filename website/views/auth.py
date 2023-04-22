@@ -24,7 +24,12 @@ def login_required(view):
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
-        if not current_app.discord.authorized:
+        if (
+            "user_id" not in session
+            or "username" not in session
+            or "avatar" not in session
+            or "is_gm" not in session
+        ):
             return redirect(url_for("login"))
         return view(**kwargs)
 
