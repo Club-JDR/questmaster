@@ -64,13 +64,13 @@ def my_games() -> object:
     try:
         games_as_player = User.query.get(payload["user_id"]).games
         games_as_gm = User.query.get(payload["user_id"]).games_gm
+        games = games_as_player + games_as_gm
     except AttributeError:
-        games_as_player = {}
-        games_as_gm = {}
+        games = {}
     return render_template(
         "games.html",
         payload=payload,
-        games=games_as_player + games_as_gm,
+        games=games,
         title="Mes parties en cours",
     )
 
