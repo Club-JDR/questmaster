@@ -41,7 +41,10 @@ def my_gm_games() -> object:
     payload = who()
     if not payload["is_gm"]:
         return redirect(url_for("open_games"))
-    games_as_gm = User.query.get(payload["user_id"]).games_gm
+    try:
+        games_as_gm = User.query.get(payload["user_id"]).games_gm
+    except AttributeError:
+        games_as_gm = {}
     return render_template(
         "games.html",
         payload=payload,
@@ -58,12 +61,16 @@ def my_games() -> object:
     List all of current user games
     """
     payload = who()
-    games_as_player = User.query.get(payload["user_id"]).games
-    games_as_gm = User.query.get(payload["user_id"]).games_gm
+    try:
+        games_as_player = User.query.get(payload["user_id"]).games
+        games_as_gm = User.query.get(payload["user_id"]).games_gm
+    except AttributeError:
+        games_as_player = {}
+        games_as_gm = {}
     return render_template(
         "games.html",
         payload=payload,
-        games=remove_archived(games_as_player) + remove_archived(games_as_gm),
+        games=games_as_player + games_as_gm,
         title="Mes parties en cours",
     )
 
@@ -106,8 +113,8 @@ def create_game() -> object:
                 role_name=new_game.name, permissions=permissions, color=color
             )["id"]
             # Save Game in database
-            db.session.add(new_game)
-            db.session.commit()
+            db.query.add(new_game)
+            db.query.commit()
             # Send embed message to Discord
             embed = {
                 "title": new_game.name,
@@ -124,9 +131,9 @@ def create_game() -> object:
                         "name": "Avertissement",
                         "value": f"{new_game.restriction}: {new_game.restriction_tags}",
                     },
-                    {"name": "Type de session", "value": new_game.type, "inline": True},
+                    {"name": "Type de query", "value": new_game.type, "inline": True},
                     {
-                        "name": "Nombre de sessions",
+                        "name": "Nombre de querys",
                         "value": new_game.length,
                         "inline": True,
                     },
@@ -163,8 +170,8 @@ def delete_game(game_id) -> object:
     game = Game.query.get(game_id)
     bot.delete_channel(game.channel)
     bot.delete_role(game.role)
-    db.session.delete(game)
-    db.session.commit()
+    db.query.delete(game)
+    db.query.commit()
     return jsonify({"game": int(game_id), "status": "deleted"})
 
 

@@ -2,7 +2,9 @@
 
 <h1>{{ title }}</h1>
 <div class="row gy-5 p-4">
-    {% for game in games|sort(attribute='date') %}
+    {% if games|length == 0 %}
+    <p>Vous n'avez pas d'annonce correspondant.</p>
+    {% else %} {% for game in games|sort(attribute='date') %}
     <div class="col-sm-4">
         <div class="card shadow">
             <div class="card-header {% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %} text-light ">
@@ -62,6 +64,6 @@
             </div>
         </div>
     </div>
-    {% endfor %}
+    {% endfor %} {% endif %}
 </div>
 {% endblock %}
