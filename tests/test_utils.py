@@ -109,6 +109,9 @@ def test_role_workflow():
     # Role deletion
     response = client.delete_role(role_id)
     assert response == "{}"
+    # Role should not exist
+    response = client.get_role(role_id)
+    assert response["message"] == "Unknown Role"
 
 
 def test_channel_workflow():

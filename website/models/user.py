@@ -26,11 +26,3 @@ class User(db.Model):
             self.name = result["nick"]
         self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
         self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
-
-    def serialize(self) -> object:
-        return {
-            "id": self.id,
-            "username": self.name,
-            "gm": self.is_gm,
-            "avatar": self.avatar,
-        }

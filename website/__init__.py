@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask
 from flask_bootstrap import Bootstrap5
 from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect
@@ -48,4 +48,4 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 
 # API import
-from website.views import auth, health, users, games, filters
+from website.views import auth, health, games, filters
