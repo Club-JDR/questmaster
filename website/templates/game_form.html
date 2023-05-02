@@ -1,0 +1,102 @@
+{% extends 'base.html' %} {% block head %} {{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />{% endblock %} {% block content %}
+
+<h1>Nouvelle annonce</h1>
+<form class="row">
+    <div class="row">
+        <div class="col-lg-5 p-3">
+            <div class="row">
+                <div class="w-75 mb-3">
+                    <label for="name" class="form-label"><strong>Nom :</strong></label>
+                    <input type="text" class="form-control" id="name" aria-describedby="Nom">
+                </div>
+            </div>
+            <div class="row">
+                <div class="w-75 mb-3">
+                    <label for="system" class="form-label"><strong>Système :</strong></label>
+                    <input type="text" class="form-control" id="system" aria-describedby="Système">
+                </div>
+            </div>
+            <div class="row">
+                <div class="mb-3 w-75">
+                    <label for="description" class="form-label"><strong>Description :</strong></label>
+                    <textarea class="form-control" id="description" rows="8"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 p-3">
+            <div class="row">
+                <div class="mb-3">
+                    <label for="sessionType" class="form-label"><strong>Type de session :</strong></label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="oneshot" value="oneshot" name="sessionType" checked>
+                        <label class="form-check-label" for="oneshot">One Shot</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="campaign" value="campaign" name="sessionType">
+                        <label class="form-check-label" for="campaign">Campagne</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="w-75 mb-3">
+                    <label for="calendar" class="form-label"><strong>Date :</strong></label>
+                    <input id="calendar" class="flatpickr flatpickr-input active form-control" type="text">
+                </div>
+            </div>
+            <div class="row">
+                <div class="w-75 mb-3">
+                    <label for="length" class="form-label"><strong>Durée :</strong></label>
+                    <input type="text" class="form-control" id="length" aria-describedby="Durée" placeholder="X sessions">
+                </div>
+            </div>
+            <div class="row">
+                <div class="w-75 mb-3">
+                    <label class="form-label"><strong>Options :</strong></label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="pregen">
+                        <label class="form-check-label" for="pregen">Prétirés</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="partySelection">
+                        <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 p-3">
+            <div class="row">
+                <label for="restriction" class="form-label"><strong>Avertissement :</strong></label>
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" name="options-outlined" id="all" autocomplete="off" checked>
+                    <label class="btn btn-outline-success" for="all">Tout public</label>
+                    <input type="radio" class="btn-check" name="options-outlined" id="16" autocomplete="off">
+                    <label class="btn btn-outline-warning" for="16">16+</label>
+                    <input type="radio" class="btn-check" name="options-outlined" id="18" autocomplete="off">
+                    <label class="btn btn-outline-danger" for="18">18+</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="mb-3 w-75">
+                    <label for="restrictionTags" class="form-label"><strong>Thèmes choquants : </strong></label>
+                    <textarea class="form-control" id="restrictionTags" rows="2" aria-describedby="tagsHelp"></textarea>
+                    <div id="tagsHelp" class="form-text">Séparer chaque thème par une virgule.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-3 offset-md-10">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+    </div>
+</form>
+{% endblock %} {% block scripts %} {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
+<script src="/static/js/tags-input.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+<script src="/static/js/calendar-input.js"></script>
+{% endblock %}

@@ -32,6 +32,17 @@ def get_game_details(game_id) -> object:
     )
 
 
+@app.route("/annonce/", methods=["GET"])
+def get_game_form() -> object:
+    """
+    Get form to create a new game.
+    """
+    payload = who()
+    if not payload["is_gm"]:
+        return redirect(url_for("open_games"))
+    return render_template("game_form.html", payload=payload)
+
+
 @app.route("/mes_annonces/", methods=["GET"])
 @login_required
 def my_gm_games() -> object:
