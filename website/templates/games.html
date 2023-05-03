@@ -4,66 +4,70 @@
 <div class="row gy-5 p-4">
     {% if games|length == 0 %}
     <p>Vous n'avez pas d'annonce correspondant.</p>
-    {% else %} {% for game in games|sort(attribute='date') %}
-    <div class="col-sm-4">
-        <div class="card shadow">
-            <div class="card-header {% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %} text-light ">
-                <h5 class="card-title text-truncate">{{ game.name }}</h5>
-            </div>
-            <img src="{{ game.img }} " class="card-img-bottom " alt="{{ game.name }} " style="width: 100%; height: 15vw; object-fit: cover; ">
-            <div class="card-body ">
-                <div class="row">
-                    <div class="col text-center">
-                        <span class="badge rounded-pill text-bg-{% if game.type=='campaign' %}primary ">Campagne{% else %}success">One Shot{% endif %}</span>
-                    </div>
-                    <div class="col text-center">
-                        <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span>
-                    </div>
+    {% else %}
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for game in games|sort(attribute='date') %}
+        <div class="col">
+            <div class="card shadow h-100">
+                <div class="card-header {% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %} text-light">
+                    <h5 class="card-title text-truncate">{{ game.name }}</h5>
                 </div>
-                <div class="row">
-                    <div class="col text-center">
-                        <strong>Maître·sse du Jeu</strong>
+                <img src="{{ game.img }}" class="card-img-bottom img-preview" alt="{{ game.name }}">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <span class="badge rounded-pill text-bg-{% if game.type=='campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span>
+                        </div>
+                        <div class="col">
+                            <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span>
+                        </div>
                     </div>
-                    <div class="col text-center">
-                        {{ game.gm.name }}
+                    <div class="row">
+                        <div class="col">
+                            <strong>Maître·sse du Jeu</strong>
+                        </div>
+                        <div class="col">
+                            {{ game.gm.name }}
+                        </div>
                     </div>
+                    <div class="row">
+                        <div class="col">
+                            <strong>Date</strong>
+                        </div>
+                        <div class="col">
+                            {{ game.date|format_datetime }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <strong>Durée</strong>
+                        </div>
+                        <div class="col">
+                            {{ game.length }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <strong>Joueur·euses</strong>
+                        </div>
+                        <div class="col">
+                            {{ game.players|length }}/{{ game.party_size }}
+                        </div>
+                    </div>
+                    <a href="/annonces/{{ game.id }}/" class="stretched-link"></a>
                 </div>
-                <div class="row">
-                    <div class="col text-center">
-                        <strong>Date</strong>
-                    </div>
-                    <div class="col text-center">
-                        {{ game.date|format_datetime }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col text-center">
-                        <strong>Durée</strong>
-                    </div>
-                    <div class="col text-center">
-                        {{ game.length }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col text-center">
-                        <strong>Joueur·euses</strong>
-                    </div>
-                    <div class="col text-center">
-                        {{ game.players|length }}/{{ game.party_size }}
-                    </div>
-                </div>
-                <a href="/annonces/{{ game.id }}/" class="stretched-link"></a>
-            </div>
 
-            {% if game.restriction_tags %}{% set tags = game.restriction_tags.split(',') %}{% endif %}
-            <div class="card-footer text-center">
-                {% if game.restriction == 'all' %}
-                <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
-                <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
-                <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge rounded-pill bg-secondary">{{ tag }}</span> {% endfor %}
+                {% if game.restriction_tags %}{% set tags = game.restriction_tags.split(',') %}{% endif %}
+                <div class="card-footer">
+                    {% if game.restriction == 'all' %}
+                    <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+                    <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
+                    <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge rounded-pill bg-secondary">{{ tag }}</span> {% endfor %}
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %} {% endif %}
+    {% endif %}
 </div>
 {% endblock %}

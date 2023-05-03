@@ -5,11 +5,7 @@
     {% block head %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> {% block styles %} {{ bootstrap.load_css() }} {% endblock %}
-    <style>
-        figure {
-            margin: 0 0 0;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/custom.css">
     <title>QuestMaster</title>
     {% endblock %}
 </head>
@@ -72,12 +68,9 @@
         {% block content %}{% endblock %}
     </main>
     {% block scripts %} {{ bootstrap.load_js() }}
-    <script>
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
-    </script> {% endblock %}
+    <script src="/static/js/tooltips.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
+    {% endblock %}
 </body>
 
 </html>

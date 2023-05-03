@@ -52,21 +52,6 @@
                 </div>
             </div>
             <div class="row">
-                <div class="w-75 mb-3">
-                    <label class="form-label"><strong>Options :</strong></label>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="pregen">
-                        <label class="form-check-label" for="pregen">Prétirés</label>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="partySelection">
-                        <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 p-3">
-            <div class="row">
                 <label for="restriction" class="form-label"><strong>Avertissement :</strong></label>
                 <div class="mb-3">
                     <input type="radio" class="btn-check" name="options-outlined" id="all" autocomplete="off" checked>
@@ -85,6 +70,52 @@
                 </div>
             </div>
         </div>
+        <div class="col-lg-3 p-3">
+            <div class="row">
+                <div id="imgPreviewContainer" class="figure img-preview rounded" style="background: linear-gradient(to top right, ghostwhite, gainsboro);"></div>
+                <div class="figure"><img id="imgPreview" src="..." class="figure-img img-fluid rounded img-preview" onerror="this.style.display='none'"></div>
+                <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadImageModal" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5">Choisir une image</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <label for="lien" class="form-label"><strong>Lien vers l'image :</strong></label>
+                                </div>
+                                <div class="row">
+                                    <div class="col-10"><input type="text" class="form-control" id="imgLink" aria-describedby="lien"></div>
+                                    <div class="col-2 d-grid">
+                                        <button id="imgSelect" type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-label="Close">Choisir</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <p>Vous pouvez utiliser <a href="https://imgur.com/upload" target="_blank">imgur</a> pour uploader vos propres images. Ensuite, faites un clic-droit sur l'image puis "Copier le lien de l'image".</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal">Choisir une image</button>
+            </div>
+            <div class="row">
+                <div class="w-75 pt-4 mb-3">
+                    <label class="form-label"><strong>Options :</strong></label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="pregen">
+                        <label class="form-check-label" for="pregen">Prétirés</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="partySelection">
+                        <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="row">
         <div class="col-lg-3 offset-md-10">
@@ -92,10 +123,12 @@
         </div>
     </div>
 </form>
+
 {% endblock %} {% block scripts %} {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.17.8/dist/tagify.min.js" integrity="sha256-cBY/Uc7f5GDeWDnEKtUMG00AZdN2Iwp6LqslivKpm2M=" crossorigin="anonymous"></script>
 <script src="/static/js/tags-input.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js" integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
 <script src="/static/js/calendar-input.js"></script>
+<script src="/static/js/img-preview.js"></script>
 {% endblock %}
