@@ -6,61 +6,66 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> {% block styles %} {{ bootstrap.load_css() }} {% endblock %}
     <link rel="stylesheet" href="/static/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace&display=swap" rel="stylesheet">
     <title>QuestMaster</title>
     {% endblock %}
 </head>
 
 <body>
     {% from 'bootstrap5/nav.html' import render_nav_item %}
-    <nav class="navbar navbar-expand-lg bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/"><img src="https://club-jdr.fr/wp-content/uploads/2022/08/cropped-club-jdr-white.png" alt="Club JDR" height="30" class="">QuestMaster</a>
+            <a class="navbar-brand title" href="/">
+                <img src="https://club-jdr.fr/wp-content/uploads/2022/08/cropped-club-jdr-white.png" alt="Club JDR" height="50"> QuestMaster
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
+                <span class="navbar-toggler-icon"></span>
+            </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-                </ul>
-                <ul class="nav justify-content-end">
+                <ul class="nav justify-content-end ms-auto">
                     {% if payload[ 'is_gm'] %}
-                    <li class="nav-item">
-                        <a class="btn btn-outline-secondary" href="/annonce/">
+                    <li class="nav-item pe-2 pt-1">
+                        <a class="btn btn-outline-light" href="/annonce/">
                             Poster une annnonce 
                         </a>
                     </li>
                     {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    {% if payload['username'] %}
-                    <li class="nav-item dropdown">
-                        <div class="d-flex">
-                            <a class="nav-link dropdown-toggle btn-danger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="{{ payload['avatar'] }}" alt="{{ payload['username'] }}" width="30" height="30" class="rounded-circle">
-                                <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                {% if payload[ 'is_gm'] %}
-                                <li><a class="dropdown-item" href="/mes_annonces/">Mes annonces</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                {% endif %}
-                                <li><a class="dropdown-item" href="/mes_parties/">Mes sessions</a></li>
-                                <li><a class="dropdown-item" href="#">Mes badges</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="/logout/">Me déconnecter</a></li>
-                            </ul>
-                        </div>
+                    <li class="nav-item">
+                        <ul class="navbar-nav">
+                            {% if payload['username'] %}
+                            <li class="nav-item dropdown">
+                                <div class="d-flex">
+                                    <a class="nav-link dropdown-toggle btn-danger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <img src="{{ payload['avatar'] }}" alt="{{ payload['username'] }}" width="30" height="30" class="rounded-circle">
+                                        <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        {% if payload[ 'is_gm'] %}
+                                        <li><a class="dropdown-item" href="/mes_annonces/">Mes annonces</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="/mes_parties/">Mes sessions</a></li>
+                                        <li><a class="dropdown-item" href="#">Mes badges</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item" href="/logout/">Me déconnecter</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            {% else %}
+                            <li>
+                                <a href="/login/" class="d-flex btn btn-outline-success">Me connecter</a>
+                            </li>
+                            {% endif %}
+                        </ul>
                     </li>
-                    {% else %}
-                    <li>
-                        <a href="/login/" class="d-flex btn btn-outline-secondary">Me connecter</a>
-                    </li>
-                    {% endif %}
                 </ul>
+
             </div>
         </div>
     </nav>

@@ -1,3 +1,7 @@
+* {
+    font-family: Helvetica, Arial, sans-serif
+}
+
 figure {
     margin: 0 0 0;
 }
@@ -12,4 +16,25 @@ figure {
     .img-preview {
         height: 15vw;
     }
+}
+
+.title {
+    font-family: 'Bruno Ace', Helvetica, sans-serif;
+    font-size: 1.8em;
+    padding: 0;
+}
+
+.navbar {
+    --bs-navbar-padding-y: 0.3rem;
+}
+
+.badge,
+.btn,
+strong,
+h1,
+h2,
+h3,
+h4,
+h5 {
+    font-family: 'Bruno Ace', Helvetica, sans-serif;
 }
