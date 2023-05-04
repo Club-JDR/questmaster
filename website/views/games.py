@@ -42,6 +42,7 @@ def get_game_form() -> object:
         return redirect(url_for("open_games"))
     return render_template("game_form.html", payload=payload)
 
+
 @app.route("/annonce/", methods=["POST"])
 @login_required
 def create_game() -> object:
@@ -52,6 +53,7 @@ def create_game() -> object:
     if not payload["is_gm"]:
         return redirect(url_for("open_games"))
     return jsonify(request.values.to_dict())
+
 
 @app.route("/mes_annonces/", methods=["GET"])
 @login_required
