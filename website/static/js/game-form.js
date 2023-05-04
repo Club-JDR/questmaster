@@ -1,3 +1,4 @@
+// Datetime picker config
 flatpickr.localize(flatpickr.l10ns.fr);
 flatpickr('#calendar', {
     "locale": "fr",
@@ -7,11 +8,13 @@ flatpickr('#calendar', {
     defaultHour: 20,
 });
 
+// Update image when URL is set
 $('#imgSelect').click(function() {
     $('#imgPreview').attr('src', $("#imgLink").val());
     $('#imgPreview').attr('style', '');
 });
 
+// Read restriction_tags to create "tags" in the text field
 var input = document.querySelector('#restriction_tags');
 new Tagify(input, {
     delimiters: ",",
@@ -38,4 +41,19 @@ function transformTag(tagData) {
         tagData.value = 's✲✲t'
 }
 
-var simplemde = new SimpleMDE({ element: document.getElementById("md-edit"), spellChecker: false, toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "preview"], });
+// Needed for form validation
+(() => {
+    'use strict'
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.querySelectorAll('.needs-validation')
+        // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()

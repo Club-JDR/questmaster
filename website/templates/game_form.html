@@ -4,26 +4,33 @@
 <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />{% endblock %} {% block content %}
 
 <h1>Nouvelle annonce</h1>
-<form method="post" action="/annonce/" class="row">
+<form method="post" action="/annonce/" class="row needs-validation" novalidate>
     <div class="col-lg-5 p-3">
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="name" class="form-label"><strong>Nom :</strong></label>
-                <input type="text" class="form-control" name="name" aria-describedby="Nom">
+                <input type="text" class="form-control" name="name" aria-describedby="Nom" required>
+                <div class="invalid-feedback">
+                    Vous devez choisir un nom pour votre annonce.
+                </div>
             </div>
         </div>
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="system" class="form-label"><strong>Système :</strong></label>
-                <input type="text" class="form-control" name="system" aria-describedby="Système">
+                <input type="text" class="form-control" name="system" aria-describedby="Système" required>
+                <div class="invalid-feedback">
+                    Vous devez choisir un système de jeu.
+                </div>
             </div>
         </div>
         <div class="row">
             <div class="mb-2 w-75">
                 <label for="description" class="form-label"><strong>Description :</strong></label>
-                <textarea class="form-control" name="description" id="md-edit" rows="6"></textarea>
-                <div id="descHelp" class="form-text">Vous pouvez utiliser la syntaxe
-                    <a href="https://docs.framasoft.org/fr/grav/markdown.html" target="_blank" rel="noopener">Markdown</a> pour la description.</div>
+                <textarea class="form-control" name="description" id="md-edit" rows="14" required></textarea>
+                <div class="invalid-feedback">
+                    Vous devez entrer une description.
+                </div>
             </div>
         </div>
     </div>
@@ -42,19 +49,28 @@
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="date" class="form-label"><strong>Date :</strong></label>
-                <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text">
+                <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text" required>
+                <div class="invalid-feedback">
+                    Vous devez entrer une date.
+                </div>
             </div>
         </div>
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="length" class="form-label"><strong>Durée :</strong></label>
-                <input type="text" class="form-control" name="length" aria-describedby="Durée">
+                <input type="text" class="form-control" name="length" aria-describedby="Durée" required>
+                <div class="invalid-feedback">
+                    Vous devez entrer une durée.
+                </div>
             </div>
         </div>
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="party_size" class="form-label"><strong>Nombre de joueur·euses :</strong></label>
-                <input type="number" step="1" max="99" value="4" name="party_size" class="form-control">
+                <input type="number" step="1" max="99" value="4" name="party_size" class="form-control" required>
+                <div class="invalid-feedback">
+                    Vous devez entrer un nombre de joueur·euses.
+                </div>
             </div>
         </div>
         <div class="row">
@@ -75,7 +91,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="pt-4 mb-2">
+            <div class="mb-2">
                 <label class="form-label"><strong>Options :</strong></label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" name="pregen">
@@ -125,10 +141,10 @@
         </div>
     </div>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="gm_id" value="{{ payload['user_id'] }}">
 </form>
 
 {% endblock %} {% block scripts %} {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/simplemde@1.11.2/dist/simplemde.min.js" integrity="sha256-6sZs7OGP0Uzcl7UDsLaNsy1K0KTZx1+6yEVrRJMn2IM=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.17.8/dist/tagify.min.js" integrity="sha256-cBY/Uc7f5GDeWDnEKtUMG00AZdN2Iwp6LqslivKpm2M=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js" integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
