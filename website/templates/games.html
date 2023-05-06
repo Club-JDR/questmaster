@@ -16,10 +16,10 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col">
-                            <span class="badge rounded-pill text-bg-{% if game.type=='campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span>
+                            <span class="badge text-bg-{% if game.type=='campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span>
                         </div>
                         <div class="col">
-                            <span class="badge rounded-pill text-bg-secondary">{{ game.system }}</span>
+                            <span class="badge text-bg-secondary">{{ game.system }}</span>
                         </div>
                     </div>
                     <div class="row">
@@ -60,9 +60,9 @@
                 {% if game.restriction_tags %}{% set tags = game.restriction_tags.split(',') %}{% endif %}
                 <div class="card-footer">
                     {% if game.restriction == 'all' %}
-                    <span class="badge rounded-pill text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
-                    <span class="badge rounded-pill text-bg-warning">16+</span> {% else %}
-                    <span class="badge rounded-pill text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge rounded-pill bg-secondary">{{ tag }}</span> {% endfor %}
+                    <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+                    <span class="badge text-bg-warning">16+</span> {% else %}
+                    <span class="badge text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge bg-secondary">{{ tag }}</span> {% endfor %}
                 </div>
             </div>
         </div>

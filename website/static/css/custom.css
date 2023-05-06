@@ -1,5 +1,13 @@
 * {
-    font-family: Helvetica, Arial, sans-serif
+    font-family: 'Ysabeau', Helvetica, Arial, sans-serif
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+    font-weight: 900;
 }
 
 figure {
@@ -19,7 +27,7 @@ figure {
 }
 
 .title {
-    font-family: 'Bruno Ace', Helvetica, sans-serif;
+    font-family: 'Ysabeau', cursive;
     font-size: 1.8em;
     padding: 0;
 }
@@ -28,13 +36,26 @@ figure {
     --bs-navbar-padding-y: 0.3rem;
 }
 
-.badge,
-.btn,
-strong,
-h1,
-h2,
-h3,
-h4,
-h5 {
-    font-family: 'Bruno Ace', Helvetica, sans-serif;
+.bi {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    fill: currentColor;
+}
+
+.nav-link,
+.nav-link:hover,
+.nav-link:focus,
+.btn.show {
+    color: white;
+}
+
+.CodeMirror.cm-s-paper,
+.tagify__input {
+    color: currentColor;
+    background: none;
+}
+
+.editor-toolbar a.fa {
+    color: currentColor!important;
 }

@@ -1,5 +1,4 @@
 from flask import Flask
-from flask_bootstrap import Bootstrap5
 from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
@@ -24,9 +23,6 @@ app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
 app.json.compact = False
-
-# Bootstrap
-bootstrap = Bootstrap5(app)
 
 # Database
 db = SQLAlchemy(app)

@@ -41,6 +41,22 @@ function transformTag(tagData) {
         tagData.value = 's✲✲t'
 }
 
+// Change form fields size from 75% to 100% on mobile
+if ($(window).width() < 1024) {
+    $('.w-75').addClass('w-100');
+    $('.w-100').removeClass('w-75');
+}
+
+// Add Markdown Editor
+var simplemde = new SimpleMDE({
+    element: $("#md-edit")[0],
+    toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "link"],
+    status: false,
+    forceSync: true,
+    indentWithTabs: false,
+    spellChecker: false,
+});
+
 // Needed for form validation
 (() => {
     'use strict'
@@ -53,7 +69,30 @@ function transformTag(tagData) {
                 event.preventDefault()
                 event.stopPropagation()
             }
+            if (simplemde.value().trim() == '') {
+                $('.cm-s-paper').addClass('form-control is-invalid');
+                $('.cm-s-paper').removeClass('is-valid');
+            } else {
+                $('.cm-s-paper').addClass('is-valid');
+                $('.cm-s-paper').removeClass('is-invalid');
+            }
             form.classList.add('was-validated')
         }, false)
     })
 })()
+
+// form validation for simpleMDE
+function delay(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
+}
+delay(1000).then(() =>
+    $('.CodeMirror-scroll').on('DOMSubtreeModified', function() {
+        if (simplemde.value().trim() == '') {
+            $('.cm-s-paper').addClass('form-control is-invalid');
+            $('.cm-s-paper').removeClass('is-valid');
+        } else {
+            $('.cm-s-paper').addClass('is-valid');
+            $('.cm-s-paper').removeClass('is-invalid');
+        }
+    })
+);
