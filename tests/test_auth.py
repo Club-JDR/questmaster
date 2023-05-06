@@ -22,6 +22,7 @@ def test_sessions(client):
         session["username"] = "user"
         session["avatar"] = "avatar.png"
         session["is_gm"] = False
+        session["is_admin"] = False
     response = client.get("/")
     assert response.status_code == 200
     icon = b'<img src="avatar.png" alt="user" width="30" height="30" class="rounded-circle">'
@@ -47,6 +48,7 @@ def test_sessions(client):
         assert "username" not in session
         assert "avatar" not in session
         assert "is_gm" not in session
+        assert "is_admin" not in session
 
 
 def test_unauthorized(client):
@@ -54,4 +56,4 @@ def test_unauthorized(client):
     Test failure of an unauthorized access to a URL needing authentication.
     """
     response = client.get("/mes_parties/")
-    assert response.status_code == 302
+    assert response.status_code == 403
