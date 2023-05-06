@@ -30,6 +30,7 @@ POSTS_CHANNEL_ID=""
 CATEGORIES_CHANNEL_ID=""
 DISCORD_GUILD_ID=""
 DISCORD_GM_ROLE_ID=""
+DISCORD_ADMIN_ROLE_ID=""
 FLASK_APP="website"
 USER_ID_LIST="{ \"gm1\": \"<id of user with GM role>\", \"gm2\": \"<id of other user with GM role>\", \"notgm\": \"<id of user without GM role>\", \"admin\": \"<id of user with Admin role>\"}"
 ```

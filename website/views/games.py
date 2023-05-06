@@ -1,4 +1,12 @@
-from flask import jsonify, request, current_app, render_template, redirect, url_for
+from flask import (
+    jsonify,
+    request,
+    current_app,
+    render_template,
+    redirect,
+    url_for,
+    abort,
+)
 from website import app, db, bot
 from website.models import Game, User, remove_archived
 from website.views.auth import who, login_required
@@ -33,13 +41,14 @@ def get_game_details(game_id) -> object:
 
 
 @app.route("/annonce/", methods=["GET"])
+@login_required
 def get_game_form() -> object:
     """
     Get form to create a new game.
     """
     payload = who()
     if not payload["is_gm"]:
-        return redirect(url_for("open_games"))
+        abort(403)
     return render_template("game_form.html", payload=payload)
 
 
@@ -49,9 +58,8 @@ def create_game() -> object:
     """
     Create a new game and redirect to the game details.
     """
-    payload = who()
-    if not payload["is_gm"]:
-        return redirect(url_for("open_games"))
+    if not who()["is_gm"]:
+        abort(403)
     return jsonify(request.values.to_dict())
 
 
@@ -63,7 +71,7 @@ def my_gm_games() -> object:
     """
     payload = who()
     if not payload["is_gm"]:
-        return redirect(url_for("open_games"))
+        abort(403)
     try:
         games_as_gm = User.query.get(payload["user_id"]).games_gm
     except AttributeError:

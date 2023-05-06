@@ -17,6 +17,7 @@ app.config["DISCORD_REDIRECT_URI"] = os.environ.get("DISCORD_REDIRECT_URI")
 app.config["DISCORD_GUILD_NAME"] = os.environ.get("DISCORD_GUILD_NAME")
 app.config["DISCORD_GUILD_ID"] = os.environ.get("DISCORD_GUILD_ID")
 app.config["DISCORD_GM_ROLE_ID"] = os.environ.get("DISCORD_GM_ROLE_ID")
+app.config["DISCORD_ADMIN_ROLE_ID"] = os.environ.get("DISCORD_ADMIN_ROLE_ID")
 app.config["CATEGORIES_CHANNEL_ID"] = os.environ.get("CATEGORIES_CHANNEL_ID")
 app.config["POSTS_CHANNEL_ID"] = os.environ.get("POSTS_CHANNEL_ID")
 app.config[
@@ -44,4 +45,4 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 
 # API import
-from website.views import auth, health, games, filters
+from website.views import auth, health, games, filters, errors

@@ -1,4 +1,4 @@
-from flask import redirect, url_for, current_app, session
+from flask import redirect, url_for, current_app, session, render_template, abort
 from website import app, db
 from website.models import User
 import functools
@@ -14,6 +14,7 @@ def who():
         payload["username"] = session["username"]
         payload["avatar"] = session["avatar"]
         payload["is_gm"] = session["is_gm"]
+        payload["is_admin"] = session["is_admin"]
     return session
 
 
@@ -29,8 +30,9 @@ def login_required(view):
             or "username" not in session
             or "avatar" not in session
             or "is_gm" not in session
+            or "is_admin" not in session
         ):
-            return redirect(url_for("login"))
+            abort(403)
         return view(**kwargs)
 
     return wrapped_view
@@ -72,4 +74,5 @@ def callback():
         session["username"] = user.name
         session["avatar"] = user.avatar
         session["is_gm"] = user.is_gm
+        session["is_admin"] = user.is_admin
     return redirect(url_for("open_games"))

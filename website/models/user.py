@@ -25,4 +25,5 @@ class User(db.Model):
         else:
             self.name = result["nick"]
         self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
+        self.is_admin = current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
         self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])

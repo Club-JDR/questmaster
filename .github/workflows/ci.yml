@@ -35,6 +35,7 @@ jobs:
         POSTS_CHANNEL_ID: "${{ secrets.POSTS_CHANNEL_ID }}"
         DISCORD_GUILD_ID: "${{ secrets.DISCORD_GUILD_ID }}"
         DISCORD_GM_ROLE_ID: "${{ secrets.DISCORD_GM_ROLE_ID }}"
+        DISCORD_ADMIN_ROLE_ID: "${{ secrets.DISCORD_ADMIN_ROLE_ID }}"
         USER_ID_LIST: "${{ secrets.USER_ID_LIST }}"
         FLASK_APP: "website"
     - name: Build the app

@@ -1,0 +1,19 @@
+{% extends 'base.html' %} {% block head %} {{ super() }}
+<link rel="stylesheet" href="/static/css/403.css"> {% endblock %} {% block title %}Internal Server Error{% endblock %} {% block content %}
+<div class="gandalf">
+    <div class="fireball"></div>
+    <div class="skirt"></div>
+    <div class="sleeves"></div>
+    <div class="shoulders">
+        <div class="hand left"></div>
+        <div class="hand right"></div>
+    </div>
+    <div class="head">
+        <div class="hair"></div>
+        <div class="beard"></div>
+    </div>
+</div>
+<div class="message">
+    <h1>VOUS NE PASSEREZ PAS !</h1>
+    <p>Gandalf bloque le passage!<br/>Êtes-vous certain de vouloir aller ici ?</p>
+</div> {% endblock %}
