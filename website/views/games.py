@@ -30,7 +30,7 @@ def get_game_details(game_id) -> object:
     Get details for a given game.
     """
     payload = who()
-    game = Game.query.get(game_id)
+    game = db.get_or_404(Game, game_id)
     is_player = False
     for player in game.players:
         if payload != {} and payload["user_id"] == player.id:
@@ -60,7 +60,85 @@ def create_game() -> object:
     """
     if not who()["is_gm"]:
         abort(403)
-    return jsonify(request.values.to_dict())
+    else:
+        # return jsonify(request.values.to_dict())
+        try:
+            data = request.values.to_dict()
+            print(data)
+            # Create the Game object
+            new_game = Game(
+                gm_id=data["gm_id"],
+                name=data["name"],
+                system=data["system"],
+                description=data["description"],
+                type=data["type"],
+                date=data["date"],
+                length=data["length"],
+                party_size=data["party_size"],
+                restriction=data["restriction"],
+            )
+            if "pregen" in data.keys():
+                new_game.pregen = data["pregen"]
+            if "restriction_tags" in data["restriction_tags"]:
+                new_game.restriction_tags = data["restriction_tags"]
+            if "party_selection" in data["party_selection"]:
+                new_game.party_selection = data["party_selection"]
+            if "img" in data["img"]:
+                new_game.img = data["img"]
+            # Create channel and update object with channel_id
+            new_game.channel = bot.create_channel(
+                channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
+                parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            )["id"]
+            # Create role and update object with role_id
+            permissions = "3072"
+            color = 15844367
+            new_game.role = bot.create_role(
+                role_name=new_game.name, permissions=permissions, color=color
+            )["id"]
+            # Save Game in database
+            db.session.add(new_game)
+            db.session.commit()
+            # Send embed message to Discord
+            """
+            embed = {
+                "title": new_game.name,
+                "color": color,
+                "fields": [
+                    {
+                        "name": "MJ",
+                        "value": new_game.gm.username,
+                        "inline": True,
+                    },
+                    {"name": "Système", "value": new_game.system, "inline": True},
+                    {"name": "Description", "value": new_game.description},
+                    {
+                        "name": "Avertissement",
+                        "value": f"{new_game.restriction}: {new_game.restriction_tags}",
+                    },
+                    {"name": "Type de query", "value": new_game.type, "inline": True},
+                    {
+                        "name": "Nombre de querys",
+                        "value": new_game.length,
+                        "inline": True,
+                    },
+                    {
+                        "name": "Nombre de joueur·euses",
+                        "value": f\"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}\""",
+                    },
+                    {
+                        "name": "Prétirés",
+                        "value": f\"""{"Oui" if new_game.pregen else "Non"}\""",
+                    },
+                ],
+                "footer": {},
+            }
+            bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+            """
+            return jsonify({"game": new_game.id, "status": "created", "data": data})
+        except Exception as e:
+            # Delete channel & role in case of error
+            abort(500)
 
 
 @app.route("/mes_annonces/", methods=["GET"])
@@ -73,7 +151,7 @@ def my_gm_games() -> object:
     if not payload["is_gm"]:
         abort(403)
     try:
-        games_as_gm = User.query.get(payload["user_id"]).games_gm
+        games_as_gm = db.session.get(User, payload["user_id"]).games_gm
     except AttributeError:
         games_as_gm = {}
     return render_template(
@@ -93,8 +171,9 @@ def my_games() -> object:
     """
     payload = who()
     try:
-        games_as_player = User.query.get(payload["user_id"]).games
-        games_as_gm = User.query.get(payload["user_id"]).games_gm
+        user = db.session.get(User, payload["user_id"])
+        games_as_player = user.games
+        games_as_gm = user.games_gm
         games = games_as_player + games_as_gm
     except AttributeError:
         games = {}
@@ -183,17 +262,6 @@ def create_game() -> object:
             return jsonify({"game": new_game.id, "status": "created"})
         except Exception as e:
             return jsonify({"error": e.args}), 500
-
-
-@app.route("/games/", methods=["GET"])
-def get_games() -> object:
-    results = [game.serialize() for game in Game.query.all()]
-    return jsonify({"count": len(results), "games": results})
-
-
-@app.route("/games/<game_id>/", methods=["GET"])
-def get_game(game_id) -> object:
-    return jsonify(Game.query.get(game_id).serialize())
 
 
 @app.route("/games/<game_id>", methods=["DELETE"])
