@@ -59,3 +59,14 @@ figure {
 .editor-toolbar a.fa {
     color: currentColor!important;
 }
+
+.card:hover {
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transform: perspective(1000px);
+    z-index: 20;
+}
+
+.card * {
+    transform: translateZ(10px);
+}
