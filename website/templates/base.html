@@ -100,7 +100,33 @@
     {% block scripts %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/konami@1.6.3/konami.min.js"></script>
     <script src="/static/js/theme.js"></script>
+    <script>
+        var Konami = new Konami(function() {
+            anime({
+                targets: 'main',
+                translateX: 10,
+                autoplay: true,
+                loop: false,
+                easing: 'easeInOutSine',
+                direction: 'alternate',
+                scale: [{
+                    value: 1
+                }, {
+                    value: 1.4
+                }, {
+                    value: 1,
+                    delay: 250
+                }],
+                rotateY: {
+                    value: '+=180',
+                    delay: 200
+                },
+            });
+        });
+    </script>
     {% endblock %}
 </body>
 
