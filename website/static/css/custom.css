@@ -61,12 +61,10 @@ figure {
 }
 
 .card:hover {
-    cursor: pointer;
-    transform-style: preserve-3d;
-    transform: perspective(1000px);
-    z-index: 20;
+    transform: scale(1.1);
+    transition-duration: 0.8s;
 }
 
-.card * {
-    transform: translateZ(10px);
+.card {
+    transition-duration: 0.8s;
 }
