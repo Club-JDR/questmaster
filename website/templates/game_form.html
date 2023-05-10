@@ -91,9 +91,9 @@
             <div class="mb-2">
                 <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" checked>
                 <label class="btn btn-outline-success btn-sm" for="all">Tout public</label>
-                <input type="radio" class="btn-check" name="restriction" value="16" id="16" autocomplete="off">
+                <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off">
                 <label class="btn btn-outline-warning btn-sm" for="16">16+</label>
-                <input type="radio" class="btn-check" name="restriction" value="18" id="18" autocomplete="off">
+                <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off">
                 <label class="btn btn-outline-danger btn-sm" for="18">18+</label>
             </div>
         </div>
@@ -148,7 +148,10 @@
             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal">Choisir une image</button>
         </div>
         <div class="row pt-2 mx-auto">
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <button type="submit" name="action" value="draft" class="btn btn-secondary">Enregistrer</button>
+        </div>
+        <div class="row pt-2 mx-auto">
+            <button type="submit" name="action" value="open" class="btn btn-primary">Publier</button>
         </div>
     </div>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
