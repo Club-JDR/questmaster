@@ -58,13 +58,12 @@ def create_game() -> object:
     """
     Create a new game and redirect to the game details.
     """
-    if not who()["is_gm"]:
+    payload = who()
+    if not payload["is_gm"]:
         abort(403)
     else:
-        # return jsonify(request.values.to_dict())
         try:
             data = request.values.to_dict()
-            print(data)
             # Create the Game object
             new_game = Game(
                 gm_id=data["gm_id"],
@@ -76,6 +75,7 @@ def create_game() -> object:
                 length=data["length"],
                 party_size=data["party_size"],
                 restriction=data["restriction"],
+                status=data["action"],
             )
             if "pregen" in data.keys():
                 new_game.pregen = data["pregen"]
@@ -85,17 +85,18 @@ def create_game() -> object:
                 new_game.party_selection = data["party_selection"]
             if "img" in data["img"]:
                 new_game.img = data["img"]
-            # Create channel and update object with channel_id
-            new_game.channel = bot.create_channel(
-                channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-                parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
-            )["id"]
-            # Create role and update object with role_id
-            permissions = "3072"
-            color = 15844367
-            new_game.role = bot.create_role(
-                role_name=new_game.name, permissions=permissions, color=color
-            )["id"]
+            if data["action"] == "open":
+                # Create channel and update object with channel_id
+                new_game.channel = bot.create_channel(
+                    channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
+                    parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+                )["id"]
+                # Create role and update object with role_id
+                permissions = "3072"
+                color = 15844367
+                new_game.role = bot.create_role(
+                    role_name=new_game.name, permissions=permissions, color=color
+                )["id"]
             # Save Game in database
             db.session.add(new_game)
             db.session.commit()
@@ -135,10 +136,14 @@ def create_game() -> object:
             }
             bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
             """
-            return jsonify({"game": new_game.id, "status": "created", "data": data})
+            return render_template(
+                "game_details.html", payload=payload, game=new_game.id, is_player=False
+            )
         except Exception as e:
             # Delete channel & role in case of error
-            abort(500)
+            bot.delete_channel(new_game.channel)
+            bot.delete_role(new_game.role)
+            abort(500, e)
 
 
 @app.route("/mes_annonces/", methods=["GET"])

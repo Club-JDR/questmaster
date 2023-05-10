@@ -15,4 +15,4 @@ def not_found(e):
 
 @app.errorhandler(500)
 def server_error(e):
-    return render_template("500.html", payload=who()), 500
+    return render_template("500.html", payload=who(), error=e), 500
