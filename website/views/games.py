@@ -112,6 +112,17 @@ def create_game() -> object:
             db.session.commit()
             if data["action"] == "open":
                 # Send embed message to Discord
+                restriction = ":red_cricle: 18+"
+                if new_game.restriction == "all":
+                    restriction = ":green_cricle: Tout public"
+                elif new_game.restriction == "16+":
+                    restriction = ":yellow_cricle: 16+"
+                if new_game.restriction_tags == None:
+                    restriction_msg = f"{new_game.restriction}"
+                else:
+                    restriction_msg = (
+                        f"{new_game.restriction}: {new_game.restriction_tags}"
+                    )
                 embed = {
                     "title": new_game.name,
                     "color": color,
@@ -136,7 +147,7 @@ def create_game() -> object:
                         {"name": "Durée", "value": new_game.length, "inline": True},
                         {
                             "name": "Avertissement",
-                            "value": f"{new_game.restriction}: {new_game.restriction_tags}",
+                            "value": restriction_msg,
                         },
                         {
                             "name": "Pour s'inscrire :",
@@ -151,7 +162,7 @@ def create_game() -> object:
                     "footer": {},
                 }
                 bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
-            return redirect(url_for('get_game_details', game_id=new_game.id))
+            return redirect(url_for("get_game_details", game_id=new_game.id))
         except Exception as e:
             # Delete channel & role in case of error
             bot.delete_channel(new_game.channel)

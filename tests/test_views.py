@@ -73,5 +73,6 @@ Nous commencerons par un OS d'introduction qui se déroulera en 1890.
     assert response.status_code == 200
     assert bytes("<h1>{}</h1>".format(game_name), encoding="UTF-8") in response.data
 
+
 def test_get_game_details(client):
     pass
