@@ -151,7 +151,7 @@ def create_game() -> object:
                         },
                         {
                             "name": "Pour s'inscrire :",
-                            "value": "Ça se passe ici : https://questmaster.club-jdr.fr/annonces/{}".format(
+                            "value": "https://questmaster.club-jdr.fr/annonces/{}".format(
                                 new_game.id
                             ),
                         },
