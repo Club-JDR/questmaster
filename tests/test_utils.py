@@ -118,11 +118,28 @@ def test_channel_workflow():
     """
     Test creating and deleting a channel
     """
+    role_name = "testrole"
+    permissions = "3072"
+    gm_id = "664487064577900594"
+    color = 15844367
+    # Role creation
+    response = client.create_role(role_name, permissions, color)
+    role_id = response["id"]
+    assert role_name == response["name"]
+    assert permissions == response["permissions"]
+    assert color == response["color"]
     channel_name = "testchannel"
     parent_id = os.environ.get("CATEGORIES_CHANNEL_ID")
     # Channel creation
-    response = client.create_channel(channel_name, parent_id)
+    response = client.create_channel(channel_name, parent_id, role_id, gm_id)
     channel_id = response["id"]
+    assert len(response["permission_overwrites"]) == 3
+    assert any(
+        role_id in permission["id"] for permission in response["permission_overwrites"]
+    )
+    assert any(
+        gm_id in permission["id"] for permission in response["permission_overwrites"]
+    )
     assert response["name"] == channel_name
     assert response["parent_id"] == parent_id
     # Channel details
@@ -132,3 +149,6 @@ def test_channel_workflow():
     # Channel deletion
     response = client.delete_channel(channel_id)
     assert response["id"] == channel_id
+    # Role deletion
+    response = client.delete_role(role_id)
+    assert response == "{}"

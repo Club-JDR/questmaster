@@ -59,8 +59,17 @@ class Discord:
             route=f"/channels/{channel_id}/messages", method="POST", payload=payload
         )
 
-    def create_channel(self, channel_name, parent_id):
-        payload = {"name": channel_name, "type": 0, "parent_id": parent_id}
+    def create_channel(self, channel_name, parent_id, role_id, gm_id):
+        payload = {
+            "name": channel_name,
+            "type": 0,
+            "parent_id": parent_id,
+            "permission_overwrites": [
+                {"id": role_id, "type": 0, "allow": "3072"},
+                {"id": self.get_role(self.guild_id)["id"], "type": 0, "deny": "1024"},
+                {"id": gm_id, "type": 1, "allow": "292057967632"},
+            ],
+        }
         return self._request(
             route=f"/guilds/{self.guild_id}/channels", method="POST", payload=payload
         )

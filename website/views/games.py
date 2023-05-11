@@ -1,5 +1,4 @@
 from flask import (
-    jsonify,
     request,
     current_app,
     render_template,
@@ -10,7 +9,8 @@ from flask import (
 from website import app, db, bot
 from website.models import Game, User, remove_archived
 from website.views.auth import who, login_required
-import re
+from datetime import datetime
+import re, yaml
 
 
 @app.route("/", methods=["GET"])
@@ -64,81 +64,94 @@ def create_game() -> object:
     else:
         try:
             data = request.values.to_dict()
+            gm_id = data["gm_id"]
             # Create the Game object
             new_game = Game(
-                gm_id=data["gm_id"],
+                gm_id=gm_id,
                 name=data["name"],
                 system=data["system"],
                 description=data["description"],
                 type=data["type"],
-                date=data["date"],
+                date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
                 length=data["length"],
                 party_size=data["party_size"],
                 restriction=data["restriction"],
                 status=data["action"],
             )
+            if "restriction_tags" in data.keys():
+                restriction_tags = ""
+                if data["restriction_tags"] != "":
+                    for item in yaml.safe_load(data["restriction_tags"]):
+                        restriction_tags += item["value"] + ", "
+                    new_game.restriction_tags = restriction_tags[:-2]
             if "pregen" in data.keys():
-                new_game.pregen = data["pregen"]
-            if "restriction_tags" in data["restriction_tags"]:
-                new_game.restriction_tags = data["restriction_tags"]
-            if "party_selection" in data["party_selection"]:
-                new_game.party_selection = data["party_selection"]
-            if "img" in data["img"]:
+                new_game.pregen = True
+            if "party_selection" in data.keys():
+                new_game.party_selection = True
+            if "img" in data.keys():
                 new_game.img = data["img"]
+            print(data)
             if data["action"] == "open":
+                # Create role and update object with role_id
+                permissions = "3072"  # view channel + send messages
+                color = 0x0D6EFD  # blue
+                if data["type"] == "oneshot":
+                    color = 0x198754  # green
+                new_game.role = bot.create_role(
+                    role_name=data["name"], permissions=permissions, color=color
+                )["id"]
                 # Create channel and update object with channel_id
                 new_game.channel = bot.create_channel(
                     channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
                     parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
-                )["id"]
-                # Create role and update object with role_id
-                permissions = "3072"
-                color = 15844367
-                new_game.role = bot.create_role(
-                    role_name=new_game.name, permissions=permissions, color=color
+                    role_id=new_game.role,
+                    gm_id=gm_id,
                 )["id"]
             # Save Game in database
             db.session.add(new_game)
             db.session.commit()
-            # Send embed message to Discord
-            """
-            embed = {
-                "title": new_game.name,
-                "color": color,
-                "fields": [
-                    {
-                        "name": "MJ",
-                        "value": new_game.gm.username,
-                        "inline": True,
+            if data["action"] == "open":
+                # Send embed message to Discord
+                embed = {
+                    "title": new_game.name,
+                    "color": color,
+                    "description": new_game.description,
+                    "fields": [
+                        {
+                            "name": "MJ",
+                            "value": new_game.gm.name,
+                            "inline": True,
+                        },
+                        {"name": "Système", "value": new_game.system, "inline": True},
+                        {
+                            "name": "Type de session",
+                            "value": new_game.type,
+                            "inline": True,
+                        },
+                        {
+                            "name": "Date",
+                            "value": new_game.date.strftime("%a %d/%m - %Hh%M"),
+                            "inline": True,
+                        },
+                        {"name": "Durée", "value": new_game.length, "inline": True},
+                        {
+                            "name": "Avertissement",
+                            "value": f"{new_game.restriction}: {new_game.restriction_tags}",
+                        },
+                        {
+                            "name": "Pour s'inscrire :",
+                            "value": "Ça se passe ici : https://questmaster.club-jdr.fr/annonces/{}".format(
+                                new_game.id
+                            ),
+                        },
+                    ],
+                    "image": {
+                        "url": new_game.img,
                     },
-                    {"name": "Système", "value": new_game.system, "inline": True},
-                    {"name": "Description", "value": new_game.description},
-                    {
-                        "name": "Avertissement",
-                        "value": f"{new_game.restriction}: {new_game.restriction_tags}",
-                    },
-                    {"name": "Type de query", "value": new_game.type, "inline": True},
-                    {
-                        "name": "Nombre de querys",
-                        "value": new_game.length,
-                        "inline": True,
-                    },
-                    {
-                        "name": "Nombre de joueur·euses",
-                        "value": f\"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}\""",
-                    },
-                    {
-                        "name": "Prétirés",
-                        "value": f\"""{"Oui" if new_game.pregen else "Non"}\""",
-                    },
-                ],
-                "footer": {},
-            }
-            bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
-            """
-            return render_template(
-                "game_details.html", payload=payload, game=new_game.id, is_player=False
-            )
+                    "footer": {},
+                }
+                bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+            return redirect(url_for('get_game_details', game_id=new_game.id))
         except Exception as e:
             # Delete channel & role in case of error
             bot.delete_channel(new_game.channel)
@@ -191,84 +204,6 @@ def my_games() -> object:
 
 
 """
-@app.route("/games/", methods=["POST"])
-def create_game() -> object:
-    data = request.get_json()
-    # Test if gm has the role or send unauthorized
-    if User.query.get(data["gm_id"]).is_gm == False:
-        return (
-            jsonify({"error": "GM doesn't have the correct role on the server."}),
-            401,
-        )
-    else:
-        try:
-            # Create the Game object
-            new_game = Game(
-                name=data["name"],
-                type=data["type"],
-                length=data["length"],
-                gm_id=data["gm_id"],
-                system=data["system"],
-                description=data["description"],
-                restriction=data["restriction"],
-                restriction_tags=data["restriction_tags"],
-                party_size=data["party_size"],
-                party_selection=data["party_selection"],
-                pregen=data["pregen"],
-            )
-            # Create channel and update object with channel_id
-            new_game.channel = bot.create_channel(
-                channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-                parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
-            )["id"]
-            # Create role and update object with role_id
-            permissions = "3072"
-            color = 15844367
-            new_game.role = bot.create_role(
-                role_name=new_game.name, permissions=permissions, color=color
-            )["id"]
-            # Save Game in database
-            db.query.add(new_game)
-            db.query.commit()
-            # Send embed message to Discord
-            embed = {
-                "title": new_game.name,
-                "color": color,
-                "fields": [
-                    {
-                        "name": "MJ",
-                        "value": new_game.gm.serialize()["username"],
-                        "inline": True,
-                    },
-                    {"name": "Système", "value": new_game.system, "inline": True},
-                    {"name": "Description", "value": new_game.description},
-                    {
-                        "name": "Avertissement",
-                        "value": f"{new_game.restriction}: {new_game.restriction_tags}",
-                    },
-                    {"name": "Type de query", "value": new_game.type, "inline": True},
-                    {
-                        "name": "Nombre de querys",
-                        "value": new_game.length,
-                        "inline": True,
-                    },
-                    {
-                        "name": "Nombre de joueur·euses",
-                        "value": f\"""{new_game.party_size}{" sur sélection" if new_game.party_selection else ""}\""",
-                    },
-                    {
-                        "name": "Prétirés",
-                        "value": f\"""{"Oui" if new_game.pregen else "Non"}\""",
-                    },
-                ],
-                "footer": {},
-            }
-            bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
-            return jsonify({"game": new_game.id, "status": "created"})
-        except Exception as e:
-            return jsonify({"error": e.args}), 500
-
-
 @app.route("/games/<game_id>", methods=["DELETE"])
 def delete_game(game_id) -> object:
     game = Game.query.get(game_id)
