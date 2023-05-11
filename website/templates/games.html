@@ -9,7 +9,7 @@
         {% for game in games|sort(attribute='date') %}
         <div class="col">
             <div class="card shadow h-100">
-                <div class="card-header {% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %} text-light">
+                <div class="card-header {% if game.status=='draft' %}bg-secondary{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
                     <h5 class="card-title text-truncate">{{ game.name }}</h5>
                 </div>
                 <img src="{{ game.img }}" class="card-img-bottom img-preview" alt="{{ game.name }}">
@@ -43,7 +43,7 @@
 
                 {% if game.restriction_tags %}{% set tags = game.restriction_tags.split(',') %}{% endif %}
                 <div class="card-footer text-center">
-                    {% if game.restriction == 'all' %}
+                    {% if game.status=='draft' %}<span class="badge text-bg-secondary">brouillon</span>{% endif %} {% if game.restriction == 'all' %}
                     <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
                     <span class="badge text-bg-warning">16+</span> {% else %}
                     <span class="badge text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge bg-secondary">{{ tag }}</span> {% endfor %}
