@@ -7,6 +7,12 @@
         <div class="col-lg-5 p-3">
             <div class="row">
                 <h4><span class="badge text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge text-bg-secondary">{{ game.system.name }}</span></h4>
+                {% if game.status == 'closed' %}
+                <h5><span class="badge text-bg-dark">Complet</span></h5>{% endif %} {% if game.status == 'draft' %}
+                <h5><span class="badge text-bg-info">Brouillon</span></h5>
+                {% endif %} {% if game.status == 'archived' %}
+                <h5><span class="badge text-bg-danger">Archivée</span></h5>
+                {% endif %}
             </div>
             <div class="row">
                 <p class="lh-lg">{{ game.description }}</p>
@@ -88,13 +94,39 @@
 <div class="row text-center">
     <div class="col align-self-center">
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
-        <div class="btn-group" role="group" aria-label="Actions du MJ">
-            <a href="/annonces/{{game.id}}/editer" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
-            <a href="/annonces/{{game.id}}/editer" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>
-            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Ajouter/supprimer une session."><i class="bi bi-calendar4-week"></i> Planifier</button>
-            <button type="button" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-title="Archiver l'annonce une fois la partie finie."><i class="bi bi-archive"></i> Archiver</button>
-        </div>
-        {% endif %}
+        <form method="post" action="/annonces/{{game.id}}/statut/">
+            <div class="btn-group" role="group" aria-label="Actions du MJ">
+                <a href="/annonces/{{game.id}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
+                <a href="/annonces/{{game.id}}/gerer/" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Ajouter/supprimer une session."><i class="bi bi-calendar4-week"></i> Planifier</button>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> {% if game.status=='open' %}
+                <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button> {% endif %}{% if game.status == 'closed'%}
+                <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button> {% endif %} {% if game.status != 'archived'
+                %}
+                <a href="/annonces/{{game.id}}/archiver/" type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</a> {% endif %}
+            </div>
+            <div class="modal fade" id="confirmArchive" tabindex="-1" aria-labelledby="confirmArchiveLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr d'avoir terminé votre partie ?</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h3><i class="bi bi-exclamation-triangle"></i></h3>
+                            <p>N'archivez votre annonce que si votre partie est terminée.</p>
+                            <p>L'archivage va supprimer le salon et le rôle lié à cette annonce.</p>
+                            <p><strong>Cette action est définitive</strong>.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" name="status" value="archived" type="button" class="btn btn-danger">Archiver</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </form>
     </div>
 </div>
 </div>

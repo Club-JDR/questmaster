@@ -236,10 +236,11 @@ def create_game() -> object:
             abort(500, e)
 
 
-@app.route("/annonces/<game_id>/editer", methods=["GET"])
+@app.route("/annonces/<game_id>/editer/", methods=["GET"])
+@login_required
 def get_game_edit_form(game_id) -> object:
     """
-    Get form to edit a new game.
+    Get form to edit a game.
     """
     payload = who()
     systems = System.query.order_by("name").all()
@@ -268,6 +269,8 @@ def edit_game(game_id) -> object:
             data = request.values.to_dict()
             gm_id = data["gm_id"]
             game = db.get_or_404(Game, game_id)
+            if game.status == "draft":
+                game.status = "open"
             post = game.status != "open" and data["action"] == "open"
             # Edit the Game object
             if game.status == "draft":
@@ -317,6 +320,29 @@ def edit_game(game_id) -> object:
                 bot.delete_channel(game.channel)
                 bot.delete_role(game.role)
             abort(500, e)
+
+
+@app.route("/annonces/<game_id>/statut/", methods=["POST"])
+@login_required
+def change_game_status(game_id) -> object:
+    """
+    Change game status and redirect to the game details.
+    """
+    payload = who()
+    try:
+        game = db.get_or_404(Game, game_id)
+        if game.gm_id != payload["user_id"]:
+            if not payload["is_admin"]:
+                abort(403)
+        status = request.values.to_dict()["status"]
+        game.status = status
+        if status == "archived":
+            bot.delete_channel(game.channel)
+            bot.delete_role(game.role)
+        db.session.commit()
+        return redirect(url_for("get_game_details", game_id=game.id))
+    except Exception as e:
+        abort(500, e)
 
 
 @app.route("/mes_annonces/", methods=["GET"])
