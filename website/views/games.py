@@ -56,9 +56,7 @@ def send_discord_embed(game):
             },
             {
                 "name": "Pour s'inscrire :",
-                "value": "https://questmaster.club-jdr.fr/annonces/{}".format(
-                    game.id
-                ),
+                "value": "https://questmaster.club-jdr.fr/annonces/{}".format(game.id),
             },
         ],
         "image": {
@@ -213,7 +211,9 @@ def create_game() -> object:
                 # Create role and update object with role_id
                 permissions = "3072"  # view channel + send messages
                 new_game.role = bot.create_role(
-                    role_name=data["name"], permissions=permissions, color=Game.COLORS[data["type"]]
+                    role_name=data["name"],
+                    permissions=permissions,
+                    color=Game.COLORS[data["type"]],
                 )["id"]
                 # Create channel and update object with channel_id
                 new_game.channel = bot.create_channel(
@@ -226,7 +226,7 @@ def create_game() -> object:
             db.session.add(new_game)
             db.session.commit()
             if data["action"] == "open":
-              send_discord_embed(new_game)                
+                send_discord_embed(new_game)
             return redirect(url_for("get_game_details", game_id=new_game.id))
         except Exception as e:
             if data["action"] == "open":
@@ -295,7 +295,9 @@ def edit_game(game_id) -> object:
                 # Create role and update object with role_id
                 permissions = "3072"  # view channel + send messages
                 game.role = bot.create_role(
-                    role_name=data["name"], permissions=permissions, color=Game.COLORS[data["type"]]
+                    role_name=data["name"],
+                    permissions=permissions,
+                    color=Game.COLORS[data["type"]],
                 )["id"]
                 # Create channel and update object with channel_id
                 game.channel = bot.create_channel(

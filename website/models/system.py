@@ -1,5 +1,6 @@
 from website import db
 
+
 class System(db.Model):
     __tablename__ = "system"
 

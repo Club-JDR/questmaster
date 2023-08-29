@@ -26,7 +26,6 @@ class Game(db.Model):
     __tablename__ = "game"
     COLORS = {"oneshot": 0x198754, "campaign": 0x0D6EFD}
 
-
     id = db.Column(db.BigInteger, primary_key=True)
     name = db.Column(db.String(), nullable=False)
     type = db.Column("type", Enum(*GAME_TYPES, name="game_type_enum"), nullable=False)

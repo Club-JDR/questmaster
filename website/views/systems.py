@@ -16,7 +16,9 @@ def list_systems():
     List all systems.
     """
     sys = System.query.all()
-    return render_template("admin.html", payload=who(), items=sys, item="systems", title="Systèmes")
+    return render_template(
+        "admin.html", payload=who(), items=sys, item="systems", title="Systèmes"
+    )
 
 
 @app.route("/systems/", methods=["POST"])

@@ -16,7 +16,9 @@ def list_vtts():
     List all VTTs.
     """
     v = Vtt.query.all()
-    return render_template("admin.html", payload=who(), items=v, item="vtts", title="Virtual TableTops")
+    return render_template(
+        "admin.html", payload=who(), items=v, item="vtts", title="Virtual TableTops"
+    )
 
 
 @app.route("/vtts/", methods=["POST"])

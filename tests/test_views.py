@@ -86,6 +86,7 @@ def test_create_vtt(client):
             if i.get("name") == config.vtt_name:
                 config.game_vtt = i.get("value")
 
+
 def test_create_game(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)

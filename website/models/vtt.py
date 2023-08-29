@@ -1,5 +1,6 @@
 from website import db
 
+
 class Vtt(db.Model):
     __tablename__ = "vtt"
 
