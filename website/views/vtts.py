@@ -6,22 +6,22 @@ from flask import (
     abort,
 )
 from website import app, db
-from website.models import System
+from website.models import Vtt
 from website.views.auth import who, login_required
 
 
-@app.route("/systems/", methods=["GET"])
-def list_systems():
+@app.route("/vtts/", methods=["GET"])
+def list_vtts():
     """
-    List all systems.
+    List all VTTs.
     """
-    sys = System.query.all()
-    return render_template("admin.html", payload=who(), items=sys, item="systems", title="Systèmes")
+    v = Vtt.query.all()
+    return render_template("admin.html", payload=who(), items=v, item="vtts", title="Virtual TableTops")
 
 
-@app.route("/systems/", methods=["POST"])
+@app.route("/vtts/", methods=["POST"])
 @login_required
-def create_system() -> object:
+def create_vtt() -> object:
     """
     Create a new system and redirect to the system list.
     """
@@ -31,20 +31,20 @@ def create_system() -> object:
     else:
         try:
             data = request.values.to_dict()
-            sys = System(name=data["name"], icon=data["icon"])
+            v = Vtt(name=data["name"], icon=data["icon"])
             # Save System in database
-            db.session.add(sys)
+            db.session.add(v)
             db.session.commit()
-            return redirect(url_for("list_systems"))
+            return redirect(url_for("list_vtts"))
         except Exception as e:
             abort(500, 2)
 
 
-@app.route("/systems/<system_id>", methods=["POST"])
+@app.route("/vtts/<vtt_id>", methods=["POST"])
 @login_required
-def edit_system(system_id) -> object:
+def edit_vtt(vtt_id) -> object:
     """
-    Edit an existing system and redirect to the system list.
+    Edit an existing VTT and redirect to the VTT list.
     """
     payload = who()
     if not payload["is_admin"]:
@@ -52,12 +52,12 @@ def edit_system(system_id) -> object:
     else:
         try:
             data = request.values.to_dict()
-            sys = db.get_or_404(System, system_id)
+            v = db.get_or_404(Vtt, vtt_id)
             # Edit the Game object
-            sys.name = data["name"]
-            sys.icon = data["icon"]
+            v.name = data["name"]
+            v.icon = data["icon"]
             # Save System in database
             db.session.commit()
-            return redirect(url_for("list_systems"))
+            return redirect(url_for("list_vtts"))
         except Exception as e:
             abort(500, 2)

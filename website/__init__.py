@@ -45,4 +45,4 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 
 # API import
-from website.views import auth, health, games, systems, filters, errors
+from website.views import auth, health, games, systems, vtts, filters, errors

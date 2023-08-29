@@ -32,6 +32,7 @@ class Game(db.Model):
     length = db.Column(db.String(), nullable=False)
     gm_id = db.Column(db.String(), db.ForeignKey("user.id"), nullable=False)
     system_id = db.Column(db.Integer(), db.ForeignKey("system.id"), nullable=False)
+    vtt_id = db.Column(db.Integer(), db.ForeignKey("vtt.id"), nullable=True)
     description = db.Column(db.Text(), nullable=False)
     restriction = db.Column(
         "restriction", Enum(*RESTRICTIONS, name="restriction_enum"), nullable=False

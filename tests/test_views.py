@@ -67,6 +67,25 @@ def test_create_system(client):
                 config.game_system = i.get("value")
 
 
+def test_create_vtt(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    data = {"name": config.vtt_name, "icon": config.vtt_icon}
+    response = client.post("/vtts/", data=data, follow_redirects=True)
+    assert response.status_code == 403  # Fails because not Admin
+    with client.session_transaction() as session:
+        session["is_admin"] = True
+    response = client.post("/vtts/", data=data, follow_redirects=True)
+    assert response.status_code == 200
+    assert bytes("{}".format(config.sys_name), encoding="UTF-8") in response.data
+    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
+    for form in BeautifulSoup(response.data.decode("utf-8"), "html.parser").find_all(
+        "form"
+    ):
+        for i in form.find_all("input"):
+            if i.get("name") == config.vtt_name:
+                config.game_vtt = i.get("value")
+
 def test_create_game(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)

@@ -1,8 +1,7 @@
 import json, os
-from website.models import Game, User, System, remove_archived
+from website.models import Game, User, System, Vtt, remove_archived
 
 users = json.loads(os.environ.get("USER_ID_LIST"))
-
 
 def test_systems():
     name = "D&D 5E"
@@ -10,8 +9,13 @@ def test_systems():
     system = System(name=name, icon=icon)
     assert system.name == name
     assert system.icon == icon
-    print(system.id)
 
+def test_vtts():
+    name = "Foundry"
+    icon = "https://foundryvtt.wiki/fvtt-solid-512.png"
+    vtt = Vtt(name=name, icon=icon)
+    assert vtt.name == name
+    assert vtt.icon == icon
 
 def test_games():
     game_name = "Baldur's Gate: Descent into Avernus"

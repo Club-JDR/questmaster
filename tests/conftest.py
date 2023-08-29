@@ -10,8 +10,11 @@ class TestConfig:
     gm_id = "664487064577900594"
     user_id = "267928135419297792"
     game_system = 1
-    sys_name = "Cthulhu Brown"
+    game_vtt = 1
+    sys_name = "Cthulhu Hack"
     sys_icon = "https://club-jdr.fr/wp-content/uploads/2021/12/hack.png"
+    vtt_name = "Foundry"
+    vtt_icon = "https://foundryvtt.wiki/fvtt-solid-512.png"
     game_id = 1
     game_name = "La ville en jaune"
     game_type = "campaign"

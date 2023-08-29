@@ -1,44 +1,44 @@
 {% extends 'base.html' %} {% block title %}{{ title }}{% endblock %} {% block content %}
 
-<h1>Systèmes</h1>
+<h1>{{ title }}</h1>
 <div class="row py-4">
-    {% if systems|length == 0 %}
-    <p>Aucun système.</p>
-    {% else %} {% for system in systems|sort(attribute='name') %}
+    {% if items|length == 0 %}
+    <p>Aucun {{title}}.</p>
+    {% else %} {% for i in items|sort(attribute='name') %}
     <div class="row">
-        <form method="post" action="/systems/{{ system.id }}" class="row needs-validation" novalidate>
+        <form method="post" action="/{{ item }}/{{ i.id }}" class="row needs-validation" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="{{ system.name }}" value="{{ system.id }}">
+            <input type="hidden" name="{{ i.name }}" value="{{ i.id }}">
             <div class="input-group mb-3">
                 <span class="input-group-text" id="name">Nom : </span>
-                <input type="text" class="form-control" name="name" placeholder="Nom du système" aria-label="Nom" aria-describedby="name" value="{{ system.name }}">
+                <input type="text" class="form-control" name="name" placeholder="Nom" aria-label="Nom" aria-describedby="name" value="{{ i.name }}">
                 <span class="input-group-text" id="icon">Illustration : </span>
-                <input type="text" class="form-control" name="icon" placeholder="URL du logo du système" aria-label="Icon" aria-describedby="icon" {% if system.icon %}value="{{ system.icon }}" {% endif %}>
+                <input type="text" class="form-control" name="icon" placeholder="URL du logo" aria-label="Icon" aria-describedby="icon" {% if i.icon %}value="{{ i.icon }}" {% endif %}>
                 <button class="btn btn-success" type="submit">Enregistrer</button>
             </div>
         </form>
     </div>
     {% endfor %} {% endif %}
     <div class="row">
-        <div class="modal fade" id="addSystemModal" tabindex="-1" aria-labelledby="addSystemModal" aria-hidden="true">
+        <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModal" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5">Nouveau Système</h1>
+                        <h1 class="modal-title fs-5">Nouveau {{ title }}</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="input-group mb-2">
                             <div class="form-floating">
-                                <form method="post" action="/systems/" class="row needs-validation" novalidate>
+                                <form method="post" action="/{{ item }}/" class="row needs-validation" novalidate>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="name">Nom : </span>
-                                        <input type="text" class="form-control" name="name" placeholder="Nom du système" aria-label="Nom" aria-describedby="name">
+                                        <input type="text" class="form-control" name="name" placeholder="Nom" aria-label="Nom" aria-describedby="name">
                                     </div>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="icon">Illustration : </span>
-                                        <input type="text" class="form-control" name="icon" placeholder="URL du logo du système" aria-label="Icon" aria-describedby="icon">
+                                        <input type="text" class="form-control" name="icon" placeholder="URL du logo" aria-label="Icon" aria-describedby="icon">
                                     </div>
                                     <button class="btn btn-success" type="submit">Enregistrer</button>
                                 </form>
@@ -52,7 +52,7 @@
             </div>
         </div>
         <div class="justify-content-md-end d-grid p-4">
-            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#addSystemModal">Nouveau Système</button>
+            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#addItemModal">Ajouter</button>
         </div>
     </div>
 </div>
