@@ -173,7 +173,9 @@ def get_game_form() -> object:
     vtts = Vtt.query.order_by("name").all()
     if not payload["is_gm"]:
         abort(403)
-    return render_template("game_form.html", payload=payload, systems=systems, vtts=vtts)
+    return render_template(
+        "game_form.html", payload=payload, systems=systems, vtts=vtts
+    )
 
 
 @app.route("/annonce/", methods=["POST"])
@@ -294,7 +296,7 @@ def edit_game(game_id) -> object:
                 game.name = data["name"]
                 game.type = data["type"]
             game.system_id = data["system"]
-            game.vtt_id = vtt,
+            game.vtt_id = (vtt,)
             game.description = data["description"]
             game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
             game.length = data["length"]

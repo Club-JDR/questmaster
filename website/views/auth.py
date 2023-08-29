@@ -66,7 +66,7 @@ def callback():
     if current_app.discord.authorized:
         uid = current_app.discord.fetch_user().id
         try:
-          user = db.get_or_404(User, str(uid))
+            user = db.get_or_404(User, str(uid))
         except Exception as e:
             user = User(id=str(uid))
             db.session.add(user)
