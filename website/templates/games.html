@@ -11,13 +11,13 @@
     <div class="p-4">
         <form class="d-container-fluid" role="search" method="get" action="/annonces/">
             <div class="row">
-                <div class="col-sm-6 pb-2">
+                <div class="col-sm-4 pb-2">
                     <div class="input-group me-2">
                         <span class="input-group-text" id="name">Nom</span>
                         <input type="text" class="form-control" placeholder="Nom de l'annonce" aria-label="name" aria-describedby="name" name="name" {% if request.args.get( 'name') %}value="{{ request.args.get('name') }}" {% endif %}>
                     </div>
                 </div>
-                <div class="col-sm-6 pb-2">
+                <div class="col-sm-4 pb-2">
                     <div class="input-group me-2">
                         <span class="input-group-text" id="system">Système</span>
                         <select class="form-select" name="system" aria-describedby="Système">
@@ -26,6 +26,17 @@
                         <option value="{{ s.id }}" {% if request.args.get('system')|int == s.id %}selected{% endif %}>{{ s.name }}</option>
                         {% endfor %}
                     </select>
+                    </div>
+                </div>
+                <div class="col-sm-4 pb-2">
+                    <div class="input-group me-2">
+                        <span class="input-group-text" id="vtt">VTT</span>
+                        <select class="form-select" name="vtt" aria-describedby="VTT">
+                      <option value="None"></option>
+                      {% for v in vtts %}
+                      <option value="{{ v.id }}" {% if request.args.get('vtt')|int == v.id %}selected{% endif %}>{{ v.name }}</option>
+                      {% endfor %}
+                  </select>
                     </div>
                 </div>
             </div>
