@@ -112,6 +112,8 @@ def test_create_game(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
     response = client.post("/annonce/", data=data, follow_redirects=True)
+    # Get game id from url
+    config.game_id = response.request.path.split("/")[-2]
     assert response.status_code == 200
     assert (
         bytes("<h1>{}</h1>".format(config.game_name), encoding="UTF-8") in response.data
@@ -122,8 +124,6 @@ def test_create_game(client):
 def get_game_details(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
-    # Get game id from url
-    config.game_id = response.request.path.split("/")[-2]
     # GET GAME DETAILS AS GAME GM
     response = client.get("/annonces/{}/".format(config.game_id))
     assert response.status_code == 200
