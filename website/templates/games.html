@@ -1,15 +1,89 @@
 {% extends 'base.html' %} {% block title %}{{ title }}{% endblock %} {% block content %}
-
 <h1>{{ title }}</h1>
+{% if request.path == '/' or request.path == '/annonces/' %}
+<nav class="navbar bg-body-tertiary">
+    <div class="container-fluid">
+        <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-controls="searchBar" aria-expanded="false" aria-label="Toggle search">Recherche avancée
+  </button>
+    </div>
+</nav>
+<div class="collapse" id="searchBar">
+    <div class="p-4">
+        <form class="d-container-fluid" role="search" method="get" action="/annonces/">
+            <div class="row">
+                <div class="col-sm-6 pb-2">
+                    <div class="input-group me-2">
+                        <span class="input-group-text" id="name">Nom</span>
+                        <input type="text" class="form-control" placeholder="Nom de l'annonce" aria-label="name" aria-describedby="name" name="name">
+                    </div>
+                </div>
+                <div class="col-sm-6 pb-2">
+                    <div class="input-group me-2">
+                        <span class="input-group-text" id="system">Système</span>
+                        <select class="form-select" name="system" aria-describedby="Système">
+                        <option selected></option>
+                        {% for s in systems %}
+                        <option value="{{ s.id }}" {% if game and game.system_id == s.id%}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 pb-2">
+                    <div class="btn-group me-2">
+                        <input type="checkbox" class="btn-check" id="oneshot" autocomplete="off" name="oneshot" checked>
+                        <label class="btn btn-sm btn-outline-success" for="oneshot">Oneshots</label>
+                        <input type="checkbox" class="btn-check" id="campaign" autocomplete="off" name="campaign" checked>
+                        <label class="btn btn-sm btn-outline-primary" for="campaign">Campagnes</label>
+                    </div>
+                </div>
+                <div class="col-sm-4 pb-2">
+                    <div class="btn-group me-2">
+                        <input type="checkbox" class="btn-check" id="open" autocomplete="off" name="open" checked>
+                        <label class="btn btn-sm btn-outline-secondary" for="open">Ouvertes</label>
+                        <input type="checkbox" class="btn-check" id="closed" autocomplete="off" name="closed">
+                        <label class="btn btn-sm btn-outline-secondary" for="closed">Complètes</label>
+                        <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived">
+                        <label class="btn btn-sm btn-outline-secondary" for="archived">Archivées</label>
+                        <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft">
+                        <label class="btn btn-sm btn-outline-secondary" for="draft">Brouillons</label>
+                    </div>
+                </div>
+                <div class="col-sm-3 pb-2">
+                    <div class="btn-group me-2">
+                        <input type="checkbox" class="btn-check" id="all" autocomplete="off" name="all" checked>
+                        <label class="btn btn-sm btn-outline-success" for="all">Tout public</label>
+                        <input type="checkbox" class="btn-check" id="16+" autocomplete="off" name="16+" checked>
+                        <label class="btn btn-sm btn-outline-warning" for="16+">16+</label>
+                        <input type="checkbox" class="btn-check" id="18+" autocomplete="off" name="18+" checked>
+                        <label class="btn btn-sm btn-outline-danger" for="18+">18+</label>
+                    </div>
+                </div>
+                <div class="col-sm-2 pb-2 d-grid">
+                    <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %} {% if prev_url or next_url %}
+<nav class="navbar bg-body-tertiary fixed-bottom justify-content-center">
+    <div class="btn-group" role="group">
+        <a class="btn btn-outline-secondary {% if not prev_url %}disabled{% endif %}" href="{{ prev_url }}" aria-label="Previous">Annonces précédentes</a>
+        <a class="btn btn-outline-secondary {% if not next_url %}disabled{% endif %}" href="{{ next_url }}" aria-label="Previous">Annonces suivantes</a>
+    </div>
+</nav>
+{% endif %}
 <div class="row gy-5 p-4">
     {% if games|length == 0 %}
     <p>Vous n'avez pas d'annonce correspondant.</p>
     {% else %}
     <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for game in games|sort(attribute='date') %}
+        {% for game in games %}
         <div class="col">
             <div class="card shadow h-100">
-                <div class="card-header {% if game.status=='draft' %}bg-secondary{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
+                <div class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
                     <h5 class="card-title text-truncate">{{ game.name }}</h5>
                 </div>
                 <img src="{{ game.img }}" class="card-img-bottom img-preview" alt="{{ game.name }}">
@@ -19,7 +93,7 @@
                             <i class="bi bi-book"></i>&nbsp; {% if game.type=='campaign' %}Campagne{% else %}One Shot{% endif %}
                         </div>
                         <div class="col-6">
-                            <i class="bi bi-joystick"></i>&nbsp; {{ game.system }}
+                            <i class="bi bi-joystick"></i>&nbsp; {{ game.system.name }}
                         </div>
                     </div>
                     <div class="row">

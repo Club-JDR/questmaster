@@ -54,7 +54,7 @@ def logout():
     """
     session.clear()
     current_app.discord.revoke()
-    return redirect(url_for("open_games"))
+    return redirect(url_for("search_games"))
 
 
 @app.route("/callback/")
@@ -75,4 +75,4 @@ def callback():
         session["avatar"] = user.avatar
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
-    return redirect(url_for("open_games"))
+    return redirect(url_for("search_games"))

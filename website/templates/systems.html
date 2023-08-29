@@ -1,0 +1,59 @@
+{% extends 'base.html' %} {% block title %}{{ title }}{% endblock %} {% block content %}
+
+<h1>Systèmes</h1>
+<div class="row py-4">
+    {% if systems|length == 0 %}
+    <p>Aucun système.</p>
+    {% else %} {% for system in systems|sort(attribute='name') %}
+    <div class="row">
+        <form method="post" action="/systems/{{ system.id }}" class="row needs-validation" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="{{ system.name }}" value="{{ system.id }}">
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="name">Nom : </span>
+                <input type="text" class="form-control" name="name" placeholder="Nom du système" aria-label="Nom" aria-describedby="name" value="{{ system.name }}">
+                <span class="input-group-text" id="icon">Illustration : </span>
+                <input type="text" class="form-control" name="icon" placeholder="URL du logo du système" aria-label="Icon" aria-describedby="icon" {% if system.icon %}value="{{ system.icon }}" {% endif %}>
+                <button class="btn btn-success" type="submit">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+    {% endfor %} {% endif %}
+    <div class="row">
+        <div class="modal fade" id="addSystemModal" tabindex="-1" aria-labelledby="addSystemModal" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Nouveau Système</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-2">
+                            <div class="form-floating">
+                                <form method="post" action="/systems/" class="row needs-validation" novalidate>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="name">Nom : </span>
+                                        <input type="text" class="form-control" name="name" placeholder="Nom du système" aria-label="Nom" aria-describedby="name">
+                                    </div>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="icon">Illustration : </span>
+                                        <input type="text" class="form-control" name="icon" placeholder="URL du logo du système" aria-label="Icon" aria-describedby="icon">
+                                    </div>
+                                    <button class="btn btn-success" type="submit">Enregistrer</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <p>Vous pouvez utiliser <a href="https://imgur.com/upload" target="_blank" rel="noopener">imgur</a> pour uploader vos propres images. Ensuite, faites un clic-droit sur l'image puis "Copier le lien de l'image".</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="justify-content-md-end d-grid p-4">
+            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#addSystemModal">Nouveau Système</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

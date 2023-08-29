@@ -7,20 +7,85 @@ from flask import (
     abort,
 )
 from website import app, db, bot
-from website.models import Game, User, remove_archived
+from website.models import Game, User, System, remove_archived
 from website.views.auth import who, login_required
 from datetime import datetime
 import re, yaml
 
 
+GAMES_PER_PAGE = 12
+
+
 @app.route("/", methods=["GET"])
-def open_games():
+@app.route("/annonces/", methods=["GET"])
+def search_games():
     """
-    List all open games.
+    Search games.
     """
-    games = Game.query.filter_by(status="open").all()
+    status = []
+    type = []
+    restriction = []
+    request_args = {}
+    name = request.args.get("name", type=str)
+    if name:
+        request_args["name"] = name
+    system = request.args.get("system", type=int)
+    if system:
+        request_args["system"] = system
+    for s in ["open", "closed", "archived", "draft"]:
+        if request.args.get(s, type=bool):
+            status.append(s)
+            request_args[s] = "on"
+    # default status if unset
+    if len(status) == 0:
+        status = ["open"]
+    for t in ["oneshot", "campaign"]:
+        if request.args.get(t, type=bool):
+            type.append(t)
+            request_args[t] = "on"
+    # default type if unset
+    if len(type) == 0:
+        type = ["oneshot", "campaign"]
+    for r in ["all", "16+", "18+"]:
+        if request.args.get(r, type=bool):
+            restriction.append(r)
+            request_args[r] = "on"
+    # default restriction if unset
+    if len(restriction) == 0:
+        restriction = ["all", "16+", "18+"]
+    queries = [
+        Game.status.in_(status),
+        Game.restriction.in_(restriction),
+        Game.type.in_(type),
+    ]
+    if name:
+        queries.append(Game.name.ilike("%{}%".format(name)))
+    if system:
+        queries.append(Game.system_id == system)
+    page = request.args.get("page", 1, type=int)
+    games = (
+        Game.query.filter(*queries)
+        .order_by(Game.date)
+        .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
+    )
+    next_url = (
+        url_for("search_games", page=games.next_num, **request_args)
+        if games.has_next
+        else None
+    )
+    prev_url = (
+        url_for("search_games", page=games.prev_num, **request_args)
+        if games.has_prev
+        else None
+    )
     return render_template(
-        "games.html", payload=who(), games=games, title="Les annonces en cours"
+        "games.html",
+        payload=who(),
+        games=games.items,
+        title="Annonces",
+        next_url=next_url,
+        prev_url=prev_url,
+        systems=System.query.order_by("name").all(),
     )
 
 
@@ -47,9 +112,10 @@ def get_game_form() -> object:
     Get form to create a new game.
     """
     payload = who()
+    systems = System.query.order_by("name").all()
     if not payload["is_gm"]:
         abort(403)
-    return render_template("game_form.html", payload=payload)
+    return render_template("game_form.html", payload=payload, systems=systems)
 
 
 @app.route("/annonce/", methods=["POST"])
@@ -59,7 +125,7 @@ def create_game() -> object:
     Create a new game and redirect to the game details.
     """
     payload = who()
-    if not payload["is_gm"]:
+    if not payload["is_gm"] and not payload["is_admin"]:
         abort(403)
     else:
         try:
@@ -69,7 +135,7 @@ def create_game() -> object:
             new_game = Game(
                 gm_id=gm_id,
                 name=data["name"],
-                system=data["system"],
+                system_id=data["system"],
                 description=data["description"],
                 type=data["type"],
                 date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
@@ -90,7 +156,6 @@ def create_game() -> object:
                 new_game.party_selection = True
             if "img" in data.keys():
                 new_game.img = data["img"]
-            print(data)
             if data["action"] == "open":
                 # Create role and update object with role_id
                 permissions = "3072"  # view channel + send messages
@@ -120,20 +185,21 @@ def create_game() -> object:
                 if new_game.restriction_tags == None:
                     restriction_msg = f"{new_game.restriction}"
                 else:
-                    restriction_msg = (
-                        f"{new_game.restriction}: {new_game.restriction_tags}"
-                    )
+                    restriction_msg = f"{restriction}: {new_game.restriction_tags}"
                 embed = {
                     "title": new_game.name,
                     "color": color,
-                    "description": new_game.description,
                     "fields": [
                         {
                             "name": "MJ",
                             "value": new_game.gm.name,
                             "inline": True,
                         },
-                        {"name": "Système", "value": new_game.system, "inline": True},
+                        {
+                            "name": "Système",
+                            "value": new_game.system.name,
+                            "inline": True,
+                        },
                         {
                             "name": "Type de session",
                             "value": new_game.type,
@@ -164,9 +230,141 @@ def create_game() -> object:
                 bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
             return redirect(url_for("get_game_details", game_id=new_game.id))
         except Exception as e:
-            # Delete channel & role in case of error
-            bot.delete_channel(new_game.channel)
-            bot.delete_role(new_game.role)
+            if data["action"] == "open":
+                # Delete channel & role in case of error on post
+                bot.delete_channel(new_game.channel)
+                bot.delete_role(new_game.role)
+            abort(500, e)
+
+
+@app.route("/annonces/<game_id>/editer", methods=["GET"])
+def get_game_edit_form(game_id) -> object:
+    """
+    Get form to edit a new game.
+    """
+    payload = who()
+    systems = System.query.order_by("name").all()
+    if not payload["is_gm"]:
+        abort(403)
+    game = db.get_or_404(Game, game_id)
+    if payload["user_id"] != game.gm.id:
+        if not payload["is_admin"]:
+            abort(403)
+    return render_template(
+        "game_form.html", payload=payload, game=game, systems=systems
+    )
+
+
+@app.route("/annonces/<game_id>/editer/", methods=["POST"])
+@login_required
+def edit_game(game_id) -> object:
+    """
+    Edit an existing game and redirect to the game details.
+    """
+    payload = who()
+    if not payload["is_gm"] or not payload["is_admin"]:
+        abort(403)
+    else:
+        try:
+            data = request.values.to_dict()
+            gm_id = data["gm_id"]
+            game = db.get_or_404(Game, game_id)
+            post = game.status != "open" and data["action"] == "open"
+            # Edit the Game object
+            if game.status == "draft":
+                game.name = data["name"]
+                game.type = data["type"]
+            game.system_id = data["system"]
+            game.description = data["description"]
+            game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
+            game.length = data["length"]
+            game.party_size = data["party_size"]
+            game.restriction = data["restriction"]
+            if "restriction_tags" in data.keys():
+                restriction_tags = ""
+                if data["restriction_tags"] != "":
+                    for item in yaml.safe_load(data["restriction_tags"]):
+                        restriction_tags += item["value"] + ", "
+                    game.restriction_tags = restriction_tags[:-2]
+            if "pregen" in data.keys():
+                game.pregen = True
+            if "party_selection" in data.keys():
+                game.party_selection = True
+            if "img" in data.keys():
+                game.img = data["img"]
+            if post:
+                # Create role and update object with role_id
+                permissions = "3072"  # view channel + send messages
+                color = 0x0D6EFD  # blue
+                if data["type"] == "oneshot":
+                    color = 0x198754  # green
+                game.role = bot.create_role(
+                    role_name=data["name"], permissions=permissions, color=color
+                )["id"]
+                # Create channel and update object with channel_id
+                game.channel = bot.create_channel(
+                    channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
+                    parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+                    role_id=game.role,
+                    gm_id=gm_id,
+                )["id"]
+            # Save Game in database
+            db.session.commit()
+            if post:
+                # Send embed message to Discord
+                restriction = ":red_circle: 18+"
+                if game.restriction == "all":
+                    restriction = ":green_circle: Tout public"
+                elif game.restriction == "16+":
+                    restriction = ":yellow_circle: 16+"
+                if game.restriction_tags == None:
+                    restriction_msg = f"{game.restriction}"
+                else:
+                    restriction_msg = f"{restriction}: {game.restriction_tags}"
+                embed = {
+                    "title": game.name,
+                    "color": color,
+                    "fields": [
+                        {
+                            "name": "MJ",
+                            "value": game.gm.name,
+                            "inline": True,
+                        },
+                        {"name": "Système", "value": game.system.name, "inline": True},
+                        {
+                            "name": "Type de session",
+                            "value": game.type,
+                            "inline": True,
+                        },
+                        {
+                            "name": "Date",
+                            "value": game.date.strftime("%a %d/%m - %Hh%M"),
+                            "inline": True,
+                        },
+                        {"name": "Durée", "value": game.length, "inline": True},
+                        {
+                            "name": "Avertissement",
+                            "value": restriction_msg,
+                        },
+                        {
+                            "name": "Pour s'inscrire :",
+                            "value": "https://questmaster.club-jdr.fr/annonces/{}".format(
+                                game.id
+                            ),
+                        },
+                    ],
+                    "image": {
+                        "url": game.img,
+                    },
+                    "footer": {},
+                }
+                bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+            return redirect(url_for("get_game_details", game_id=game.id))
+        except Exception as e:
+            if post:
+                # Delete channel & role in case of error on post
+                bot.delete_channel(game.channel)
+                bot.delete_role(game.role)
             abort(500, e)
 
 

@@ -1,14 +1,13 @@
 {% extends 'base.html' %} {% block head %} {{ super() }}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha256-GzSkJVLJbxDk36qko2cnawOGiqz/Y8GsQv/jMTUrx1Q=" crossorigin="anonymous">
-<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplemde@1.11.2/dist/simplemde.min.css" integrity="sha256-Is0XNfNX8KF/70J2nv8Qe6BWyiXrtFxKfJBHoDgNAEM=" crossorigin="anonymous"> {% endblock %} {% block title %}Poster une annonce{% endblock %} {% block content %}
-<h1>Nouvelle annonce</h1>
-<form method="post" action="/annonce/" class="row needs-validation" novalidate>
+<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" /> {% endblock %} {% block content %}
+<h1>{% if game %}Éditer l'{% else %}Nouvelle {% endif%}annonce</h1>
+<form method="post" action="{% if game %}/annonces/{{ game.id }}/editer/{% else %}/annonce/{% endif %}" class="row needs-validation" novalidate>
     <div class="col-lg-5 p-3">
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="name" class="form-label"><strong>Nom :</strong></label>
-                <input type="text" class="form-control" name="name" aria-describedby="Nom" autocomplete="off" required>
+                <input type="text" class="form-control" name="name" aria-describedby="Nom" autocomplete="off" {% if game %}value="{{game.name}}" {% if game.status !="draft" %}disabled{% endif%}{% endif %} required>
                 <div class="invalid-feedback">
                     Vous devez choisir un nom pour votre annonce.
                 </div>
@@ -17,7 +16,12 @@
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="system" class="form-label"><strong>Système :</strong></label>
-                <input type="text" class="form-control" name="system" aria-describedby="Système" required>
+                <select class="form-select" name="system" aria-describedby="Système" required>
+                  <option value="" selected></option>
+                  {% for s in systems %}
+                  <option value="{{ s.id }}" {% if game and game.system_id == s.id%}selected{% endif %}>{{ s.name }}</option>
+                  {% endfor %}
+                </select>
                 <div class="invalid-feedback">
                     Vous devez choisir un système de jeu.
                 </div>
@@ -26,12 +30,9 @@
         <div class="row">
             <div class="mb-2 w-75">
                 <label for="description" class="form-label"><strong>Description :</strong></label>
-                <textarea class="form-control" name="description" id="md-edit" rows="14" spellcheck="true" required></textarea>
+                <textarea class="form-control" name="description" id="md-edit" rows="14" spellcheck="true" required>{% if game %}{{game.description}}{% endif %}</textarea>
                 <div class="invalid-feedback">
                     Vous devez entrer une description.
-                </div>
-                <div id="descHelp" class="form-text">Vous pouvez utiliser la syntaxe
-                    <a href="https://docs.framasoft.org/fr/grav/markdown.html" target="_blank" rel="noopener">Markdown</a> pour la description.
                 </div>
             </div>
         </div>
@@ -41,9 +42,9 @@
             <div class="mb-2">
                 <label for="type" class="form-label"><strong>Type de session :</strong></label>
                 <div class="mb-2">
-                    <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" checked>
+                    <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" %}disabled{% endif%} {% else %}checked{%endif%}>
                     <label class="btn btn-outline-success btn-sm" for="oneshot">One Shot</label>
-                    <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off">
+                    <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off" {% if game %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" %}disabled{% endif%}{%endif%}{% endif %}>
                     <label class="btn btn-outline-primary btn-sm" for="campaign">Campagne</label>
                 </div>
             </div>
@@ -51,7 +52,7 @@
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="date" class="form-label"><strong>Date :</strong></label>
-                <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" required>
+                <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" {% if game %}value="{{game.date}}" {% endif %}required>
                 <div class="invalid-feedback">
                     Vous devez entrer une date.
                 </div>
@@ -62,13 +63,13 @@
                 <label for="length" class="form-label"><strong>Durée :</strong></label>
                 <div class="input-group mb-3">
                     <select class="form-select" aria-label="Durée" name="length" required>
-                    <option value="1 session" selected>1</option>
-                    <option value="2 sessions">2</option>
-                    <option value="3 sessions">3</option>
-                    <option value="~5 sessions">~5</option>
-                    <option value="~10 sessions">~10</option>
-                    <option value="10+ sessions">10+</option>
-                    <option value="20+ sessions">20+</option>
+                    <option value="1 session" {% if game and game.length == '1 session' %}checked{% endif %}>1</option>
+                    <option value="2 sessions" {% if game and game.length == '2 sessions' %}checked{% endif %}>2</option>
+                    <option value="3 sessions" {% if game and game.length == '3 sessions' %}checked{% endif %}>3</option>
+                    <option value="~5 sessions" {% if game and game.length == '~5 sessions' %}checked{% endif %}>5</option>
+                    <option value="~10 sessions" {% if game and game.length == '~10 sessions' %}checked{% endif %}>~10</option>
+                    <option value="10+ sessions" {% if game and game.length == '10+ sessions' %}checked{% endif %}>10+</option>
+                    <option value="20+ sessions" {% if game and game.length == '20+ sessions' %}checked{% endif %}>20+</option>
                   </select>
                     <label class="input-group-text" for="length">session(s)</label>
                 </div>
@@ -80,7 +81,7 @@
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="party_size" class="form-label"><strong>Nombre de joueur·euses :</strong></label>
-                <input type="number" step="1" max="99" value="4" name="party_size" class="form-control" required>
+                <input type="number" step="1" max="99" name="party_size" class="form-control" {% if game %}value="{{game.party_size}}" {% else %}value="4" {% endif %}required>
                 <div class="invalid-feedback">
                     Vous devez entrer un nombre de joueur·euses.
                 </div>
@@ -89,18 +90,18 @@
         <div class="row">
             <label for="restriction" class="form-label"><strong>Avertissement :</strong></label>
             <div class="mb-2">
-                <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" checked>
+                <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" {% if game %}{% if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
                 <label class="btn btn-outline-success btn-sm" for="all">Tout public</label>
-                <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off">
+                <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off" {% if game and game.restriction=='16+' %}checked{% endif %}>
                 <label class="btn btn-outline-warning btn-sm" for="16">16+</label>
-                <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off">
+                <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off" {% if game and game.restriction=='18+' %}checked{% endif %}>
                 <label class="btn btn-outline-danger btn-sm" for="18">18+</label>
             </div>
         </div>
         <div class="row">
             <div class="mb-2 w-75">
                 <label for="restriction_tags" class="form-label"><strong>Thèmes choquants :</strong></label>
-                <textarea class="form-control" name="restriction_tags" id="restriction_tags" rows="2" aria-describedby="RestrictionTags"></textarea>
+                <textarea class="form-control" name="restriction_tags" id="restriction_tags" rows="2" aria-describedby="RestrictionTags">{% if game and game.restriction_tags is not none %}{{game.restriction_tags}}{% endif %}</textarea>
                 <div id="tagsHelp" class="form-text">Séparer chaque thème par une virgule.</div>
             </div>
         </div>
@@ -108,11 +109,11 @@
             <div class="mb-2">
                 <label class="form-label"><strong>Options :</strong></label>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" name="pregen">
+                    <input class="form-check-input" type="checkbox" role="switch" name="pregen" {% if game and game.pregen %}checked{% endif %}>
                     <label class="form-check-label" for="pregen">Prétirés</label>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" name="party_selection">
+                    <input class="form-check-input" type="checkbox" role="switch" name="party_selection" {% if game and game.party_selection %}checked{% endif %}>
                     <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
                 </div>
             </div>
@@ -120,7 +121,7 @@
     </div>
     <div class="col-lg-3 p-3">
         <div class="row">
-            <div class="figure"><img id="imgPreview" alt="placeholder" src="/static/img/placeholder.jpeg" class="figure-img img-fluid rounded img-preview" onerror="this.src='/static/img/placeholder.jpeg'"></div>
+            <div class="figure"><img id="imgPreview" alt="placeholder" src="{% if game and game.img %}{{ game.img }}{% else %}/static/img/placeholder.jpeg{% endif %}" class="figure-img img-fluid rounded img-preview" onerror="this.src='/static/img/placeholder.jpeg'"></div>
             <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadImageModal" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -131,7 +132,7 @@
                         <div class="modal-body">
                             <div class="input-group mb-2">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="imgLink" name="img">
+                                    <input type="text" class="form-control" id="imgLink" name="img" {% if game and game.img %}value="{{ game.img }}" {% endif %}>
                                     <label for="imgLink" class="form-label">Lien vers l'image :</label>
                                 </div>
                                 <button id="imgSelect" type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-label="Close">Choisir</button>
@@ -150,18 +151,18 @@
         <div class="row pt-2 mx-auto">
             <button type="submit" name="action" value="draft" class="btn btn-secondary">Enregistrer</button>
         </div>
+        {% if not game or game.status == 'draft' %}
         <div class="row pt-2 mx-auto">
             <button type="submit" name="action" value="open" class="btn btn-primary">Publier</button>
-        </div>
+        </div>{% elif game.status != 'open' %} {% endif %}
     </div>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="gm_id" value="{{ payload['user_id'] }}">
+    <input type="hidden" name="gm_id" value="{% if game %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
 </form>
 
 {% endblock %} {% block scripts %} {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.17.8/dist/tagify.min.js" integrity="sha256-cBY/Uc7f5GDeWDnEKtUMG00AZdN2Iwp6LqslivKpm2M=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js" integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/simplemde@1.11.2/dist/simplemde.min.js" integrity="sha256-6sZs7OGP0Uzcl7UDsLaNsy1K0KTZx1+6yEVrRJMn2IM=" crossorigin="anonymous"></script>
 <script src="/static/js/game-form.js"></script>
 {% endblock %}

@@ -31,15 +31,21 @@
             <a class="navbar-brand title" href="/">
                 <img src="https://club-jdr.fr/wp-content/uploads/2022/08/cropped-club-jdr-white.png" alt="Club JDR" height="50"> QuestMaster
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="nav justify-content-end ms-auto">
+                    <li class="nav-item d-flex">
+                        <form class="d-flex" role="search" method="get" action="/annonces/">
+                            <input class="form-control" type="search" placeholder="Recherche simple" aria-label="Search" name="name">
+                            <button class="btn btn-outline-success ms-2" type="submit">Rechercher</button>
+                        </form>
+                    </li>
                     <li class="nav-item dropdown">
                         <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" data-bs-toggle="dropdown" data-bs-display="static">
                           <svg class="bi my-1 theme-icon-active"><use href="#sun-fill"></use></svg>
-                          <span class="d-lg-none ms-2" id="bd-theme-text">Toggle theme</span>
+                          <span class="d-lg-none ms-2" id="bd-theme-text"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
                             <li>
@@ -66,9 +72,14 @@
                                         <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        {% if payload[ 'is_gm'] %}
-                                        <li><a class="dropdown-item" href="/annonce/">Poster une annnonce</a></li>
-                                        <li><a class="dropdown-item" href="/mes_annonces/">Mes annonces</a></li>
+                                        {% if payload[ 'is_admin'] %}
+                                        <li><a class="dropdown-item bg-danger" href="/systems/">Gérer les systèmes</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        {% endif %} {% if payload[ 'is_gm'] %}
+                                        <li><a class="dropdown-item bg-primary" href="/annonce/">Poster une annnonce</a></li>
+                                        <li><a class="dropdown-item bg-primary" href="/mes_annonces/">Mes annonces</a></li>
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>

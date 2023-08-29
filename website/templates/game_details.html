@@ -2,9 +2,11 @@
 <div class="container">
     <div class="row">
         <h1>{{ game.name }}</h1>
+    </div>
+    <div class="row">
         <div class="col-lg-5 p-3">
             <div class="row">
-                <h4><span class="badge text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge text-bg-secondary">{{ game.system }}</span></h4>
+                <h4><span class="badge text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge text-bg-secondary">{{ game.system.name }}</span></h4>
             </div>
             <div class="row">
                 <p class="lh-lg">{{ game.description }}</p>
@@ -46,14 +48,9 @@
                     <div class="row gy-4">
                         {% if game.players|length > 0 %} {% for player in game.players %}
                         <div class="col">
-                            <figure class="figure mx-auto d-block">
+                            <figure class="figure mx-auto d-block position-relative">
                                 <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
                                 <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
-                                {% if payload['user_id'] == game.gm.id %}
-                                <figcaption class="text-centered">
-                                    <button class="btn btn-danger btn-sm mx-auto d-block">désinscrire</button>
-                                </figcaption>
-                                {% endif %}
                             </figure>
                         </div>
                         {% endfor %} {% else %}
@@ -70,27 +67,36 @@
                     <img src="{{ game.img }}" class="figure-img img-fluid rounded img-preview" alt="{{ game.name }}">
                 </div>
             </div>
+            {% if payload['user_id'] != game.gm.id %}
             <div class="row">
-                {% if payload['user_id'] == game.gm.id %}
-                <div class="btn-group" role="group" aria-label="Actions du MJ">
-                    <button type="button" class="btn btn-outline-secondary">éditer</button>
-                    <button type="button" class="btn btn-danger">supprimer</button>
-                </div>
-                {% else %}
                 <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if payload == {} %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
-                        {% if is_player %}
-                        <button type="button" class="btn btn-danger" >
-                            se désinscrire
-                        </button>
-                        {% else %}
-                        <button type="button" class="btn btn-success" {% if (payload == {}) or (payload[ 'user_id'] == game.gm.id) %}disabled{% endif %}>
-                            s'inscrire
-                        </button>
-                        {% endif %}
-                    </span> {% endif %}
+                      {% if is_player %}
+                      <button type="button" class="btn btn-danger" >
+                          Se désinscrire
+                      </button>
+                      {% else %}
+                      <button type="button" class="btn btn-success" {% if (payload == {}) or (payload[ 'user_id'] == game.gm.id) %}disabled{% endif %}>
+                          S'inscrire
+                      </button>
+                      {% endif %}
+                  </span>
             </div>
+            {% endif %}
         </div>
     </div>
+</div>
+<div class="row text-center">
+    <div class="col align-self-center">
+        {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+        <div class="btn-group" role="group" aria-label="Actions du MJ">
+            <a href="/annonces/{{game.id}}/editer" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
+            <a href="/annonces/{{game.id}}/editer" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Ajouter/supprimer une session."><i class="bi bi-calendar4-week"></i> Planifier</button>
+            <button type="button" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-title="Archiver l'annonce une fois la partie finie."><i class="bi bi-archive"></i> Archiver</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
 </div>
 {% endblock %} {% block scripts %} {{ super() }}
 <script src="/static/js/tooltips.js"></script>{% endblock %}

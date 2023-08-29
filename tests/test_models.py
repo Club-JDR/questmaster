@@ -1,7 +1,16 @@
 import json, os
-from website.models import Game, User, remove_archived
+from website.models import Game, User, System, remove_archived
 
 users = json.loads(os.environ.get("USER_ID_LIST"))
+
+
+def test_systems():
+    name = "D&D 5E"
+    icon = "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"
+    system = System(name=name, icon=icon)
+    assert system.name == name
+    assert system.icon == icon
+    print(system.id)
 
 
 def test_games():
@@ -21,7 +30,7 @@ def test_games():
         name=game_name,
         type=game_type,
         length=game_length,
-        system="5E",
+        system=System(name="5E"),
         description=game_description,
         restriction="16+",
         restriction_tags=game_restriction_tags,
