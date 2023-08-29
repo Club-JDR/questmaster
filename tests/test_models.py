@@ -38,6 +38,7 @@ def test_games():
         type=game_type,
         length=game_length,
         system=System(name="5E"),
+        vtt=Vtt(name="Foundry"),
         description=game_description,
         restriction="16+",
         restriction_tags=game_restriction_tags,

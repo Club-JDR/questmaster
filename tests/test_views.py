@@ -97,6 +97,7 @@ def test_create_game(client):
         "length": config.game_length,
         "gm_id": config.gm_id,
         "system": config.game_system,
+        "vtt": config.game_vtt,
         "description": config.game_description,
         "restriction": config.game_restriction,
         "restriction_tags": config.game_restriction_tags,

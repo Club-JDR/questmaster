@@ -28,6 +28,17 @@
             </div>
         </div>
         <div class="row">
+            <div class="w-75 mb-2">
+                <label for="vtt" class="form-label"><strong>VTT :</strong></label>
+                <select class="form-select" name="vtt" aria-describedby="VTT">
+                <option value="" selected></option>
+                {% for v in vtts %}
+                <option value="{{ v.id }}" {% if game and game.vtt_id == v.id%}selected{% endif %}>{{ v.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+        </div>
+        <div class="row">
             <div class="mb-2 w-75">
                 <label for="description" class="form-label"><strong>Description :</strong></label>
                 <textarea class="form-control" name="description" id="md-edit" rows="14" spellcheck="true" required>{% if game %}{{game.description}}{% endif %}</textarea>

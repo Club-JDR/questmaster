@@ -7,7 +7,7 @@ from flask import (
     abort,
 )
 from website import app, db, bot
-from website.models import Game, User, System, remove_archived
+from website.models import Game, User, System, Vtt
 from website.views.auth import who, login_required
 from datetime import datetime
 import re, yaml
@@ -83,6 +83,9 @@ def search_games():
     system = request.args.get("system", type=int)
     if system:
         request_args["system"] = system
+    vtt = request.args.get("vtt", type=int)
+    if vtt:
+        request_args["vtt"] = vtt
     for s in ["open", "closed", "archived", "draft"]:
         if request.args.get(s, type=bool):
             status.append(s)
@@ -113,6 +116,8 @@ def search_games():
         queries.append(Game.name.ilike("%{}%".format(name)))
     if system:
         queries.append(Game.system_id == system)
+    if vtt:
+        queries.append(Game.vtt_id == vtt)
     page = request.args.get("page", 1, type=int)
     games = (
         Game.query.filter(*queries)
@@ -137,6 +142,7 @@ def search_games():
         next_url=next_url,
         prev_url=prev_url,
         systems=System.query.order_by("name").all(),
+        vtts=Vtt.query.order_by("name").all(),
     )
 
 
@@ -164,9 +170,10 @@ def get_game_form() -> object:
     """
     payload = who()
     systems = System.query.order_by("name").all()
+    vtts = Vtt.query.order_by("name").all()
     if not payload["is_gm"]:
         abort(403)
-    return render_template("game_form.html", payload=payload, systems=systems)
+    return render_template("game_form.html", payload=payload, systems=systems, vtts=vtts)
 
 
 @app.route("/annonce/", methods=["POST"])
@@ -182,11 +189,16 @@ def create_game() -> object:
         try:
             data = request.values.to_dict()
             gm_id = data["gm_id"]
+            if data["vtt"] == "":
+                vtt = None
+            else:
+                vtt = data["vtt"]
             # Create the Game object
             new_game = Game(
                 gm_id=gm_id,
                 name=data["name"],
                 system_id=data["system"],
+                vtt_id=vtt,
                 description=data["description"],
                 type=data["type"],
                 date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
@@ -244,6 +256,7 @@ def get_game_edit_form(game_id) -> object:
     """
     payload = who()
     systems = System.query.order_by("name").all()
+    vtts = Vtt.query.order_by("name").all()
     if not payload["is_gm"]:
         abort(403)
     game = db.get_or_404(Game, game_id)
@@ -251,7 +264,7 @@ def get_game_edit_form(game_id) -> object:
         if not payload["is_admin"]:
             abort(403)
     return render_template(
-        "game_form.html", payload=payload, game=game, systems=systems
+        "game_form.html", payload=payload, game=game, systems=systems, vtts=vtts
     )
 
 
@@ -268,6 +281,10 @@ def edit_game(game_id) -> object:
         try:
             data = request.values.to_dict()
             gm_id = data["gm_id"]
+            if data["vtt"] == "":
+                vtt = None
+            else:
+                vtt = data["vtt"]
             game = db.get_or_404(Game, game_id)
             if game.status == "draft":
                 game.status = "open"
@@ -277,6 +294,7 @@ def edit_game(game_id) -> object:
                 game.name = data["name"]
                 game.type = data["type"]
             game.system_id = data["system"]
+            game.vtt_id = vtt,
             game.description = data["description"]
             game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
             game.length = data["length"]

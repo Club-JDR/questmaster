@@ -10,54 +10,57 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
-    - name: Create dotenv
-      uses: iamsauravsharma/create-dotenv@v1.2.2
-      env:
-        FLASK_AUTH_SECRET: "${{ secrets.FLASK_AUTH_SECRET }}"
-        DISCORD_CLIENT_ID: "${{ secrets.DISCORD_CLIENT_ID }}"
-        DISCORD_CLIENT_SECRET: "${{ secrets.DISCORD_CLIENT_SECRET }}"
-        DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
-        DISCORD_REDIRECT_URI: "${{ secrets.DISCORD_REDIRECT_URI }}"
-        DISCORD_GUILD_NAME: "Club JDR TEST"
-        POSTGRES_USER: "clubjdr"
-        POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-        POSTGRES_DB: "clubjdr"
-        POSTGRES_HOST: "db"
-        UNITTEST_CHANNEL_ID: "${{ secrets.UNITTEST_CHANNEL_ID }}"
-        CATEGORIES_CHANNEL_ID: "${{ secrets.CATEGORIES_CHANNEL_ID }}"
-        POSTS_CHANNEL_ID: "${{ secrets.POSTS_CHANNEL_ID }}"
-        DISCORD_GUILD_ID: "${{ secrets.DISCORD_GUILD_ID }}"
-        DISCORD_GM_ROLE_ID: "${{ secrets.DISCORD_GM_ROLE_ID }}"
-        DISCORD_ADMIN_ROLE_ID: "${{ secrets.DISCORD_ADMIN_ROLE_ID }}"
-        USER_ID_LIST: "${{ secrets.USER_ID_LIST }}"
-        FLASK_APP: "website"
-    - name: Build the app
-      run: docker-compose build
-    - name: Run the stack
-      run: docker-compose down && docker-compose up -d db app
-    - name: Ensure app is running
-      run:  "sleep 10 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster_app_1"
-    - name: Init the database and run the migrations
-      run: docker exec questmaster_app_1 bash -c "flask db init && flask db migrate && flask db upgrade"
-    - name: Lint with Black
-      run: |
-        docker-compose run app-test black --check questmaster.py website
-    - name: Tests with Pytest
-      run: |
-        docker-compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
-    - name: Fix code coverage permissions and path
-      run: sudo chmod -R 777 test-results/ && sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    - name: Stop the stack
-      run: docker-compose down
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Create dotenv
+        uses: iamsauravsharma/create-dotenv@v1.2.2
+        env:
+          FLASK_AUTH_SECRET: "${{ secrets.FLASK_AUTH_SECRET }}"
+          DISCORD_CLIENT_ID: "${{ secrets.DISCORD_CLIENT_ID }}"
+          DISCORD_CLIENT_SECRET: "${{ secrets.DISCORD_CLIENT_SECRET }}"
+          DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
+          DISCORD_REDIRECT_URI: "${{ secrets.DISCORD_REDIRECT_URI }}"
+          DISCORD_GUILD_NAME: "Club JDR TEST"
+          POSTGRES_USER: "clubjdr"
+          POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
+          POSTGRES_DB: "clubjdr"
+          POSTGRES_HOST: "db"
+          UNITTEST_CHANNEL_ID: "${{ secrets.UNITTEST_CHANNEL_ID }}"
+          CATEGORIES_CHANNEL_ID: "${{ secrets.CATEGORIES_CHANNEL_ID }}"
+          POSTS_CHANNEL_ID: "${{ secrets.POSTS_CHANNEL_ID }}"
+          DISCORD_GUILD_ID: "${{ secrets.DISCORD_GUILD_ID }}"
+          DISCORD_GM_ROLE_ID: "${{ secrets.DISCORD_GM_ROLE_ID }}"
+          DISCORD_ADMIN_ROLE_ID: "${{ secrets.DISCORD_ADMIN_ROLE_ID }}"
+          USER_ID_LIST: "${{ secrets.USER_ID_LIST }}"
+          FLASK_APP: "website"
+      - name: Build the app
+        run: docker-compose build
+      - name: Run the stack
+        run: docker-compose down && docker-compose up -d db app
+      - name: Ensure app is running
+        run: "sleep 10 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster_app_1"
+      - name: Init the database and run the migrations
+        run: docker exec questmaster_app_1 bash -c "flask db init && flask db migrate && flask db upgrade"
+      - name: Lint with Black
+        run: |
+          docker-compose run app-test black --check questmaster.py website
+      - name: Seed test users
+        run: |
+          docker exec questmaster_db_1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('664487064577900594'), ('267928135419297792')"
+      - name: Tests with Pytest
+        run: |
+          docker-compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
+      - name: Fix code coverage permissions and path
+        run: sudo chmod -R 777 test-results/ && sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Stop the stack
+        run: docker-compose down
