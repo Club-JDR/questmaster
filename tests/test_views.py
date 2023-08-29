@@ -52,7 +52,7 @@ def test_create_system(client):
         TestConfig.set_user_session(session)
     data = {"name": config.sys_name, "icon": config.sys_icon}
     response = client.post("/systems/", data=data, follow_redirects=True)
-    assert response.status_code == 403  # Fails because not Admin
+    assert response.status_code == 403  # Not Admin
     with client.session_transaction() as session:
         session["is_admin"] = True
     response = client.post("/systems/", data=data, follow_redirects=True)
@@ -64,9 +64,28 @@ def test_create_system(client):
     ):
         for i in form.find_all("input"):
             if i.get("name") == config.sys_name:
-                config.game_system = i.get("value")    
+                config.game_system = i.get("value")
     response = client.post("/systems/", data=data, follow_redirects=True)
-    assert response.status_code == 500 # System name must be unique
+    assert response.status_code == 500  # System name must be unique
+
+
+def test_edit_system(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    new_name = "{} modifié".format(config.sys_name)
+    data = {"name": new_name, "icon": config.sys_icon}
+    response = client.post(
+        "/systems/{}/".format(config.game_system), data=data, follow_redirects=True
+    )
+    assert response.status_code == 403  # Not Admin
+    with client.session_transaction() as session:
+        session["is_admin"] = True
+    response = client.post(
+        "/systems/{}/".format(config.game_vtt), data=data, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert bytes(new_name, encoding="UTF-8") in response.data
+    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
 
 
 def test_create_vtt(client):
@@ -74,7 +93,7 @@ def test_create_vtt(client):
         TestConfig.set_user_session(session)
     data = {"name": config.vtt_name, "icon": config.vtt_icon}
     response = client.post("/vtts/", data=data, follow_redirects=True)
-    assert response.status_code == 403  # Fails because not Admin
+    assert response.status_code == 403  # Not Admin
     with client.session_transaction() as session:
         session["is_admin"] = True
     response = client.post("/vtts/", data=data, follow_redirects=True)
@@ -88,7 +107,26 @@ def test_create_vtt(client):
             if i.get("name") == config.vtt_name:
                 config.game_vtt = i.get("value")
     response = client.post("/vtts/", data=data, follow_redirects=True)
-    assert response.status_code == 500 # VTT name must be unique
+    assert response.status_code == 500  # VTT name must be unique
+
+
+def test_edit_vtt(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    new_name = "{} modifié".format(config.vtt_name)
+    data = {"name": new_name, "icon": config.vtt_icon}
+    response = client.post(
+        "/vtts/{}/".format(config.game_vtt), data=data, follow_redirects=True
+    )
+    assert response.status_code == 403  # Not Admin
+    with client.session_transaction() as session:
+        session["is_admin"] = True
+    response = client.post(
+        "/vtts/{}/".format(config.game_vtt), data=data, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert bytes(new_name, encoding="UTF-8") in response.data
+    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
 
 
 def test_create_game(client):

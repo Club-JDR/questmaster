@@ -6,7 +6,7 @@
     <p>Aucun {{title}}.</p>
     {% else %} {% for i in items|sort(attribute='name') %}
     <div class="row">
-        <form method="post" action="/{{ item }}/{{ i.id }}" class="row needs-validation" novalidate>
+        <form method="post" action="/{{ item }}/{{ i.id }}/" class="row needs-validation" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="{{ i.name }}" value="{{ i.id }}">
             <div class="input-group mb-3">

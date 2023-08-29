@@ -42,7 +42,7 @@ def create_vtt() -> object:
             abort(500, 2)
 
 
-@app.route("/vtts/<vtt_id>", methods=["POST"])
+@app.route("/vtts/<vtt_id>/", methods=["POST"])
 @login_required
 def edit_vtt(vtt_id) -> object:
     """

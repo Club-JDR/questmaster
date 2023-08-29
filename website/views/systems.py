@@ -42,7 +42,7 @@ def create_system() -> object:
             abort(500, 2)
 
 
-@app.route("/systems/<system_id>", methods=["POST"])
+@app.route("/systems/<system_id>/", methods=["POST"])
 @login_required
 def edit_system(system_id) -> object:
     """
