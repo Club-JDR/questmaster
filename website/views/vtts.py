@@ -39,7 +39,7 @@ def create_vtt() -> object:
             db.session.commit()
             return redirect(url_for("list_vtts"))
         except Exception as e:
-            abort(500, 2)
+            abort(500, e)
 
 
 @app.route("/vtts/<vtt_id>/", methods=["POST"])
@@ -62,4 +62,4 @@ def edit_vtt(vtt_id) -> object:
             db.session.commit()
             return redirect(url_for("list_vtts"))
         except Exception as e:
-            abort(500, 2)
+            abort(500, e)

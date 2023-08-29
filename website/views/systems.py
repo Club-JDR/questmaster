@@ -39,7 +39,7 @@ def create_system() -> object:
             db.session.commit()
             return redirect(url_for("list_systems"))
         except Exception as e:
-            abort(500, 2)
+            abort(500, e)
 
 
 @app.route("/systems/<system_id>/", methods=["POST"])
@@ -62,4 +62,4 @@ def edit_system(system_id) -> object:
             db.session.commit()
             return redirect(url_for("list_systems"))
         except Exception as e:
-            abort(500, 2)
+            abort(500, e)
