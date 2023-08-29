@@ -5,7 +5,6 @@ GAME_TYPES = ("oneshot", "campaign")
 GAME_STATUS = ("draft", "open", "closed", "archived")
 RESTRICTIONS = ("all", "16+", "18+")
 
-
 players_table = db.Table(
     "game_players",
     db.Column("game_id", db.ForeignKey("game.id")),
@@ -25,6 +24,8 @@ def remove_archived(games) -> object:
 
 class Game(db.Model):
     __tablename__ = "game"
+    COLORS = {"oneshot": 0x198754, "campaign": 0x0D6EFD}
+
 
     id = db.Column(db.BigInteger, primary_key=True)
     name = db.Column(db.String(), nullable=False)

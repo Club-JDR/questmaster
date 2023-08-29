@@ -16,6 +16,59 @@ import re, yaml
 GAMES_PER_PAGE = 12
 
 
+def send_discord_embed(game):
+    """
+    Send Discord embed message for game.
+    """
+    restriction = ":red_circle: 18+"
+    if game.restriction == "all":
+        restriction = ":green_circle: Tout public"
+    elif game.restriction == "16+":
+        restriction = ":yellow_circle: 16+"
+    if game.restriction_tags == None:
+        restriction_msg = f"{game.restriction}"
+    else:
+        restriction_msg = f"{restriction}: {game.restriction_tags}"
+    embed = {
+        "title": game.name,
+        "color": Game.COLORS[game.type],
+        "fields": [
+            {
+                "name": "MJ",
+                "value": game.gm.name,
+                "inline": True,
+            },
+            {"name": "Système", "value": game.system.name, "inline": True},
+            {
+                "name": "Type de session",
+                "value": game.type,
+                "inline": True,
+            },
+            {
+                "name": "Date",
+                "value": game.date.strftime("%a %d/%m - %Hh%M"),
+                "inline": True,
+            },
+            {"name": "Durée", "value": game.length, "inline": True},
+            {
+                "name": "Avertissement",
+                "value": restriction_msg,
+            },
+            {
+                "name": "Pour s'inscrire :",
+                "value": "https://questmaster.club-jdr.fr/annonces/{}".format(
+                    game.id
+                ),
+            },
+        ],
+        "image": {
+            "url": game.img,
+        },
+        "footer": {},
+    }
+    bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+
+
 @app.route("/", methods=["GET"])
 @app.route("/annonces/", methods=["GET"])
 def search_games():
@@ -159,11 +212,8 @@ def create_game() -> object:
             if data["action"] == "open":
                 # Create role and update object with role_id
                 permissions = "3072"  # view channel + send messages
-                color = 0x0D6EFD  # blue
-                if data["type"] == "oneshot":
-                    color = 0x198754  # green
                 new_game.role = bot.create_role(
-                    role_name=data["name"], permissions=permissions, color=color
+                    role_name=data["name"], permissions=permissions, color=Game.COLORS[data["type"]]
                 )["id"]
                 # Create channel and update object with channel_id
                 new_game.channel = bot.create_channel(
@@ -176,58 +226,7 @@ def create_game() -> object:
             db.session.add(new_game)
             db.session.commit()
             if data["action"] == "open":
-                # Send embed message to Discord
-                restriction = ":red_cricle: 18+"
-                if new_game.restriction == "all":
-                    restriction = ":green_cricle: Tout public"
-                elif new_game.restriction == "16+":
-                    restriction = ":yellow_cricle: 16+"
-                if new_game.restriction_tags == None:
-                    restriction_msg = f"{new_game.restriction}"
-                else:
-                    restriction_msg = f"{restriction}: {new_game.restriction_tags}"
-                embed = {
-                    "title": new_game.name,
-                    "color": color,
-                    "fields": [
-                        {
-                            "name": "MJ",
-                            "value": new_game.gm.name,
-                            "inline": True,
-                        },
-                        {
-                            "name": "Système",
-                            "value": new_game.system.name,
-                            "inline": True,
-                        },
-                        {
-                            "name": "Type de session",
-                            "value": new_game.type,
-                            "inline": True,
-                        },
-                        {
-                            "name": "Date",
-                            "value": new_game.date.strftime("%a %d/%m - %Hh%M"),
-                            "inline": True,
-                        },
-                        {"name": "Durée", "value": new_game.length, "inline": True},
-                        {
-                            "name": "Avertissement",
-                            "value": restriction_msg,
-                        },
-                        {
-                            "name": "Pour s'inscrire :",
-                            "value": "https://questmaster.club-jdr.fr/annonces/{}".format(
-                                new_game.id
-                            ),
-                        },
-                    ],
-                    "image": {
-                        "url": new_game.img,
-                    },
-                    "footer": {},
-                }
-                bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+              send_discord_embed(new_game)                
             return redirect(url_for("get_game_details", game_id=new_game.id))
         except Exception as e:
             if data["action"] == "open":
@@ -295,11 +294,8 @@ def edit_game(game_id) -> object:
             if post:
                 # Create role and update object with role_id
                 permissions = "3072"  # view channel + send messages
-                color = 0x0D6EFD  # blue
-                if data["type"] == "oneshot":
-                    color = 0x198754  # green
                 game.role = bot.create_role(
-                    role_name=data["name"], permissions=permissions, color=color
+                    role_name=data["name"], permissions=permissions, color=Game.COLORS[data["type"]]
                 )["id"]
                 # Create channel and update object with channel_id
                 game.channel = bot.create_channel(
@@ -311,54 +307,7 @@ def edit_game(game_id) -> object:
             # Save Game in database
             db.session.commit()
             if post:
-                # Send embed message to Discord
-                restriction = ":red_circle: 18+"
-                if game.restriction == "all":
-                    restriction = ":green_circle: Tout public"
-                elif game.restriction == "16+":
-                    restriction = ":yellow_circle: 16+"
-                if game.restriction_tags == None:
-                    restriction_msg = f"{game.restriction}"
-                else:
-                    restriction_msg = f"{restriction}: {game.restriction_tags}"
-                embed = {
-                    "title": game.name,
-                    "color": color,
-                    "fields": [
-                        {
-                            "name": "MJ",
-                            "value": game.gm.name,
-                            "inline": True,
-                        },
-                        {"name": "Système", "value": game.system.name, "inline": True},
-                        {
-                            "name": "Type de session",
-                            "value": game.type,
-                            "inline": True,
-                        },
-                        {
-                            "name": "Date",
-                            "value": game.date.strftime("%a %d/%m - %Hh%M"),
-                            "inline": True,
-                        },
-                        {"name": "Durée", "value": game.length, "inline": True},
-                        {
-                            "name": "Avertissement",
-                            "value": restriction_msg,
-                        },
-                        {
-                            "name": "Pour s'inscrire :",
-                            "value": "https://questmaster.club-jdr.fr/annonces/{}".format(
-                                game.id
-                            ),
-                        },
-                    ],
-                    "image": {
-                        "url": game.img,
-                    },
-                    "footer": {},
-                }
-                bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+                send_discord_embed(game)
             return redirect(url_for("get_game_details", game_id=game.id))
         except Exception as e:
             if post:

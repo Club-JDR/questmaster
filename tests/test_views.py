@@ -77,8 +77,8 @@ def test_create_vtt(client):
         session["is_admin"] = True
     response = client.post("/vtts/", data=data, follow_redirects=True)
     assert response.status_code == 200
-    assert bytes("{}".format(config.sys_name), encoding="UTF-8") in response.data
-    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
+    assert bytes("{}".format(config.vtt_name), encoding="UTF-8") in response.data
+    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
     for form in BeautifulSoup(response.data.decode("utf-8"), "html.parser").find_all(
         "form"
     ):
