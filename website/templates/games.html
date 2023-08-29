@@ -14,16 +14,16 @@
                 <div class="col-sm-6 pb-2">
                     <div class="input-group me-2">
                         <span class="input-group-text" id="name">Nom</span>
-                        <input type="text" class="form-control" placeholder="Nom de l'annonce" aria-label="name" aria-describedby="name" name="name">
+                        <input type="text" class="form-control" placeholder="Nom de l'annonce" aria-label="name" aria-describedby="name" name="name" {% if request.args.get( 'name') %}value="{{ request.args.get('name') }}" {% endif %}>
                     </div>
                 </div>
                 <div class="col-sm-6 pb-2">
                     <div class="input-group me-2">
                         <span class="input-group-text" id="system">Système</span>
                         <select class="form-select" name="system" aria-describedby="Système">
-                        <option selected></option>
+                        <option value="None"></option>
                         {% for s in systems %}
-                        <option value="{{ s.id }}" {% if game and game.system_id == s.id%}selected{% endif %}>{{ s.name }}</option>
+                        <option value="{{ s.id }}" {% if request.args.get('system')|int == s.id %}selected{% endif %}>{{ s.name }}</option>
                         {% endfor %}
                     </select>
                     </div>
