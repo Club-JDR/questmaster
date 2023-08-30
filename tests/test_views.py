@@ -285,3 +285,47 @@ def test_edit_publish_game(client):
     assert response.status_code == 200
     assert new_description in response.data.decode()
     assert "Brouillon" not in response.data.decode()
+
+
+def test_close_game(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.post(
+        "/annonces/{}/statut/".format(config.game_id),
+        data={"status": "closed"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 403
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/statut/".format(config.game_id),
+        data={"status": "closed"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "Complet" in response.data.decode()
+
+
+def test_open_game(client):
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/statut/".format(config.game_id),
+        data={"status": "open"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "Complet" not in response.data.decode()
+
+
+def test_archive_game(client):
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/statut/".format(config.game_id),
+        data={"status": "archived"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert bytes("Archivée".format(config.game_name), encoding="UTF-8") in response.data

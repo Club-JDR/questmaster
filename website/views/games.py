@@ -346,10 +346,10 @@ def change_game_status(game_id) -> object:
     Change game status and redirect to the game details.
     """
     payload = who()
+    game = db.get_or_404(Game, game_id)
+    if game.gm_id != payload["user_id"] and not payload["is_admin"]:
+        abort(403)
     try:
-        game = db.get_or_404(Game, game_id)
-        if game.gm_id != payload["user_id"] and not payload["is_admin"]:
-            abort(403)
         status = request.values.to_dict()["status"]
         game.status = status
         if status == "archived":
