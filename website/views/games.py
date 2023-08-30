@@ -193,16 +193,12 @@ def create_game() -> object:
         try:
             data = request.values.to_dict()
             gm_id = data["gm_id"]
-            if data["vtt"] == "":
-                vtt = None
-            else:
-                vtt = data["vtt"]
             # Create the Game object
             new_game = Game(
                 gm_id=gm_id,
                 name=data["name"],
                 system_id=data["system"],
-                vtt_id=vtt,
+                vtt_id=data["vtt"] if data["vtt"] != "" else None,
                 description=data["description"],
                 type=data["type"],
                 date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
@@ -217,12 +213,9 @@ def create_game() -> object:
                     for item in yaml.safe_load(data["restriction_tags"]):
                         restriction_tags += item["value"] + ", "
                     new_game.restriction_tags = restriction_tags[:-2]
-            if "pregen" in data.keys():
-                new_game.pregen = True
-            if "party_selection" in data.keys():
-                new_game.party_selection = True
-            if "img" in data.keys():
-                new_game.img = data["img"]
+            new_game.pregen = "pregen" in data.keys()
+            new_game.party_selection = "party_selection" in data.keys()
+            new_game.img = data.get("img", None)
             if data["action"] == "open":
                 # Create role and update object with role_id
                 new_game.role = bot.create_role(
@@ -283,10 +276,6 @@ def edit_game(game_id) -> object:
     try:
         data = request.values.to_dict()
         gm_id = data["gm_id"]
-        if data["vtt"] == "":
-            vtt = None
-        else:
-            vtt = data["vtt"]
         post = game.status == "draft" and data["action"] == "open"
         if post:
           game.status = data["action"]
@@ -295,7 +284,7 @@ def edit_game(game_id) -> object:
             game.name = data["name"]
             game.type = data["type"]
         game.system_id = data["system"]
-        game.vtt_id = vtt
+        game.vtt_id = data["vtt"] if data["vtt"] != "" else None
         game.description = data["description"]
         game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
         game.length = data["length"]
@@ -307,12 +296,9 @@ def edit_game(game_id) -> object:
                 for item in yaml.safe_load(data["restriction_tags"]):
                     restriction_tags += item["value"] + ", "
                 game.restriction_tags = restriction_tags[:-2]
-        if "pregen" in data.keys():
-            game.pregen = True
-        if "party_selection" in data.keys():
-            game.party_selection = True
-        if "img" in data.keys():
-            game.img = data["img"]
+        game.pregen = "pregen" in data.keys()
+        game.party_selection = "party_selection" in data.keys()
+        game.img = data.get("img", None)
         if post:
             # Create role and update object with role_id
             game.role = bot.create_role(
