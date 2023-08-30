@@ -3,6 +3,7 @@ from conftest import TestConfig
 
 config = TestConfig()
 
+
 def test_search_games(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -12,6 +13,7 @@ def test_search_games(client):
     assert "Recherche avancée" in response.data.decode()
     response = client.get("/annonces/?name=test&open=on&oneshot=on&all=on")
     assert response.status_code == 200
+
 
 def test_my_gm_games(client):
     with client.session_transaction() as session:
@@ -24,12 +26,14 @@ def test_my_gm_games(client):
     response = client.get("/mes_annonces/")
     assert response.status_code == 403
 
+
 def test_my_games(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
     response = client.get("/mes_parties/")
     assert response.status_code == 200
     assert b"<h1>Mes parties en cours</h1>" in response.data
+
 
 def test_game_form(client):
     with client.session_transaction() as session:
@@ -41,6 +45,7 @@ def test_game_form(client):
     response = client.get("/annonce/")
     assert response.status_code == 200
     assert b"<h1>Nouvelle annonce</h1>" in response.data
+
 
 def test_create_system(client):
     with client.session_transaction() as session:
@@ -63,6 +68,7 @@ def test_create_system(client):
     response = client.post("/systems/", data=data, follow_redirects=True)
     assert response.status_code == 500  # System name must be unique
 
+
 def test_edit_system(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -80,6 +86,7 @@ def test_edit_system(client):
     assert response.status_code == 200
     assert bytes(new_name, encoding="UTF-8") in response.data
     assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
+
 
 def test_create_vtt(client):
     with client.session_transaction() as session:
@@ -102,6 +109,7 @@ def test_create_vtt(client):
     response = client.post("/vtts/", data=data, follow_redirects=True)
     assert response.status_code == 500  # VTT name must be unique
 
+
 def test_edit_vtt(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -119,6 +127,7 @@ def test_edit_vtt(client):
     assert response.status_code == 200
     assert bytes(new_name, encoding="UTF-8") in response.data
     assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
+
 
 def test_create_open_game(client):
     with client.session_transaction() as session:
@@ -151,6 +160,7 @@ def test_create_open_game(client):
     )
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
 
+
 def test_create_draft_game(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
@@ -179,6 +189,7 @@ def test_create_draft_game(client):
     )
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
 
+
 def test_get_game_details(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
@@ -206,6 +217,7 @@ def test_get_game_details(client):
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
     assert "S'inscrire" in response.data.decode()
 
+
 def test_get_open_game_edit_form(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -228,6 +240,7 @@ def test_get_open_game_edit_form(client):
         in response.data
     )
 
+
 def test_get_draft_game_edit_form(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
@@ -238,6 +251,7 @@ def test_get_draft_game_edit_form(client):
         in response.data
     )
     assert "Publier" in response.data.decode()
+
 
 def test_edit_publish_game(client):
     with client.session_transaction() as session:
