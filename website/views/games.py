@@ -12,8 +12,9 @@ from website.views.auth import who, login_required
 from datetime import datetime
 import re, yaml
 
-
 GAMES_PER_PAGE = 12
+GAME_LIST_TEMPLATE = "games.html"
+PLAYER_ROLE_PERMISSION = "3072"  # view channel + send messages
 
 
 def send_discord_embed(game):
@@ -56,7 +57,7 @@ def send_discord_embed(game):
             },
             {
                 "name": "Pour s'inscrire :",
-                "value": "https://questmaster.club-jdr.fr/annonces/{}".format(game.id),
+                "value": "https://questmaster.club-jdr.fr/annonces/{}/".format(game.id),
             },
         ],
         "image": {
@@ -74,7 +75,7 @@ def search_games():
     Search games.
     """
     status = []
-    type = []
+    game_type = []
     restriction = []
     request_args = {}
     name = request.args.get("name", type=str)
@@ -95,11 +96,11 @@ def search_games():
         status = ["open"]
     for t in ["oneshot", "campaign"]:
         if request.args.get(t, type=bool):
-            type.append(t)
+            game_type.append(t)
             request_args[t] = "on"
     # default type if unset
-    if len(type) == 0:
-        type = ["oneshot", "campaign"]
+    if len(game_type) == 0:
+        game_type = ["oneshot", "campaign"]
     for r in ["all", "16+", "18+"]:
         if request.args.get(r, type=bool):
             restriction.append(r)
@@ -110,7 +111,7 @@ def search_games():
     queries = [
         Game.status.in_(status),
         Game.restriction.in_(restriction),
-        Game.type.in_(type),
+        Game.type.in_(game_type),
     ]
     if name:
         queries.append(Game.name.ilike("%{}%".format(name)))
@@ -135,7 +136,7 @@ def search_games():
         else None
     )
     return render_template(
-        "games.html",
+        GAME_LIST_TEMPLATE,
         payload=who(),
         games=games.items,
         title="Annonces",
@@ -169,12 +170,13 @@ def get_game_form() -> object:
     Get form to create a new game.
     """
     payload = who()
-    systems = System.query.order_by("name").all()
-    vtts = Vtt.query.order_by("name").all()
     if not payload["is_gm"]:
         abort(403)
     return render_template(
-        "game_form.html", payload=payload, systems=systems, vtts=vtts
+        "game_form.html",
+        payload=payload,
+        systems=System.query.order_by("name").all(),
+        vtts=Vtt.query.order_by("name").all(),
     )
 
 
@@ -223,10 +225,9 @@ def create_game() -> object:
                 new_game.img = data["img"]
             if data["action"] == "open":
                 # Create role and update object with role_id
-                permissions = "3072"  # view channel + send messages
                 new_game.role = bot.create_role(
                     role_name=data["name"],
-                    permissions=permissions,
+                    permissions=PLAYER_ROLE_PERMISSION,
                     color=Game.COLORS[data["type"]],
                 )["id"]
                 # Create channel and update object with channel_id
@@ -257,16 +258,15 @@ def get_game_edit_form(game_id) -> object:
     Get form to edit a game.
     """
     payload = who()
-    systems = System.query.order_by("name").all()
-    vtts = Vtt.query.order_by("name").all()
-    if not payload["is_gm"]:
-        abort(403)
     game = db.get_or_404(Game, game_id)
-    if payload["user_id"] != game.gm.id:
-        if not payload["is_admin"]:
-            abort(403)
+    if payload["user_id"] != game.gm.id and not payload["is_admin"]:
+        abort(403)
     return render_template(
-        "game_form.html", payload=payload, game=game, systems=systems, vtts=vtts
+        "game_form.html",
+        payload=payload,
+        game=game,
+        systems=System.query.order_by("name").all(),
+        vtts=Vtt.query.order_by("name").all(),
     )
 
 
@@ -277,69 +277,66 @@ def edit_game(game_id) -> object:
     Edit an existing game and redirect to the game details.
     """
     payload = who()
-    if not payload["is_gm"] or not payload["is_admin"]:
+    game = db.get_or_404(Game, game_id)
+    if payload["user_id"] != game.gm.id and not payload["is_admin"]:
         abort(403)
-    else:
-        try:
-            data = request.values.to_dict()
-            gm_id = data["gm_id"]
-            if data["vtt"] == "":
-                vtt = None
-            else:
-                vtt = data["vtt"]
-            game = db.get_or_404(Game, game_id)
-            if game.status == "draft":
-                game.status = "open"
-            post = game.status != "open" and data["action"] == "open"
-            # Edit the Game object
-            if game.status == "draft":
-                game.name = data["name"]
-                game.type = data["type"]
-            game.system_id = data["system"]
-            game.vtt_id = (vtt,)
-            game.description = data["description"]
-            game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
-            game.length = data["length"]
-            game.party_size = data["party_size"]
-            game.restriction = data["restriction"]
-            if "restriction_tags" in data.keys():
-                restriction_tags = ""
-                if data["restriction_tags"] != "":
-                    for item in yaml.safe_load(data["restriction_tags"]):
-                        restriction_tags += item["value"] + ", "
-                    game.restriction_tags = restriction_tags[:-2]
-            if "pregen" in data.keys():
-                game.pregen = True
-            if "party_selection" in data.keys():
-                game.party_selection = True
-            if "img" in data.keys():
-                game.img = data["img"]
-            if post:
-                # Create role and update object with role_id
-                permissions = "3072"  # view channel + send messages
-                game.role = bot.create_role(
-                    role_name=data["name"],
-                    permissions=permissions,
-                    color=Game.COLORS[data["type"]],
-                )["id"]
-                # Create channel and update object with channel_id
-                game.channel = bot.create_channel(
-                    channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
-                    parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
-                    role_id=game.role,
-                    gm_id=gm_id,
-                )["id"]
-            # Save Game in database
-            db.session.commit()
-            if post:
-                send_discord_embed(game)
-            return redirect(url_for("get_game_details", game_id=game.id))
-        except Exception as e:
-            if post:
-                # Delete channel & role in case of error on post
-                bot.delete_channel(game.channel)
-                bot.delete_role(game.role)
-            abort(500, e)
+    try:
+        data = request.values.to_dict()
+        gm_id = data["gm_id"]
+        if data["vtt"] == "":
+            vtt = None
+        else:
+            vtt = data["vtt"]
+        post = game.status != "open" and data["action"] == "open"
+        game.status = data["action"]
+        # Edit the Game object
+        if game.status == "draft":
+            game.name = data["name"]
+            game.type = data["type"]
+        game.system_id = data["system"]
+        game.vtt_id = vtt
+        game.description = data["description"]
+        game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
+        game.length = data["length"]
+        game.party_size = data["party_size"]
+        game.restriction = data["restriction"]
+        if "restriction_tags" in data.keys():
+            restriction_tags = ""
+            if data["restriction_tags"] != "":
+                for item in yaml.safe_load(data["restriction_tags"]):
+                    restriction_tags += item["value"] + ", "
+                game.restriction_tags = restriction_tags[:-2]
+        if "pregen" in data.keys():
+            game.pregen = True
+        if "party_selection" in data.keys():
+            game.party_selection = True
+        if "img" in data.keys():
+            game.img = data["img"]
+        if post:
+            # Create role and update object with role_id
+            game.role = bot.create_role(
+                role_name=data["name"],
+                permissions=PLAYER_ROLE_PERMISSION,
+                color=Game.COLORS[data["type"]],
+            )["id"]
+            # Create channel and update object with channel_id
+            game.channel = bot.create_channel(
+                channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
+                parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+                role_id=game.role,
+                gm_id=gm_id,
+            )["id"]
+        # Save Game in database
+        db.session.commit()
+        if post:
+            send_discord_embed(game)
+        return redirect(url_for("get_game_details", game_id=game.id))
+    except Exception as e:
+        if post:
+            # Delete channel & role in case of error on post
+            bot.delete_channel(game.channel)
+            bot.delete_role(game.role)
+        abort(500, e)
 
 
 @app.route("/annonces/<game_id>/statut/", methods=["POST"])
@@ -351,9 +348,8 @@ def change_game_status(game_id) -> object:
     payload = who()
     try:
         game = db.get_or_404(Game, game_id)
-        if game.gm_id != payload["user_id"]:
-            if not payload["is_admin"]:
-                abort(403)
+        if game.gm_id != payload["user_id"] and not payload["is_admin"]:
+            abort(403)
         status = request.values.to_dict()["status"]
         game.status = status
         if status == "archived":
@@ -379,7 +375,7 @@ def my_gm_games() -> object:
     except AttributeError:
         games_as_gm = {}
     return render_template(
-        "games.html",
+        GAME_LIST_TEMPLATE,
         payload=payload,
         games=games_as_gm,
         gm_only=True,
@@ -402,7 +398,7 @@ def my_games() -> object:
     except AttributeError:
         games = {}
     return render_template(
-        "games.html",
+        GAME_LIST_TEMPLATE,
         payload=payload,
         games=games,
         title="Mes parties en cours",
