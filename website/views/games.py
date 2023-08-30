@@ -410,7 +410,7 @@ def my_gm_games() -> object:
 @login_required
 def my_games() -> object:
     """
-    List all of current user games
+    List all of current user non archived games
     """
     payload = who()
     try:
@@ -418,11 +418,15 @@ def my_games() -> object:
         games_as_player = user.games
         games_as_gm = user.games_gm
         games = games_as_player + games_as_gm
+        active_games = []
+        for game in games:
+            if game.status != "archived":
+                active_games.append(game)
     except AttributeError:
         games = {}
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
-        games=games,
+        games=active_games,
         title="Mes parties en cours",
     )
