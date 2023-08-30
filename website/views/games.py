@@ -361,6 +361,29 @@ def change_game_status(game_id) -> object:
         abort(500, e)
 
 
+@app.route("/annonces/<game_id>/inscription/", methods=["POST"])
+@login_required
+def register_game(game_id) -> object:
+    """
+    Register a player to a game.
+    """
+    payload = who()
+    game = db.get_or_404(Game, game_id)
+    if game.status in ["closed", "archived"]:
+        abort(500)
+    if game.gm_id == payload["user_id"]:
+        abort(403)
+    game.players.append(User.query.get_or_404(payload["user_id"]))
+    if len(game.players) == game.party_size and not game.party_selection:
+        game.status = "closed"
+    try:
+        db.session.commit()
+        bot.add_role_to_user(payload["user_id"], game.role)
+    except Exception as e:
+        abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game.id))
+
+
 @app.route("/mes_annonces/", methods=["GET"])
 @login_required
 def my_gm_games() -> object:
@@ -403,32 +426,3 @@ def my_games() -> object:
         games=games,
         title="Mes parties en cours",
     )
-
-
-"""
-@app.route("/games/<game_id>", methods=["DELETE"])
-def delete_game(game_id) -> object:
-    game = Game.query.get(game_id)
-    bot.delete_channel(game.channel)
-    bot.delete_role(game.role)
-    db.query.delete(game)
-    db.query.commit()
-    return jsonify({"game": int(game_id), "status": "deleted"})
-
-
-@app.route("/games/<game_id>/register/<user_id>", methods=["POST"])
-def register_player_for_game(game_id, user_id) -> object:
-    game = Game.query.get(game_id)
-    role_id = game.role
-    bot.add_role_to_user(user_id, role_id)
-    return jsonify({"user": user_id, "game": int(game_id), "status": "registered"})
-
-
-@app.route("/games/<game_id>/unregister/<user_id>", methods=["DELETE"])
-def unregister_player_for_game(game_id, user_id) -> object:
-    game = Game.query.get(game_id)
-    role_id = game.role
-    bot.remove_role_from_user(user_id, role_id)
-    return jsonify({"user": user_id, "game": int(game_id), "status": "unregistered"})
-
-"""

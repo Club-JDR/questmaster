@@ -329,3 +329,26 @@ def test_archive_game(client):
     )
     assert response.status_code == 200
     assert bytes("Archivée".format(config.game_name), encoding="UTF-8") in response.data
+
+
+def test_register_game(client):
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/inscription/".format(config.game_id2),
+        follow_redirects=True,
+    )
+    assert response.status_code == 403  # cannot register to own game
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.post(
+        "/annonces/{}/inscription/".format(config.game_id),
+        follow_redirects=True,
+    )
+    assert response.status_code == 500  # cannot register to archived game
+    response = client.post(
+        "/annonces/{}/inscription/".format(config.game_id2),
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert config.user_id in response.data.decode()

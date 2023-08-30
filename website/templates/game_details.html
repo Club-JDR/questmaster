@@ -50,7 +50,11 @@
                 </div>
             </div>
             <div class="row pb-2">
-                <div class="col"><strong>Joueur·euses</strong></div>
+                <div class="col"><strong>Nombre de joueur·euses souhaité</strong></div>
+                <div class="col text-center"> {{ game.party_size }}</div>
+            </div>
+            <div class="row pb-2">
+                <div class="col"><strong>Joueur·euses inscrit·es</strong></div>
                 <div class="col">
                     <div class="row gy-4">
                         {% if game.players|length > 0 %} {% for player in game.players %}
@@ -75,19 +79,20 @@
                 </div>
             </div>
             {% if payload['user_id'] != game.gm.id %}
-            <div class="row">
+            <form class="row" method="post" action="/annonces/{{ game.id }}/inscription/">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if payload == {} %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
                       {% if is_player %}
                       <button type="button" class="btn btn-danger" >
                           Se désinscrire
                       </button>
                       {% else %}
-                      <button type="button" class="btn btn-success" {% if (payload == {}) or (payload[ 'user_id'] == game.gm.id) %}disabled{% endif %}>
+                      <button type="submit" class="btn btn-success" {% if (payload == {}) or (payload[ 'user_id'] == game.gm.id) %}disabled{% endif %}>
                           S'inscrire
                       </button>
                       {% endif %}
                   </span>
-            </div>
+            </form>
             {% endif %}
         </div>
     </div>
