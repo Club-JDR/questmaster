@@ -6,7 +6,8 @@
     <div class="row">
         <div class="col-lg-5 p-3">
             <div class="row">
-                <h4><span class="badge text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge text-bg-secondary">{{ game.system.name }}</span></h4>
+                <h4><span class="badge text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge text-bg-secondary">{{ game.system.name }}</span>{% if game.vtt %} <span class="badge text-bg-secondary">{{ game.vtt.name }}</span>{%
+                    endif %}</h4>
                 {% if game.status == 'closed' %}
                 <h5><span class="badge text-bg-dark">Complet</span></h5>{% endif %} {% if game.status == 'draft' %}
                 <h5><span class="badge text-bg-info">Brouillon</span></h5>
