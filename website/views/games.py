@@ -278,7 +278,7 @@ def edit_game(game_id) -> object:
         gm_id = data["gm_id"]
         post = game.status == "draft" and data["action"] == "open"
         if post:
-          game.status = data["action"]
+            game.status = data["action"]
         # Edit the Game object
         if game.status == "draft":
             game.name = data["name"]
