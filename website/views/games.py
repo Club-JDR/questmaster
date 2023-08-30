@@ -27,9 +27,9 @@ def send_discord_embed(game):
     elif game.restriction == "16+":
         restriction = ":yellow_circle: 16+"
     if game.restriction_tags == None:
-        restriction_msg = f"{game.restriction}"
+        restriction_msg = f"{restriction}"
     else:
-        restriction_msg = f"{restriction}: {game.restriction_tags}"
+        restriction_msg = f"{restriction} {game.restriction_tags}"
     embed = {
         "title": game.name,
         "color": Game.COLORS[game.type],

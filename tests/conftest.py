@@ -45,7 +45,6 @@ Ce scénario n'existe pas, c'est uniquement une annonce qui sert à faire des te
     game_party_size = 3
     game_party_size2 = 1
     game_party_selection = True
-    game_party_selection2 = False
     game_img = "https://www.gameontabletop.com/contenu/image/ks_projet_img/414_rp-Aenk0p_Iwj_2rkY-mk-gdW6nr"
     game_img2 = "https://i.imgur.com/CJQdtXT.jpeg"
 

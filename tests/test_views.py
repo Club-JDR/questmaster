@@ -175,7 +175,6 @@ def test_create_draft_game(client):
         "restriction": config.game_restriction2,
         "restriction_tags": "",
         "party_size": config.game_party_size2,
-        "party_selection": config.game_party_selection2,
         "img": config.game_img2,
         "action": "draft",
         "date": "2023-11-01 20:30",
@@ -268,7 +267,6 @@ def test_edit_publish_game(client):
         "restriction": config.game_restriction2,
         "restriction_tags": "",
         "party_size": config.game_party_size2,
-        "party_selection": config.game_party_selection2,
         "img": config.game_img2,
         "action": "open",
         "date": "2023-11-01 20:30",
@@ -352,3 +350,5 @@ def test_register_game(client):
     )
     assert response.status_code == 200
     assert config.user_id in response.data.decode()
+    print(response.data.decode())
+    assert "Complet" in response.data.decode()

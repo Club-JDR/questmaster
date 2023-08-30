@@ -51,7 +51,7 @@
             </div>
             <div class="row pb-2">
                 <div class="col"><strong>Nombre de joueur·euses souhaité</strong></div>
-                <div class="col text-center"> {{ game.party_size }}</div>
+                <div class="col text-center">{{ game.party_size }} {% if game.party_selection %}(sur sélection){% endif %}</div>
             </div>
             <div class="row pb-2">
                 <div class="col"><strong>Joueur·euses inscrit·es</strong></div>
