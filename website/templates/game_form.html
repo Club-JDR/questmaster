@@ -7,7 +7,7 @@
         <div class="row">
             <div class="w-75 mb-2">
                 <label for="name" class="form-label"><strong>Nom :</strong></label>
-                <input type="text" class="form-control" name="name" aria-describedby="Nom" autocomplete="off" {% if game %}value="{{game.name}}" {% if game.status !="draft" %}disabled{% endif%}{% endif %} required>
+                <input type="text" class="form-control" name="name" aria-describedby="Nom" autocomplete="off" {% if game %}value="{{game.name}}" {% if game.status !="draft" %}readonly{% endif%}{% endif %} required>
                 <div class="invalid-feedback">
                     Vous devez choisir un nom pour votre annonce.
                 </div>

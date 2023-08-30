@@ -287,8 +287,9 @@ def edit_game(game_id) -> object:
             vtt = None
         else:
             vtt = data["vtt"]
-        post = game.status != "open" and data["action"] == "open"
-        game.status = data["action"]
+        post = game.status == "draft" and data["action"] == "open"
+        if post:
+          game.status = data["action"]
         # Edit the Game object
         if game.status == "draft":
             game.name = data["name"]
