@@ -71,9 +71,12 @@ def callback():
             user = User(id=str(uid))
             db.session.add(user)
             db.session.commit()
+        if not user.is_player:
+            abort(403)
         session["user_id"] = user.id
         session["username"] = user.name
         session["avatar"] = user.avatar
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
+        session["is_player"] = user.is_player
     return redirect(url_for("search_games"))
