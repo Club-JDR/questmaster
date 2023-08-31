@@ -3,6 +3,7 @@ from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from datetime import timedelta
 from website.utils.discord import Discord
 import os
 
@@ -18,8 +19,10 @@ app.config["DISCORD_GUILD_NAME"] = os.environ.get("DISCORD_GUILD_NAME")
 app.config["DISCORD_GUILD_ID"] = os.environ.get("DISCORD_GUILD_ID")
 app.config["DISCORD_GM_ROLE_ID"] = os.environ.get("DISCORD_GM_ROLE_ID")
 app.config["DISCORD_ADMIN_ROLE_ID"] = os.environ.get("DISCORD_ADMIN_ROLE_ID")
+app.config["DISCORD_PLAYER_ROLE_ID"] = os.environ.get("DISCORD_PLAYER_ROLE_ID")
 app.config["CATEGORIES_CHANNEL_ID"] = os.environ.get("CATEGORIES_CHANNEL_ID")
 app.config["POSTS_CHANNEL_ID"] = os.environ.get("POSTS_CHANNEL_ID")
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
