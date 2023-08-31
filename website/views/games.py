@@ -189,59 +189,58 @@ def create_game() -> object:
     payload = who()
     if not payload["is_gm"] and not payload["is_admin"]:
         abort(403)
-    else:
-        try:
-            data = request.values.to_dict()
-            gm_id = data["gm_id"]
-            # Create the Game object
-            new_game = Game(
-                gm_id=gm_id,
-                name=data["name"],
-                system_id=data["system"],
-                vtt_id=data["vtt"] if data["vtt"] != "" else None,
-                description=data["description"],
-                type=data["type"],
-                date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
-                length=data["length"],
-                party_size=data["party_size"],
-                restriction=data["restriction"],
-                status=data["action"],
-            )
-            if "restriction_tags" in data.keys():
-                restriction_tags = ""
-                if data["restriction_tags"] != "":
-                    for item in yaml.safe_load(data["restriction_tags"]):
-                        restriction_tags += item["value"] + ", "
-                    new_game.restriction_tags = restriction_tags[:-2]
-            new_game.pregen = "pregen" in data.keys()
-            new_game.party_selection = "party_selection" in data.keys()
-            new_game.img = data.get("img", None)
-            if data["action"] == "open":
-                # Create role and update object with role_id
-                new_game.role = bot.create_role(
-                    role_name=data["name"],
-                    permissions=PLAYER_ROLE_PERMISSION,
-                    color=Game.COLORS[data["type"]],
-                )["id"]
-                # Create channel and update object with channel_id
-                new_game.channel = bot.create_channel(
-                    channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-                    parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
-                    role_id=new_game.role,
-                    gm_id=gm_id,
-                )["id"]
-            # Save Game in database
-            db.session.add(new_game)
-            db.session.commit()
-            if data["action"] == "open":
-                send_discord_embed(new_game)
-            return redirect(url_for("get_game_details", game_id=new_game.id))
-        except Exception as e:
-            if data["action"] == "open":
-                # Delete channel & role in case of error on post
-                bot.delete_channel(new_game.channel)
-                bot.delete_role(new_game.role)
-            abort(500, e)
+    data = request.values.to_dict()
+    gm_id = data["gm_id"]
+    # Create the Game object
+    new_game = Game(
+        gm_id=gm_id,
+        name=data["name"],
+        system_id=data["system"],
+        vtt_id=data["vtt"] if data["vtt"] != "" else None,
+        description=data["description"],
+        type=data["type"],
+        date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
+        length=data["length"],
+        party_size=data["party_size"],
+        restriction=data["restriction"],
+        status=data["action"],
+    )
+    if "restriction_tags" in data.keys():
+        restriction_tags = ""
+        if data["restriction_tags"] != "":
+            for item in yaml.safe_load(data["restriction_tags"]):
+                restriction_tags += item["value"] + ", "
+            new_game.restriction_tags = restriction_tags[:-2]
+    new_game.pregen = "pregen" in data.keys()
+    new_game.party_selection = "party_selection" in data.keys()
+    new_game.img = data.get("img", None)
+    if data["action"] == "open":
+        # Create role and update object with role_id
+        new_game.role = bot.create_role(
+            role_name=data["name"],
+            permissions=PLAYER_ROLE_PERMISSION,
+            color=Game.COLORS[data["type"]],
+        )["id"]
+        # Create channel and update object with channel_id
+        new_game.channel = bot.create_channel(
+            channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
+            parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            role_id=new_game.role,
+            gm_id=gm_id,
+        )["id"]
+    try:
+        # Save Game in database
+        db.session.add(new_game)
+        db.session.commit()
+    except Exception as e:
+        if data["action"] == "open":
+            # Delete channel & role in case of error on post
+            bot.delete_channel(new_game.channel)
+            bot.delete_role(new_game.role)
+        abort(500, e)
+    if data["action"] == "open":
+        send_discord_embed(new_game)
+    return redirect(url_for("get_game_details", game_id=new_game.id))
 
 
 @app.route("/annonces/<game_id>/editer/", methods=["GET"])
@@ -273,57 +272,57 @@ def edit_game(game_id) -> object:
     game = db.get_or_404(Game, game_id)
     if payload["user_id"] != game.gm.id and not payload["is_admin"]:
         abort(403)
+    data = request.values.to_dict()
+    gm_id = data["gm_id"]
+    post = game.status == "draft" and data["action"] == "open"
+    if post:
+        game.status = data["action"]
+    # Edit the Game object
+    if game.status == "draft":
+        game.name = data["name"]
+        game.type = data["type"]
+    game.system_id = data["system"]
+    game.vtt_id = data["vtt"] if data["vtt"] != "" else None
+    game.description = data["description"]
+    game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
+    game.length = data["length"]
+    game.party_size = data["party_size"]
+    game.restriction = data["restriction"]
+    if "restriction_tags" in data.keys():
+        restriction_tags = ""
+        if data["restriction_tags"] != "":
+            for item in yaml.safe_load(data["restriction_tags"]):
+                restriction_tags += item["value"] + ", "
+            game.restriction_tags = restriction_tags[:-2]
+    game.pregen = "pregen" in data.keys()
+    game.party_selection = "party_selection" in data.keys()
+    game.img = data.get("img", None)
+    if post:
+        # Create role and update object with role_id
+        game.role = bot.create_role(
+            role_name=data["name"],
+            permissions=PLAYER_ROLE_PERMISSION,
+            color=Game.COLORS[data["type"]],
+        )["id"]
+        # Create channel and update object with channel_id
+        game.channel = bot.create_channel(
+            channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
+            parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            role_id=game.role,
+            gm_id=gm_id,
+        )["id"]
     try:
-        data = request.values.to_dict()
-        gm_id = data["gm_id"]
-        post = game.status == "draft" and data["action"] == "open"
-        if post:
-            game.status = data["action"]
-        # Edit the Game object
-        if game.status == "draft":
-            game.name = data["name"]
-            game.type = data["type"]
-        game.system_id = data["system"]
-        game.vtt_id = data["vtt"] if data["vtt"] != "" else None
-        game.description = data["description"]
-        game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
-        game.length = data["length"]
-        game.party_size = data["party_size"]
-        game.restriction = data["restriction"]
-        if "restriction_tags" in data.keys():
-            restriction_tags = ""
-            if data["restriction_tags"] != "":
-                for item in yaml.safe_load(data["restriction_tags"]):
-                    restriction_tags += item["value"] + ", "
-                game.restriction_tags = restriction_tags[:-2]
-        game.pregen = "pregen" in data.keys()
-        game.party_selection = "party_selection" in data.keys()
-        game.img = data.get("img", None)
-        if post:
-            # Create role and update object with role_id
-            game.role = bot.create_role(
-                role_name=data["name"],
-                permissions=PLAYER_ROLE_PERMISSION,
-                color=Game.COLORS[data["type"]],
-            )["id"]
-            # Create channel and update object with channel_id
-            game.channel = bot.create_channel(
-                channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
-                parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
-                role_id=game.role,
-                gm_id=gm_id,
-            )["id"]
         # Save Game in database
         db.session.commit()
-        if post:
-            send_discord_embed(game)
-        return redirect(url_for("get_game_details", game_id=game.id))
     except Exception as e:
         if post:
             # Delete channel & role in case of error on post
             bot.delete_channel(game.channel)
             bot.delete_role(game.role)
         abort(500, e)
+    if post:
+        send_discord_embed(game)
+    return redirect(url_for("get_game_details", game_id=game.id))
 
 
 @app.route("/annonces/<game_id>/statut/", methods=["POST"])
@@ -336,16 +335,16 @@ def change_game_status(game_id) -> object:
     game = db.get_or_404(Game, game_id)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         abort(403)
+    status = request.values.to_dict()["status"]
+    game.status = status
     try:
-        status = request.values.to_dict()["status"]
-        game.status = status
+        db.session.commit()
         if status == "archived":
             bot.delete_channel(game.channel)
             bot.delete_role(game.role)
-        db.session.commit()
-        return redirect(url_for("get_game_details", game_id=game.id))
     except Exception as e:
         abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game.id))
 
 
 @app.route("/annonces/<game_id>/inscription/", methods=["POST"])
