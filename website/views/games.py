@@ -9,12 +9,12 @@ from flask import (
 from website import app, db, bot
 from website.models import Game, User, System, Vtt
 from website.views.auth import who, login_required
+from website.utils.discord import PLAYER_ROLE_PERMISSION
 from datetime import datetime
 import re, yaml
 
 GAMES_PER_PAGE = 12
 GAME_LIST_TEMPLATE = "games.html"
-PLAYER_ROLE_PERMISSION = "3072"  # view channel + send messages
 
 
 def send_discord_embed(game):
