@@ -4,17 +4,6 @@ from conftest import TestConfig
 config = TestConfig()
 
 
-def test_search_games(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/annonces/")
-    assert response.status_code == 200
-    assert b"<h1>Annonces</h1>" in response.data
-    assert "Recherche avancée" in response.data.decode()
-    response = client.get("/annonces/?name=test&open=on&oneshot=on&all=on")
-    assert response.status_code == 200
-
-
 def test_my_gm_games(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
@@ -159,6 +148,21 @@ def test_create_open_game(client):
         bytes("<h1>{}</h1>".format(config.game_name), encoding="UTF-8") in response.data
     )
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
+
+
+def test_search_games(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.get("/annonces/")
+    assert response.status_code == 200
+    assert b"<h1>Annonces</h1>" in response.data
+    assert "Recherche avancée" in response.data.decode()
+    response = client.get(
+        "/annonces/?name=test&open=on&oneshot=on&all=on&vtt={}&system={}".format(
+            config.game_vtt, config.game_system
+        )
+    )
+    assert response.status_code == 200
 
 
 def test_create_draft_game(client):
