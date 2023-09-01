@@ -350,5 +350,4 @@ def test_register_game(client):
     )
     assert response.status_code == 200
     assert config.user_id in response.data.decode()
-    print(response.data.decode())
     assert "Complet" in response.data.decode()
