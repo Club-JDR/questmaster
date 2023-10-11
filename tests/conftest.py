@@ -4,7 +4,7 @@ import pytest
 # Load env BEFORE importing app
 config = load_dotenv()
 import website
-
+import time
 
 class TestConfig:
     gm_id = "664487064577900594"
@@ -84,3 +84,8 @@ def app():
 @pytest.fixture()
 def client(app):
     return app.test_client()
+
+@pytest.fixture(autouse=True)
+def slow_down_tests():
+    yield
+    time.sleep(1)
