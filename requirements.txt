@@ -8,3 +8,4 @@ psutil==5.9.4
 psycopg2-binary==2.9.5
 Werkzeug==2.2.3
 pyyaml==6.0
+schema==0.7.5

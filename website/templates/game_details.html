@@ -6,18 +6,37 @@
     <div class="row">
         <div class="col-lg-5 p-3">
             <div class="row">
-                <h4><span class="badge text-bg-{% if game.type == 'campaign' %}primary">Campagne{% else %}success">One Shot{% endif %}</span> <span class="badge text-bg-secondary">{{ game.system.name }}</span>{% if game.vtt %} <span class="badge text-bg-secondary">{{ game.vtt.name }}</span>{%
-                    endif %}</h4>
                 {% if game.status == 'closed' %}
-                <h5><span class="badge text-bg-dark">Complet</span></h5>{% endif %} {% if game.status == 'draft' %}
+                <h5><span class="badge text-bg-dark">Complet</span></h5>
+                {% elif game.status == 'draft' %}
                 <h5><span class="badge text-bg-info">Brouillon</span></h5>
-                {% endif %} {% if game.status == 'archived' %}
+                {% elif game.status == 'archived' %}
                 <h5><span class="badge text-bg-danger">Archivée</span></h5>
                 {% endif %}
             </div>
+            <div class="row pb-2">
+                <div class="col"><strong>Type de session</strong></div>
+                <div class="col text-center"> {% if game.type == 'campaign' %}Campagne{% else %}One Shot{% endif %}</div>
+            </div>
+            <div class="row pb-2">
+                <div class="col"><strong>Système</strong></div>
+                <div class="col text-center"> {{ game.system.name }}</div>
+            </div>
+            {% if game.vtt %}
+            <div class="row pb-2">
+                <div class="col"><strong>VTT</strong></div>
+                <div class="col text-center"> {{ game.vtt.name }}</div>
+            </div>
+            {% endif %}
             <div class="row">
                 <p class="lh-lg">{{ game.description }}</p>
             </div>
+            {% if game.complement is not none %}
+            <div class="row pb-2">
+                <div class="col"><strong>Informations complémentaires</strong></div>
+                <div class="col text-center"> {{ game.complement }}</div>
+            </div>
+            {% endif %}
         </div>
         <div class="col-lg-4 p-3">
             <div class="row pb-2">
@@ -26,8 +45,14 @@
             </div>
             <div class="row pb-2">
                 <div class="col"><strong>Durée</strong></div>
-                <div class="col text-center"> {{ game.length }}</div>
+                <div class="col text-center"> {{ game.length }} de {{game.session_length}} heures</div>
             </div>
+            {% if game.length != "1 session" %}
+            <div class="row pb-2">
+                <div class="col"><strong>Fréquence</strong></div>
+                <div class="col text-center"> {{ game.frequency }}</div>
+            </div>
+            {% endif %}
             <div class="row pb-2">
                 <div class="col"><strong>Avertissement</strong></div>
                 <div class="col text-center">
@@ -54,6 +79,18 @@
                 <div class="col text-center">{{ game.party_size }} {% if game.party_selection %}(sur sélection){% endif %}</div>
             </div>
             <div class="row pb-2">
+                <div class="col"><strong>Expérience recherchée</strong></div>
+                <div class="col text-center">
+                    {% if game.xp == "beginners" %}Réservé aux débutants{% elif game.xp == "seasoned" %}Interdit aux débutants{% else %}Débutants bienvenus{% endif %}
+                </div>
+            </div>
+            <div class="row pb-2">
+                <div class="col"><strong>Création des personnages</strong></div>
+                <div class="col text-center">
+                    {% if game.characters == "self" %}À faire seul·e{% elif game.characters == "with_gm" %}À faire avec le·a MJ{% else %}Prétirés{% endif %}
+                </div>
+            </div>
+            <div class="row pb-2">
                 <div class="col"><strong>Joueur·euses inscrit·es</strong></div>
                 <div class="col">
                     <div class="row gy-4">
@@ -78,15 +115,25 @@
                     <img src="{{ game.img }}" class="figure-img img-fluid rounded img-preview" alt="{{ game.name }}">
                 </div>
             </div>
-            {% if payload['user_id'] != game.gm.id %}
+            {% if game.classification is not none %}
+            <div class="row pb-2">
+                <div class="col"><strong>Classification du scénario</strong></div>
+                <div class="col text-center">
+                    {{ game.classification }}
+                </div>
+            </div>
+            {% endif %} {% if game.ambience is not none %}
+            <div class="row pb-2">
+                <div class="col"><strong>Ambiance du scénario</strong></div>
+                <div class="col text-center">
+                    {{ game.ambience }}
+                </div>
+            </div>
+            {% endif %} {% if payload['user_id'] != game.gm.id %}
             <form class="row" method="post" action="/annonces/{{ game.id }}/inscription/">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
-                      {% if is_player %}
-                      <button type="button" class="btn btn-danger" >
-                          Se désinscrire
-                      </button>
-                      {% else %}
+                      {% if not is_player %}
                       <button type="submit" class="btn btn-success" {% if 'user_id' not in payload or (payload['user_id'] == game.gm.id) %}disabled{% endif %}>
                           S'inscrire
                       </button>

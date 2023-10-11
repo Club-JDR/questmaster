@@ -180,6 +180,26 @@ def get_game_form() -> object:
     )
 
 
+def get_classification(data):
+    classification = {}
+    for theme in ["action", "investigation", "interaction", "horror"]:
+        if data.get(f"class-{theme}") == "none":
+            classification[theme] = 0
+        elif data.get(f"class-{theme}") == "min":
+            classification[theme] = 1
+        elif data.get(f"class-{theme}") == "maj":
+            classification[theme] = 2
+    return classification
+
+
+def get_ambience(data):
+    ambience = []
+    for a in ["chill", "serious", "comic", "epic"]:
+        if data.get(a):
+            ambience.append(a)
+    return ambience
+
+
 @app.route("/annonce/", methods=["POST"])
 @login_required
 def create_game() -> object:
@@ -193,27 +213,33 @@ def create_game() -> object:
     gm_id = data["gm_id"]
     # Create the Game object
     new_game = Game(
-        gm_id=gm_id,
         name=data["name"],
+        type=data["type"],
+        length=data["length"],
+        gm_id=gm_id,
         system_id=data["system"],
         vtt_id=data["vtt"] if data["vtt"] != "" else None,
         description=data["description"],
-        type=data["type"],
-        date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
-        length=data["length"],
-        party_size=data["party_size"],
         restriction=data["restriction"],
+        party_size=data["party_size"],
+        xp=data["xp"],
+        date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
+        session_length=data["session_length"],
+        frequency=data.get("frequency") or None,
+        characters=data["characters"],
+        classification=get_classification(data),
+        ambience=get_ambience(data),
+        complement=data.get("complement"),
         status=data["action"],
+        img=data.get("img"),
     )
+    new_game.party_selection = "party_selection" in data.keys()
     if "restriction_tags" in data.keys():
         restriction_tags = ""
         if data["restriction_tags"] != "":
             for item in yaml.safe_load(data["restriction_tags"]):
                 restriction_tags += item["value"] + ", "
             new_game.restriction_tags = restriction_tags[:-2]
-    new_game.pregen = "pregen" in data.keys()
-    new_game.party_selection = "party_selection" in data.keys()
-    new_game.img = data.get("img", None)
     if data["action"] == "open":
         # Create role and update object with role_id
         new_game.role = bot.create_role(
@@ -287,6 +313,15 @@ def edit_game(game_id) -> object:
     game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
     game.length = data["length"]
     game.party_size = data["party_size"]
+    game.party_selection = "party_selection" in data.keys()
+    game.xp = data["xp"]
+    game.session_length = data["session_length"]
+    game.frequency = data.get("frequency") or None
+    game.characters = data["characters"]
+    game.classification = get_classification(data)
+    game.ambience = get_ambience(data)
+    game.complement = data.get("complement")
+    game.img = data.get("img")
     game.restriction = data["restriction"]
     if "restriction_tags" in data.keys():
         restriction_tags = ""
@@ -294,9 +329,7 @@ def edit_game(game_id) -> object:
             for item in yaml.safe_load(data["restriction_tags"]):
                 restriction_tags += item["value"] + ", "
             game.restriction_tags = restriction_tags[:-2]
-    game.pregen = "pregen" in data.keys()
-    game.party_selection = "party_selection" in data.keys()
-    game.img = data.get("img", None)
+            name = (data["name"],)
     if post:
         # Create role and update object with role_id
         game.role = bot.create_role(
