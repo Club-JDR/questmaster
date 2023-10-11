@@ -329,7 +329,6 @@ def edit_game(game_id) -> object:
             for item in yaml.safe_load(data["restriction_tags"]):
                 restriction_tags += item["value"] + ", "
             game.restriction_tags = restriction_tags[:-2]
-            name = (data["name"],)
     if post:
         # Create role and update object with role_id
         game.role = bot.create_role(
