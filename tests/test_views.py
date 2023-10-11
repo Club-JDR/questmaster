@@ -291,7 +291,7 @@ def test_edit_publish_game(client):
         "restriction_tags": "",
         "party_size": config.game_party_size2,
         "img": config.game_img2,
-        "action": "draft",
+        "action": "open",
         "date": "2023-11-01 20:30",
         "xp": config.game_xp,
         "frequency": "",
@@ -301,6 +301,7 @@ def test_edit_publish_game(client):
         "class-investigation": "maj",
         "class-interaction": "maj",
         "class-horror": "none",
+        "session_length": "3.5",
     }
     response = client.post(
         "/annonces/{}/editer/".format(config.game_id2), data=data, follow_redirects=True
