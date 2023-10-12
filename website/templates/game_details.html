@@ -112,7 +112,8 @@
             <div class="row pb-2">
                 <div class="col"><strong>Classification</strong></div>
                 <div class="col text-center">
-                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% elif item[1] == 1 %}<span class="badge bg-primary">{% elif item[1] == 0 %}<span class="badge bg-secondary-subtle">{% endif %}{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span>                    {% endfor %}
+                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span> {% elif item[1] == 1 %}
+                    <span class="badge bg-primary">{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span> {% endif %}{% endfor %}
                 </div>
             </div>
             {% endif %} {% if game.ambience is not none %}

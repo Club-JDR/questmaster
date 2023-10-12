@@ -189,6 +189,8 @@ def get_classification(data):
             classification[theme] = 1
         elif data.get(f"class-{theme}") == "maj":
             classification[theme] = 2
+    if all(value == 0 for value in classification.values()):
+        return None
     return classification
 
 

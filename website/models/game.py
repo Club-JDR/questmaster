@@ -79,7 +79,8 @@ class Game(db.Model):
     @orm.validates("classification")
     def validate_classification(self, key, value):
         try:
-            CLASSIFICATION_SCHEMA.validate(value)
+            if value:
+              CLASSIFICATION_SCHEMA.validate(value)
             return value
         except SchemaError:
             raise ValueError(f"Invalid classification format {value}")
