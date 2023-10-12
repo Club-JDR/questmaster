@@ -200,16 +200,16 @@
         </div>
         <div class="row">
             <div class="mb-2">
-                <label for="classification" class="form-label"><strong>Thèmes du scénario :</strong></label>
+                <label for="classification" class="form-label"><strong>Classification du scénario :</strong></label>
                 <div class="row">
                     <label for="action" class="col-sm-4 col-form-label">Action</label>
                     <div class="btn-group col-sm-8" role="group" aria-label="Action">
                         <input type="radio" class="btn-check" name="class-action" value="none" id="noaction" autocomplete="off" {% if (game and game.classification.action==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="noaction">Absent</label>
                         <input type="radio" class="btn-check" name="class-action" value="min" id="minaction" autocomplete="off" {% if game and game.classification.action==1 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="minaction">Mineur</label>
+                        <label class="btn btn-outline-primary btn-sm" for="minaction">Mineur</label>
                         <input type="radio" class="btn-check" name="class-action" value="maj" id="majaction" autocomplete="off" {% if game and game.classification.action==2 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="majaction">Majeur</label>
+                        <label class="btn btn-outline-danger btn-sm" for="majaction">Majeur</label>
                     </div>
                 </div>
                 <div class="row">
@@ -218,9 +218,9 @@
                         <input type="radio" class="btn-check" name="class-investigation" value="none" id="noinvestigation" autocomplete="off" {% if (game and game.classification.investigation==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="noinvestigation">Absent</label>
                         <input type="radio" class="btn-check" name="class-investigation" value="min" id="mininvestigation" autocomplete="off" {% if game and game.classification.investigation==1 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="mininvestigation">Mineur</label>
+                        <label class="btn btn-outline-primary btn-sm" for="mininvestigation">Mineur</label>
                         <input type="radio" class="btn-check" name="class-investigation" value="maj" id="majinvestigation" autocomplete="off" {% if game and game.classification.investigation==2 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="majinvestigation">Majeur</label>
+                        <label class="btn btn-outline-danger btn-sm" for="majinvestigation">Majeur</label>
                     </div>
                 </div>
                 <div class="row">
@@ -229,9 +229,9 @@
                         <input type="radio" class="btn-check" name="class-interaction" value="none" id="nointeraction" autocomplete="off" {% if (game and game.classification.interaction==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="nointeraction">Absent</label>
                         <input type="radio" class="btn-check" name="class-interaction" value="min" id="mininteraction" autocomplete="off" {% if game and game.classification.interaction==1 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="mininteraction">Mineur</label>
+                        <label class="btn btn-outline-primary btn-sm" for="mininteraction">Mineur</label>
                         <input type="radio" class="btn-check" name="class-interaction" value="maj" id="majinteraction" autocomplete="off" {% if game and game.classification.interaction==2 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="majinteraction">Majeur</label>
+                        <label class="btn btn-outline-danger btn-sm" for="majinteraction">Majeur</label>
                     </div>
                 </div>
                 <div class="row">
@@ -240,9 +240,9 @@
                         <input type="radio" class="btn-check" name="class-horror" value="none" id="nohorror" autocomplete="off" {% if (game and game.classification.horror==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="nohorror">Absent</label>
                         <input type="radio" class="btn-check" name="class-horror" value="min" id="minhorror" autocomplete="off" {% if game and game.classification.horror==1 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="minhorror">Mineur</label>
+                        <label class="btn btn-outline-primary btn-sm" for="minhorror">Mineur</label>
                         <input type="radio" class="btn-check" name="class-horror" value="maj" id="majhorror" autocomplete="off" {% if game and game.classification.horror==2 %}checked{% endif %}>
-                        <label class="btn btn-outline-secondary btn-sm" for="majhorror">Majeur</label>
+                        <label class="btn btn-outline-danger btn-sm" for="majhorror">Majeur</label>
                     </div>
                 </div>
             </div>

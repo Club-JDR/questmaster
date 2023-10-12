@@ -29,7 +29,8 @@
             </div>
             {% endif %}
             <div class="row">
-                <p class="lh-lg">{{ game.description }}</p>
+                <strong class="pb-2">Description</strong>
+                <pre>{{ game.description }}</pre>
             </div>
             {% if game.complement is not none %}
             <div class="row pb-2">
@@ -105,7 +106,21 @@
                         <p class="text-center">Aucun·e joueur·euses pour le moment.</p>
                         {% endif %}
                     </div>
-
+                </div>
+            </div>
+            {% if game.classification is not none %}
+            <div class="row pb-2">
+                <div class="col"><strong>Classification</strong></div>
+                <div class="col text-center">
+                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% elif item[1] == 1 %}<span class="badge bg-primary">{% elif item[1] == 0 %}<span class="badge bg-secondary-subtle">{% endif %}{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span>                    {% endfor %}
+                </div>
+            </div>
+            {% endif %} {% if game.ambience is not none %}
+            <div class="row pb-2">
+                <div class="col"><strong>Ambiance</strong></div>
+                <div class="col text-center">
+                    {% for ambience in game.ambience %}
+                    <span class="badge bg-secondary">{% if ambience == "serious"%}sérieuse {% elif ambience == "epic"%}épique {% elif ambience == "comic"%}comique{% elif ambience == "chill"%}décontractée{% endif %}</span> {% endfor %}
                 </div>
             </div>
         </div>
@@ -113,20 +128,6 @@
             <div class="row">
                 <div class="figure">
                     <img src="{{ game.img }}" class="figure-img img-fluid rounded img-preview" alt="{{ game.name }}">
-                </div>
-            </div>
-            {% if game.classification is not none %}
-            <div class="row pb-2">
-                <div class="col"><strong>Classification du scénario</strong></div>
-                <div class="col text-center">
-                    {{ game.classification }}
-                </div>
-            </div>
-            {% endif %} {% if game.ambience is not none %}
-            <div class="row pb-2">
-                <div class="col"><strong>Ambiance du scénario</strong></div>
-                <div class="col text-center">
-                    {{ game.ambience }}
                 </div>
             </div>
             {% endif %} {% if payload['user_id'] != game.gm.id %}
