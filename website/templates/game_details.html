@@ -48,10 +48,10 @@
                 <div class="col"><strong>Durée</strong></div>
                 <div class="col text-center"> {{ game.length }} de {{game.session_length}} heures</div>
             </div>
-            {% if game.length != "1 session" %}
+            {% if game.length != "1 session" or game.frequency %}
             <div class="row pb-2">
                 <div class="col"><strong>Fréquence</strong></div>
-                <div class="col text-center"> {{ game.frequency }}</div>
+                <div class="col text-center">{% if game.frequency == "weekly" %}Hebdomadaire{% elif game.frequency == "bi-weekly" %}Une semaine sur deux{% elif game.frequency == "monthly" %}Mensuelle{% else %}Autre{%endif%}</div>
             </div>
             {% endif %}
             <div class="row pb-2">
