@@ -80,7 +80,7 @@ class Game(db.Model):
     def validate_classification(self, key, value):
         try:
             if value:
-              CLASSIFICATION_SCHEMA.validate(value)
+                CLASSIFICATION_SCHEMA.validate(value)
             return value
         except SchemaError:
             raise ValueError(f"Invalid classification format {value}")

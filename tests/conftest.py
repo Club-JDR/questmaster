@@ -6,6 +6,7 @@ config = load_dotenv()
 import website
 import time
 
+
 class TestConfig:
     gm_id = "664487064577900594"
     user_id = "267928135419297792"
@@ -84,6 +85,7 @@ def app():
 @pytest.fixture()
 def client(app):
     return app.test_client()
+
 
 @pytest.fixture(autouse=True)
 def slow_down_tests():
