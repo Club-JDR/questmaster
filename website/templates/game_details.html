@@ -112,8 +112,8 @@
             <div class="row pb-2">
                 <div class="col"><strong>Classification</strong></div>
                 <div class="col text-center">
-                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span> {% elif item[1] == 1 %}
-                    <span class="badge bg-primary">{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span> {% endif %}{% endfor %}
+                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% if item[0] == "horror" %}Horreur{% else %}{{ item[0]|capitalize }}{% endif %}</span> {% elif item[1] == 1 %}
+                    <span class="badge bg-primary">{% if item[0] == "horror" %}Horreur{% else %}{{ item[0]|capitalize }}{% endif %}</span> {% endif %}{% endfor %}
                 </div>
             </div>
             {% endif %} {% if game.ambience is not none %}
@@ -134,7 +134,7 @@
             {% endif %} {% if payload['user_id'] != game.gm.id %}
             <form class="row" method="post" action="/annonces/{{ game.id }}/inscription/">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
                       {% if not is_player %}
                       <button type="submit" class="btn btn-success" {% if 'user_id' not in payload or (payload['user_id'] == game.gm.id) %}disabled{% endif %}>
                           S'inscrire
