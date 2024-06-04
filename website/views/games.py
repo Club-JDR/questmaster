@@ -250,9 +250,14 @@ def create_game() -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
+        category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
+        if new_game.type == "oneshot":
+            category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
+        else:
+            category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
         new_game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-            parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            parent_id=category_id,
             role_id=new_game.role,
             gm_id=gm_id,
         )["id"]
