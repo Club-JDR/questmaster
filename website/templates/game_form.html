@@ -5,18 +5,18 @@
 <form method="post" action="{% if game %}/annonces/{{ game.id }}/editer/{% else %}/annonce/{% endif %}" class="row needs-validation" novalidate>
     <div class="col-lg-5 p-3">
         <div class="row">
-            <div class="w-75 mb-2">
+            <div class="mb-2">
                 <label for="name" class="form-label"><strong>Nom :</strong></label>
-                <input type="text" class="form-control" name="name" aria-describedby="Nom" autocomplete="off" {% if game %}value="{{game.name}}" {% if game.status !="draft" %}readonly{% endif%}{% endif %} required>
+                <input type="text" class="form-control" id="name" name="name" aria-describedby="Nom" autocomplete="off" {% if game %}value="{{game.name}}" {% if game.status !="draft" %}readonly{% endif%}{% endif %} required>
                 <div class="invalid-feedback">
                     Vous devez choisir un nom pour votre annonce.
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="w-75 mb-2">
+            <div class="mb-2">
                 <label for="system" class="form-label"><strong>Système :</strong></label>
-                <select class="form-select" name="system" aria-describedby="Système" required>
+                <select class="form-select" id="system" name="system" aria-describedby="Système" required>
                   <option value="" selected></option>
                   {% for s in systems %}
                   <option value="{{ s.id }}" {% if game and game.system_id == s.id%}selected{% endif %}>{{ s.name }}</option>
@@ -28,9 +28,9 @@
             </div>
         </div>
         <div class="row">
-            <div class="w-75 mb-2">
+            <div class="mb-2">
                 <label for="vtt" class="form-label"><strong>VTT :</strong></label>
-                <select class="form-select" name="vtt" aria-describedby="VTT">
+                <select class="form-select" name="vtt" id="vtt" aria-describedby="VTT">
                 <option value="" selected></option>
                 {% for v in vtts %}
                 <option value="{{ v.id }}" {% if game and game.vtt_id == v.id%}selected{% endif %}>{{ v.name }}</option>
@@ -39,30 +39,38 @@
             </div>
         </div>
         <div class="row">
-            <div class="mb-2 w-75">
+            <div class="mb-2">
                 <label for="description" class="form-label"><strong>Description :</strong></label>
-                <textarea class="form-control" name="description" id="md-edit" rows="14" spellcheck="true" required>{% if game %}{{game.description}}{% endif %}</textarea>
+                <textarea class="form-control" name="description" id="description" rows="14" spellcheck="true" required>{% if game %}{{game.description}}{% endif %}</textarea>
                 <div class="invalid-feedback">
                     Vous devez entrer une description.
                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="mb-2">
+                <label for="complement" class="form-label"><strong>Informations complémentaires :</strong></label>
+                <textarea class="form-control" name="complement" id="complement" rows="4" spellcheck="true">{% if game and game.complement %}{{game.complement}}{% endif %}</textarea>
             </div>
         </div>
     </div>
     <div class="col-lg-4 p-3">
         <div class="row">
             <div class="mb-2">
-                <label for="type" class="form-label"><strong>Type de session :</strong></label>
+                <label class="form-label"><strong>Type de session :</strong></label>
                 <div class="mb-2">
-                    <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" %}disabled{% endif%} {% else %}checked{%endif%}>
-                    <label class="btn btn-outline-success btn-sm" for="oneshot">One Shot</label>
-                    <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off" {% if game %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" %}disabled{% endif%}{%endif%}{% endif %}>
-                    <label class="btn btn-outline-primary btn-sm" for="campaign">Campagne</label>
+                    <div class="btn-group" role="group" aria-label="SessionType">
+                        <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" %}disabled{% endif%} {% else %}checked{%endif%}>
+                        <label class="btn btn-outline-success btn-sm" for="oneshot">One Shot</label>
+                        <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off" {% if game %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" %}disabled{% endif%}{%endif%}{% endif %}>
+                        <label class="btn btn-outline-primary btn-sm" for="campaign">Campagne</label>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="w-75 mb-2">
-                <label for="date" class="form-label"><strong>Date :</strong></label>
+            <div class="mb-2">
+                <label for="calendar" class="form-label"><strong>Date :</strong></label>
                 <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" {% if game %}value="{{game.date}}" {% endif %}required>
                 <div class="invalid-feedback">
                     Vous devez entrer une date.
@@ -70,19 +78,21 @@
             </div>
         </div>
         <div class="row">
-            <div class="w-75 mb-2">
+            <div class="mb-2">
                 <label for="length" class="form-label"><strong>Durée :</strong></label>
                 <div class="input-group mb-3">
-                    <select class="form-select" aria-label="Durée" name="length" required>
-                    <option value="1 session" {% if game and game.length == '1 session' %}checked{% endif %}>1</option>
-                    <option value="2 sessions" {% if game and game.length == '2 sessions' %}checked{% endif %}>2</option>
-                    <option value="3 sessions" {% if game and game.length == '3 sessions' %}checked{% endif %}>3</option>
-                    <option value="~5 sessions" {% if game and game.length == '~5 sessions' %}checked{% endif %}>5</option>
-                    <option value="~10 sessions" {% if game and game.length == '~10 sessions' %}checked{% endif %}>~10</option>
-                    <option value="10+ sessions" {% if game and game.length == '10+ sessions' %}checked{% endif %}>10+</option>
-                    <option value="20+ sessions" {% if game and game.length == '20+ sessions' %}checked{% endif %}>20+</option>
-                  </select>
-                    <label class="input-group-text" for="length">session(s)</label>
+                    <select class="form-select" aria-label="Durée" id="length" name="length" required>
+                      <option value="1 session" {% if game and game.length == '1 session' %}selected{% endif %}>1</option>
+                      <option value="2 sessions" {% if game and game.length == '2 sessions' %}selected{% endif %}>2</option>
+                      <option value="3 sessions" {% if game and game.length == '3 sessions' %}selected{% endif %}>3</option>
+                      <option value="~5 sessions" {% if game and game.length == '~5 sessions' %}selected{% endif %}>5</option>
+                      <option value="~10 sessions" {% if game and game.length == '~10 sessions' %}selected{% endif %}>~10</option>
+                      <option value="10+ sessions" {% if game and game.length == '10+ sessions' %}selected{% endif %}>10+</option>
+                      <option value="20+ sessions" {% if game and game.length == '20+ sessions' %}selected{% endif %}>20+</option>
+                    </select>
+                    <label class="input-group-text" for="session_length">session(s) de</label>
+                    <input type="number" step="0.5" value="3.5" class="form-control" id="session_length" name="session_length" aria-describedby="Durée moyenne de session" autocomplete="off" {% if game %}value="{{game.session_length}}" {% endif %} required>
+                    <label class="input-group-text" for="session_length">heures</label>
                 </div>
                 <div class="invalid-feedback">
                     Vous devez choisir une durée.
@@ -90,43 +100,72 @@
             </div>
         </div>
         <div class="row">
-            <div class="w-75 mb-2">
+            <div class="mb-2">
+                <label for="frequency" class="form-label"><strong>Fréquence :</strong></label>
+                <select class="form-select" name="frequency" id="frequency" aria-describedby="Fréquence">
+                  <option value="" selected></option>
+                  <option value="weekly" {% if game and game.frequency == "weekly" %}selected{% endif %}>Hebdomadaire</option>
+                  <option value="bi-weekly" {% if game and game.frequency == "bi-weekly" %}selected{% endif %}>Une semaine sur deux</option>
+                  <option value="monthly" {% if game and game.frequency == "monthly" %}selected{% endif %}>Mensuelle</option>
+                  <option value="other" {% if game and game.frequency == "other" %}selected{% endif %}>Autre</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="mb-2">
                 <label for="party_size" class="form-label"><strong>Nombre de joueur·euses :</strong></label>
-                <input type="number" step="1" max="99" name="party_size" class="form-control" {% if game %}value="{{game.party_size}}" {% else %}value="4" {% endif %}required>
+                <input type="number" step="1" max="99" name="party_size" id="party_size" class="form-control" {% if game %}value="{{game.party_size}}" {% else %}value="4" {% endif %}required>
                 <div class="invalid-feedback">
                     Vous devez entrer un nombre de joueur·euses.
                 </div>
             </div>
         </div>
         <div class="row">
-            <label for="restriction" class="form-label"><strong>Avertissement :</strong></label>
             <div class="mb-2">
-                <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" {% if game %}{% if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
-                <label class="btn btn-outline-success btn-sm" for="all">Tout public</label>
-                <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off" {% if game and game.restriction=='16+' %}checked{% endif %}>
-                <label class="btn btn-outline-warning btn-sm" for="16">16+</label>
-                <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off" {% if game and game.restriction=='18+' %}checked{% endif %}>
-                <label class="btn btn-outline-danger btn-sm" for="18">18+</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" name="party_selection" id="party_selection" {% if game and game.party_selection %}checked{% endif %}>
+                    <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
+                </div>
             </div>
         </div>
         <div class="row">
-            <div class="mb-2 w-75">
+            <div class="mb-2">
+                <label for="xp" class="form-label"><strong>Expérience recherchée :</strong></label>
+                <select class="form-select" id="xp" name="xp" aria-describedby="Expérience">
+                  <option value="all" {% if (game and game.xp == "all") or not game %}selected{% endif %}>Débutants bienvenus</option>
+                  <option value="beginners" {% if game and game.xp == "beginners" %}selected{% endif %}>Réservé aux débutants</option>
+                  <option value="seasoned" {% if game and game.xp == "seasoned" %}selected{% endif %}>Interdit aux débutants</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="mb-2">
+                <label for="characters" class="form-label"><strong>Création des personnages :</strong></label>
+                <select class="form-select" name="characters" id="characters" aria-describedby="Personnages">
+                  <option value="with_gm" {% if (game and game.xp == "with_gm") or not game %}selected{% endif %}>À faire avec le·a MJ</option>
+                  <option value="self" {% if game and game.xp == "self" %}selected{% endif %}>À faire seul·e</option>
+                  <option value="pregen" {% if game and game.xp == "pregen" %}selected{% endif %}>Prétirés</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <label class="form-label"><strong>Avertissement :</strong></label>
+            <div class="mb-2">
+                <div class="btn-group" role="group" aria-label="Restriction">
+                    <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" {% if game %}{% if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
+                    <label class="btn btn-outline-success btn-sm" for="all">Tout public</label>
+                    <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off" {% if game and game.restriction=='16+' %}checked{% endif %}>
+                    <label class="btn btn-outline-warning btn-sm" for="16">16+</label>
+                    <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off" {% if game and game.restriction=='18+' %}checked{% endif %}>
+                    <label class="btn btn-outline-danger btn-sm" for="18">18+</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="mb-2">
                 <label for="restriction_tags" class="form-label"><strong>Thèmes choquants :</strong></label>
                 <textarea class="form-control" name="restriction_tags" id="restriction_tags" rows="2" aria-describedby="RestrictionTags">{% if game and game.restriction_tags is not none %}{{game.restriction_tags}}{% endif %}</textarea>
                 <div id="tagsHelp" class="form-text">Séparer chaque thème par une virgule.</div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="mb-2">
-                <label class="form-label"><strong>Options :</strong></label>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" name="pregen" {% if game and game.pregen %}checked{% endif %}>
-                    <label class="form-check-label" for="pregen">Prétirés</label>
-                </div>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" name="party_selection" {% if game and game.party_selection %}checked{% endif %}>
-                    <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
-                </div>
             </div>
         </div>
     </div>
@@ -156,8 +195,78 @@
                 </div>
             </div>
         </div>
-        <div class="row mx-auto">
+        <div class="row mx-auto mb-2">
             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal">Choisir une image</button>
+        </div>
+        <div class="row">
+            <div class="mb-2">
+                <label class="form-label"><strong>Classification du scénario :</strong></label>
+                <div class="row">
+                    <label class="col-sm-4 col-form-label">Action</label>
+                    <div class="btn-group col-sm-8" role="group" aria-label="Action">
+                        <input type="radio" class="btn-check" name="class-action" value="none" id="noaction" autocomplete="off" {% if (game and game.classification.action==0) or not game %}checked{% endif %}>
+                        <label class="btn btn-outline-secondary btn-sm" for="noaction">Absent</label>
+                        <input type="radio" class="btn-check" name="class-action" value="min" id="minaction" autocomplete="off" {% if game and game.classification.action==1 %}checked{% endif %}>
+                        <label class="btn btn-outline-primary btn-sm" for="minaction">Mineur</label>
+                        <input type="radio" class="btn-check" name="class-action" value="maj" id="majaction" autocomplete="off" {% if game and game.classification.action==2 %}checked{% endif %}>
+                        <label class="btn btn-outline-danger btn-sm" for="majaction">Majeur</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <label class="col-sm-4 col-form-label">Investigation</label>
+                    <div class="btn-group col-sm-8" role="group" aria-label="Investigation">
+                        <input type="radio" class="btn-check" name="class-investigation" value="none" id="noinvestigation" autocomplete="off" {% if (game and game.classification.investigation==0) or not game %}checked{% endif %}>
+                        <label class="btn btn-outline-secondary btn-sm" for="noinvestigation">Absent</label>
+                        <input type="radio" class="btn-check" name="class-investigation" value="min" id="mininvestigation" autocomplete="off" {% if game and game.classification.investigation==1 %}checked{% endif %}>
+                        <label class="btn btn-outline-primary btn-sm" for="mininvestigation">Mineur</label>
+                        <input type="radio" class="btn-check" name="class-investigation" value="maj" id="majinvestigation" autocomplete="off" {% if game and game.classification.investigation==2 %}checked{% endif %}>
+                        <label class="btn btn-outline-danger btn-sm" for="majinvestigation">Majeur</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <label class="col-sm-4 col-form-label">Interaction</label>
+                    <div class="btn-group col-sm-8" role="group" aria-label="Interaction">
+                        <input type="radio" class="btn-check" name="class-interaction" value="none" id="nointeraction" autocomplete="off" {% if (game and game.classification.interaction==0) or not game %}checked{% endif %}>
+                        <label class="btn btn-outline-secondary btn-sm" for="nointeraction">Absent</label>
+                        <input type="radio" class="btn-check" name="class-interaction" value="min" id="mininteraction" autocomplete="off" {% if game and game.classification.interaction==1 %}checked{% endif %}>
+                        <label class="btn btn-outline-primary btn-sm" for="mininteraction">Mineur</label>
+                        <input type="radio" class="btn-check" name="class-interaction" value="maj" id="majinteraction" autocomplete="off" {% if game and game.classification.interaction==2 %}checked{% endif %}>
+                        <label class="btn btn-outline-danger btn-sm" for="majinteraction">Majeur</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <label class="col-sm-4 col-form-label">Horreur</label>
+                    <div class="btn-group col-sm-8" role="group" aria-label="Horreur">
+                        <input type="radio" class="btn-check" name="class-horror" value="none" id="nohorror" autocomplete="off" {% if (game and game.classification.horror==0) or not game %}checked{% endif %}>
+                        <label class="btn btn-outline-secondary btn-sm" for="nohorror">Absent</label>
+                        <input type="radio" class="btn-check" name="class-horror" value="min" id="minhorror" autocomplete="off" {% if game and game.classification.horror==1 %}checked{% endif %}>
+                        <label class="btn btn-outline-primary btn-sm" for="minhorror">Mineur</label>
+                        <input type="radio" class="btn-check" name="class-horror" value="maj" id="majhorror" autocomplete="off" {% if game and game.classification.horror==2 %}checked{% endif %}>
+                        <label class="btn btn-outline-danger btn-sm" for="majhorror">Majeur</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <label class="form-label"><strong>Ambiance recherchée :</strong></label>
+            <div class="mb-2">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" role="switch" type="checkbox" id="chill" name="chill" {% if game and "chill" in game.ambience %}checked{% endif %}>
+                    <label class="form-check-label" for="chill">Décontractée</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" role="switch" type="checkbox" name="serious" id="serious" {% if game and "serious" in game.ambience %}checked{% endif %}>
+                    <label class="form-check-label" for="serious">Sérieuse</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" role="switch" type="checkbox" name="comic" id="comic" {% if game and "comic" in game.ambience %}checked{% endif %}>
+                    <label class="form-check-label" for="comic">Comique</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" role="switch" type="checkbox" name="epic" id="epic" {% if game and "epic" in game.ambience %}checked{% endif %}>
+                    <label class="form-check-label" for="epic">Épique</label>
+                </div>
+            </div>
         </div>
         <div class="row pt-2 mx-auto">
             <button type="submit" name="action" value="draft" class="btn btn-secondary">Enregistrer</button>

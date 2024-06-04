@@ -133,9 +133,19 @@ def test_create_open_game(client):
         "restriction_tags": config.game_restriction_tags,
         "party_size": config.game_party_size,
         "party_selection": config.game_party_selection,
+        "xp": config.game_xp,
+        "frequency": config.game_frequency,
+        "characters": config.game_characters,
+        "complement": config.game_complement,
+        "serious": "on",
+        "class-action": "min",
+        "class-investigation": "maj",
+        "class-interaction": "maj",
+        "class-horror": "maj",
         "img": config.game_img,
         "action": "open",
         "date": "2023-07-01 20:30",
+        "session_length": "3.5",
     }
     response = client.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 403  # fails because not GM
@@ -182,6 +192,15 @@ def test_create_draft_game(client):
         "img": config.game_img2,
         "action": "draft",
         "date": "2023-11-01 20:30",
+        "xp": config.game_xp,
+        "frequency": "",
+        "characters": config.game_characters2,
+        "serious": "on",
+        "class-action": "min",
+        "class-investigation": "maj",
+        "class-interaction": "maj",
+        "class-horror": "none",
+        "session_length": "3.5",
     }
     response = client.post("/annonce/", data=data, follow_redirects=True)
     config.game_id2 = response.request.path.split("/")[-2]
@@ -274,6 +293,15 @@ def test_edit_publish_game(client):
         "img": config.game_img2,
         "action": "open",
         "date": "2023-11-01 20:30",
+        "xp": config.game_xp,
+        "frequency": "",
+        "characters": config.game_characters2,
+        "serious": "on",
+        "class-action": "min",
+        "class-investigation": "maj",
+        "class-interaction": "maj",
+        "class-horror": "none",
+        "session_length": "3.5",
     }
     response = client.post(
         "/annonces/{}/editer/".format(config.game_id2), data=data, follow_redirects=True

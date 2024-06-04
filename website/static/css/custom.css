@@ -1,5 +1,5 @@
 * {
-    font-family: 'Ysabeau', Helvetica, Arial, sans-serif
+    font-family: 'Ysabeau', Helvetica, Arial, sans-serif;
 }
 
 h1,
@@ -67,4 +67,15 @@ figure {
 
 .card {
     transition-duration: 0.8s;
+}
+
+pre {
+    font-family: 'Ysabeau', Helvetica, Arial, sans-serif;
+    font-size: var(--bs-body-font-size);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
 }

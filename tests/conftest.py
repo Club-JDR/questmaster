@@ -4,6 +4,7 @@ import pytest
 # Load env BEFORE importing app
 config = load_dotenv()
 import website
+import time
 
 
 class TestConfig:
@@ -41,12 +42,17 @@ Ce scénario n'existe pas, c'est uniquement une annonce qui sert à faire des te
     """
     game_restriction = "18+"
     game_restriction2 = "all"
-    game_restriction_tags = '[{"value":"meurtres","color":"hsl(250,63%,66%)","style":"--tag-bg:hsl(250,63%,66%)"},{"value":"folie","color":"hsl(184,47%,67%)","style":"--tag-bg:hsl(184,47%,67%)"}]'
+    game_restriction_tags = '[{"value":"meurtres"},{"value":"folie"}]'
     game_party_size = 3
     game_party_size2 = 1
-    game_party_selection = True
+    game_party_selection = "on"
     game_img = "https://www.gameontabletop.com/contenu/image/ks_projet_img/414_rp-Aenk0p_Iwj_2rkY-mk-gdW6nr"
     game_img2 = "https://i.imgur.com/CJQdtXT.jpeg"
+    game_xp = "all"
+    game_frequency = "bi-weekly"
+    game_complement = "Sélection sur questionnaire."
+    game_characters = "self"
+    game_characters2 = "pregen"
 
     def set_gm_session(session):
         session["user_id"] = TestConfig.gm_id
@@ -79,3 +85,9 @@ def app():
 @pytest.fixture()
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def slow_down_tests():
+    yield
+    time.sleep(1)
