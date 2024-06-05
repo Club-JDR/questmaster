@@ -4,7 +4,7 @@
         <h1>{{ game.name }}</h1>
     </div>
     <div class="row">
-        <div class="col-lg-5 p-3">
+        <div class="col-lg-4 p-3">
             <div class="row">
                 {% if game.status == 'closed' %}
                 <h5><span class="badge text-bg-dark">Complet</span></h5>
@@ -125,7 +125,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 p-3">
+        <div class="col-lg-4 p-3">
             <div class="row">
                 <div class="figure">
                     <img src="{{ game.img }}" class="figure-img img-fluid rounded img-preview" alt="{{ game.name }}">
@@ -143,6 +143,32 @@
                   </span>
             </form>
             {% endif %}
+            <div class="row overflow-y-auto session-box">
+              <div class="row text-center pb-2">
+                <strong>Liste des sessions</strong>
+              </div>
+              {% for session in game.sessions|sort(attribute='start') %}
+                <div class="row text-center pb-2">
+                  <add-to-calendar-button
+                    name="{{ game.name }} par {{ game.gm.name }} #{{loop.index}}"
+                    options="'Apple','Google','iCal','Outlook.com','Yahoo'"
+                    location="https://discord.com/channels/789486751571116053/1115719113071927406"
+                    startDate="{{ session.start|format_datetime('%Y-%m-%d') }}"
+                    endDate="{{ session.end|format_datetime('%Y-%m-%d') }}"
+                    startTime="{{ session.start|format_datetime('%H:%M') }}"
+                    endTime="{{ session.end|format_datetime('%H:%M') }}"
+                    timeZone="Europe/Paris"
+                    description="{{ game.type }} - {{ game.gm.name }}"
+                    size="1"
+                    listStyle="overlay"
+                    hideTextLabelButton
+                    language="fr"
+                    buttonStyle="date"
+                    inline
+                  ></add-to-calendar-button>
+                </div>
+              {% endfor %}
+            </div>
         </div>
     </div>
 </div>
@@ -186,4 +212,7 @@
 </div>
 </div>
 {% endblock %} {% block scripts %} {{ super() }}
-<script src="/static/js/tooltips.js"></script>{% endblock %}
+<script src="/static/js/tooltips.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/assets/css/atcb.min.css" integrity="sha256-i1OgrNoqi0lw5oc4mQteQV4bzL+7Qj6ZgkL00zku/hY=" crossorigin="anonymous">
+{% endblock %}

@@ -7,14 +7,24 @@ from flask import (
     abort,
 )
 from website import app, db, bot
-from website.models import Game, User, System, Vtt
+from website.models import Game, User, System, Vtt, Session
 from website.views.auth import who, login_required
 from website.utils.discord import PLAYER_ROLE_PERMISSION
-from datetime import datetime
+from datetime import datetime, timedelta
 import re, yaml
 
 GAMES_PER_PAGE = 12
 GAME_LIST_TEMPLATE = "games.html"
+
+
+def create_game_session(game, start, end):
+    """
+    Create a session for a game.
+    """
+    session = Session(start=start, end=end)
+    db.session.add(session)
+    db.session.commit()
+    game.sessions.append(session)
 
 
 def send_discord_embed(game):
@@ -243,6 +253,11 @@ def create_game() -> object:
                 restriction_tags += item["value"] + ", "
             new_game.restriction_tags = restriction_tags[:-2]
     if data["action"] == "open":
+        create_game_session(
+            new_game,
+            new_game.date,
+            new_game.date + timedelta(hours=float(new_game.session_length)),
+        )
         # Create role and update object with role_id
         new_game.role = bot.create_role(
             role_name=data["name"],
@@ -337,6 +352,11 @@ def edit_game(game_id) -> object:
                 restriction_tags += item["value"] + ", "
             game.restriction_tags = restriction_tags[:-2]
     if post:
+        create_game_session(
+            game,
+            game.date,
+            game.date + timedelta(hours=float(game.session_length)),
+        )
         # Create role and update object with role_id
         game.role = bot.create_role(
             role_name=data["name"],
