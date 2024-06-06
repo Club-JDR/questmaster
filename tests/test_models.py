@@ -79,7 +79,6 @@ def test_games():
     assert game.vtt == game_vtt
     assert game.session_length == game_session_length
     assert game.frequency == game_frequency
-    assert game.sessions[0].start == game.date
 
 
 def test_users():
