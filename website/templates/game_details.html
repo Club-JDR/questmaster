@@ -1,4 +1,8 @@
-{% extends 'base.html' %} {% block title %}{{ game.name }}{% endblock %} {% block content %}
+{% extends 'base.html' %} {% block title %}{{ game.name }}{% endblock %} {% block head %} {{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha256-GzSkJVLJbxDk36qko2cnawOGiqz/Y8GsQv/jMTUrx1Q=" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/assets/css/atcb.min.css" integrity="sha256-i1OgrNoqi0lw5oc4mQteQV4bzL+7Qj6ZgkL00zku/hY=" crossorigin="anonymous">
+{% endblock %} {% block content %}
 <div class="container">
     <div class="row">
         <h1>{{ game.name }}</h1>
@@ -149,6 +153,7 @@
               </div>
               {% for session in game.sessions|sort(attribute='start') %}
                 <div class="row text-center pb-2">
+                  <div class="btn-toolbar justify-content-center" role="toolbar" aria-label="Toolbar with button groups">
                   <add-to-calendar-button
                     name="{{ game.name }} par {{ game.gm.name }} #{{loop.index}}"
                     options="'Apple','Google','iCal','Outlook.com','Yahoo'"
@@ -166,8 +171,46 @@
                     buttonStyle="date"
                     inline
                   ></add-to-calendar-button>
+                  {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+                  <div class="btn-group pb-4 ps-4" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
+                    <button type="button" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                  </div>
+                  {% endif %}
+                </div>
                 </div>
               {% endfor %}
+              {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+              <div class="row text-center">
+                <div class="col align-self-center">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#addSessionModal"><i class="bi bi-calendar-plus"></i> Ajouter</button>
+                </div>
+              </div>
+              <div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModal" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1 class="modal-title fs-5">Ajouter une session</h1>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form method="post" action="/annonces/{{game.id}}/sessions/ajouter" class="row">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                          <div class="input-group mb-3">
+                            <span class="input-group-text">Début :</span>
+                            <input id="date_start" name="date_start" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" required>
+                            <span class="input-group-text">Fin :</span>
+                            <input name="date_end" id="date_end" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" required>
+                            <button type="submit" class="btn btn-primary">Ajouter</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
             </div>
         </div>
     </div>
@@ -180,11 +223,15 @@
                 <a href="/annonces/{{game.id}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <a href="/annonces/{{game.id}}/gerer/" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>
-                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Ajouter/supprimer une session."><i class="bi bi-calendar4-week"></i> Planifier</button> {% if game.status=='open' %}
-                <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button> {% endif %}{% if game.status == 'closed'%}
-                <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button> {% endif %} {% if game.status != 'archived'
-                %}
-                <a href="/annonces/{{game.id}}/archiver/" type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</a> {% endif %}
+                {% if game.status=='open' %}
+                <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button>
+                {% endif %}
+                {% if game.status == 'closed'%}
+                <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button>
+                {% endif %}
+                {% if game.status != 'archived'%}
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
+                {% endif %}
             </div>
             <div class="modal fade" id="confirmArchive" tabindex="-1" aria-labelledby="confirmArchiveLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -214,5 +261,7 @@
 {% endblock %} {% block scripts %} {{ super() }}
 <script src="/static/js/tooltips.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/assets/css/atcb.min.css" integrity="sha256-i1OgrNoqi0lw5oc4mQteQV4bzL+7Qj6ZgkL00zku/hY=" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js" integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
+<script src="/static/js/game-sessions.js"></script>
 {% endblock %}
