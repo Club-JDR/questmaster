@@ -153,7 +153,7 @@
               </div>
               {% for session in game.sessions|sort(attribute='start') %}
                 <div class="row text-center pb-2">
-                  <div class="btn-toolbar justify-content-center" role="toolbar" aria-label="Toolbar with button groups">
+                  <div class="btn-toolbar justify-content-center">
                   <add-to-calendar-button
                     name="{{ game.name }} par {{ game.gm.name }} #{{loop.index}}"
                     options="'Apple','Google','iCal','Outlook.com','Yahoo'"
@@ -172,7 +172,7 @@
                     inline
                   ></add-to-calendar-button>
                   {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
-                  <div class="btn-group pb-4 ps-4" role="group">
+                  <div class="btn-group pb-4 ps-4">
                     <button type="button" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
                     <button type="button" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
                   </div>
@@ -219,7 +219,7 @@
     <div class="col align-self-center">
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
         <form method="post" action="/annonces/{{game.id}}/statut/">
-            <div class="btn-group" role="group" aria-label="Actions du MJ">
+            <div class="btn-group">
                 <a href="/annonces/{{game.id}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <a href="/annonces/{{game.id}}/gerer/" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>

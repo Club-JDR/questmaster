@@ -160,6 +160,21 @@ def test_create_open_game(client):
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
 
 
+def test_add_session_to_game(client):
+    response = client.post(
+        "/annonces/{}/sessions/ajouter".format(config.game_id),
+        data={"start": "2024-06-07 20:00", "end": "2024-06-07 23:00"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert '<div class="atcb-date-btn-day">7</div>' in response.data.decode()
+    assert '<div class="atcb-date-btn-month">juin</div>' in response.data.decode()
+
+
+def test_remove_session_to_game():
+    pass
+
+
 def test_search_games(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)

@@ -17,6 +17,16 @@ GAMES_PER_PAGE = 12
 GAME_LIST_TEMPLATE = "games.html"
 
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
+DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
+HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
+
+
+def get_channel_category(game):
+    if game.type == "oneshot":
+        category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
+    else:
+        category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
+    return category_id
 
 
 def abort_if_not_gm(payload):
@@ -86,7 +96,7 @@ def send_discord_embed(game, type="annonce", start=None, end=None, player=None):
                 },
                 {
                     "name": "Date",
-                    "value": game.date.strftime("%a %d/%m - %Hh%M"),
+                    "value": game.date.strftime(HUMAN_TIMEFORMAT),
                     "inline": True,
                 },
                 {"name": "Durée", "value": game.length, "inline": True},
@@ -127,9 +137,7 @@ def send_discord_embed(game, type="annonce", start=None, end=None, player=None):
         target = game.channel
     elif type == "register":
         embed = {
-            "description": "<@&{}>\nVotre MJ a annulé une la session du **{}** au ** {}**\nPensez à l'enlever de votre calendrier.".format(
-                game.role, start, end
-            ),
+            "description": "<@{}> s'est inscrit. Bienvenue :wave: ".format(player),
             "title": "Nouvelle inscription",
             "color": 2201331,  # blue
         }
@@ -293,7 +301,7 @@ def create_game() -> object:
         restriction=data["restriction"],
         party_size=data["party_size"],
         xp=data["xp"],
-        date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
+        date=datetime.strptime(data["date"], DEFAULT_TIMEFORMAT),
         session_length=data["session_length"],
         frequency=data.get("frequency") or None,
         characters=data["characters"],
@@ -323,11 +331,7 @@ def create_game() -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
-        category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
-        if new_game.type == "oneshot":
-            category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
-        else:
-            category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
+        category_id = get_channel_category(new_game)
         new_game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
             parent_id=category_id,
@@ -386,7 +390,7 @@ def edit_game(game_id) -> object:
     game.system_id = data["system"]
     game.vtt_id = data["vtt"] if data["vtt"] != "" else None
     game.description = data["description"]
-    game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
+    game.date = datetime.strptime(data["date"], DEFAULT_TIMEFORMAT)
     game.length = data["length"]
     game.party_size = data["party_size"]
     game.party_selection = "party_selection" in data.keys()
@@ -478,10 +482,10 @@ def add_game_session(game_id) -> object:
         send_discord_embed(
             game,
             type="add-session",
-            start=datetime.strptime(start, "%Y-%m-%d %H:%M").strftime(
-                "%a %d/%m - %Hh%M"
+            start=datetime.strptime(start, DEFAULT_TIMEFORMAT).strftime(
+                HUMAN_TIMEFORMAT
             ),
-            end=datetime.strptime(end, "%Y-%m-%d %H:%M").strftime("%a %d/%m - %Hh%M"),
+            end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
         )
     except Exception as e:
         abort(500, e)
@@ -505,10 +509,10 @@ def remove_game_session(game_id, session_id) -> object:
         send_discord_embed(
             game,
             type="del-session",
-            start=datetime.strptime(start, "%Y-%m-%d %H:%M").strftime(
-                "%a %d/%m - %Hh%M"
+            start=datetime.strptime(start, DEFAULT_TIMEFORMAT).strftime(
+                HUMAN_TIMEFORMAT
             ),
-            end=datetime.strptime(end, "%Y-%m-%d %H:%M").strftime("%a %d/%m - %Hh%M"),
+            end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
         )
     except Exception as e:
         abort(500, e)
