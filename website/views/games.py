@@ -22,10 +22,9 @@ HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
 
 def get_channel_category(game):
+    category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
     if game.type == "oneshot":
         category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
-    else:
-        category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
     return category_id
 
 

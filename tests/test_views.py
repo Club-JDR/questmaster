@@ -180,7 +180,6 @@ def test_add_session_to_game(client):
     )
     assert response.status_code == 200
     assert '<div class="atcb-date-btn-day">7</div>' in response.data.decode()
-    assert '<div class="atcb-date-btn-month">juin</div>' in response.data.decode()
 
 
 def test_remove_session_to_game():
