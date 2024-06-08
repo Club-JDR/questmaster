@@ -1,7 +1,9 @@
 from bs4 import BeautifulSoup
 from conftest import TestConfig
+import locale
 
 config = TestConfig()
+locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 
 
 def test_my_gm_games(client):
