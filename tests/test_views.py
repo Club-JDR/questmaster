@@ -161,7 +161,7 @@ def test_create_open_game(client):
 
 
 def test_add_session_to_game(client):
-    data = {"start": "2024-06-07 20:00", "end": "2024-06-07 23:00"}
+    data = {"date_start": "2024-06-07 20:00", "date_end": "2024-06-07 23:00"}
     url = "/annonces/{}/sessions/ajouter".format(config.game_id)
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
