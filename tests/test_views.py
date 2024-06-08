@@ -1,9 +1,7 @@
 from bs4 import BeautifulSoup
 from conftest import TestConfig
-import locale
 
 config = TestConfig()
-locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 
 
 def test_my_gm_games(client):
@@ -181,7 +179,8 @@ def test_add_session_to_game(client):
         follow_redirects=True,
     )
     assert response.status_code == 200
-    assert 'startdate="2024-06-07" enddate="2024-06-07"' in response.data.decode()
+    assert 'startDate="2024-06-07"' in response.data.decode()
+    assert 'endDate="2024-06-07"' in response.data.decode()
 
 
 def test_remove_session_to_game():
