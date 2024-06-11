@@ -1,10 +1,14 @@
-{% extends 'base.html' %} {% block title %}{{ game.name }}{% endblock %} {% block content %}
+{% extends 'base.html' %} {% block title %}{{ game.name }}{% endblock %} {% block head %} {{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha256-GzSkJVLJbxDk36qko2cnawOGiqz/Y8GsQv/jMTUrx1Q=" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/assets/css/atcb.min.css" integrity="sha256-i1OgrNoqi0lw5oc4mQteQV4bzL+7Qj6ZgkL00zku/hY=" crossorigin="anonymous">
+{% endblock %} {% block content %}
 <div class="container">
     <div class="row">
         <h1>{{ game.name }}</h1>
     </div>
     <div class="row">
-        <div class="col-lg-5 p-3">
+        <div class="col-lg-4 p-3">
             <div class="row">
                 {% if game.status == 'closed' %}
                 <h5><span class="badge text-bg-dark">Complet</span></h5>
@@ -112,8 +116,8 @@
             <div class="row pb-2">
                 <div class="col"><strong>Classification</strong></div>
                 <div class="col text-center">
-                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span> {% elif item[1] == 1 %}
-                    <span class="badge bg-primary">{% if item[0] == "horror" %}horreur{% else %}{{ item[0] }}{% endif %}</span> {% endif %}{% endfor %}
+                    {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% if item[0] == "horror" %}Horreur{% else %}{{ item[0]|capitalize }}{% endif %}</span> {% elif item[1] == 1 %}
+                    <span class="badge bg-primary">{% if item[0] == "horror" %}Horreur{% else %}{{ item[0]|capitalize }}{% endif %}</span> {% endif %}{% endfor %}
                 </div>
             </div>
             {% endif %} {% if game.ambience is not none %}
@@ -125,7 +129,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 p-3">
+        <div class="col-lg-4 p-3">
             <div class="row">
                 <div class="figure">
                     <img src="{{ game.img }}" class="figure-img img-fluid rounded img-preview" alt="{{ game.name }}">
@@ -134,7 +138,7 @@
             {% endif %} {% if payload['user_id'] != game.gm.id %}
             <form class="row" method="post" action="/annonces/{{ game.id }}/inscription/">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <span class="d-inline-block d-grid" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">
                       {% if not is_player %}
                       <button type="submit" class="btn btn-success" {% if 'user_id' not in payload or (payload['user_id'] == game.gm.id) %}disabled{% endif %}>
                           S'inscrire
@@ -143,6 +147,118 @@
                   </span>
             </form>
             {% endif %}
+            <div class="row overflow-y-auto session-box">
+              <div class="row text-center pb-2">
+                <strong>Liste des sessions</strong>
+              </div>
+              {% for session in game.sessions|sort(attribute='start') %}
+                <div class="row text-center pb-2">
+                  <div class="btn-toolbar justify-content-center">
+                  <add-to-calendar-button
+                    name="{{ game.name }} par {{ game.gm.name }} #{{loop.index}}"
+                    options="'Apple','Google','iCal','Outlook.com','Yahoo'"
+                    location="https://discord.com/channels/789486751571116053/1115719113071927406"
+                    startDate="{{ session.start|format_datetime('%Y-%m-%d') }}"
+                    endDate="{{ session.end|format_datetime('%Y-%m-%d') }}"
+                    startTime="{{ session.start|format_datetime('%H:%M') }}"
+                    endTime="{{ session.end|format_datetime('%H:%M') }}"
+                    timeZone="Europe/Paris"
+                    description="{{ game.type }} - {{ game.gm.name }}"
+                    size="1"
+                    listStyle="overlay"
+                    hideTextLabelButton
+                    language="fr"
+                    buttonStyle="date"
+                    inline
+                  ></add-to-calendar-button>
+                  {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+                  <div class="btn-group pb-4 ps-4">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSessionModal{{session.id}}"><i class="bi bi-pencil-square"></i></button>
+                    <div class="modal fade" id="editSessionModal{{session.id}}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h1 class="modal-title fs-5">Éditer la session du {{session.start|format_datetime}} au {{session.end|format_datetime}}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/editer" class="row">
+                              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                              <div class="row">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Début :</span>
+                                  <input id="date_start" name="date_start" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.start}}" required>
+                                  <span class="input-group-text">Fin :</span>
+                                  <input name="date_end" id="date_end" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.end}}" required>
+                                  <button type="submit" class="btn btn-primary">Modifier</button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteSessionModal{{session.id}}"><i class="bi bi-trash"></i></button>
+                    <div class="modal fade" id="deleteSessionModal{{session.id}}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <div class="modal-header bg-danger">
+                                  <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr de vouloir suprimer la session ?</h1>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                  <h3><i class="bi bi-exclamation-triangle"></i></h3>
+                                  <p>Vous êtes sur le point de supprimer la session suivante :</p>
+                                  <p><strong>Du {{session.start|format_datetime}} au {{session.end|format_datetime}}</strong></p>
+                                  <p>Êtes-vous sûr de vouloir continuer ?</p>
+                              </div>
+                              <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                  <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/supprimer">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" name="status" type="button" class="btn btn-danger">Supprimer</button>
+                                  </form>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  </div>
+                  {% endif %}
+                </div>
+                </div>
+              {% endfor %}
+              {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+              <div class="row text-center">
+                <div class="col align-self-center">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#addSessionModal"><i class="bi bi-calendar-plus"></i> Ajouter</button>
+                </div>
+              </div>
+              <div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModal" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1 class="modal-title fs-5">Ajouter une session</h1>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form method="post" action="/annonces/{{game.id}}/sessions/ajouter" class="row">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                          <div class="input-group mb-3">
+                            <span class="input-group-text">Début :</span>
+                            <input id="date_start" name="date_start" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" required>
+                            <span class="input-group-text">Fin :</span>
+                            <input name="date_end" id="date_end" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" required>
+                            <button type="submit" class="btn btn-primary">Ajouter</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -150,15 +266,19 @@
     <div class="col align-self-center">
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
         <form method="post" action="/annonces/{{game.id}}/statut/">
-            <div class="btn-group" role="group" aria-label="Actions du MJ">
+            <div class="btn-group">
                 <a href="/annonces/{{game.id}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <a href="/annonces/{{game.id}}/gerer/" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>
-                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Ajouter/supprimer une session."><i class="bi bi-calendar4-week"></i> Planifier</button> {% if game.status=='open' %}
-                <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button> {% endif %}{% if game.status == 'closed'%}
-                <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button> {% endif %} {% if game.status != 'archived'
-                %}
-                <a href="/annonces/{{game.id}}/archiver/" type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</a> {% endif %}
+                {% if game.status=='open' %}
+                <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button>
+                {% endif %}
+                {% if game.status == 'closed'%}
+                <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button>
+                {% endif %}
+                {% if game.status != 'archived'%}
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
+                {% endif %}
             </div>
             <div class="modal fade" id="confirmArchive" tabindex="-1" aria-labelledby="confirmArchiveLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -186,4 +306,9 @@
 </div>
 </div>
 {% endblock %} {% block scripts %} {{ super() }}
-<script src="/static/js/tooltips.js"></script>{% endblock %}
+<script src="/static/js/tooltips.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js" integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
+<script src="/static/js/game-sessions.js"></script>
+{% endblock %}

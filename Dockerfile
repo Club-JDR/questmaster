@@ -4,12 +4,12 @@ RUN adduser --system --group questmaster
 
 RUN apt update && apt upgrade -y
 RUN apt install -y --no-install-recommends locales && \
-    sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \
-    dpkg-reconfigure --frontend=noninteractive locales
+  sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \
+  dpkg-reconfigure --frontend=noninteractive locales
 
 FROM base AS build
 
-RUN apt install -y --no-install-recommends build-essential gcc
+RUN apt install -y --no-install-recommends build-essential gcc && apt clean
 RUN python -m pip install --upgrade pip
 
 FROM build AS code

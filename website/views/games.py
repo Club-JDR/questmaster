@@ -7,65 +7,158 @@ from flask import (
     abort,
 )
 from website import app, db, bot
-from website.models import Game, User, System, Vtt
+from website.models import Game, User, System, Vtt, Session
 from website.views.auth import who, login_required
 from website.utils.discord import PLAYER_ROLE_PERMISSION
-from datetime import datetime
-import re, yaml
+from datetime import datetime, timedelta
+import re, yaml, locale
 
 GAMES_PER_PAGE = 12
 GAME_LIST_TEMPLATE = "games.html"
 
+locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
+DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
+HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
-def send_discord_embed(game):
+
+def get_channel_category(game):
+    category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
+    if game.type == "oneshot":
+        category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
+    return category_id
+
+
+def abort_if_not_gm(payload):
+    """
+    Return 403 if user is not GM
+    """
+    if not payload["is_gm"]:
+        abort(403)
+
+
+def get_game_if_authorized(payload, game_id):
+    """
+    Return game if user is either the gmae's GM or admin
+    """
+    game = db.get_or_404(Game, game_id)
+    if game.gm_id != payload["user_id"] and not payload["is_admin"]:
+        abort(403)
+    return game
+
+
+def create_game_session(game, start, end):
+    """
+    Create a session for a game.
+    """
+    session = Session(start=start, end=end)
+    db.session.add(session)
+    db.session.commit()
+    game.sessions.append(session)
+
+
+def delete_game_session(session):
+    """
+    Delete a session for a game.
+    """
+    db.session.delete(session)
+    db.session.commit()
+
+
+def send_discord_embed(
+    game,
+    type="annonce",
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+):
     """
     Send Discord embed message for game.
     """
-    restriction = ":red_circle: 18+"
-    if game.restriction == "all":
-        restriction = ":green_circle: Tout public"
-    elif game.restriction == "16+":
-        restriction = ":yellow_circle: 16+"
-    if game.restriction_tags == None:
-        restriction_msg = f"{restriction}"
-    else:
-        restriction_msg = f"{restriction} {game.restriction_tags}"
-    embed = {
-        "title": game.name,
-        "color": Game.COLORS[game.type],
-        "fields": [
-            {
-                "name": "MJ",
-                "value": game.gm.name,
-                "inline": True,
+    if type == "annonce":
+        restriction = ":red_circle: 18+"
+        if game.restriction == "all":
+            restriction = ":green_circle: Tout public"
+        elif game.restriction == "16+":
+            restriction = ":yellow_circle: 16+"
+        if game.restriction_tags == None:
+            restriction_msg = f"{restriction}"
+        else:
+            restriction_msg = f"{restriction} {game.restriction_tags}"
+        embed = {
+            "title": game.name,
+            "color": Game.COLORS[game.type],
+            "fields": [
+                {
+                    "name": "MJ",
+                    "value": game.gm.name,
+                    "inline": True,
+                },
+                {"name": "Système", "value": game.system.name, "inline": True},
+                {
+                    "name": "Type de session",
+                    "value": game.type,
+                    "inline": True,
+                },
+                {
+                    "name": "Date",
+                    "value": game.date.strftime(HUMAN_TIMEFORMAT),
+                    "inline": True,
+                },
+                {"name": "Durée", "value": game.length, "inline": True},
+                {
+                    "name": "Avertissement",
+                    "value": restriction_msg,
+                },
+                {
+                    "name": "Pour s'inscrire :",
+                    "value": "https://questmaster.club-jdr.fr/annonces/{}/".format(
+                        game.id
+                    ),
+                },
+            ],
+            "image": {
+                "url": game.img,
             },
-            {"name": "Système", "value": game.system.name, "inline": True},
-            {
-                "name": "Type de session",
-                "value": game.type,
-                "inline": True,
-            },
-            {
-                "name": "Date",
-                "value": game.date.strftime("%a %d/%m - %Hh%M"),
-                "inline": True,
-            },
-            {"name": "Durée", "value": game.length, "inline": True},
-            {
-                "name": "Avertissement",
-                "value": restriction_msg,
-            },
-            {
-                "name": "Pour s'inscrire :",
-                "value": "https://questmaster.club-jdr.fr/annonces/{}/".format(game.id),
-            },
-        ],
-        "image": {
-            "url": game.img,
-        },
-        "footer": {},
-    }
-    bot.send_embed_message(embed, current_app.config["POSTS_CHANNEL_ID"])
+            "footer": {},
+        }
+        target = current_app.config["POSTS_CHANNEL_ID"]
+    elif type == "add-session":
+        embed = {
+            "description": "<@&{}>\nVotre MJ a jouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton corredpondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
+                game.role, start, end, game.id
+            ),
+            "title": "Nouvelle session prévue",
+            "color": 5025616,  # green
+        }
+        target = game.channel
+    elif type == "edit-session":
+        embed = {
+            "description": "<@&{}>\nVotre MJ a modifié la session ~~du {} au {}~~\nLa session a été décalée du **{}** au **{}**\nPensez à mettre à jour votre calendrier.".format(
+                game.role, old_start, old_end, start, end
+            ),
+            "title": "Session modifiée",
+            "color": 16771899,  # yellow
+        }
+        target = game.channel
+    elif type == "del-session":
+        embed = {
+            "description": "<@&{}>\nVotre MJ a annulé une la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
+                game.role, start, end
+            ),
+            "title": "Session annulée",
+            "color": 16007990,  # red
+        }
+        target = game.channel
+    elif type == "register":
+        embed = {
+            "description": "<@{}> s'est inscrit. Bienvenue :wave: ".format(player),
+            "title": "Nouvelle inscription",
+            "color": 2201331,  # blue
+        }
+        target = game.channel
+    bot.send_embed_message(embed, target)
 
 
 @app.route("/", methods=["GET"])
@@ -170,8 +263,7 @@ def get_game_form() -> object:
     Get form to create a new game.
     """
     payload = who()
-    if not payload["is_gm"]:
-        abort(403)
+    abort_if_not_gm(payload)
     return render_template(
         "game_form.html",
         payload=payload,
@@ -225,7 +317,7 @@ def create_game() -> object:
         restriction=data["restriction"],
         party_size=data["party_size"],
         xp=data["xp"],
-        date=datetime.strptime(data["date"], "%Y-%m-%d %H:%M"),
+        date=datetime.strptime(data["date"], DEFAULT_TIMEFORMAT),
         session_length=data["session_length"],
         frequency=data.get("frequency") or None,
         characters=data["characters"],
@@ -243,6 +335,11 @@ def create_game() -> object:
                 restriction_tags += item["value"] + ", "
             new_game.restriction_tags = restriction_tags[:-2]
     if data["action"] == "open":
+        create_game_session(
+            new_game,
+            new_game.date,
+            new_game.date + timedelta(hours=float(new_game.session_length)),
+        )
         # Create role and update object with role_id
         new_game.role = bot.create_role(
             role_name=data["name"],
@@ -250,9 +347,10 @@ def create_game() -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
+        category_id = get_channel_category(new_game)
         new_game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-            parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            parent_id=category_id,
             role_id=new_game.role,
             gm_id=gm_id,
         )["id"]
@@ -278,9 +376,7 @@ def get_game_edit_form(game_id) -> object:
     Get form to edit a game.
     """
     payload = who()
-    game = db.get_or_404(Game, game_id)
-    if payload["user_id"] != game.gm.id and not payload["is_admin"]:
-        abort(403)
+    game = get_game_if_authorized(payload, game_id)
     return render_template(
         "game_form.html",
         payload=payload,
@@ -297,9 +393,7 @@ def edit_game(game_id) -> object:
     Edit an existing game and redirect to the game details.
     """
     payload = who()
-    game = db.get_or_404(Game, game_id)
-    if payload["user_id"] != game.gm.id and not payload["is_admin"]:
-        abort(403)
+    game = get_game_if_authorized(payload, game_id)
     data = request.values.to_dict()
     gm_id = data["gm_id"]
     post = game.status == "draft" and data["action"] == "open"
@@ -312,7 +406,7 @@ def edit_game(game_id) -> object:
     game.system_id = data["system"]
     game.vtt_id = data["vtt"] if data["vtt"] != "" else None
     game.description = data["description"]
-    game.date = datetime.strptime(data["date"], "%Y-%m-%d %H:%M")
+    game.date = datetime.strptime(data["date"], DEFAULT_TIMEFORMAT)
     game.length = data["length"]
     game.party_size = data["party_size"]
     game.party_selection = "party_selection" in data.keys()
@@ -332,6 +426,11 @@ def edit_game(game_id) -> object:
                 restriction_tags += item["value"] + ", "
             game.restriction_tags = restriction_tags[:-2]
     if post:
+        create_game_session(
+            game,
+            game.date,
+            game.date + timedelta(hours=float(game.session_length)),
+        )
         # Create role and update object with role_id
         game.role = bot.create_role(
             role_name=data["name"],
@@ -339,9 +438,10 @@ def edit_game(game_id) -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
+        category_id = get_channel_category(game)
         game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
-            parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            parent_id=category_id,
             role_id=game.role,
             gm_id=gm_id,
         )["id"]
@@ -366,9 +466,7 @@ def change_game_status(game_id) -> object:
     Change game status and redirect to the game details.
     """
     payload = who()
-    game = db.get_or_404(Game, game_id)
-    if game.gm_id != payload["user_id"] and not payload["is_admin"]:
-        abort(403)
+    game = get_game_if_authorized(payload, game_id)
     status = request.values.to_dict()["status"]
     game.status = status
     try:
@@ -379,6 +477,89 @@ def change_game_status(game_id) -> object:
     except Exception as e:
         abort(500, e)
     return redirect(url_for("get_game_details", game_id=game.id))
+
+
+@app.route("/annonces/<game_id>/sessions/ajouter", methods=["POST"])
+@login_required
+def add_game_session(game_id) -> object:
+    """
+    Add session to a game and redirect to the game details.
+    """
+    payload = who()
+    game = get_game_if_authorized(payload, game_id)
+    start = request.values.to_dict()["date_start"]
+    end = request.values.to_dict()["date_end"]
+    create_game_session(
+        game,
+        start,
+        end,
+    )
+    try:
+        db.session.commit()
+        send_discord_embed(
+            game,
+            type="add-session",
+            start=datetime.strptime(start, DEFAULT_TIMEFORMAT).strftime(
+                HUMAN_TIMEFORMAT
+            ),
+            end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
+        )
+    except Exception as e:
+        abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game_id))
+
+
+@app.route("/annonces/<game_id>/sessions/<session_id>/editer", methods=["POST"])
+@login_required
+def edit_game_session(game_id, session_id) -> object:
+    """
+    Edit game session and redirect to the game details.
+    """
+    payload = who()
+    game = get_game_if_authorized(payload, game_id)
+    session = db.get_or_404(Session, session_id)
+    old_start = session.start.strftime(HUMAN_TIMEFORMAT)
+    old_end = session.end.strftime(HUMAN_TIMEFORMAT)
+    session.start = request.values.to_dict()["date_start"]
+    session.end = request.values.to_dict()["date_end"]
+    try:
+        db.session.commit()
+        send_discord_embed(
+            game,
+            type="edit-session",
+            start=session.start.strftime(HUMAN_TIMEFORMAT),
+            end=session.end.strftime(HUMAN_TIMEFORMAT),
+            old_start=old_start,
+            old_end=old_end,
+        )
+    except Exception as e:
+        abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game_id))
+
+
+@app.route("/annonces/<game_id>/sessions/<session_id>/supprimer", methods=["POST"])
+@login_required
+def remove_game_session(game_id, session_id) -> object:
+    """
+    Remove session from a game and redirect to the game details.
+    """
+    payload = who()
+    game = get_game_if_authorized(payload, game_id)
+    session = db.get_or_404(Session, session_id)
+    start = session.start
+    end = session.end
+    delete_game_session(session)
+    try:
+        db.session.commit()
+        send_discord_embed(
+            game,
+            type="del-session",
+            start=start.strftime(HUMAN_TIMEFORMAT),
+            end=end.strftime(HUMAN_TIMEFORMAT),
+        )
+    except Exception as e:
+        abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game_id))
 
 
 @app.route("/annonces/<game_id>/inscription/", methods=["POST"])
@@ -399,6 +580,7 @@ def register_game(game_id) -> object:
     try:
         db.session.commit()
         bot.add_role_to_user(payload["user_id"], game.role)
+        send_discord_embed(game, type="register", player=payload["user_id"])
     except Exception as e:
         abort(500, e)
     return redirect(url_for("get_game_details", game_id=game.id))
@@ -411,8 +593,7 @@ def my_gm_games() -> object:
     List all of games where current user is GM.
     """
     payload = who()
-    if not payload["is_gm"]:
-        abort(403)
+    abort_if_not_gm(payload)
     try:
         games_as_gm = db.session.get(User, payload["user_id"]).games_gm
     except AttributeError:

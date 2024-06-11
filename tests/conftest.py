@@ -17,6 +17,7 @@ class TestConfig:
     vtt_name = "Foundry"
     vtt_icon = "https://foundryvtt.wiki/fvtt-solid-512.png"
     game_id = 1
+    session_id = 1
     game_id2 = 1
     game_name = "La ville en jaune"
     game_name2 = "Une enquête OKLM"
