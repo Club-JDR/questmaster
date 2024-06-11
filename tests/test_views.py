@@ -224,7 +224,7 @@ def test_delete_game_session(client):
     assert response.status_code == 200
     assert (
         'action="/annonces/{}/sessions/{}/editer"'.format(
-            config.game_id, config.session
+            config.game_id, config.session_id
         )
         not in response.data.decode()
     )
