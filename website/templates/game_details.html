@@ -173,8 +173,55 @@
                   ></add-to-calendar-button>
                   {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
                   <div class="btn-group pb-4 ps-4">
-                    <button type="button" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
-                    <button type="button" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSessionModal{{session.id}}"><i class="bi bi-pencil-square"></i></button>
+                    <div class="modal fade" id="editSessionModal{{session.id}}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h1 class="modal-title fs-5">Éditer la session du {{session.start|format_datetime}} au {{session.end|format_datetime}}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/editer" class="row">
+                              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                              <div class="row">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Début :</span>
+                                  <input id="date_start" name="date_start" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.start}}" required>
+                                  <span class="input-group-text">Fin :</span>
+                                  <input name="date_end" id="date_end" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.end}}" required>
+                                  <button type="submit" class="btn btn-primary">Modifier</button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteSessionModal{{session.id}}"><i class="bi bi-trash"></i></button>
+                    <div class="modal fade" id="deleteSessionModal{{session.id}}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <div class="modal-header bg-danger">
+                                  <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr de vouloir suprimer la session ?</h1>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                  <h3><i class="bi bi-exclamation-triangle"></i></h3>
+                                  <p>Vous êtes sur le point de supprimer la session suivante :</p>
+                                  <p><strong>Du {{session.start|format_datetime}} au {{session.end|format_datetime}}</strong></p>
+                                  <p>Êtes-vous sûr de vouloir continuer ?</p>
+                              </div>
+                              <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                  <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/supprimer">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" name="status" type="button" class="btn btn-danger">Supprimer</button>
+                                  </form>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
                   </div>
                   {% endif %}
                 </div>

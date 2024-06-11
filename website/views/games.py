@@ -64,7 +64,15 @@ def delete_game_session(session):
     db.session.commit()
 
 
-def send_discord_embed(game, type="annonce", start=None, end=None, player=None):
+def send_discord_embed(
+    game,
+    type="annonce",
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+):
     """
     Send Discord embed message for game.
     """
@@ -118,16 +126,25 @@ def send_discord_embed(game, type="annonce", start=None, end=None, player=None):
         target = current_app.config["POSTS_CHANNEL_ID"]
     elif type == "add-session":
         embed = {
-            "description": "<@&{}>\nVotre MJ a jouté une nouvelle session : du **{}** au ** {}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton corredpondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
+            "description": "<@&{}>\nVotre MJ a jouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton corredpondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
                 game.role, start, end, game.id
             ),
             "title": "Nouvelle session prévue",
             "color": 5025616,  # green
         }
         target = game.channel
+    elif type == "edit-session":
+        embed = {
+            "description": "<@&{}>\nVotre MJ a modifié la session ~~du {} au {}~~\nLa session a été décalée du **{}** au **{}**\nPensez à mettre à jour votre calendrier.".format(
+                game.role, old_start, old_end, start, end
+            ),
+            "title": "Session modifiée",
+            "color": 16771899,  # yellow
+        }
+        target = game.channel
     elif type == "del-session":
         embed = {
-            "description": "<@&{}>\nVotre MJ a annulé une la session du **{}** au ** {}**\nPensez à l'enlever de votre calendrier.".format(
+            "description": "<@&{}>\nVotre MJ a annulé une la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
                 game.role, start, end
             ),
             "title": "Session annulée",
@@ -421,9 +438,10 @@ def edit_game(game_id) -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
+        category_id = get_channel_category(game)
         game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
-            parent_id=current_app.config.get("CATEGORIES_CHANNEL_ID"),
+            parent_id=category_id,
             role_id=game.role,
             gm_id=gm_id,
         )["id"]
@@ -491,6 +509,34 @@ def add_game_session(game_id) -> object:
     return redirect(url_for("get_game_details", game_id=game_id))
 
 
+@app.route("/annonces/<game_id>/sessions/<session_id>/editer", methods=["POST"])
+@login_required
+def edit_game_session(game_id, session_id) -> object:
+    """
+    Edit game session and redirect to the game details.
+    """
+    payload = who()
+    game = get_game_if_authorized(payload, game_id)
+    session = db.get_or_404(Session, session_id)
+    old_start = session.start.strftime(HUMAN_TIMEFORMAT)
+    old_end = session.end.strftime(HUMAN_TIMEFORMAT)
+    session.start = request.values.to_dict()["date_start"]
+    session.end = request.values.to_dict()["date_end"]
+    try:
+        db.session.commit()
+        send_discord_embed(
+            game,
+            type="edit-session",
+            start=session.start.strftime(HUMAN_TIMEFORMAT),
+            end=session.end.strftime(HUMAN_TIMEFORMAT),
+            old_start=old_start,
+            old_end=old_end,
+        )
+    except Exception as e:
+        abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game_id))
+
+
 @app.route("/annonces/<game_id>/sessions/<session_id>/supprimer", methods=["POST"])
 @login_required
 def remove_game_session(game_id, session_id) -> object:
@@ -508,10 +554,8 @@ def remove_game_session(game_id, session_id) -> object:
         send_discord_embed(
             game,
             type="del-session",
-            start=datetime.strptime(start, DEFAULT_TIMEFORMAT).strftime(
-                HUMAN_TIMEFORMAT
-            ),
-            end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
+            start=start.strftime(HUMAN_TIMEFORMAT),
+            end=end.strftime(HUMAN_TIMEFORMAT),
         )
     except Exception as e:
         abort(500, e)

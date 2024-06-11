@@ -160,7 +160,7 @@ def test_create_open_game(client):
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
 
 
-def test_add_session_to_game(client):
+def test_add_game_session(client):
     data = {"date_start": "2024-06-07 20:00", "date_end": "2024-06-07 23:00"}
     url = "/annonces/{}/sessions/ajouter".format(config.game_id)
     with client.session_transaction() as session:
@@ -183,8 +183,51 @@ def test_add_session_to_game(client):
     assert 'endDate="2024-06-07"' in response.data.decode()
 
 
-def test_remove_session_to_game():
-    pass
+def test_edit_game_session(client):
+    data = {"date_start": "2024-06-12 20:00", "date_end": "2024-06-12 23:00"}
+    url = "/annonces/{}/sessions/{}/editer".format(config.game_id, config.session_id)
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.post(
+        url,
+        data=data,
+        follow_redirects=True,
+    )
+    assert response.status_code == 403
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        url,
+        data=data,
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert 'startDate="2024-06-12"' in response.data.decode()
+    assert 'endDate="2024-06-12"' in response.data.decode()
+
+
+def test_delete_game_session(client):
+    url = "/annonces/{}/sessions/{}/supprimer".format(config.game_id, config.session_id)
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.post(
+        url,
+        follow_redirects=True,
+    )
+    assert response.status_code == 403
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        url,
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert (
+        'action="/annonces/{}/sessions/{}/editer"'.format(
+            config.game_id, config.session
+        )
+        not in response.data.decode()
+    )
 
 
 def test_search_games(client):
@@ -223,10 +266,6 @@ def test_create_draft_game(client):
         "frequency": "",
         "characters": config.game_characters2,
         "serious": "on",
-        "class-action": "min",
-        "class-investigation": "maj",
-        "class-interaction": "maj",
-        "class-horror": "none",
         "session_length": "3.5",
     }
     response = client.post("/annonce/", data=data, follow_redirects=True)
