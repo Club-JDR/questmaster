@@ -415,6 +415,17 @@ def test_open_game(client):
     assert "Complet" not in response.data.decode()
 
 
+def test_archive_game(client):
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/statut/".format(config.game_id),
+        data={"status": "archived"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+
+
 def test_register_game(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
@@ -439,17 +450,8 @@ def test_register_game(client):
     assert "Complet" in response.data.decode()
 
 
-def test_archive_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/statut/".format(config.game_id),
-        data={"status": "archived"},
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
+def test_cleanup(client):
     assert bytes("Archivée".format(config.game_name), encoding="UTF-8") in response.data
-    # Cleanup Game 2
     response = client.post(
         "/annonces/{}/statut/".format(config.game_id2),
         data={"status": "archived"},

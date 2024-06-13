@@ -68,10 +68,10 @@
                             {% if payload['username'] %}
                             <li class="nav-item dropdown">
                                 <div class="d-flex">
-                                    <a class="nav-link dropdown-toggle btn-danger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <button class="nav-link dropdown-toggle btn-danger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <img src="{{ payload['avatar'] }}" alt="{{ payload['username'] }}" width="30" height="30" class="rounded-circle">
                                         <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
-                                    </a>
+                                    </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         {% if payload[ 'is_admin'] %}
                                         <li><a class="dropdown-item" href="/systems/">Gérer les systèmes</a></li>

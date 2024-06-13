@@ -207,9 +207,8 @@
                                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                               </div>
                               <div class="modal-body">
-                                  <h3><i class="bi bi-exclamation-triangle"></i></h3>
-                                  <p>Vous êtes sur le point de supprimer la session suivante :</p>
-                                  <p><strong>Du {{session.start|format_datetime}} au {{session.end|format_datetime}}</strong></p>
+                                  <h1><i class="bi bi-exclamation-triangle"></i><br/>Danger</h1>
+                                  <p>Vous êtes sur le point de supprimer la session suivante :<br/><strong>Du {{session.start|format_datetime}} au {{session.end|format_datetime}}</strong></p>
                                   <p>Êtes-vous sûr de vouloir continuer ?</p>
                               </div>
                               <div class="modal-footer">
@@ -288,9 +287,8 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <h3><i class="bi bi-exclamation-triangle"></i></h3>
-                            <p>N'archivez votre annonce que si votre partie est terminée.</p>
-                            <p>L'archivage va supprimer le salon et le rôle lié à cette annonce.</p>
+                            <h1><i class="bi bi-exclamation-triangle"></i><br/>Danger</h1>
+                            <p>N'archivez votre annonce que si votre partie est terminée.<br/>L'archivage va supprimer le salon et le rôle lié à cette annonce.</p>
                             <p><strong>Cette action est définitive</strong>.</p>
                         </div>
                         <div class="modal-footer">

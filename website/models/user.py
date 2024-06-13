@@ -33,7 +33,7 @@ class User(db.Model):
                 current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
             )
             self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
-        except Exception as e:
+        except Exception:
             self.name = "Inconnu"
             self.is_gm = False
             self.is_admin = False

@@ -58,7 +58,7 @@
     <div class="col-lg-4 p-3">
         <div class="row">
             <div class="mb-2">
-                <label class="form-label"><strong>Type de session :</strong></label>
+                <p class="form-label"><strong>Type de session :</strong></p>
                 <div class="mb-2">
                     <div class="btn-group" role="group" aria-label="SessionType">
                         <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" %}disabled{% endif%} {% else %}checked{%endif%}>
@@ -124,7 +124,7 @@
         <div class="row">
             <div class="mb-2">
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" name="party_selection" id="party_selection" {% if game and game.party_selection %}checked{% endif %}>
+                    <input class="form-check-input" type="checkbox" role="switch" name="party_selection" id="party_selection" aria-checked="false" {% if game and game.party_selection %}checked{% endif %}>
                     <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
                 </div>
             </div>
@@ -150,7 +150,7 @@
             </div>
         </div>
         <div class="row">
-            <label class="form-label"><strong>Avertissement :</strong></label>
+            <p class="form-label"><strong>Avertissement :</strong></p>
             <div class="mb-2">
                 <div class="btn-group" role="group" aria-label="Restriction">
                     <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" {% if game %}{% if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
@@ -172,7 +172,7 @@
     </div>
     <div class="col-lg-3 p-3">
         <div class="row">
-            <div class="figure"><img id="imgPreview" alt="placeholder" src="{% if game and game.img %}{{ game.img }}{% else %}/static/img/placeholder.jpeg{% endif %}" class="figure-img img-fluid rounded img-preview" onerror="this.src='/static/img/placeholder.jpeg'"></div>
+            <div class="figure"><img id="imgPreview" alt="placeholder" src="{% if game and game.img %}{{ game.img }}{% else %}/static/img/placeholder.jpeg{% endif %}" class="figure-img img-fluid rounded img-preview" onerror="this.src='/static/img/placeholder.jpeg'" role="presentation"></div>
             <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadImageModal" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -201,9 +201,9 @@
         </div>
         <div class="row">
             <div class="mb-2">
-                <label class="form-label"><strong>Classification du scénario :</strong></label>
+                <p class="form-label"><strong>Classification du scénario :</strong></p>
                 <div class="row">
-                    <label class="col-sm-4 col-form-label">Action</label>
+                    <p class="col-sm-4 col-form-label">Action</p>
                     <div class="btn-group col-sm-8" role="group" aria-label="Action">
                         <input type="radio" class="btn-check" name="class-action" value="none" id="noaction" autocomplete="off" {% if (game and game.classification.action==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="noaction">Absent</label>
@@ -214,7 +214,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <label class="col-sm-4 col-form-label">Investigation</label>
+                    <p class="col-sm-4 col-form-label">Investigation</p>
                     <div class="btn-group col-sm-8" role="group" aria-label="Investigation">
                         <input type="radio" class="btn-check" name="class-investigation" value="none" id="noinvestigation" autocomplete="off" {% if (game and game.classification.investigation==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="noinvestigation">Absent</label>
@@ -225,7 +225,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <label class="col-sm-4 col-form-label">Interaction</label>
+                    <p class="col-sm-4 col-form-label">Interaction</p>
                     <div class="btn-group col-sm-8" role="group" aria-label="Interaction">
                         <input type="radio" class="btn-check" name="class-interaction" value="none" id="nointeraction" autocomplete="off" {% if (game and game.classification.interaction==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="nointeraction">Absent</label>
@@ -236,7 +236,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <label class="col-sm-4 col-form-label">Horreur</label>
+                    <p class="col-sm-4 col-form-label">Horreur</p>
                     <div class="btn-group col-sm-8" role="group" aria-label="Horreur">
                         <input type="radio" class="btn-check" name="class-horror" value="none" id="nohorror" autocomplete="off" {% if (game and game.classification.horror==0) or not game %}checked{% endif %}>
                         <label class="btn btn-outline-secondary btn-sm" for="nohorror">Absent</label>
@@ -249,22 +249,22 @@
             </div>
         </div>
         <div class="row">
-            <label class="form-label"><strong>Ambiance recherchée :</strong></label>
+            <p class="form-label"><strong>Ambiance recherchée :</strong></p>
             <div class="mb-2">
                 <div class="form-check form-switch">
-                    <input class="form-check-input" role="switch" type="checkbox" id="chill" name="chill" {% if game and "chill" in game.ambience %}checked{% endif %}>
+                    <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" id="chill" name="chill" {% if game and "chill" in game.ambience %}checked{% endif %}>
                     <label class="form-check-label" for="chill">Décontractée</label>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" role="switch" type="checkbox" name="serious" id="serious" {% if game and "serious" in game.ambience %}checked{% endif %}>
+                    <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" name="serious" id="serious" {% if game and "serious" in game.ambience %}checked{% endif %}>
                     <label class="form-check-label" for="serious">Sérieuse</label>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" role="switch" type="checkbox" name="comic" id="comic" {% if game and "comic" in game.ambience %}checked{% endif %}>
+                    <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" name="comic" id="comic" {% if game and "comic" in game.ambience %}checked{% endif %}>
                     <label class="form-check-label" for="comic">Comique</label>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" role="switch" type="checkbox" name="epic" id="epic" {% if game and "epic" in game.ambience %}checked{% endif %}>
+                    <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" name="epic" id="epic" {% if game and "epic" in game.ambience %}checked{% endif %}>
                     <label class="form-check-label" for="epic">Épique</label>
                 </div>
             </div>
