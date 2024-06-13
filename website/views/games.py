@@ -161,6 +161,16 @@ def send_discord_embed(
     bot.send_embed_message(embed, target)
 
 
+def set_default_search_parameters(status, game_type, restriction):
+    if len(status) == 0:
+        status = ["open"]
+    if len(game_type) == 0:
+        game_type = ["oneshot", "campaign"]
+    if len(restriction) == 0:
+        restriction = ["all", "16+", "18+"]
+    return status, game_type, restriction
+
+
 @app.route("/", methods=["GET"])
 @app.route("/annonces/", methods=["GET"])
 def search_games():
@@ -172,45 +182,36 @@ def search_games():
     restriction = []
     request_args = {}
     name = request.args.get("name", type=str)
-    if name:
-        request_args["name"] = name
     system = request.args.get("system", type=int)
-    if system:
-        request_args["system"] = system
     vtt = request.args.get("vtt", type=int)
-    if vtt:
-        request_args["vtt"] = vtt
     for s in ["open", "closed", "archived", "draft"]:
         if request.args.get(s, type=bool):
             status.append(s)
             request_args[s] = "on"
-    # default status if unset
-    if len(status) == 0:
-        status = ["open"]
     for t in ["oneshot", "campaign"]:
         if request.args.get(t, type=bool):
             game_type.append(t)
             request_args[t] = "on"
-    # default type if unset
-    if len(game_type) == 0:
-        game_type = ["oneshot", "campaign"]
     for r in ["all", "16+", "18+"]:
         if request.args.get(r, type=bool):
             restriction.append(r)
             request_args[r] = "on"
-    # default restriction if unset
-    if len(restriction) == 0:
-        restriction = ["all", "16+", "18+"]
+    status, game_type, restriction = set_default_search_parameters(
+        status, game_type, restriction
+    )
     queries = [
         Game.status.in_(status),
         Game.restriction.in_(restriction),
         Game.type.in_(game_type),
     ]
     if name:
+        request_args["name"] = name
         queries.append(Game.name.ilike("%{}%".format(name)))
     if system:
+        request_args["system"] = system
         queries.append(Game.system_id == system)
     if vtt:
+        request_args["vtt"] = vtt
         queries.append(Game.vtt_id == vtt)
     page = request.args.get("page", 1, type=int)
     games = (
@@ -397,8 +398,6 @@ def edit_game(game_id) -> object:
     data = request.values.to_dict()
     gm_id = data["gm_id"]
     post = game.status == "draft" and data["action"] == "open"
-    if post:
-        game.status = data["action"]
     # Edit the Game object
     if game.status == "draft":
         game.name = data["name"]
@@ -426,6 +425,7 @@ def edit_game(game_id) -> object:
                 restriction_tags += item["value"] + ", "
             game.restriction_tags = restriction_tags[:-2]
     if post:
+        game.status = data["action"]
         create_game_session(
             game,
             game.date,
@@ -448,14 +448,13 @@ def edit_game(game_id) -> object:
     try:
         # Save Game in database
         db.session.commit()
+        send_discord_embed(game)
     except Exception as e:
         if post:
             # Delete channel & role in case of error on post
             bot.delete_channel(game.channel)
             bot.delete_role(game.role)
         abort(500, e)
-    if post:
-        send_discord_embed(game)
     return redirect(url_for("get_game_details", game_id=game.id))
 
 

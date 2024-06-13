@@ -29,12 +29,6 @@ players_table = db.Table(
     db.Column("player_id", db.ForeignKey("user.id")),
 )
 
-sessions_table = db.Table(
-    "game_sessions",
-    db.Column("game_id", db.ForeignKey("game.id")),
-    db.Column("session_id", db.ForeignKey("session.id")),
-)
-
 
 class Game(db.Model):
     __tablename__ = "game"
@@ -66,7 +60,7 @@ class Game(db.Model):
     ambience = db.Column(pg.ARRAY(Enum(*AMBIENCES, name="game_ambience_enum")))
     complement = db.Column(db.Text())
     img = db.Column(db.String())
-    sessions = db.relationship("Session", secondary=sessions_table, backref="sessions")
+    sessions = db.relationship("Session", backref="game")
     channel = db.Column(db.String())
     role = db.Column(db.String())
     status = db.Column(

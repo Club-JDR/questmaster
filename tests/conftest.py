@@ -8,8 +8,8 @@ import time
 
 
 class TestConfig:
-    gm_id = "664487064577900594"
-    user_id = "267928135419297792"
+    gm_id = "701747435097292830"
+    user_id = "664487064577900594"
     game_system = 1
     game_vtt = 1
     sys_name = "Cthulhu Hack"

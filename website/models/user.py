@@ -20,11 +20,22 @@ class User(db.Model):
         Get informations from Discord API not the database when the oject is loaded.
         """
         result = bot.get_user(self.id)
-        if result["nick"] == None:
-            self.name = result["user"]["username"]
-        else:
-            self.name = result["nick"]
-        self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
-        self.is_admin = current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
-        self.is_player = current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
-        self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
+        try:
+            if result["nick"] == None:
+                self.name = result["user"]["username"]
+            else:
+                self.name = result["nick"]
+            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
+            self.is_admin = (
+                current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
+            )
+            self.is_player = (
+                current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
+            )
+            self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
+        except Exception as e:
+            self.name = "Inconnu"
+            self.is_gm = False
+            self.is_admin = False
+            self.is_player = False
+            self.avatar = "/static/img/avatar.webp"
