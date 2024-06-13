@@ -424,6 +424,7 @@ def test_archive_game(client):
         follow_redirects=True,
     )
     assert response.status_code == 200
+    assert bytes("Archivée".format(config.game_name), encoding="UTF-8") in response.data
 
 
 def test_register_game(client):
@@ -451,7 +452,6 @@ def test_register_game(client):
 
 
 def test_cleanup(client):
-    assert bytes("Archivée".format(config.game_name), encoding="UTF-8") in response.data
     response = client.post(
         "/annonces/{}/statut/".format(config.game_id2),
         data={"status": "archived"},
