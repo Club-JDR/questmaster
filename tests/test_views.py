@@ -452,6 +452,8 @@ def test_register_game(client):
 
 
 def test_cleanup(client):
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
     response = client.post(
         "/annonces/{}/statut/".format(config.game_id2),
         data={"status": "archived"},
