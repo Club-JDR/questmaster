@@ -573,7 +573,7 @@ def register_game(game_id) -> object:
         abort(500)
     if game.gm_id == payload["user_id"]:
         abort(403)
-    game.players.append(User.query.get_or_404(payload["user_id"]))
+    game.players.append(db.get_or_404(User, payload["user_id"]))
     if len(game.players) == game.party_size and not game.party_selection:
         game.status = "closed"
     try:
