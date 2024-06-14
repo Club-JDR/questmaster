@@ -1,0 +1,24 @@
+<div class="modal fade" id="editSessionModal{{session.id}}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">Éditer la session du {{session.start|format_datetime}} au {{session.end|format_datetime}}</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/editer" class="row">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="row">
+            <div class="input-group mb-3">
+              <span class="input-group-text">Début :</span>
+              <input id="date_start" name="date_start" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.start}}" required>
+              <span class="input-group-text">Fin :</span>
+              <input name="date_end" id="date_end" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.end}}" required>
+              <button type="submit" class="btn btn-primary">Modifier</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

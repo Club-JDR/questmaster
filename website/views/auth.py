@@ -15,7 +15,7 @@ def who():
         payload["avatar"] = session["avatar"]
         payload["is_gm"] = session["is_gm"]
         payload["is_admin"] = session["is_admin"]
-    return session
+    return payload
 
 
 def login_required(view):
