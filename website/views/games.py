@@ -448,7 +448,8 @@ def edit_game(game_id) -> object:
     try:
         # Save Game in database
         db.session.commit()
-        send_discord_embed(game)
+        if post:
+            send_discord_embed(game)
     except Exception as e:
         if post:
             # Delete channel & role in case of error on post

@@ -118,6 +118,23 @@ def test_edit_vtt(client):
     assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
 
 
+def test_admin_form(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.get("/admin/vtts/")
+    assert response.status_code == 403  # Not Admin
+    response = client.get("/admin/systems/")
+    assert response.status_code == 403  # Not Admin
+    with client.session_transaction() as session:
+        TestConfig.set_admin_session(session)
+    response = client.get("/admin/systems/")
+    assert response.status_code == 200
+    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
+    response = client.get("/admin/vtts/")
+    assert response.status_code == 200
+    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
+
+
 def test_create_open_game(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)

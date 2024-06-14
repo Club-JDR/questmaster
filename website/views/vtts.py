@@ -17,6 +17,17 @@ def list_vtts():
     """
     v = Vtt.query.all()
     return render_template(
+        "list.html", payload=who(), items=v, item="vtts", title="Virtual TableTops"
+    )
+
+
+@app.route("/admin/vtts/", methods=["GET"])
+def get_form_vtts():
+    """
+    Get admin VTTs form.
+    """
+    v = Vtt.query.all()
+    return render_template(
         "admin.html", payload=who(), items=v, item="vtts", title="Virtual TableTops"
     )
 

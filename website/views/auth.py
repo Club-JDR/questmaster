@@ -8,14 +8,15 @@ def who():
     """
     Init session with user information from Discord API.
     """
-    payload = {}
     if "username" in session:
-        payload["user_id"] = session["user_id"]
-        payload["username"] = session["username"]
-        payload["avatar"] = session["avatar"]
-        payload["is_gm"] = session["is_gm"]
-        payload["is_admin"] = session["is_admin"]
-    return payload
+        user = db.get_or_404(User, str(session["user_id"]))
+        session["user_id"] = user.id
+        session["username"] = user.name
+        session["avatar"] = user.avatar
+        session["is_gm"] = user.is_gm
+        session["is_admin"] = user.is_admin
+        session["is_player"] = user.is_player
+    return session
 
 
 def login_required(view):

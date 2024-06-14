@@ -26,7 +26,7 @@
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for game in games %}
         <div class="col">
-            <div class="card shadow h-100">
+            <div class="card game-card shadow h-100">
                 <div class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
                     <h5 class="card-title text-truncate">{{ game.name }}</h5>
                 </div>
