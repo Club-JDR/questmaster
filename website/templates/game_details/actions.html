@@ -1,23 +1,24 @@
 <div class="row text-center">
   <div class="col align-self-center">
       {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
-      <form method="post" action="/annonces/{{game.id}}/statut/">
           <div class="btn-group">
               <a href="/annonces/{{game.id}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <a href="/annonces/{{game.id}}/gerer/" type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-title="Gérer les inscriptions."><i class="bi bi-people"></i> Gérer</a>
-              {% if game.status=='open' %}
-              <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button>
-              {% endif %}
-              {% if game.status == 'closed'%}
-              <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button>
-              {% endif %}
-              {% if game.status != 'archived'%}
-              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
-              {% endif %}
+              <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editPlayers"><i class="bi bi-people"></i> Gérer</a>
+              <form method="post" action="/annonces/{{game.id}}/statut/">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if game.status=='open' %}
+                <button type="submit" name="status" value="closed" class="btn btn-outline-danger" data-bs-toggle="tooltip" data-bs-title="Fermer l'annonce aux inscriptions."><i class="bi bi-lock"></i> Fermer</button>
+                {% endif %}
+                {% if game.status == 'closed'%}
+                <button type="submit" name="status" value="open" class="btn btn-success" data-bs-toggle="tooltip" data-bs-title="Ouvrir l'annonce aux inscriptions."><i class="bi bi-unlock"></i> Ouvrir</button>
+                {% endif %}
+                {% if game.status != 'archived'%}
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
+                {% endif %}
+              </form>
           </div>
+          {% include 'game_details/modals/edit_players.html' %}
           {% include 'game_details/modals/confirm_archive.html' %}
-      </form>
       {% endif %}
   </div>
 </div>

@@ -4,7 +4,7 @@
           <img src="{{ game.img }}" class="figure-img img-fluid rounded img-preview" alt="{{ game.name }}">
       </div>
   </div>
-  {% if payload['user_id'] != game.gm.id %}
+  {% if payload['user_id'] != game.gm.id and game.status == "open" %}
   <form class="row" method="post" action="/annonces/{{ game.id }}/inscription/">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% endif %}">

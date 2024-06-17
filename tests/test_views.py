@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from conftest import TestConfig
+from datetime import datetime
 
 config = TestConfig()
 
@@ -467,6 +468,23 @@ def test_register_game(client):
     assert config.user_id in response.data.decode()
     assert "Complet" in response.data.decode()
 
+def test_manage_game_registration(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.post(
+        "/annonces/{}/gerer/".format(config.game_id2),
+        follow_redirects=True,
+    )
+    assert response.status_code == 403  # cannot manage registration if not gamne's GM
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/gerer/".format(config.game_id2), data={} # empty data to unregister everyone
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "Aucun·e joueur·euses pour le moment." in response.data.decode()
+    
 
 def test_cleanup(client):
     with client.session_transaction() as session:
@@ -477,3 +495,14 @@ def test_cleanup(client):
         follow_redirects=True,
     )
     assert response.status_code == 200
+
+
+def test_stats(client):
+    response = client.get("/stats/")
+    assert response.status_code == 200
+    assert (
+        datetime.today()
+        .replace(day=1, month=datetime.today().month - 1)
+        .strftime("%a %d/%m")
+        in response.data.decode()
+    )

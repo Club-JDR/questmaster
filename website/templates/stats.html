@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Statistiques mensuelles{% endblock %}
+{% block content %}
+<h1>Statistiques du {{ base_day }} au {{ last_day }}</h1>
+
+<div class="row pt-4">
+  <div class="col-3 text-center pb-4">
+    <h2>Nombre de sessions</h2>
+    <div class="row text-primary">
+      <strong class="pb-2">OS : {{ num_os }}</strong>
+    </div>
+    <div class="row text-success">
+      <strong class="pb-2">Campagnes : {{ num_campaign }}</strong>
+    </div>
+    <div class="row">
+      <strong class="pb-2">Total : {{ num_os + num_campaign }}</strong>
+    </div>
+  </div>
+  <div class="col-6">
+    <div class="row">
+      <div class="col-6">
+        <h2>Liste des OS</h2>
+        {% for system in os %}
+        <strong>{{ system }} ({{ os[system]|length }} session{% if os[system]|length > 1 %}s{% endif %})</strong>
+        <ul>
+          {% for element in os[system] %}<li>{{ element }}</li>{% endfor %}
+        </ul>
+        {% endfor %}
+      </div>
+      <div class="col-6">
+        <h2>Liste des campagnes</h2>
+        {% for system in campaign %}
+        <strong>{{ system }} ({{ campaign[system]|length }} session{% if campaign[system]|length > 1 %}s{% endif %})</strong>
+        <ul>
+          {% for element in campaign[system] %}<li>{{ element }}</li>{% endfor %}
+        </ul>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-3">
+    <h2>Classement des MJs</h2>
+    <table class="table table-striped text-center">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">MJ</th>
+          <th scope="col">Nombre de sessions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set counter = namespace(p=0) %}
+        {% for mj in mjs %}
+        {% set counter.p = counter.p + 1 %}
+        <tr>
+          <td>{{ counter.p }}</td>
+          <td>{{ mj }}</td>
+          <td>{{ mjs[mj] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

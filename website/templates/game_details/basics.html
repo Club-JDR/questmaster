@@ -26,7 +26,7 @@
       <strong class="pb-2">Description</strong>
       <pre>{{ game.description }}</pre>
   </div>
-  {% if game.complement is not none %}
+  {% if game.complement != "" %}
   <div class="row pb-2">
       <strong class="pb-2">Informations complémentaires</strong>
       <p class="lh-lg"> {{ game.complement }}</p>
