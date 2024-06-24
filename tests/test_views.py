@@ -468,6 +468,7 @@ def test_register_game(client):
     assert config.user_id in response.data.decode()
     assert "Complet" in response.data.decode()
 
+
 def test_manage_game_registration(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -479,12 +480,13 @@ def test_manage_game_registration(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
     response = client.post(
-        "/annonces/{}/gerer/".format(config.game_id2), data={} # empty data to unregister everyone
+        "/annonces/{}/gerer/".format(config.game_id2),
+        data={},  # empty data to unregister everyone
         follow_redirects=True,
     )
     assert response.status_code == 200
     assert "Aucun·e joueur·euses pour le moment." in response.data.decode()
-    
+
 
 def test_cleanup(client):
     with client.session_transaction() as session:
