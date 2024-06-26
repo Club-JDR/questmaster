@@ -55,7 +55,7 @@ jobs:
           docker-compose run app-test black --check questmaster.py website
       - name: Seed test users
         run: |
-          docker exec questmaster_db_1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594'), ('689839538436440095')"
+          docker exec questmaster_db_1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594'), ('698965618279317624')"
       - name: Tests with Pytest
         run: |
           docker-compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
