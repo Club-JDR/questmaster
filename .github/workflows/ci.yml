@@ -12,11 +12,11 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
       - name: Create dotenv
@@ -55,7 +55,7 @@ jobs:
           docker-compose run app-test black --check questmaster.py website
       - name: Seed test users
         run: |
-          docker exec questmaster_db_1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594')"
+          docker exec questmaster_db_1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594'), ('698965618279317624')"
       - name: Tests with Pytest
         run: |
           docker-compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml

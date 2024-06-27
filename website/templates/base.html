@@ -30,16 +30,53 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">
-                <img src="/static/img/logo.png" alt="Club JDR" height="75">
+                <img src="/static/img/logo.png" alt="QuestMaster" height="50">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      Annonces
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li><h6 class="dropdown-header">Pour les Joueur·euses</h6></li>
+                      <li><a class="dropdown-item" href="/annonces/">Annonces ouvertes</a></li>
+                      <li><a class="dropdown-item {% if not payload['username'] %}disabled{% endif %}" href="/mes_parties/">Mes parties</a></li>
+                      <li><h6 class="dropdown-header">Pour les MJs</h6></li>
+                      <li><a class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}" href="/mes_annonces/">Mes annonces</a></li>
+                      <li><a class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}" href="/annonce/">Poster une annonce</a></li>
+                    </ul>
+                  </li>
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      Informations
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item disabled" href="/calendat/">Calendrier</a></li>
+                      <li><a class="dropdown-item" href="/stats/">Statistiques</a></li>
+                      <li><a class="dropdown-item" href="/systemes/">Systèmes</a></li>
+                      <li><a class="dropdown-item" href="/vtts/">VTTs</a></li>
+                    </ul>
+                  </li>
+                  {% if payload[ 'is_admin'] %}
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      Admin
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="/admin/systems/">Gérer les systèmes</a></li>
+                      <li><a class="dropdown-item" href="/admin/vtts/">Gérer les vtts</a></li>
+                    </ul>
+                  </li>
+                {% endif %}
+                </ul>
                 <ul class="nav justify-content-end ms-auto">
                     <li class="nav-item d-flex">
                         <form class="d-flex" role="search" method="get" action="/annonces/">
-                            <input class="form-control" type="search" placeholder="Recherche simple" aria-label="Search" name="name">
+                            <input class="form-control" type="search" placeholder="Rechercher" aria-label="Search" name="name">
                             <button class="btn btn-success ms-2" type="submit">Rechercher</button>
                         </form>
                     </li>
@@ -73,25 +110,11 @@
                                         <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        {% if payload[ 'is_admin'] %}
-                                        <li><a class="dropdown-item" href="/systems/">Gérer les systèmes</a></li>
-                                        <li><a class="dropdown-item" href="/vtts/">Gérer les vtts</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        {% endif %} {% if payload[ 'is_gm'] %}
-                                        <li><a class="dropdown-item" href="/annonce/">Poster une annnonce</a></li>
-                                        <li><a class="dropdown-item" href="/mes_annonces/">Mes annonces</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        {% endif %}
-                                        <li><a class="dropdown-item" href="/mes_parties/">Mes parties</a></li>
-                                        <li><a class="dropdown-item" href="#">Mes badges</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item" href="/logout/">Me déconnecter</a></li>
+                                      <li><a class="dropdown-item disabled" href="/">Mes badges</a></li>
+                                      <li>
+                                          <hr class="dropdown-divider">
+                                      </li>
+                                      <li><a class="dropdown-item" href="/logout/">Me déconnecter</a></li>
                                     </ul>
                                 </div>
                             </li>

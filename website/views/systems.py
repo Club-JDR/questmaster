@@ -10,14 +10,25 @@ from website.models import System
 from website.views.auth import who, login_required
 
 
-@app.route("/systems/", methods=["GET"])
+@app.route("/systemes/", methods=["GET"])
 def list_systems():
     """
-    List all systems.
+    List all VTTs.
     """
-    sys = System.query.all()
+    s = System.query.all()
     return render_template(
-        "admin.html", payload=who(), items=sys, item="systems", title="Systèmes"
+        "list.html", payload=who(), items=s, item="systems", title="Systèmes"
+    )
+
+
+@app.route("/admin/systems/", methods=["GET"])
+def get_form_systems():
+    """
+    Get admin systems form.
+    """
+    s = System.query.all()
+    return render_template(
+        "admin.html", payload=who(), items=s, item="systems", title="Systèmes"
     )
 
 

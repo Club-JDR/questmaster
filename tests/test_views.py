@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from conftest import TestConfig
+from datetime import datetime
 
 config = TestConfig()
 
@@ -11,7 +12,7 @@ def test_my_gm_games(client):
     assert response.status_code == 200
     assert b"<h1>Mes annonces</h1>" in response.data
     with client.session_transaction() as session:
-        session["is_gm"] = False
+        TestConfig.set_user_session(session)
     response = client.get("/mes_annonces/")
     assert response.status_code == 403
 
@@ -30,7 +31,7 @@ def test_game_form(client):
     response = client.get("/annonce/")
     assert response.status_code == 403
     with client.session_transaction() as session:
-        session["is_gm"] = True
+        TestConfig.set_gm_session(session)
     response = client.get("/annonce/")
     assert response.status_code == 200
     assert b"<h1>Nouvelle annonce</h1>" in response.data
@@ -43,7 +44,7 @@ def test_create_system(client):
     response = client.post("/systems/", data=data, follow_redirects=True)
     assert response.status_code == 403  # Not Admin
     with client.session_transaction() as session:
-        session["is_admin"] = True
+        TestConfig.set_admin_session(session)
     response = client.post("/systems/", data=data, follow_redirects=True)
     assert response.status_code == 200
     assert bytes("{}".format(config.sys_name), encoding="UTF-8") in response.data
@@ -68,7 +69,7 @@ def test_edit_system(client):
     )
     assert response.status_code == 403  # Not Admin
     with client.session_transaction() as session:
-        session["is_admin"] = True
+        TestConfig.set_admin_session()
     response = client.post(
         "/systems/{}/".format(config.game_vtt), data=data, follow_redirects=True
     )
@@ -84,7 +85,7 @@ def test_create_vtt(client):
     response = client.post("/vtts/", data=data, follow_redirects=True)
     assert response.status_code == 403  # Not Admin
     with client.session_transaction() as session:
-        session["is_admin"] = True
+        TestConfig.set_admin_session()
     response = client.post("/vtts/", data=data, follow_redirects=True)
     assert response.status_code == 200
     assert bytes("{}".format(config.vtt_name), encoding="UTF-8") in response.data
@@ -109,12 +110,29 @@ def test_edit_vtt(client):
     )
     assert response.status_code == 403  # Not Admin
     with client.session_transaction() as session:
-        session["is_admin"] = True
+        TestConfig.set_admin_session()
     response = client.post(
         "/vtts/{}/".format(config.game_vtt), data=data, follow_redirects=True
     )
     assert response.status_code == 200
     assert bytes(new_name, encoding="UTF-8") in response.data
+    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
+
+
+def test_admin_form(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.get("/admin/vtts/")
+    assert response.status_code == 403  # Not Admin
+    response = client.get("/admin/systems/")
+    assert response.status_code == 403  # Not Admin
+    with client.session_transaction() as session:
+        TestConfig.set_admin_session(session)
+    response = client.get("/admin/systems/")
+    assert response.status_code == 200
+    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
+    response = client.get("/admin/vtts/")
+    assert response.status_code == 200
     assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
 
 
@@ -291,15 +309,14 @@ def test_get_game_details(client):
     assert "S'inscrire" not in response.data.decode()
     # GET GAME DETAILS AS ANOTHER (NON ADMIN) USER should NOT show the actions bar but allow to register
     with client.session_transaction() as session:
-        session["user_id"] = config.user_id
-        session["is_admin"] = False
+        TestConfig.set_user_session()
     response = client.get("/annonces/{}/".format(config.game_id))
     assert response.status_code == 200
     assert '<i class="bi bi-pencil-square"></i> Éditer' not in response.data.decode()
     assert "S'inscrire" in response.data.decode()
     # GET GAME DETAILS AS ANOTHER ADMIN USER should show the actions bar and allow to register
     with client.session_transaction() as session:
-        session["is_admin"] = True
+        TestConfig.set_admin_session()
     response = client.get("/annonces/{}/".format(config.game_id))
     assert response.status_code == 200
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
@@ -312,7 +329,7 @@ def test_get_open_game_edit_form(client):
     response = client.get("/annonces/{}/editer/".format(config.game_id))
     assert response.status_code == 403
     with client.session_transaction() as session:
-        session["is_admin"] = True
+        TestConfig.set_admin_session()
     response = client.get("/annonces/{}/editer/".format(config.game_id))
     assert response.status_code == 200
     assert (
@@ -451,6 +468,25 @@ def test_register_game(client):
     assert "Complet" in response.data.decode()
 
 
+def test_manage_game_registration(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    response = client.post(
+        "/annonces/{}/gerer/".format(config.game_id2),
+        follow_redirects=True,
+    )
+    assert response.status_code == 403  # cannot manage registration if not gamne's GM
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/gerer/".format(config.game_id2),
+        data={},  # empty data to unregister everyone
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "Aucun·e joueur·euses pour le moment." in response.data.decode()
+
+
 def test_cleanup(client):
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
@@ -460,3 +496,14 @@ def test_cleanup(client):
         follow_redirects=True,
     )
     assert response.status_code == 200
+
+
+def test_stats(client):
+    response = client.get("/stats/")
+    assert response.status_code == 200
+    assert (
+        datetime.today()
+        .replace(day=1, month=datetime.today().month - 1)
+        .strftime("%a %d/%m")
+        in response.data.decode()
+    )

@@ -75,6 +75,8 @@ Then, you can run the app:
 
 ```sh
 flask run -p 8000
+# Or in debug if you don't want to restart it at every code change
+flask --app website --debug run -p 8000
 ```
 
 To run the tests:
