@@ -2,6 +2,11 @@
   font-family: 'Ysabeau', Helvetica, Arial, sans-serif;
 }
 
+.nav-link {
+  font-size: large;
+  font-weight: 600;
+}
+
 h1,
 h2,
 h3,
@@ -24,6 +29,24 @@ figure {
   .img-preview {
     height: 15vw;
   }
+}
+
+.item-img {
+  max-height: 10vw;
+  max-width: inherit;
+  object-fit: cover;
+}
+
+.top-section {
+  height: 12vw;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bottom-content {
+  display: inline-block;
 }
 
 .navbar {
@@ -54,12 +77,12 @@ figure {
   color: currentColor !important;
 }
 
-.card:hover {
+.game-card:hover {
   transform: scale(1.1);
   transition-duration: 0.8s;
 }
 
-.card {
+.game-card {
   transition-duration: 0.8s;
 }
 

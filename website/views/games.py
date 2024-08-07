@@ -38,7 +38,7 @@ def abort_if_not_gm(payload):
 
 def get_game_if_authorized(payload, game_id):
     """
-    Return game if user is either the gmae's GM or admin
+    Return game if user is either the game's GM or admin
     """
     game = db.get_or_404(Game, game_id)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
@@ -448,7 +448,8 @@ def edit_game(game_id) -> object:
     try:
         # Save Game in database
         db.session.commit()
-        send_discord_embed(game)
+        if post:
+            send_discord_embed(game)
     except Exception as e:
         if post:
             # Delete channel & role in case of error on post
@@ -573,7 +574,7 @@ def register_game(game_id) -> object:
         abort(500)
     if game.gm_id == payload["user_id"]:
         abort(403)
-    game.players.append(User.query.get_or_404(payload["user_id"]))
+    game.players.append(db.get_or_404(User, payload["user_id"]))
     if len(game.players) == game.party_size and not game.party_selection:
         game.status = "closed"
     try:
@@ -582,6 +583,30 @@ def register_game(game_id) -> object:
         send_discord_embed(game, type="register", player=payload["user_id"])
     except Exception as e:
         abort(500, e)
+    return redirect(url_for("get_game_details", game_id=game.id))
+
+
+@app.route("/annonces/<game_id>/gerer/", methods=["POST"])
+@login_required
+def manage_game_registration(game_id) -> object:
+    """
+    Manage player registration for a game.
+    """
+    payload = who()
+    game = db.get_or_404(Game, game_id)
+    if game.status in ["draft", "archived"]:
+        abort(500)
+    if game.gm_id != payload["user_id"] and not payload["is_admin"]:
+        abort(403)
+    data = request.values.to_dict()
+    for player in game.players:
+        if player.id not in data:
+            try:
+                game.players.remove(db.get_or_404(User, player.id))
+                db.session.commit()
+                bot.remove_role_from_user(player.id, game.role)
+            except Exception as e:
+                abort(500, e)
     return redirect(url_for("get_game_details", game_id=game.id))
 
 

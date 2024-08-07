@@ -1,0 +1,22 @@
+<div class="modal fade" id="deleteSessionModal{{session.id}}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header bg-danger">
+              <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr de vouloir suprimer la session ?</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <h1><i class="bi bi-exclamation-triangle"></i><br/>Danger</h1>
+              <p>Vous êtes sur le point de supprimer la session suivante :<br/><strong>Du {{session.start|format_datetime}} au {{session.end|format_datetime}}</strong></p>
+              <p>Êtes-vous sûr de vouloir continuer ?</p>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+              <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/supprimer">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="status" type="button" class="btn btn-danger">Supprimer</button>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>

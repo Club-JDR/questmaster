@@ -1,0 +1,90 @@
+<div class="col-lg-4 p-3">
+  <div class="row pb-2">
+      <div class="col"><strong>Date</strong></div>
+      <div class="col text-center"> {{ game.date|format_datetime }}</div>
+  </div>
+  <div class="row pb-2">
+      <div class="col"><strong>Durée</strong></div>
+      <div class="col text-center"> {{ game.length }} de {{game.session_length}} heures</div>
+  </div>
+  {% if game.length != "1 session" or game.frequency %}
+  <div class="row pb-2">
+      <div class="col"><strong>Fréquence</strong></div>
+      <div class="col text-center">{% if game.frequency == "weekly" %}Hebdomadaire{% elif game.frequency == "bi-weekly" %}Une semaine sur deux{% elif game.frequency == "monthly" %}Mensuelle{% else %}Autre{%endif%}</div>
+  </div>
+  {% endif %}
+  <div class="row pb-2">
+      <div class="col"><strong>Avertissement</strong></div>
+      <div class="col text-center">
+          {% if game.restriction == 'all' %}
+          <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+          <span class="badge text-bg-warning">16+</span> {% else %}
+          <span class="badge text-bg-danger">18+</span> {% endif %} {% if game.restriction_tags %} {% set tags = game.restriction_tags.split(',') %} {% endif %} {% for tag in tags %}<span class="badge bg-secondary">{{ tag }}</span> {% endfor
+          %}
+      </div>
+  </div>
+  <div class="row pb-2">
+      <div class="col"><strong>Maître·sse du Jeu</strong></div>
+      <div class="col">
+          <figure class="figure mx-auto d-block">
+              <div class="text-center">
+                  <img src="{{ game.gm.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ game.gm.name }}" width="30" height="30">
+              </div>
+              <figcaption class="figure-caption text-center">{{ game.gm.name }}</figcaption>
+          </figure>
+      </div>
+  </div>
+  <div class="row pb-2">
+      <div class="col"><strong>Nombre de joueur·euses souhaité</strong></div>
+      <div class="col text-center">{{ game.party_size }} {% if game.party_selection %}(sur sélection){% endif %}</div>
+  </div>
+  <div class="row pb-2">
+      <div class="col"><strong>Expérience recherchée</strong></div>
+      <div class="col text-center">
+          {% if game.xp == "beginners" %}Réservé aux débutants{% elif game.xp == "seasoned" %}Interdit aux débutants{% else %}Débutants bienvenus{% endif %}
+      </div>
+  </div>
+  <div class="row pb-2">
+      <div class="col"><strong>Création des personnages</strong></div>
+      <div class="col text-center">
+          {% if game.characters == "self" %}À faire seul·e{% elif game.characters == "with_gm" %}À faire avec le·a MJ{% else %}Prétirés{% endif %}
+      </div>
+  </div>
+  <div class="row pb-2">
+      <div class="col"><strong>Joueur·euses inscrit·es</strong></div>
+      <div class="col">
+          <div class="row gy-4">
+              {% if game.players|length > 0 %} {% for player in game.players %}
+              <div class="col">
+                  <figure class="figure mx-auto d-block position-relative">
+                      <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
+                      <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
+                  </figure>
+              </div>
+              {% endfor %} {% else %}
+              <p class="text-center">Aucun·e joueur·euses pour le moment.</p>
+              {% endif %}
+          </div>
+      </div>
+  </div>
+  {% if game.classification is not none %}
+  <div class="row pb-2">
+      <div class="col"><strong>Classification</strong></div>
+      <div class="col text-center">
+          {% for item in game.classification|dictsort(by='value', reverse=true) %}{% if item[1] == 2 %}<span class="badge bg-danger">{% if item[0] == "horror" %}Horreur{% else %}{{ item[0]|capitalize }}{% endif %}</span> {% elif item[1] == 1 %}
+          <span class="badge bg-primary">{% if item[0] == "horror" %}Horreur{% else %}{{ item[0]|capitalize }}{% endif %}</span> {% endif %}{% endfor %}
+      </div>
+  </div>
+  {% endif %}
+  {% if game.ambience is not none %}
+  <div class="row pb-2">
+      <div class="col"><strong>Ambiance</strong></div>
+      <div class="col text-center">
+          {% for ambience in game.ambience %}
+          <span class="badge bg-secondary">
+            {% if ambience == "serious"%}sérieuse {% elif ambience == "epic"%}épique {% elif ambience == "comic"%}comique{% elif ambience == "chill"%}décontractée{% endif %}</span>
+          {% endfor %}
+      </div>
+  </div>
+  {% endif %}
+</div>

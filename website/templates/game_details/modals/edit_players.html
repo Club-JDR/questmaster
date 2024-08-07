@@ -1,0 +1,33 @@
+<div class="modal fade" id="editPlayers" tabindex="-1" aria-labelledby="editPlayers" aria-hidden="true">
+  <form method="post" action="/annonces/{{game.id}}/gerer/">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="editPLayersLabel">Gérer les inscriptions</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>Les joueur·euses inscrit·es s'affichent ci-dessous. Pour désinscrire quelqu'un, décochez la·le puis cliquez sur le bouton <strong>confirmer</strong>. Il est possible de décocher une ou plusieurs personnes avant de confirmer.</p>
+              <div class="row gy-4 p-4">
+                {% if game.players|length > 0 %} {% for player in game.players %}
+                <div class="col">
+                    <figure class="figure mx-auto d-block position-relative">
+                        <div class="text-center"><img src="{{ player.avatar }}" class="figure-img img-fluid rounded-circle" alt="{{ player.name }}" width="30" height="30"></div>
+                          <figcaption class="figure-caption text-center">{{ player.name }}</figcaption>
+                          <input class="form-check-input" type="checkbox" role="switch" id="register{{ player.id }}" name="{{ player.id }}" checked>
+                    </figure>
+                </div>
+                {% endfor %} {% else %}
+                <p class="text-center">Aucun·e joueur·euses pour le moment.</p>
+                {% endif %}
+              </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" type="button" class="btn btn-primary">Confirmer</button>
+            </div>
+        </div>
+    </div>
+  </form>
+</div>

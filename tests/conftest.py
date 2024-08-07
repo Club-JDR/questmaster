@@ -9,7 +9,8 @@ import time
 
 class TestConfig:
     gm_id = "701747435097292830"
-    user_id = "664487064577900594"
+    user_id = "698965618279317624"
+    admin_id = "664487064577900594"
     game_system = 1
     game_vtt = 1
     sys_name = "Cthulhu Hack"
@@ -57,24 +58,12 @@ Ce scénario n'existe pas, c'est uniquement une annonce qui sert à faire des te
 
     def set_gm_session(session):
         session["user_id"] = TestConfig.gm_id
-        session["username"] = "user"
-        session["avatar"] = "avatar.png"
-        session["is_gm"] = True
-        session["is_admin"] = False
 
     def set_user_session(session):
         session["user_id"] = TestConfig.user_id
-        session["username"] = "user"
-        session["avatar"] = "avatar.png"
-        session["is_gm"] = False
-        session["is_admin"] = False
 
     def set_admin_session(session):
-        session["user_id"] = TestConfig.gm_id
-        session["username"] = "user"
-        session["avatar"] = "avatar.png"
-        session["is_gm"] = True
-        session["is_admin"] = True
+        session["user_id"] = TestConfig.admin_id
 
 
 @pytest.fixture()

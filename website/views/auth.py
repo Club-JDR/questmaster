@@ -1,4 +1,4 @@
-from flask import redirect, url_for, current_app, session, render_template, abort
+from flask import redirect, url_for, current_app, session, abort
 from website import app, db
 from website.models import User
 import functools
@@ -8,30 +8,25 @@ def who():
     """
     Init session with user information from Discord API.
     """
-    payload = {}
-    if "username" in session:
-        payload["user_id"] = session["user_id"]
-        payload["username"] = session["username"]
-        payload["avatar"] = session["avatar"]
-        payload["is_gm"] = session["is_gm"]
-        payload["is_admin"] = session["is_admin"]
+    if "user_id" in session:
+        user = db.get_or_404(User, str(session["user_id"]))
+        session["user_id"] = user.id
+        session["username"] = user.name
+        session["avatar"] = user.avatar
+        session["is_gm"] = user.is_gm
+        session["is_admin"] = user.is_admin
+        session["is_player"] = user.is_player
     return session
 
 
 def login_required(view):
     """
-    View decorator that redirects unauthoried users to the login page.
+    View decorator that redirects to 403 is not logged-in.
     """
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
-        if (
-            "user_id" not in session
-            or "username" not in session
-            or "avatar" not in session
-            or "is_gm" not in session
-            or "is_admin" not in session
-        ):
+        if "user_id" not in session:
             abort(403)
         return view(**kwargs)
 

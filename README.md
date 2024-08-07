@@ -36,24 +36,24 @@ FLASK_APP="website"
 USER_ID_LIST="{ \"gm1\": \"<id of user with GM role>\", \"gm2\": \"<id of other user with GM role>\", \"notgm\": \"<id of user without GM role>\", \"admin\": \"<id of user with Admin role>\"}"
 ```
 
-### Using docker-compose
+### Using docker compose
 
 Start the complete stack:
 
 ```sh
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 To init the database and run the migrations:
 
 ```sh
-docker exec -it questmaster_app_1 bash -c "flask db init && flask db migrate && flask db upgrade"
+docker exec -it questmaster-app-1 bash -c "flask db init && flask db migrate && flask db upgrade"
 ```
 
 To run the tests:
 
 ```sh
-docker-compose run app-test python -m pytest tests/ website
+docker compose run app-test python -m pytest tests/ website
 ```
 
 ### Locally
@@ -62,7 +62,7 @@ Edit the `.env` to change the `POSTGRES_HOST` value to `localhost`.
 Run at least the database and eventually pgadmin:
 
 ```sh
-docker-compose down && docker compose up -d --build db pgadmin
+docker compose down && docker compose up -d --build db pgadmin
 ```
 
 To init the database and run the migrations:
@@ -75,6 +75,8 @@ Then, you can run the app:
 
 ```sh
 flask run -p 8000
+# Or in debug if you don't want to restart it at every code change
+flask --app website --debug run -p 8000
 ```
 
 To run the tests:
@@ -88,8 +90,8 @@ python -m pytest tests/ website
 You can connect to a shell (to test your models, interact with the database and so on) by simply running:
 
 ```sh
-# if using docker-compose
-docker-compose run app flask shell
+# if using docker compose
+docker compose run app flask shell
 # if running locally
 flask shell
 ```

@@ -10,14 +10,29 @@ from website.models import System
 from website.views.auth import who, login_required
 
 
-@app.route("/systems/", methods=["GET"])
+@app.route("/systemes/", methods=["GET"])
 def list_systems():
     """
-    List all systems.
+    List all VTTs.
     """
-    sys = System.query.all()
+    s = System.query.all()
     return render_template(
-        "admin.html", payload=who(), items=sys, item="systems", title="Systèmes"
+        "list.html", payload=who(), items=s, item="systems", title="Systèmes"
+    )
+
+
+@app.route("/admin/systems/", methods=["GET"])
+@login_required
+def get_form_systems():
+    """
+    Get admin systems form.
+    """
+    payload = who()
+    if not payload["is_admin"]:
+        abort(403)
+    s = System.query.all()
+    return render_template(
+        "admin.html", payload=who(), items=s, item="systems", title="Systèmes"
     )
 
 
@@ -30,16 +45,15 @@ def create_system() -> object:
     payload = who()
     if not payload["is_admin"]:
         abort(403)
-    else:
-        try:
-            data = request.values.to_dict()
-            sys = System(name=data["name"], icon=data["icon"])
-            # Save System in database
-            db.session.add(sys)
-            db.session.commit()
-            return redirect(url_for("list_systems"))
-        except Exception as e:
-            abort(500, e)
+    try:
+        data = request.values.to_dict()
+        sys = System(name=data["name"], icon=data["icon"])
+        # Save System in database
+        db.session.add(sys)
+        db.session.commit()
+        return redirect(url_for("list_systems"))
+    except Exception as e:
+        abort(500, e)
 
 
 @app.route("/systems/<system_id>/", methods=["POST"])
@@ -51,15 +65,14 @@ def edit_system(system_id) -> object:
     payload = who()
     if not payload["is_admin"]:
         abort(403)
-    else:
-        try:
-            data = request.values.to_dict()
-            sys = db.get_or_404(System, system_id)
-            # Edit the Game object
-            sys.name = data["name"]
-            sys.icon = data["icon"]
-            # Save System in database
-            db.session.commit()
-            return redirect(url_for("list_systems"))
-        except Exception as e:
-            abort(500, e)
+    try:
+        data = request.values.to_dict()
+        sys = db.get_or_404(System, system_id)
+        # Edit the Game object
+        sys.name = data["name"]
+        sys.icon = data["icon"]
+        # Save System in database
+        db.session.commit()
+        return redirect(url_for("list_systems"))
+    except Exception as e:
+        abort(500, e)

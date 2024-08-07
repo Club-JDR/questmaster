@@ -1,0 +1,115 @@
+<div class="col-lg-4 p-3">
+  <div class="row">
+      <div class="mb-2">
+          <p class="form-label"><strong>Type de session :</strong></p>
+          <div class="mb-2">
+              <div class="btn-group" role="group" aria-label="SessionType">
+                  <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" %}disabled{% endif%} {% else %}checked{%endif%}>
+                  <label class="btn btn-outline-success btn-sm" for="oneshot">One Shot</label>
+                  <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off" {% if game %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" %}disabled{% endif%}{%endif%}{% endif %}>
+                  <label class="btn btn-outline-primary btn-sm" for="campaign">Campagne</label>
+              </div>
+          </div>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="calendar" class="form-label"><strong>Date :</strong></label>
+          <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" {% if game %}value="{{game.date}}" {% endif %}required>
+          <div class="invalid-feedback">
+              Vous devez entrer une date.
+          </div>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="length" class="form-label"><strong>Durée :</strong></label>
+          <div class="input-group mb-3">
+              <select class="form-select" aria-label="Durée" id="length" name="length" required>
+                <option value="1 session" {% if game and game.length == '1 session' %}selected{% endif %}>1</option>
+                <option value="2 sessions" {% if game and game.length == '2 sessions' %}selected{% endif %}>2</option>
+                <option value="3 sessions" {% if game and game.length == '3 sessions' %}selected{% endif %}>3</option>
+                <option value="~5 sessions" {% if game and game.length == '~5 sessions' %}selected{% endif %}>5</option>
+                <option value="~10 sessions" {% if game and game.length == '~10 sessions' %}selected{% endif %}>~10</option>
+                <option value="10+ sessions" {% if game and game.length == '10+ sessions' %}selected{% endif %}>10+</option>
+                <option value="20+ sessions" {% if game and game.length == '20+ sessions' %}selected{% endif %}>20+</option>
+              </select>
+              <label class="input-group-text" for="session_length">session(s) de</label>
+              <input type="number" step="0.5" value="3.5" class="form-control" id="session_length" name="session_length" aria-describedby="Durée moyenne de session" autocomplete="off" {% if game %}value="{{game.session_length}}" {% endif %} required>
+              <label class="input-group-text" for="session_length">heures</label>
+          </div>
+          <div class="invalid-feedback">
+              Vous devez choisir une durée.
+          </div>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="frequency" class="form-label"><strong>Fréquence :</strong></label>
+          <select class="form-select" name="frequency" id="frequency" aria-describedby="Fréquence">
+            <option value="" selected></option>
+            <option value="weekly" {% if game and game.frequency == "weekly" %}selected{% endif %}>Hebdomadaire</option>
+            <option value="bi-weekly" {% if game and game.frequency == "bi-weekly" %}selected{% endif %}>Une semaine sur deux</option>
+            <option value="monthly" {% if game and game.frequency == "monthly" %}selected{% endif %}>Mensuelle</option>
+            <option value="other" {% if game and game.frequency == "other" %}selected{% endif %}>Autre</option>
+          </select>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="party_size" class="form-label"><strong>Nombre de joueur·euses :</strong></label>
+          <input type="number" step="1" max="99" name="party_size" id="party_size" class="form-control" {% if game %}value="{{game.party_size}}" {% else %}value="4" {% endif %}required>
+          <div class="invalid-feedback">
+              Vous devez entrer un nombre de joueur·euses.
+          </div>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" name="party_selection" id="party_selection" aria-checked="false" {% if game and game.party_selection %}checked{% endif %}>
+              <label class="form-check-label" for="party_selection">Sélection de joueur·euses</label>
+          </div>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="xp" class="form-label"><strong>Expérience recherchée :</strong></label>
+          <select class="form-select" id="xp" name="xp" aria-describedby="Expérience">
+            <option value="all" {% if (game and game.xp == "all") or not game %}selected{% endif %}>Débutants bienvenus</option>
+            <option value="beginners" {% if game and game.xp == "beginners" %}selected{% endif %}>Réservé aux débutants</option>
+            <option value="seasoned" {% if game and game.xp == "seasoned" %}selected{% endif %}>Interdit aux débutants</option>
+          </select>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="characters" class="form-label"><strong>Création des personnages :</strong></label>
+          <select class="form-select" name="characters" id="characters" aria-describedby="Personnages">
+            <option value="with_gm" {% if (game and game.xp == "with_gm") or not game %}selected{% endif %}>À faire avec le·a MJ</option>
+            <option value="self" {% if game and game.xp == "self" %}selected{% endif %}>À faire seul·e</option>
+            <option value="pregen" {% if game and game.xp == "pregen" %}selected{% endif %}>Prétirés</option>
+          </select>
+      </div>
+  </div>
+  <div class="row">
+      <p class="form-label"><strong>Avertissement :</strong></p>
+      <div class="mb-2">
+          <div class="btn-group" role="group" aria-label="Restriction">
+              <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" {% if game %}{% if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
+              <label class="btn btn-outline-success btn-sm" for="all">Tout public</label>
+              <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off" {% if game and game.restriction=='16+' %}checked{% endif %}>
+              <label class="btn btn-outline-warning btn-sm" for="16">16+</label>
+              <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off" {% if game and game.restriction=='18+' %}checked{% endif %}>
+              <label class="btn btn-outline-danger btn-sm" for="18">18+</label>
+          </div>
+      </div>
+  </div>
+  <div class="row">
+      <div class="mb-2">
+          <label for="restriction_tags" class="form-label"><strong>Thèmes choquants :</strong></label>
+          <textarea class="form-control" name="restriction_tags" id="restriction_tags" rows="2" aria-describedby="RestrictionTags">{% if game and game.restriction_tags is not none %}{{game.restriction_tags}}{% endif %}</textarea>
+          <div id="tagsHelp" class="form-text">Séparer chaque thème par une virgule.</div>
+      </div>
+  </div>
+</div>
