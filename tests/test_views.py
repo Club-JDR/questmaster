@@ -483,6 +483,7 @@ def test_manage_game_registration(client):
         follow_redirects=True,
     )
     assert response.status_code == 403  # cannot manage registration if not game's GM
+    time.sleep(1)
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
     response = client.post(
