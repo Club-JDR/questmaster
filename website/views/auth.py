@@ -8,7 +8,7 @@ def who():
     """
     Init session with user information from Discord API.
     """
-    if "username" in session:
+    if "user_id" in session:
         user = db.get_or_404(User, str(session["user_id"]))
         session["user_id"] = user.id
         session["username"] = user.name
@@ -26,13 +26,7 @@ def login_required(view):
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
-        if (
-            "user_id" not in session
-            or "username" not in session
-            or "avatar" not in session
-            or "is_gm" not in session
-            or "is_admin" not in session
-        ):
+        if "user_id" not in session:
             abort(403)
         return view(**kwargs)
 
