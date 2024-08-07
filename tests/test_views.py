@@ -482,7 +482,7 @@ def test_manage_game_registration(client):
         "/annonces/{}/gerer/".format(config.game_id2),
         follow_redirects=True,
     )
-    assert response.status_code == 403  # cannot manage registration if not gamne's GM
+    assert response.status_code == 403  # cannot manage registration if not game's GM
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
     response = client.post(

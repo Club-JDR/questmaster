@@ -594,7 +594,7 @@ def manage_game_registration(game_id) -> object:
     """
     payload = who()
     game = db.get_or_404(Game, game_id)
-    if game.status in ["closed", "archived"]:
+    if game.status in ["draft", "archived"]:
         abort(500)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         abort(403)
