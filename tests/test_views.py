@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from conftest import TestConfig
 from datetime import datetime
+import time
 
 config = TestConfig()
 
@@ -309,6 +310,7 @@ def test_get_game_details(client):
     )
     assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
     assert "S'inscrire" not in response.data.decode()
+    time.sleep(1)
     # GET GAME DETAILS AS ANOTHER (NON ADMIN) USER should NOT show the actions bar but allow to register
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -316,6 +318,7 @@ def test_get_game_details(client):
     assert response.status_code == 200
     assert '<i class="bi bi-pencil-square"></i> Éditer' not in response.data.decode()
     assert "S'inscrire" in response.data.decode()
+    time.sleep(1)
     # GET GAME DETAILS AS ANOTHER ADMIN USER should show the actions bar and allow to register
     with client.session_transaction() as session:
         TestConfig.set_admin_session(session)
@@ -454,6 +457,7 @@ def test_register_game(client):
         follow_redirects=True,
     )
     assert response.status_code == 403  # cannot register to own game
+    time.sleep(1)
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
     response = client.post(
@@ -461,6 +465,7 @@ def test_register_game(client):
         follow_redirects=True,
     )
     assert response.status_code == 500  # cannot register to archived game
+    time.sleep(1)
     response = client.post(
         "/annonces/{}/inscription/".format(config.game_id2),
         follow_redirects=True,
