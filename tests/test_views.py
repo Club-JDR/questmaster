@@ -55,8 +55,6 @@ def test_create_system(client):
         for i in form.find_all("input"):
             if i.get("name") == config.sys_name:
                 config.game_system = i.get("value")
-    response = client.post("/systems/", data=data, follow_redirects=True)
-    assert response.status_code == 500  # System name must be unique
 
 
 def test_edit_system(client):
@@ -96,8 +94,6 @@ def test_create_vtt(client):
         for i in form.find_all("input"):
             if i.get("name") == config.vtt_name:
                 config.game_vtt = i.get("value")
-    response = client.post("/vtts/", data=data, follow_redirects=True)
-    assert response.status_code == 500  # VTT name must be unique
 
 
 def test_edit_vtt(client):

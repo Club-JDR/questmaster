@@ -1,4 +1,4 @@
-from flask import redirect, url_for, current_app, session, render_template, abort
+from flask import redirect, url_for, current_app, session, abort
 from website import app, db
 from website.models import User
 import functools
@@ -21,7 +21,7 @@ def who():
 
 def login_required(view):
     """
-    View decorator that redirects unauthoried users to the login page.
+    View decorator that redirects to 403 is not logged-in.
     """
 
     @functools.wraps(view)
