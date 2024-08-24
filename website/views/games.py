@@ -602,19 +602,38 @@ def manage_game_registration(game_id) -> object:
     """
     payload = who()
     game = db.get_or_404(Game, game_id)
-    if game.status in ["draft", "archived"]:
+    if game.status == "archived":
         abort(500)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         abort(403)
     data = request.values.to_dict()
-    for player in game.players:
-        if player.id not in data:
-            try:
-                game.players.remove(db.get_or_404(User, player.id))
-                db.session.commit()
-                bot.remove_role_from_user(player.id, game.role)
-            except Exception as e:
-                abort(500, e)
+    if data["action"] == "manage":
+        for player in game.players:
+            if player.id not in data:
+                try:
+                    game.players.remove(db.get_or_404(User, player.id))
+                    db.session.commit()
+                    bot.remove_role_from_user(player.id, game.role)
+                except Exception as e:
+                    abort(500, e)
+    elif data["action"] == "add":
+        uid = data["discord_id"]
+        try:
+            new_player = db.get_or_404(User, str(uid))
+        except Exception:
+            new_player = User(id=str(uid))
+            db.session.add(new_player)
+            db.session.commit()
+            new_player.init_on_load()
+        if not new_player.is_player:
+            abort(500, "Cette personne n'est pas un·e joueur·euse sur le Discord")
+        try:
+            game.players.append(new_player)
+            db.session.commit()
+            bot.add_role_to_user(uid, game.role)
+            send_discord_embed(game, type="register", player=uid)
+        except Exception as e:
+            abort(500, e)
     return redirect(url_for("get_game_details", game_id=game.id))
 
 
@@ -643,14 +662,12 @@ def my_gm_games() -> object:
 @login_required
 def my_games() -> object:
     """
-    List all of current user non archived games
+    List all of current user non archived games "as player"
     """
     payload = who()
     try:
         user = db.session.get(User, payload["user_id"])
-        games_as_player = user.games
-        games_as_gm = user.games_gm
-        games = games_as_player + games_as_gm
+        games = user.games
         active_games = []
         for game in games:
             if game.status != "archived":

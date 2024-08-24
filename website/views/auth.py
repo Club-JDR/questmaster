@@ -68,7 +68,7 @@ def callback():
             db.session.commit()
             user.init_on_load()
         if not user.is_player:
-            abort(403)
+            abort(403, "Vous n'êtes pas un·e joueur·euse sur le Discord Club JDR")
         session["user_id"] = user.id
         session["username"] = user.name
         session["avatar"] = user.avatar

@@ -4,6 +4,7 @@ flatpickr('.flatpickr-start', {
   enableTime: true,
   allowInput: true,
   defaultHour: 20,
+  defaultMinute: 30,
 });
 flatpickr('.flatpickr-end', {
   "locale": "fr",

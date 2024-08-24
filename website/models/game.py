@@ -10,7 +10,7 @@ GAME_TYPES = ("oneshot", "campaign")
 GAME_STATUS = ("draft", "open", "closed", "archived")
 GAME_FREQUENCIES = ("weekly", "bi-weekly", "monthly", "other")
 GAME_XP = ("all", "beginners", "seasoned")
-GAME_CHAR = ("with_gm", "self", "pregen")
+GAME_CHAR = ("with_gm", "self", "pregen", "choice")
 RESTRICTIONS = ("all", "16+", "18+")
 AMBIENCES = ("chill", "serious", "comic", "epic")
 
