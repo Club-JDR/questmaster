@@ -66,6 +66,7 @@ def callback():
             user = User(id=str(uid))
             db.session.add(user)
             db.session.commit()
+            user.init_on_load()
         if not user.is_player:
             abort(403)
         session["user_id"] = user.id

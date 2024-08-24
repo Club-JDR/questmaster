@@ -38,11 +38,10 @@ discord = DiscordOAuth2Session(app)
 global bot
 bot = Discord(app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"])
 
-if "https" not in app.config["DISCORD_REDIRECT_URI"]:
-    # OAuth2 must make use of HTTPS in production environment.
-    os.environ[
-        "OAUTHLIB_INSECURE_TRANSPORT"
-    ] = "true"  # !! Only in development environment.
+# OAuth2 must make use of HTTPS in production environment.
+os.environ[
+    "OAUTHLIB_INSECURE_TRANSPORT"
+] = "true"  # !! Remove on production or if not using a reverse proxy as cert bearer.
 
 # CSRF
 csrf = CSRFProtect()

@@ -77,6 +77,10 @@ def send_discord_embed(
     Send Discord embed message for game.
     """
     if type == "annonce":
+        if game.type == "campaign":
+            session_type = "Campagne"
+        else:
+            session_type = "OS"
         restriction = ":red_circle: 18+"
         if game.restriction == "all":
             restriction = ":green_circle: Tout public"
@@ -98,7 +102,7 @@ def send_discord_embed(
                 {"name": "Système", "value": game.system.name, "inline": True},
                 {
                     "name": "Type de session",
-                    "value": game.type,
+                    "value": session_type,
                     "inline": True,
                 },
                 {
@@ -126,7 +130,7 @@ def send_discord_embed(
         target = current_app.config["POSTS_CHANNEL_ID"]
     elif type == "add-session":
         embed = {
-            "description": "<@&{}>\nVotre MJ a jouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton corredpondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
+            "description": "<@&{}>\nVotre MJ a ajouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton correspondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
                 game.role, start, end, game.id
             ),
             "title": "Nouvelle session prévue",
@@ -144,7 +148,7 @@ def send_discord_embed(
         target = game.channel
     elif type == "del-session":
         embed = {
-            "description": "<@&{}>\nVotre MJ a annulé une la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
+            "description": "<@&{}>\nVotre MJ a annulé la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
                 game.role, start, end
             ),
             "title": "Session annulée",
@@ -489,6 +493,8 @@ def add_game_session(game_id) -> object:
     game = get_game_if_authorized(payload, game_id)
     start = request.values.to_dict()["date_start"]
     end = request.values.to_dict()["date_end"]
+    if start > end:
+        abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
     create_game_session(
         game,
         start,
@@ -522,6 +528,8 @@ def edit_game_session(game_id, session_id) -> object:
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
     session.start = request.values.to_dict()["date_start"]
     session.end = request.values.to_dict()["date_end"]
+    if session.start > session.end:
+        abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
     try:
         db.session.commit()
         send_discord_embed(

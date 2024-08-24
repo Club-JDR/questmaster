@@ -11,10 +11,10 @@
           <div class="row">
             <div class="input-group mb-3">
               <span class="input-group-text">Début :</span>
-              <input id="date_start" name="date_start" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.start}}" required>
+              <input id="date_start_{{session.id}}" name="date_start" class="flatpickr flatpickr-start flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.start}}" onchange="validateDateRange('#date_start_{{session.id}}', '#date_end_{{session.id}}', 'edit_session_{{session.id}}')" required>
               <span class="input-group-text">Fin :</span>
-              <input name="date_end" id="date_end" class="flatpickr flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.end}}" required>
-              <button type="submit" class="btn btn-primary">Modifier</button>
+              <input name="date_end" id="date_end_{{session.id}}" class="flatpickr flatpickr-end flatpickr-input active form-control" type="text" autocomplete="off" placeholder="{{session.end}}" onchange="validateDateRange('#date_start_{{session.id}}', '#date_end_{{session.id}}', 'edit_session_{{session.id}}')" required>
+              <button id="edit_session_{{session.id}}" type="submit" class="btn btn-primary" disabled>Modifier</button>
             </div>
           </div>
         </form>
