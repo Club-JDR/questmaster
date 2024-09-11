@@ -1,9 +1,16 @@
-from website import db, bot
+from website import db, bot, cache
 from sqlalchemy import orm
 from flask import current_app
 
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
+@cache.memoize(timeout=300)
+def get_user(user_id):
+    """
+        Wrapper to get user info from cache or Discord API.
+    """
+    print("Getting informations from Discord for {}".format(user_id))
+    return bot.get_user(user_id)
 
 class User(db.Model):
     __tablename__ = "user"
@@ -17,9 +24,9 @@ class User(db.Model):
     @orm.reconstructor
     def init_on_load(self):
         """
-        Get informations from Discord API not the database when the oject is loaded.
+        Retrieve distant data on user when the oject is loaded.
         """
-        result = bot.get_user(self.id)
+        result = get_user(self.id)
         try:
             if result["nick"] == None:
                 self.name = result["user"]["username"]

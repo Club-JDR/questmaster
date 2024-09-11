@@ -3,7 +3,6 @@ from website import app, db
 from website.models import User
 import functools
 
-
 def who():
     """
     Init session with user information from Discord API.

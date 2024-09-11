@@ -3,6 +3,7 @@ from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_caching import Cache
 from datetime import timedelta
 from website.utils.discord import Discord
 import os
@@ -27,11 +28,19 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
+app.config["CACHE_TYPE"] = "RedisCache"
+app.config['CACHE_REDIS_HOST'] = os.environ.get("REDIS_HOST")
+app.config['CACHE_REDIS_PORT'] = 6379
+app.config['CACHE_REDIS_DB'] = 0
 app.json.compact = False
 
 # Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+# Cache
+cache = Cache(app)
+cache.init_app(app)
 
 # OAuth
 discord = DiscordOAuth2Session(app)
