@@ -1,3 +1,9 @@
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+    retry_if_exception_type
+)  # for exponential backoff
 from website.utils.exceptions import RateLimited
 from flask_discord import Unauthorized
 import requests
@@ -22,6 +28,7 @@ class Discord:
         }
         return headers
 
+    @retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(3), retry=retry_if_exception_type(RateLimited))
     def _request(self, route, method, payload=None):
         route = DISCORD_API_BASE_URL + route
         if payload == None:
