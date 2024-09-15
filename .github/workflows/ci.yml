@@ -54,7 +54,7 @@ jobs:
           docker compose run app-test black --check questmaster.py website
       - name: Seed test data
         run: |
-          docker exec questmaster-db-1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594'), ('698965618279317624'); insert into public.channle values('1284847865776177217', 'campaign', 10), ('1247613296870162474', 'campaign', 5);"
+          docker exec questmaster-db-1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594'), ('698965618279317624'); insert into public.channel values('1284847865776177217', 'campaign', 10), ('1247613296870162474', 'campaign', 5);"
       - name: Tests with Pytest
         run: |
           docker compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
