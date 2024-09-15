@@ -29,9 +29,9 @@ app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
 app.config["CACHE_TYPE"] = "RedisCache"
-app.config['CACHE_REDIS_HOST'] = os.environ.get("REDIS_HOST")
-app.config['CACHE_REDIS_PORT'] = 6379
-app.config['CACHE_REDIS_DB'] = 0
+app.config["CACHE_REDIS_HOST"] = os.environ.get("REDIS_HOST")
+app.config["CACHE_REDIS_PORT"] = 6379
+app.config["CACHE_REDIS_DB"] = 0
 app.json.compact = False
 
 # Database
