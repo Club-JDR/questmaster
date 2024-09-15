@@ -3,6 +3,7 @@ WORKDIR /questmaster
 RUN adduser --system --group questmaster && \
   apt update && apt upgrade -y && \
   apt install -y --no-install-recommends locales && \
+  apt clean && \
   sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \
   dpkg-reconfigure --frontend=noninteractive locales
 
@@ -14,7 +15,7 @@ RUN apt install -y --no-install-recommends build-essential gcc && apt clean && \
 FROM build AS code
 COPY requirements.txt /questmaster/requirements.txt
 RUN python -m pip install -r requirements.txt
-ADD questmaster.py  /questmaster/questmaster.py
+COPY questmaster.py  /questmaster/questmaster.py
 COPY website/ /questmaster/website
 RUN chown -R questmaster: /questmaster
 
