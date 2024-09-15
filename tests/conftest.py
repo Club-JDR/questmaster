@@ -11,6 +11,7 @@ class TestConfig:
     gm_id = "701747435097292830"
     user_id = "698965618279317624"
     admin_id = "664487064577900594"
+    os_category = "1247613267552108696"
     game_system = 1
     game_vtt = 1
     sys_name = "Cthulhu Hack"

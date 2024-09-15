@@ -21,8 +21,6 @@ app.config["DISCORD_GUILD_ID"] = os.environ.get("DISCORD_GUILD_ID")
 app.config["DISCORD_GM_ROLE_ID"] = os.environ.get("DISCORD_GM_ROLE_ID")
 app.config["DISCORD_ADMIN_ROLE_ID"] = os.environ.get("DISCORD_ADMIN_ROLE_ID")
 app.config["DISCORD_PLAYER_ROLE_ID"] = os.environ.get("DISCORD_PLAYER_ROLE_ID")
-app.config["CATEGORY_OS_CHANNEL_ID"] = os.environ.get("CATEGORY_OS_CHANNEL_ID")
-app.config["CATEGORY_LONG_CHANNEL_ID"] = os.environ.get("CATEGORY_LONG_CHANNEL_ID")
 app.config["POSTS_CHANNEL_ID"] = os.environ.get("POSTS_CHANNEL_ID")
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 app.config[
@@ -57,4 +55,14 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 
 # API import
-from website.views import auth, health, games, systems, vtts, filters, errors, stats
+from website.views import (
+    auth,
+    health,
+    games,
+    systems,
+    vtts,
+    filters,
+    errors,
+    stats,
+    channels,
+)

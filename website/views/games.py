@@ -7,9 +7,11 @@ from flask import (
     abort,
 )
 from website import app, db, bot
-from website.models import Game, User, System, Vtt, Session
+from website.models import Game, User, System, Vtt, Session, Channel
 from website.views.auth import who, login_required
 from website.utils.discord import PLAYER_ROLE_PERMISSION
+from sqlalchemy import func
+
 from datetime import datetime, timedelta
 import re, yaml, locale
 
@@ -22,10 +24,15 @@ HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
 
 def get_channel_category(game):
-    category_id = current_app.config.get("CATEGORY_LONG_CHANNEL_ID")
     if game.type == "oneshot":
-        category_id = current_app.config.get("CATEGORY_OS_CHANNEL_ID")
-    return category_id
+        category = (
+            Channel.query.filter_by(type="oneshot").order_by(Channel.size).first()
+        )
+    else:
+        category = (
+            Channel.query.filter_by(type="campaign").order_by(Channel.size).first()
+        )
+    return category
 
 
 def abort_if_not_gm(payload):
@@ -352,13 +359,14 @@ def create_game() -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
-        category_id = get_channel_category(new_game)
+        category = get_channel_category(new_game)
         new_game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-            parent_id=category_id,
+            parent_id=category.id,
             role_id=new_game.role,
             gm_id=gm_id,
         )["id"]
+        category.size = category.size + 1
     try:
         # Save Game in database
         db.session.add(new_game)
@@ -442,13 +450,14 @@ def edit_game(game_id) -> object:
             color=Game.COLORS[data["type"]],
         )["id"]
         # Create channel and update object with channel_id
-        category_id = get_channel_category(game)
+        category = get_channel_category(game)
         game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
-            parent_id=category_id,
+            parent_id=category.id,
             role_id=game.role,
             gm_id=gm_id,
         )["id"]
+        category.size = category.size + 1
     try:
         # Save Game in database
         db.session.commit()
