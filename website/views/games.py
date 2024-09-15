@@ -29,7 +29,9 @@ def get_channel_category(game):
             Channel.query.filter_by(type="oneshot").order_by(Channel.size).first()
         )
     else:
-      category = Channel.query.filter_by(type="campaign").order_by(Channel.size).first()
+        category = (
+            Channel.query.filter_by(type="campaign").order_by(Channel.size).first()
+        )
     return category
 
 
