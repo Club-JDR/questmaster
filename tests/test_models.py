@@ -18,7 +18,7 @@ def test_channels():
     type = "oneshot"
     size = 15
     channel = Channel(id=id, type=type, size=size)
-    assert channel.name == id
+    assert channel.id == id
     assert channel.type == type
     assert channel.size == size
 
