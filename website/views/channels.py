@@ -21,7 +21,11 @@ def get_form_channels():
         abort(403)
     c = Channel.query.all()
     return render_template(
-        "admin.html", payload=who(), items=c, item="channels", title="Catégories des salons de parties"
+        "admin.html",
+        payload=who(),
+        items=c,
+        item="channels",
+        title="Catégories des salons de parties",
     )
 
 
@@ -36,7 +40,9 @@ def create_channel() -> object:
         abort(403)
     try:
         data = request.values.to_dict()
-        c = Channel(id=data["channel_id"], type=data["channel_type"], size=data["channel_size"])
+        c = Channel(
+            id=data["channel_id"], type=data["channel_type"], size=data["channel_size"]
+        )
         # Save Channel in database
         db.session.add(c)
         db.session.commit()

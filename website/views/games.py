@@ -25,7 +25,9 @@ HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
 def get_channel_category(game):
     if game.type == "oneshot":
-        category = Channel.query.filter_by(type="oneshot").order_by(Channel.size).first()
+        category = (
+            Channel.query.filter_by(type="oneshot").order_by(Channel.size).first()
+        )
     category = Channel.query.filter_by(type="campaign").order_by(Channel.size).first()
     return category
 
