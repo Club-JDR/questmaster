@@ -8,6 +8,7 @@ from website.utils.exceptions import RateLimited
 
 msg_id = ""
 
+
 def test_rate_limited_exception():
     is_global = False
     message = "You are being rate limited."
@@ -108,6 +109,7 @@ def test_edit_message():
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
+
 
 def test_role_workflow():
     """

@@ -173,7 +173,7 @@ def send_discord_embed(
     if type == "annonce" and game.msg_id:
         response = bot.edit_embed_message(game.msg_id, embed, target)
     else:
-      response = bot.send_embed_message(embed, target)
+        response = bot.send_embed_message(embed, target)
     return response["id"]
 
 
