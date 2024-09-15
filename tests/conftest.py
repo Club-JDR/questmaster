@@ -8,6 +8,7 @@ import time
 
 
 class TestConfig:
+    msg_id = ""
     gm_id = "701747435097292830"
     user_id = "698965618279317624"
     admin_id = "664487064577900594"

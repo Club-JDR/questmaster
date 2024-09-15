@@ -84,6 +84,7 @@ def send_discord_embed(
     Send Discord embed message for game.
     """
     if type == "annonce":
+        print(game.__dict__)
         if game.type == "campaign":
             session_type = "Campagne"
         else:
@@ -169,7 +170,11 @@ def send_discord_embed(
             "color": 2201331,  # blue
         }
         target = game.channel
-    bot.send_embed_message(embed, target)
+    if type == "annonce" and game.msg_id:
+        response = bot.edit_embed_message(game.msg_id, embed, target)
+    else:
+        response = bot.send_embed_message(embed, target)
+    return response["id"]
 
 
 def set_default_search_parameters(status, game_type, restriction):
@@ -371,14 +376,15 @@ def create_game() -> object:
         # Save Game in database
         db.session.add(new_game)
         db.session.commit()
+        game = db.get_or_404(Game, new_game.id)
+        game.msg_id = send_discord_embed(game)
+        db.session.commit()
     except Exception as e:
         if data["action"] == "open":
             # Delete channel & role in case of error on post
             bot.delete_channel(new_game.channel)
             bot.delete_role(new_game.role)
         abort(500, e)
-    if data["action"] == "open":
-        send_discord_embed(new_game)
     return redirect(url_for("get_game_details", game_id=new_game.id))
 
 
@@ -459,10 +465,9 @@ def edit_game(game_id) -> object:
         )["id"]
         category.size = category.size + 1
     try:
+        game.msg_id = send_discord_embed(game)
         # Save Game in database
         db.session.commit()
-        if post:
-            send_discord_embed(game)
     except Exception as e:
         if post:
             # Delete channel & role in case of error on post

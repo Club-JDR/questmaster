@@ -1,10 +1,13 @@
 from dotenv import load_dotenv
 from website.utils.discord import Discord
 from flask_discord import Unauthorized
+from conftest import TestConfig
 import os
 import pytest
 
 from website.utils.exceptions import RateLimited
+
+config = TestConfig()
 
 
 def test_rate_limited_exception():
@@ -31,7 +34,7 @@ def test_rate_limited_exception():
     assert error.retry_after == retry_after
 
 
-config = load_dotenv()
+load_dotenv()
 client = Discord(
     os.environ.get("DISCORD_GUILD_ID"), os.environ.get("DISCORD_BOT_TOKEN")
 )
@@ -77,6 +80,33 @@ def test_send_message():
         "footer": {},
     }
     response = client.send_embed_message(embed, test_channel_id)
+    assert response["channel_id"] == test_channel_id
+    assert response["embeds"][0]["title"] == title
+    assert response["embeds"][0]["color"] == color
+    config.msg_id = response["id"]
+
+
+def test_edit_message():
+    """
+    Test editing previous embed message
+    """
+    # Embed
+    title = "Annonce de test (édité)"
+    color = 16766723
+    embed = {
+        "title": title,
+        "color": color,
+        "fields": [
+            {"name": "Name", "value": "Mon OS"},
+            {"name": "MJ", "value": "John Bob"},
+            {"name": "Description", "value": "blabla"},
+            {"name": "Type de session", "value": "OS", "inline": True},
+            {"name": "Nombre de sessions", "value": "2", "inline": True},
+        ],
+        "image": {"url": "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"},
+        "footer": {},
+    }
+    response = client.edit_embed_message(config.msg_id, embed, test_channel_id)
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color

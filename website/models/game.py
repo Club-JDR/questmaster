@@ -62,6 +62,7 @@ class Game(db.Model):
     img = db.Column(db.String())
     sessions = db.relationship("Session", backref="game")
     channel = db.Column(db.String())
+    msg_id = db.Column(db.String())
     role = db.Column(db.String())
     status = db.Column(
         "status",
