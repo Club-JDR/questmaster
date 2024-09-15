@@ -40,7 +40,7 @@ def get_form_vtts():
 @login_required
 def create_vtt() -> object:
     """
-    Create a new system and redirect to the system list.
+    Create a new VTT and redirect to the CTT list.
     """
     payload = who()
     if not payload["is_admin"]:
@@ -48,7 +48,7 @@ def create_vtt() -> object:
     try:
         data = request.values.to_dict()
         v = Vtt(name=data["name"], icon=data["icon"])
-        # Save System in database
+        # Save VTT in database
         db.session.add(v)
         db.session.commit()
         return redirect(url_for("list_vtts"))
@@ -68,10 +68,10 @@ def edit_vtt(vtt_id) -> object:
     try:
         data = request.values.to_dict()
         v = db.get_or_404(Vtt, vtt_id)
-        # Edit the Game object
+        # Edit the VTT object
         v.name = data["name"]
         v.icon = data["icon"]
-        # Save System in database
+        # Save VTT in database
         db.session.commit()
         return redirect(url_for("list_vtts"))
     except Exception as e:

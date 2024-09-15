@@ -68,7 +68,7 @@ def edit_system(system_id) -> object:
     try:
         data = request.values.to_dict()
         sys = db.get_or_404(System, system_id)
-        # Edit the Game object
+        # Edit the System object
         sys.name = data["name"]
         sys.icon = data["icon"]
         # Save System in database

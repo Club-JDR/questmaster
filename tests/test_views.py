@@ -37,6 +37,31 @@ def test_game_form(client):
     assert response.status_code == 200
     assert b"<h1>Nouvelle annonce</h1>" in response.data
 
+def test_create_channel(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    data = {"channel_id": config.os_category, "channel_type": "campaign", "channel_size": "10"}
+    response = client.post("/channels/", data=data, follow_redirects=True)
+    assert response.status_code == 403  # Not Admin
+    with client.session_transaction() as session:
+        TestConfig.set_admin_session(session)
+    response = client.post("/channels/", data=data, follow_redirects=True)
+    assert response.status_code == 200
+    assert bytes("{}".format(config.os_category), encoding="UTF-8") in response.data
+
+
+def test_edit_channel(client):
+    with client.session_transaction() as session:
+        TestConfig.set_user_session(session)
+    data = {"channel_id": config.os_category, "channel_type": "oneshot", "channel_size": "10"}
+    response = client.post("/channels/{}".format(config.os_category), data=data, follow_redirects=True)
+    assert response.status_code == 403  # Not Admin
+    with client.session_transaction() as session:
+        TestConfig.set_admin_session(session)
+    response = client.post("/channels/{}".format(config.os_category), data=data, follow_redirects=True)
+    assert response.status_code == 200
+    assert bytes("option value=\"oneshot\" selected", encoding="UTF-8") in response.data
+
 
 def test_create_system(client):
     with client.session_transaction() as session:

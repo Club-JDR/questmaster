@@ -8,6 +8,20 @@
     <div class="row">
         <form method="post" action="/{{ item }}/{{ i.id }}/" class="row needs-validation" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if item == "channels" %}
+            <div class="input-group mb-3">
+              <span class="input-group-text" id="channel_id">ID de la catégorie : </span>
+              <input type="text" class="form-control" name="channel_id" aria-label="Nom" aria-describedby="ID" value="{{ i.id }}" required>
+              <span class="input-group-text">Type de la catégorie : </span>
+                <select class="form-select" aria-label="Type de catégorie" name="channel_type" required>
+                  <option value="oneshot" {% if i.type =="oneshot" %}selected{% endif %}>OS</option>
+                  <option value="campaign" {% if i.type =="campaign" %}selected{% endif %}>Campagne</option>
+                </select>
+                <span class="input-group-text">Nombre de salons dans la catégorie : </span>
+                <input type="number" class="form-control" id="channel_size" name="channel_size" min="0" max="50" value="{{ i.size }}" required>
+              <button class="btn btn-success" type="submit">Enregistrer</button>
+            </div>
+            {% else %}
             <input type="hidden" name="{{ i.name }}" value="{{ i.id }}">
             <div class="input-group mb-3">
                 <span class="input-group-text" id="name">Nom : </span>
@@ -16,6 +30,7 @@
                 <input type="text" class="form-control" name="icon" placeholder="URL du logo" aria-label="Icon" aria-describedby="icon" {% if i.icon %}value="{{ i.icon }}" {% endif %}>
                 <button class="btn btn-success" type="submit">Enregistrer</button>
             </div>
+            {% endif %}
         </form>
     </div>
     {% endfor %} {% endif %}
@@ -32,6 +47,23 @@
                             <div class="form-floating">
                                 <form method="post" action="/{{ item }}/" class="row needs-validation" novalidate>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    {% if item == "channels" %}
+                                    <div class="input-group mb-3">
+                                      <span class="input-group-text" id="channel_id">ID de la catégorie : </span>
+                                      <input type="text" class="form-control" name="channel_id" aria-label="Nom" aria-describedby="channel_id" required>
+                                    </div>
+                                    <div class="input-group mb-3">
+                                      <span class="input-group-text">Type de la catégorie : </span>
+                                      <select class="form-select" aria-label="Type de catégorie" name="channel_type" required>
+                                        <option value="oneshot">OS</option>
+                                        <option value="campaign">Campagne</option>
+                                      </select>
+                                    </div>
+                                    <div class="input-group mb-3">
+                                      <span class="input-group-text">Nombre de salons dans la catégorie : </span>
+                                      <input type="number" class="form-control" id="channel_size" name="channel_size" min="0" max="50" value="0" required>
+                                    </div>
+                                    {% else %}
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="name">Nom : </span>
                                         <input type="text" class="form-control" name="name" placeholder="Nom" aria-label="Nom" aria-describedby="name">
@@ -40,6 +72,7 @@
                                         <span class="input-group-text" id="icon">Illustration : </span>
                                         <input type="text" class="form-control" name="icon" placeholder="URL du logo" aria-label="Icon" aria-describedby="icon">
                                     </div>
+                                    {% endif %}
                                     <button class="btn btn-success" type="submit">Enregistrer</button>
                                 </form>
                             </div>

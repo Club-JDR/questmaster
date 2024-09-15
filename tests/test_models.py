@@ -1,6 +1,6 @@
 import json, os
 from datetime import datetime
-from website.models import Game, User, System, Vtt, Session
+from website.models import Game, User, System, Vtt, Session, Channel
 
 users = json.loads(os.environ.get("USER_ID_LIST"))
 
@@ -12,6 +12,14 @@ def test_systems():
     assert system.name == name
     assert system.icon == icon
 
+def test_channels():
+    id = "1234567890"
+    type = "oneshot"
+    size = 15
+    channel = Channel(id=id, type=type, size=size)
+    assert channel.name == id
+    assert channel.type == type
+    assert channel.size == size
 
 def test_vtts():
     name = "Foundry"
