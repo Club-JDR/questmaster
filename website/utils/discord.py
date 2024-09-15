@@ -71,6 +71,12 @@ class Discord:
         return self._request(
             route=f"/channels/{channel_id}/messages", method="POST", payload=payload
         )
+    
+    def edit_embed_message(self, msg_id, embed, channel_id):
+        payload = {"embeds": [embed]}
+        return self._request(
+            route=f"/channels/{channel_id}/messages/{msg_id}", method="PATCH", payload=payload
+        )
 
     def create_channel(self, channel_name, parent_id, role_id, gm_id):
         payload = {

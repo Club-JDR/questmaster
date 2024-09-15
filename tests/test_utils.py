@@ -6,6 +6,7 @@ import pytest
 
 from website.utils.exceptions import RateLimited
 
+msg_id = ""
 
 def test_rate_limited_exception():
     is_global = False
@@ -80,7 +81,33 @@ def test_send_message():
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
+    msg_id = response["id"]
 
+
+def test_edit_message():
+    """
+    Test editing previous embed message
+    """
+    # Embed
+    title = "Annonce de test (édité)"
+    color = 16766723
+    embed = {
+        "title": title,
+        "color": color,
+        "fields": [
+            {"name": "Name", "value": "Mon OS"},
+            {"name": "MJ", "value": "John Bob"},
+            {"name": "Description", "value": "blabla"},
+            {"name": "Type de session", "value": "OS", "inline": True},
+            {"name": "Nombre de sessions", "value": "2", "inline": True},
+        ],
+        "image": {"url": "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"},
+        "footer": {},
+    }
+    response = client.edit_embed_message(msg_id, embed, test_channel_id)
+    assert response["channel_id"] == test_channel_id
+    assert response["embeds"][0]["title"] == title
+    assert response["embeds"][0]["color"] == color
 
 def test_role_workflow():
     """
