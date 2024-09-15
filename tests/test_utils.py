@@ -1,12 +1,13 @@
 from dotenv import load_dotenv
 from website.utils.discord import Discord
 from flask_discord import Unauthorized
+from conftest import TestConfig
 import os
 import pytest
 
 from website.utils.exceptions import RateLimited
 
-msg_id = ""
+config = TestConfig()
 
 
 def test_rate_limited_exception():
@@ -33,7 +34,7 @@ def test_rate_limited_exception():
     assert error.retry_after == retry_after
 
 
-config = load_dotenv()
+load_dotenv()
 client = Discord(
     os.environ.get("DISCORD_GUILD_ID"), os.environ.get("DISCORD_BOT_TOKEN")
 )
@@ -82,7 +83,7 @@ def test_send_message():
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
-    msg_id = response["id"]
+    config.msg_id = response["id"]
 
 
 def test_edit_message():
@@ -105,7 +106,7 @@ def test_edit_message():
         "image": {"url": "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"},
         "footer": {},
     }
-    response = client.edit_embed_message(msg_id, embed, test_channel_id)
+    response = client.edit_embed_message(config.msg_id, embed, test_channel_id)
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
