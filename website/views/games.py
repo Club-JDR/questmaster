@@ -77,6 +77,10 @@ def send_discord_embed(
     Send Discord embed message for game.
     """
     if type == "annonce":
+        if game.type == "campaign":
+            session_type = "Campagne"
+        else:
+            session_type = "OS"
         restriction = ":red_circle: 18+"
         if game.restriction == "all":
             restriction = ":green_circle: Tout public"
@@ -98,7 +102,7 @@ def send_discord_embed(
                 {"name": "Système", "value": game.system.name, "inline": True},
                 {
                     "name": "Type de session",
-                    "value": game.type,
+                    "value": session_type,
                     "inline": True,
                 },
                 {
@@ -126,7 +130,7 @@ def send_discord_embed(
         target = current_app.config["POSTS_CHANNEL_ID"]
     elif type == "add-session":
         embed = {
-            "description": "<@&{}>\nVotre MJ a jouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton corredpondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
+            "description": "<@&{}>\nVotre MJ a ajouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton correspondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
                 game.role, start, end, game.id
             ),
             "title": "Nouvelle session prévue",
@@ -144,7 +148,7 @@ def send_discord_embed(
         target = game.channel
     elif type == "del-session":
         embed = {
-            "description": "<@&{}>\nVotre MJ a annulé une la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
+            "description": "<@&{}>\nVotre MJ a annulé la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
                 game.role, start, end
             ),
             "title": "Session annulée",
@@ -489,6 +493,8 @@ def add_game_session(game_id) -> object:
     game = get_game_if_authorized(payload, game_id)
     start = request.values.to_dict()["date_start"]
     end = request.values.to_dict()["date_end"]
+    if start > end:
+        abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
     create_game_session(
         game,
         start,
@@ -522,6 +528,8 @@ def edit_game_session(game_id, session_id) -> object:
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
     session.start = request.values.to_dict()["date_start"]
     session.end = request.values.to_dict()["date_end"]
+    if session.start > session.end:
+        abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
     try:
         db.session.commit()
         send_discord_embed(
@@ -594,19 +602,38 @@ def manage_game_registration(game_id) -> object:
     """
     payload = who()
     game = db.get_or_404(Game, game_id)
-    if game.status in ["draft", "archived"]:
+    if game.status == "archived":
         abort(500)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         abort(403)
     data = request.values.to_dict()
-    for player in game.players:
-        if player.id not in data:
-            try:
-                game.players.remove(db.get_or_404(User, player.id))
-                db.session.commit()
-                bot.remove_role_from_user(player.id, game.role)
-            except Exception as e:
-                abort(500, e)
+    if data["action"] == "manage":
+        for player in game.players:
+            if player.id not in data:
+                try:
+                    game.players.remove(db.get_or_404(User, player.id))
+                    db.session.commit()
+                    bot.remove_role_from_user(player.id, game.role)
+                except Exception as e:
+                    abort(500, e)
+    elif data["action"] == "add":
+        uid = data["discord_id"]
+        try:
+            new_player = db.get_or_404(User, str(uid))
+        except Exception:
+            new_player = User(id=str(uid))
+            db.session.add(new_player)
+            db.session.commit()
+            new_player.init_on_load()
+        if not new_player.is_player:
+            abort(500, "Cette personne n'est pas un·e joueur·euse sur le Discord")
+        try:
+            game.players.append(new_player)
+            db.session.commit()
+            bot.add_role_to_user(uid, game.role)
+            send_discord_embed(game, type="register", player=uid)
+        except Exception as e:
+            abort(500, e)
     return redirect(url_for("get_game_details", game_id=game.id))
 
 
@@ -635,14 +662,12 @@ def my_gm_games() -> object:
 @login_required
 def my_games() -> object:
     """
-    List all of current user non archived games
+    List all of current user non archived games "as player"
     """
     payload = who()
     try:
         user = db.session.get(User, payload["user_id"])
-        games_as_player = user.games
-        games_as_gm = user.games_gm
-        games = games_as_player + games_as_gm
+        games = user.games
         active_games = []
         for game in games:
             if game.status != "archived":

@@ -3,8 +3,9 @@
 {% block content %}
 <h1>{{ title }}</h1>
 <div class="container text-center pt-4">
-  <div class="card-group">
+  <div class="row row-cols-1 row-cols-md-4 g-4">
     {% for i in items|sort(attribute='name') %}
+    <div class="col">
       <div class="card text-center">
         <div class="card-body">
           <div class="top-section">
@@ -13,6 +14,7 @@
           <h5 class="card-title pt-4 bottom-content">{{ i.name }}</h5>
         </div>
       </div>
+    </div>
     {% endfor %}
   </div>
 </div>

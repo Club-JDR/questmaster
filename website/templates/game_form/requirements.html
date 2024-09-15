@@ -89,6 +89,7 @@
             <option value="with_gm" {% if (game and game.xp == "with_gm") or not game %}selected{% endif %}>À faire avec le·a MJ</option>
             <option value="self" {% if game and game.xp == "self" %}selected{% endif %}>À faire seul·e</option>
             <option value="pregen" {% if game and game.xp == "pregen" %}selected{% endif %}>Prétirés</option>
+            <option value="choice" {% if game and game.xp == "choice" %}selected{% endif %}>Au choix</option>
           </select>
       </div>
   </div>

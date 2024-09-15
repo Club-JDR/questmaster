@@ -139,6 +139,7 @@ def test_admin_form_sys(client):
     assert response.status_code == 200
     assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
 
+
 def test_create_open_game(client):
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -182,7 +183,7 @@ def test_create_open_game(client):
 
 
 def test_add_game_session(client):
-    data = {"date_start": "2024-06-07 20:00", "date_end": "2024-06-07 23:00"}
+    data = {"date_start": "2024-06-07 23:00", "date_end": "2024-06-07 20:00"}
     url = "/annonces/{}/sessions/ajouter".format(config.game_id)
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -199,13 +200,20 @@ def test_add_game_session(client):
         data=data,
         follow_redirects=True,
     )
+    assert response.status_code == 500
+    data = {"date_start": "2024-06-07 20:00", "date_end": "2024-06-07 23:00"}
+    response = client.post(
+        url,
+        data=data,
+        follow_redirects=True,
+    )
     assert response.status_code == 200
     assert 'startDate="2024-06-07"' in response.data.decode()
     assert 'endDate="2024-06-07"' in response.data.decode()
 
 
 def test_edit_game_session(client):
-    data = {"date_start": "2024-06-12 20:00", "date_end": "2024-06-12 23:00"}
+    data = {"date_start": "2024-06-12 23:00", "date_end": "2024-06-12 20:00"}
     url = "/annonces/{}/sessions/{}/editer".format(config.game_id, config.session_id)
     with client.session_transaction() as session:
         TestConfig.set_user_session(session)
@@ -217,6 +225,13 @@ def test_edit_game_session(client):
     assert response.status_code == 403
     with client.session_transaction() as session:
         TestConfig.set_gm_session(session)
+    response = client.post(
+        url,
+        data=data,
+        follow_redirects=True,
+    )
+    assert response.status_code == 500
+    data = {"date_start": "2024-06-12 20:00", "date_end": "2024-06-12 23:00"}
     response = client.post(
         url,
         data=data,
@@ -488,11 +503,21 @@ def test_manage_game_registration(client):
         TestConfig.set_gm_session(session)
     response = client.post(
         "/annonces/{}/gerer/".format(config.game_id2),
-        data={},  # empty data to unregister everyone
+        data={"action": "manage"},  # unregister everyone
         follow_redirects=True,
     )
     assert response.status_code == 200
     assert "Aucun·e joueur·euses pour le moment." in response.data.decode()
+    time.sleep(1)
+    with client.session_transaction() as session:
+        TestConfig.set_gm_session(session)
+    response = client.post(
+        "/annonces/{}/gerer/".format(config.game_id2),
+        data={"action": "add", "discord_id": TestConfig.user_id},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert TestConfig.user_id in response.data.decode()
 
 
 def test_cleanup(client):
