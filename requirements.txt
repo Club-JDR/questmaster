@@ -16,3 +16,4 @@ schema==0.7.5
 tenacity==9.0.0
 wtforms==2.3.0
 python-dateutil==2.9.0
+unidecode==1.4.0

@@ -9,13 +9,13 @@ from flask import (
 )
 from website.extensions import db
 from website.bot import get_bot
-from website.models import Game, User, System, Vtt, GameSession, GameEvent, Channel
+from website.models import Game, User, System, Vtt, GameSession
 from website.views.auth import who, login_required
-from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.utils.logger import logger
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
-from datetime import datetime, timedelta
-import re, yaml, locale
+from .helpers import *
+from datetime import datetime
+import locale
 
 
 game_bp = Blueprint("annonces", __name__)
@@ -26,78 +26,6 @@ GAME_LIST_TEMPLATE = "games.j2"
 
 # Datetime format
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
-
-
-def get_channel_category(game):
-    if game.type == "oneshot":
-        category = (
-            Channel.query.filter_by(type="oneshot").order_by(Channel.size).first()
-        )
-    else:
-        category = (
-            Channel.query.filter_by(type="campaign").order_by(Channel.size).first()
-        )
-    return category
-
-
-def abort_if_not_gm(payload):
-    """
-    Return 403 if user is not GM
-    """
-    if not payload["is_gm"]:
-        abort(403)
-
-
-def get_game_if_authorized(payload, game_id):
-    """
-    Return game if user is either the game's GM or admin
-    """
-    game = db.get_or_404(Game, game_id)
-    if game.gm_id != payload["user_id"] and not payload["is_admin"]:
-        abort(403)
-    return game
-
-
-def create_game_session(game, start, end):
-    """
-    Create a session for a game.
-    """
-    session = GameSession(start=start, end=end)
-    db.session.add(session)
-    db.session.commit()
-    game.sessions.append(session)
-    logger.info(f"Session added for game {game.id} from {start} to {end}")
-
-
-def create_game_event(game, type, description=None):
-    """
-    Create an event for a game.
-    """
-    event = GameEvent(event_type=type, description=description)
-    db.session.add(event)
-    db.session.commit()
-    game.events.append(event)
-
-
-def delete_game_session(session):
-    """
-    Delete a session for a game.
-    """
-    db.session.delete(session)
-    db.session.commit()
-    logger.info(
-        f"Session removed for game {game.id} from {session.start} to {session.end}"
-    )
-
-
-def set_default_search_parameters(status, game_type, restriction):
-    if len(status) == 0:
-        status = ["open"]
-    if len(game_type) == 0:
-        game_type = ["oneshot", "campaign"]
-    if len(restriction) == 0:
-        restriction = ["all", "16+", "18+"]
-    return status, game_type, restriction
 
 
 @game_bp.route("/", methods=["GET"])
@@ -202,36 +130,12 @@ def get_game_form():
     )
 
 
-def get_classification(data):
-    classification = {}
-    for theme in ["action", "investigation", "interaction", "horror"]:
-        if data.get(f"class-{theme}") == "none":
-            classification[theme] = 0
-        elif data.get(f"class-{theme}") == "min":
-            classification[theme] = 1
-        elif data.get(f"class-{theme}") == "maj":
-            classification[theme] = 2
-    if all(value == 0 for value in classification.values()):
-        return None
-    return classification
-
-
-def get_ambience(data):
-    ambience = []
-    for a in ["chill", "serious", "comic", "epic"]:
-        if data.get(a):
-            ambience.append(a)
-    return ambience
-
-
 @game_bp.route("/annonce/", methods=["POST"])
 @login_required
 def create_game():
-    """
-    Create a new game and redirect to the game details.
-    """
     payload = who()
     bot = get_bot()
+
     if not payload["is_gm"] and not payload["is_admin"]:
         logger.warning(
             f"Unauthorized game creation attempt by user: {payload.get('user_id', 'Unknown')}"
@@ -240,183 +144,77 @@ def create_game():
 
     data = request.values.to_dict()
     gm_id = data["gm_id"]
-
     logger.info(
         f"User {payload.get('user_id', 'Unknown')} is creating a game with GM ID {gm_id}"
     )
 
-    # Create the Game object
-    new_game = Game(
-        name=data["name"],
-        type=data["type"],
-        length=data["length"],
-        gm_id=gm_id,
-        system_id=data["system"],
-        vtt_id=data["vtt"] if data["vtt"] != "" else None,
-        description=data["description"],
-        restriction=data["restriction"],
-        party_size=data["party_size"],
-        xp=data["xp"],
-        date=datetime.strptime(data["date"], DEFAULT_TIMEFORMAT),
-        session_length=data["session_length"],
-        frequency=data.get("frequency") or None,
-        characters=data["characters"],
-        classification=get_classification(data),
-        ambience=get_ambience(data),
-        complement=data.get("complement"),
-        status=data["action"],
-        img=data.get("img"),
-    )
+    game = build_game_from_form(data, gm_id)
+    logger.info(f"Game object created: {game.name}")
 
-    logger.info(f"Game object created: {new_game.name}")
-
-    new_game.party_selection = "party_selection" in data.keys()
-
-    if "restriction_tags" in data.keys() and data["restriction_tags"] != "":
-        restriction_tags = ""
-        for item in yaml.safe_load(data["restriction_tags"]):
-            restriction_tags += item["value"] + ", "
-        new_game.restriction_tags = restriction_tags[:-2]
-
-    if data["action"] == "open":
-        create_game_session(
-            new_game,
-            new_game.date,
-            new_game.date + timedelta(hours=float(new_game.session_length)),
-        )
-        logger.info("Initial game session created.")
-        create_game_event(
-            new_game,
-            "Game Created",
-        )
-        logger.info("Initial game event registered.")
-
-        new_game.role = bot.create_role(
-            role_name=data["name"],
-            permissions=PLAYER_ROLE_PERMISSION,
-            color=Game.COLORS[data["type"]],
-        )["id"]
-        logger.info(f"Role created with ID: {new_game.role}")
-
-        category = get_channel_category(new_game)
-        new_game.channel = bot.create_channel(
-            channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
-            parent_id=category.id,
-            role_id=new_game.role,
-            gm_id=gm_id,
-        )["id"]
-        logger.info(
-            f"Channel created with ID: {new_game.channel} under category: {category.id}"
-        )
-        category.size += 1
+    is_open = data["action"] == "open"
+    if is_open:
+        logger.info("Game is being posted as open.")
+        setup_game_post_creation(game, bot)
+        logger.info("Game post-creation setup completed.")
 
     try:
-        db.session.add(new_game)
+        db.session.add(game)
         db.session.commit()
-        logger.info(f"Game saved in DB with ID: {new_game.id}")
+        logger.info(f"Game saved in DB with ID: {game.id}")
 
-        game = db.get_or_404(Game, new_game.id)
-        game.msg_id = send_discord_embed(game)
-        db.session.commit()
-        logger.info(f"Discord embed sent with message ID: {game.msg_id}")
+        if is_open:
+            game = db.get_or_404(Game, game.id)
+            game.msg_id = send_discord_embed(game)
+            db.session.commit()
+            logger.info(f"Discord embed sent with message ID: {game.msg_id}")
+
     except Exception as e:
         logger.error(f"Failed to save game: {e}", exc_info=True)
-        if data["action"] == "open":
+        if is_open:
             logger.info("Rolling back channel and role creation due to error")
-            bot.delete_channel(new_game.channel)
-            bot.delete_role(new_game.role)
+            rollback_discord_resources(bot, game)
         abort(500, e)
 
-    return redirect(url_for("annonces.get_game_details", game_id=new_game.id))
-
-
-@game_bp.route("/annonces/<game_id>/editer/", methods=["GET"])
-@login_required
-def get_game_edit_form(game_id):
-    """
-    Get form to edit a game.
-    """
-    payload = who()
-    game = get_game_if_authorized(payload, game_id)
-    return render_template(
-        "game_form.j2",
-        payload=payload,
-        game=game,
-        systems=System.query.order_by("name").all(),
-        vtts=Vtt.query.order_by("name").all(),
-    )
+    return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
 @game_bp.route("/annonces/<game_id>/editer/", methods=["POST"])
 @login_required
 def edit_game(game_id):
-    """
-    Edit an existing game and redirect to the game details.
-    """
     payload = who()
-    bot = get_bot()
-    game = get_game_if_authorized(payload, game_id)
     data = request.values.to_dict()
+    bot = get_bot()
+
+    game = get_game_if_authorized(payload, game_id)
     gm_id = data["gm_id"]
     post = game.status == "draft" and data["action"] == "open"
-    # Edit the Game object
-    if game.status == "draft":
-        game.name = data["name"]
-        game.type = data["type"]
-    game.system_id = data["system"]
-    game.vtt_id = data["vtt"] if data["vtt"] != "" else None
-    game.description = data["description"]
-    game.date = datetime.strptime(data["date"], DEFAULT_TIMEFORMAT)
-    game.length = data["length"]
-    game.party_size = data["party_size"]
-    game.party_selection = "party_selection" in data.keys()
-    game.xp = data["xp"]
-    game.session_length = data["session_length"]
-    game.frequency = data.get("frequency") or None
-    game.characters = data["characters"]
-    game.classification = get_classification(data)
-    game.ambience = get_ambience(data)
-    game.complement = data.get("complement")
-    game.img = data.get("img")
-    game.restriction = data["restriction"]
-    if "restriction_tags" in data.keys():
-        restriction_tags = ""
-        if data["restriction_tags"] != "":
-            for item in yaml.safe_load(data["restriction_tags"]):
-                restriction_tags += item["value"] + ", "
-            game.restriction_tags = restriction_tags[:-2]
+
+    logger.info(f"Editing game {game.id} - Post: {post}")
+    update_game_from_form(game, data)
+    logger.info(f"Game {game.id} updated with new data")
+
     if post:
-        game.status = data["action"]
-        create_game_session(
-            game,
-            game.date,
-            game.date + timedelta(hours=float(game.session_length)),
+        logger.info(
+            "Game was draft, setting to open and creating session/channel/role."
         )
-        # Create role and update object with role_id
-        game.role = bot.create_role(
-            role_name=data["name"],
-            permissions=PLAYER_ROLE_PERMISSION,
-            color=Game.COLORS[data["type"]],
-        )["id"]
-        # Create channel and update object with channel_id
-        category = get_channel_category(game)
-        game.channel = bot.create_channel(
-            channel_name=re.sub("[^0-9a-zA-Z]+", "-", game.name.lower()),
-            parent_id=category.id,
-            role_id=game.role,
-            gm_id=gm_id,
-        )["id"]
-        category.size = category.size + 1
+        game.status = data["action"]
+        setup_game_post_creation(game, bot)
+        logger.info(f"Game {game.id} post-publishing setup completed.")
+
     try:
-        game.msg_id = send_discord_embed(game)
-        # Save Game in database
-        db.session.commit()
-    except Exception as e:
         if post:
-            # Delete channel & role in case of error on post
-            bot.delete_channel(game.channel)
-            bot.delete_role(game.role)
+            game.msg_id = send_discord_embed(game)
+            logger.info(f"Embed sent for game {game.id}")
+
+        db.session.commit()
+        logger.info(f"Game {game.id} changes saved")
+    except Exception as e:
+        logger.error(f"Failed to edit game {game.id}: {e}", exc_info=True)
+        if post:
+            logger.info("Rolling back channel and role creation due to error")
+            rollback_discord_resources(bot, game)
         abort(500, e)
+
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
@@ -434,9 +232,12 @@ def change_game_status(game_id):
     create_game_event(game, "Status Update", status)
     try:
         db.session.commit()
+        logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
             bot.delete_channel(game.channel)
+            logger.info(f"Game {game.id} channel {game.channel} has been deleted")
             bot.delete_role(game.role)
+            logger.info(f"Game {game.id} role {game.role} has been deleted")
     except Exception as e:
         abort(500, e)
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
@@ -459,8 +260,10 @@ def add_game_session(game_id):
         start,
         end,
     )
+    create_game_event(game, "Session Add", f"New session {start}/{end}")
     try:
         db.session.commit()
+        logger.info(f"Session {start}/{end} created for Game {game.id}")
         send_discord_embed(
             game,
             type="add-session",
@@ -487,10 +290,16 @@ def edit_game_session(game_id, session_id):
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
     session.start = request.values.to_dict()["date_start"]
     session.end = request.values.to_dict()["date_end"]
+    create_game_event(
+        game, "Session Edit", f"{old_start}/{old_end} -> {session.start}/{session.end}"
+    )
     if session.start > session.end:
         abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
     try:
         db.session.commit()
+        logger.info(
+            f"Session {old_start}/{old_end} of Game {game.id} has been updated to {session.start}/{session.end}"
+        )
         send_discord_embed(
             game,
             type="edit-session",
@@ -516,8 +325,10 @@ def remove_game_session(game_id, session_id):
     start = session.start
     end = session.end
     delete_game_session(session)
+    create_game_event(game, "Session Delete", f"{start}/{end}")
     try:
         db.session.commit()
+        logger.info(f"Session {start}/{end} of Game {game.id} has been removed")
         send_discord_embed(
             game,
             type="del-session",
@@ -543,7 +354,7 @@ def register_game(game_id):
     if game.gm_id == payload["user_id"]:
         abort(403)
     game.players.append(db.get_or_404(User, payload["user_id"]))
-    create_game_event(game, "Add Player", payload["user_id"])
+    create_game_event(game, "Player Add", payload["user_id"])
     if len(game.players) == game.party_size and not game.party_selection:
         game.status = "closed"
     try:
@@ -566,46 +377,45 @@ def manage_game_registration(game_id):
     payload = who()
     bot = get_bot()
     game = db.get_or_404(Game, game_id)
+
+    # Authorization and validation
     if game.status == "archived":
-        abort(500)
+        abort(500, "Cannot manage an archived game.")
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         abort(403)
+
     data = request.values.to_dict()
-    if data["action"] == "manage":
-        for player in game.players:
-            if player.id not in data:
-                try:
-                    game.players.remove(db.get_or_404(User, player.id))
-                    create_game_event(game, "Remove Player", player.id)
-                    db.session.commit()
-                    logger.info(f"User {player.id} removed from Game {game.id}")
-                    bot.remove_role_from_user(player.id, game.role)
-                    logger.info(f"Role {game.role} removed from Player {player.id}")
-                except Exception as e:
-                    abort(500, e)
-    elif data["action"] == "add":
-        uid = data["discord_id"]
-        try:
-            new_player = db.get_or_404(User, str(uid))
-        except Exception:
-            new_player = User(id=str(uid))
-            db.session.add(new_player)
-            db.session.commit()
-            logger.info(f"User {uid} created in database")
-            new_player.init_on_load()
-        if not new_player.is_player:
-            abort(500, "Cette personne n'est pas un·e joueur·euse sur le Discord")
-        try:
-            game.players.append(new_player)
-            create_game_event(game, "Add Player", uid)
-            db.session.commit()
-            logger.info(f"User {uid} registered to Game {game.id}")
-            bot.add_role_to_user(uid, game.role)
-            logger.info(f"Role {game.role} added to user {uid}")
-            send_discord_embed(game, type="register", player=uid)
-        except Exception as e:
-            abort(500, e)
+    action = data.get("action")
+
+    try:
+        if action == "manage":
+            handle_remove_players(game, data, bot)
+        elif action == "add":
+            handle_add_player(game, data, bot)
+        else:
+            abort(400, "Invalid action.")
+    except Exception as e:
+        logger.exception("Error during game registration management")
+        abort(500, str(e))
+
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
+
+
+@game_bp.route("/annonces/<game_id>/editer/", methods=["GET"])
+@login_required
+def get_game_edit_form(game_id):
+    """
+    Get form to edit a game.
+    """
+    payload = who()
+    game = get_game_if_authorized(payload, game_id)
+    return render_template(
+        "game_form.j2",
+        payload=payload,
+        game=game,
+        systems=System.query.order_by("name").all(),
+        vtts=Vtt.query.order_by("name").all(),
+    )
 
 
 @game_bp.route("/mes_annonces/", methods=["GET"])

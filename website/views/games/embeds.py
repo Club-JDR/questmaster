@@ -1,4 +1,5 @@
 from flask import current_app
+from website.models import Game
 from website.bot import get_bot
 
 DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
