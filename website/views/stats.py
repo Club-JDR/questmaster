@@ -2,7 +2,8 @@ from flask import render_template, Blueprint
 from website.models import GameSession
 from website.views.auth import who
 from datetime import datetime
-from collections import Counter
+from dateutil.relativedelta import relativedelta
+from collections import defaultdict, Counter
 import calendar
 
 stats_bp = Blueprint("stats", __name__)
@@ -11,37 +12,46 @@ stats_bp = Blueprint("stats", __name__)
 @stats_bp.route("/stats/", methods=["GET"])
 def get_stats():
     """
-    Get monthly statistics.
+    Get monthly statistics for sessions, grouped by type and system.
     """
-    _, num_days = calendar.monthrange(datetime.today().year, datetime.today().month)
-    base_day = datetime.today().replace(day=1, month=datetime.today().month - 1)
-    last_day = datetime.today().replace(day=num_days, month=datetime.today().month - 1)
-    monthly_sessions = GameSession.query.filter(GameSession.start >= base_day).filter(
-        GameSession.end <= last_day
+    today = datetime.today()
+    base_day = today.replace(day=1) - relativedelta(months=1)
+    last_day = base_day.replace(
+        day=calendar.monthrange(base_day.year, base_day.month)[1]
     )
+
+    # Query all sessions in the previous month
+    sessions = GameSession.query.filter(
+        GameSession.start >= base_day,
+        GameSession.end <= last_day
+    ).all()
+
     num_os = 0
     num_campaign = 0
-    os = set()
-    campaign = set()
-    mjs = []
-    for session in monthly_sessions:
-        if session.game.type == "oneshot":
+    os_games = set()
+    campaign_games = set()
+    gm_names = []
+
+    for session in sessions:
+        game = session.game
+        if game.type == "oneshot":
             num_os += 1
-            os.add(session.game)
+            os_games.add(game)
         else:
             num_campaign += 1
-            campaign.add(session.game)
-        mjs.append(session.game.gm.name)
-    os_dict = {}
-    campaign_dict = {}
-    for i in os:
-        if i.system.name not in os_dict:
-            os_dict[i.system.name] = set()
-        os_dict[i.system.name].add(i.name)
-    for i in campaign:
-        if i.system.name not in campaign_dict:
-            campaign_dict[i.system.name] = set()
-        campaign_dict[i.system.name].add(i.name)
+            campaign_games.add(game)
+        gm_names.append(game.gm.name)
+
+    # Group games by system
+    def group_games_by_system(games):
+        grouped = defaultdict(set)
+        for game in games:
+            grouped[game.system.name].add(game.name)
+        return grouped
+
+    os_dict = group_games_by_system(os_games)
+    campaign_dict = group_games_by_system(campaign_games)
+
     return render_template(
         "stats.html",
         payload=who(),
@@ -51,5 +61,5 @@ def get_stats():
         num_campaign=num_campaign,
         os=os_dict,
         campaign=campaign_dict,
-        mjs=Counter(mjs),
+        mjs=Counter(gm_names),
     )
