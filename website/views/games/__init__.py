@@ -1,6 +1,5 @@
 from flask import (
     request,
-    current_app,
     render_template,
     redirect,
     url_for,
@@ -13,30 +12,20 @@ from website.bot import get_bot
 from website.models import Game, User, System, Vtt, GameSession, GameEvent, Channel
 from website.views.auth import who, login_required
 from website.utils.discord import PLAYER_ROLE_PERMISSION
-
+from website.utils.logger import logger
+from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
 from datetime import datetime, timedelta
 import re, yaml, locale
 
-import logging
 
-# Configure logging
-class RequestLoggerAdapter(logging.LoggerAdapter):
-    def process(self, msg, kwargs):
-        trace_id = getattr(g, "trace_id", "no-trace-id")
-        return f"[trace_id={trace_id}] {msg}", kwargs
-
-
-logger = RequestLoggerAdapter(logging.getLogger(__name__), {})
 game_bp = Blueprint("annonces", __name__)
 
 # Configurables
 GAMES_PER_PAGE = 12
-GAME_LIST_TEMPLATE = "games.html"
+GAME_LIST_TEMPLATE = "games.j2"
 
 # Datetime format
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
-DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
-HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
 
 def get_channel_category(game):
@@ -77,6 +66,7 @@ def create_game_session(game, start, end):
     db.session.add(session)
     db.session.commit()
     game.sessions.append(session)
+    logger.info(f"Session added for game {game.id} from {start} to {end}")
 
 
 def create_game_event(game, type, description=None):
@@ -95,113 +85,9 @@ def delete_game_session(session):
     """
     db.session.delete(session)
     db.session.commit()
-
-
-def send_discord_embed(
-    game,
-    type="annonce",
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-):
-    """
-    Send Discord embed message for game.
-    """
-    bot = get_bot()
-    if type == "annonce":
-        print(game.__dict__)
-        if game.type == "campaign":
-            session_type = "Campagne"
-        else:
-            session_type = "OS"
-        restriction = ":red_circle: 18+"
-        if game.restriction == "all":
-            restriction = ":green_circle: Tout public"
-        elif game.restriction == "16+":
-            restriction = ":yellow_circle: 16+"
-        if game.restriction_tags == None:
-            restriction_msg = f"{restriction}"
-        else:
-            restriction_msg = f"{restriction} {game.restriction_tags}"
-        embed = {
-            "title": game.name,
-            "color": Game.COLORS[game.type],
-            "fields": [
-                {
-                    "name": "MJ",
-                    "value": game.gm.name,
-                    "inline": True,
-                },
-                {"name": "Système", "value": game.system.name, "inline": True},
-                {
-                    "name": "Type de session",
-                    "value": session_type,
-                    "inline": True,
-                },
-                {
-                    "name": "Date",
-                    "value": game.date.strftime(HUMAN_TIMEFORMAT),
-                    "inline": True,
-                },
-                {"name": "Durée", "value": game.length, "inline": True},
-                {
-                    "name": "Avertissement",
-                    "value": restriction_msg,
-                },
-                {
-                    "name": "Pour s'inscrire :",
-                    "value": "https://questmaster.club-jdr.fr/annonces/{}/".format(
-                        game.id
-                    ),
-                },
-            ],
-            "image": {
-                "url": game.img,
-            },
-            "footer": {},
-        }
-        target = current_app.config["POSTS_CHANNEL_ID"]
-    elif type == "add-session":
-        embed = {
-            "description": "<@&{}>\nVotre MJ a ajouté une nouvelle session : du **{}** au **{}**\n\nPour ne pas l'oublier pensez à l'ajouter à votre calendrier. Vous pouvez le faire facilement depuis [l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{}) en cliquant sur le bouton correspondant à la session.\nSi vous avez un empêchement prevenez votre MJ en avance.".format(
-                game.role, start, end, game.id
-            ),
-            "title": "Nouvelle session prévue",
-            "color": 5025616,  # green
-        }
-        target = game.channel
-    elif type == "edit-session":
-        embed = {
-            "description": "<@&{}>\nVotre MJ a modifié la session ~~du {} au {}~~\nLa session a été décalée du **{}** au **{}**\nPensez à mettre à jour votre calendrier.".format(
-                game.role, old_start, old_end, start, end
-            ),
-            "title": "GameSession modifiée",
-            "color": 16771899,  # yellow
-        }
-        target = game.channel
-    elif type == "del-session":
-        embed = {
-            "description": "<@&{}>\nVotre MJ a annulé la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
-                game.role, start, end
-            ),
-            "title": "GameSession annulée",
-            "color": 16007990,  # red
-        }
-        target = game.channel
-    elif type == "register":
-        embed = {
-            "description": "<@{}> s'est inscrit. Bienvenue :wave: ".format(player),
-            "title": "Nouvelle inscription",
-            "color": 2201331,  # blue
-        }
-        target = game.channel
-    if type == "annonce" and game.msg_id:
-        response = bot.edit_embed_message(game.msg_id, embed, target)
-    else:
-        response = bot.send_embed_message(embed, target)
-    return response["id"]
+    logger.info(
+        f"Session removed for game {game.id} from {session.start} to {session.end}"
+    )
 
 
 def set_default_search_parameters(status, game_type, restriction):
@@ -296,7 +182,7 @@ def get_game_details(game_id):
         if payload != {} and payload["user_id"] == player.id:
             is_player = True
     return render_template(
-        "game_details.html", payload=payload, game=game, is_player=is_player
+        "game_details.j2", payload=payload, game=game, is_player=is_player
     )
 
 
@@ -309,7 +195,7 @@ def get_game_form():
     payload = who()
     abort_if_not_gm(payload)
     return render_template(
-        "game_form.html",
+        "game_form.j2",
         payload=payload,
         systems=System.query.order_by("name").all(),
         vtts=Vtt.query.order_by("name").all(),
@@ -453,7 +339,7 @@ def get_game_edit_form(game_id):
     payload = who()
     game = get_game_if_authorized(payload, game_id)
     return render_template(
-        "game_form.html",
+        "game_form.j2",
         payload=payload,
         game=game,
         systems=System.query.order_by("name").all(),
@@ -664,7 +550,7 @@ def register_game(game_id):
         db.session.commit()
         logger.info(f"User {payload['user_id']} registered to Game {game.id}")
         bot.add_role_to_user(payload["user_id"], game.role)
-        logger.info(f"Role {game.role} added to user {uid}")
+        logger.info(f"Role {game.role} added to user {payload['user_id']}")
         send_discord_embed(game, type="register", player=payload["user_id"])
     except Exception as e:
         abort(500, e)

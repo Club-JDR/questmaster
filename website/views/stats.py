@@ -22,8 +22,7 @@ def get_stats():
 
     # Query all sessions in the previous month
     sessions = GameSession.query.filter(
-        GameSession.start >= base_day,
-        GameSession.end <= last_day
+        GameSession.start >= base_day, GameSession.end <= last_day
     ).all()
 
     num_os = 0
@@ -53,7 +52,7 @@ def get_stats():
     campaign_dict = group_games_by_system(campaign_games)
 
     return render_template(
-        "stats.html",
+        "stats.j2",
         payload=who(),
         base_day=base_day.strftime("%a %d/%m"),
         last_day=last_day.strftime("%a %d/%m"),

@@ -15,7 +15,7 @@ def list_vtts():
     """
     v = Vtt.query.all()
     return render_template(
-        "list.html", payload=who(), items=v, item="vtts", title="Virtual TableTops"
+        "list.j2", payload=who(), items=v, item="vtts", title="Virtual TableTops"
     )
 
 
@@ -26,5 +26,5 @@ def list_systems():
     """
     s = System.query.all()
     return render_template(
-        "list.html", payload=who(), items=s, item="systems", title="Systèmes"
+        "list.j2", payload=who(), items=s, item="systems", title="Systèmes"
     )

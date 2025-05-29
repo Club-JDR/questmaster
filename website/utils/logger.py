@@ -19,3 +19,6 @@ def configure_logging(level=logging.INFO):
     root_logger.setLevel(level)
     if not root_logger.handlers:
         root_logger.addHandler(handler)
+
+
+logger = RequestLoggerAdapter(logging.getLogger(__name__), {})
