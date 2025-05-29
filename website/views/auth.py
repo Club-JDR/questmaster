@@ -1,7 +1,9 @@
-from flask import redirect, url_for, current_app, session, abort
-from website import app, db
+from flask import redirect, url_for, session, abort, Blueprint
+from website.extensions import db, discord
 from website.models import User
 import functools
+
+auth_bp = Blueprint("auth", __name__)
 
 
 def who():
@@ -16,12 +18,13 @@ def who():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
+        print("Getting user ", user.id, user.name, user.is_admin)
     return session
 
 
 def login_required(view):
     """
-    View decorator that redirects to 403 is not logged-in.
+    View decorator that redirects to 403 if not logged-in.
     """
 
     @functools.wraps(view)
@@ -33,33 +36,33 @@ def login_required(view):
     return wrapped_view
 
 
-@app.route("/login/")
+@auth_bp.route("/login/")
 def login():
     """
     Login using Discord OAuth2.
     """
     session.permanent = True
-    return current_app.discord.create_session()
+    return discord.create_session()
 
 
-@app.route("/logout/")
+@auth_bp.route("/logout/")
 def logout():
     """
     Logout by removing username from session.
     """
     session.clear()
-    current_app.discord.revoke()
-    return redirect(url_for("search_games"))
+    discord.revoke()
+    return redirect(url_for("annonces.search_games"))
 
 
-@app.route("/callback/")
+@auth_bp.route("/callback/")
 def callback():
     """
     Login callback redirect to homepage.
     """
-    current_app.discord.callback()
-    if current_app.discord.authorized:
-        uid = current_app.discord.fetch_user().id
+    discord.callback()
+    if discord.authorized:
+        uid = discord.fetch_user().id
         try:
             user = db.get_or_404(User, str(uid))
         except Exception:
@@ -75,4 +78,4 @@ def callback():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
-    return redirect(url_for("search_games"))
+    return redirect(url_for("annonces.search_games"))

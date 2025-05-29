@@ -1,15 +1,18 @@
-from website import db, bot, cache
+from website.extensions import db, cache
 from sqlalchemy import orm
 from flask import current_app
+from website.bot import get_bot
+
 
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 
-@cache.memoize(timeout=300)
+@cache.memoize()
 def get_user(user_id):
     """
     Wrapper to get user info from cache or Discord API.
     """
+    bot = get_bot()
     return bot.get_user(user_id)
 
 

@@ -1,15 +1,14 @@
-from flask import (
-    render_template,
-)
-from website import app
-from website.models import Session
+from flask import render_template, Blueprint
+from website.models import GameSession
 from website.views.auth import who
 from datetime import datetime
 from collections import Counter
 import calendar
 
+stats_bp = Blueprint("stats", __name__)
 
-@app.route("/stats/", methods=["GET"])
+
+@stats_bp.route("/stats/", methods=["GET"])
 def get_stats():
     """
     Get monthly statistics.
@@ -17,8 +16,8 @@ def get_stats():
     _, num_days = calendar.monthrange(datetime.today().year, datetime.today().month)
     base_day = datetime.today().replace(day=1, month=datetime.today().month - 1)
     last_day = datetime.today().replace(day=num_days, month=datetime.today().month - 1)
-    monthly_sessions = Session.query.filter(Session.start >= base_day).filter(
-        Session.end <= last_day
+    monthly_sessions = GameSession.query.filter(GameSession.start >= base_day).filter(
+        GameSession.end <= last_day
     )
     num_os = 0
     num_campaign = 0

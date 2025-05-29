@@ -1,68 +1,80 @@
-from flask import Flask
-from flask_discord import DiscordOAuth2Session
-from flask_wtf.csrf import CSRFProtect
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_caching import Cache
-from datetime import timedelta
+import os, uuid
+from flask import Flask, g
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 from website.utils.discord import Discord
-import os
+from website.utils.logger import RequestLoggerAdapter, configure_logging
+from website.models import Channel, Game, GameSession, System, Vtt, User, GameEvent
+from website.bot import set_bot
+from website.views import admin as admin_view
+from website.extensions import db, migrate, csrf, cache, discord
+from website.views import register_blueprints, register_filters
 
-app = Flask(__name__)
 
-# Configuration
-app.secret_key = os.environ.get("FLASK_AUTH_SECRET")
-app.config["DISCORD_CLIENT_ID"] = os.environ.get("DISCORD_CLIENT_ID")
-app.config["DISCORD_CLIENT_SECRET"] = os.environ.get("DISCORD_CLIENT_SECRET")
-app.config["DISCORD_BOT_TOKEN"] = os.environ.get("DISCORD_BOT_TOKEN")
-app.config["DISCORD_REDIRECT_URI"] = os.environ.get("DISCORD_REDIRECT_URI")
-app.config["DISCORD_GUILD_NAME"] = os.environ.get("DISCORD_GUILD_NAME")
-app.config["DISCORD_GUILD_ID"] = os.environ.get("DISCORD_GUILD_ID")
-app.config["DISCORD_GM_ROLE_ID"] = os.environ.get("DISCORD_GM_ROLE_ID")
-app.config["DISCORD_ADMIN_ROLE_ID"] = os.environ.get("DISCORD_ADMIN_ROLE_ID")
-app.config["DISCORD_PLAYER_ROLE_ID"] = os.environ.get("DISCORD_PLAYER_ROLE_ID")
-app.config["POSTS_CHANNEL_ID"] = os.environ.get("POSTS_CHANNEL_ID")
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
-app.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
-app.config["CACHE_TYPE"] = "RedisCache"
-app.config["CACHE_REDIS_HOST"] = os.environ.get("REDIS_HOST")
-app.config["CACHE_REDIS_PORT"] = 6379
-app.config["CACHE_REDIS_DB"] = 0
-app.json.compact = False
+def create_app():
+    app = Flask(__name__)
 
-# Database
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+    # Config
+    app.secret_key = os.environ.get("FLASK_AUTH_SECRET")
+    app.config.from_object("config.Config")
 
-# Cache
-cache = Cache(app)
-cache.init_app(app)
+    # Logging
+    configure_logging()
 
-# OAuth
-discord = DiscordOAuth2Session(app)
-global bot
-bot = Discord(app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"])
+    @app.before_request
+    def assign_trace_id():
+        g.trace_id = str(uuid.uuid4())
 
-# OAuth2 must make use of HTTPS in production environment.
-os.environ[
-    "OAUTHLIB_INSECURE_TRANSPORT"
-] = "true"  # !! Remove on production or if not using a reverse proxy as cert bearer.
+    @app.after_request
+    def add_trace_id_to_response(response):
+        response.headers["X-Trace-ID"] = g.trace_id
+        return response
 
-# CSRF
-csrf = CSRFProtect()
-csrf.init_app(app)
+    @app.context_processor
+    def inject_payload():
+        from flask import session
 
-# API import
-from website.views import (
-    auth,
-    health,
-    games,
-    systems,
-    vtts,
-    filters,
-    errors,
-    stats,
-    channels,
-)
+        # Build your payload however you normally do
+        payload = {
+            "username": session.get("username"),
+            "avatar": session.get("avatar"),
+            "is_gm": session.get("is_gm"),
+            "is_admin": session.get("is_admin"),
+            # Add more as needed
+        }
+        return dict(payload=payload)
+
+    # Extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
+    cache.init_app(app)
+    csrf.init_app(app)
+    discord.init_app(app)
+
+    # Create bot instance and store it
+    bot_instance = Discord(
+        app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"]
+    )
+    set_bot(bot_instance)
+
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"  # Dev only
+
+    # Admin
+    app.config["FLASK_ADMIN_SWATCH"] = "cosmo"
+    admin = Admin(
+        app,
+        name="QuestMaster Admin",
+        template_mode="bootstrap4",
+        index_view=admin_view.SecureAdminIndexView(),
+    )
+    admin.add_view(admin_view.GameAdmin(Game, db.session))
+    admin.add_view(admin_view.GameEventAdmin(GameEvent, db.session))
+    admin.add_view(admin_view.GameSessionAdmin(GameSession, db.session))
+    admin.add_view(admin_view.ChannelAdmin(Channel, db.session))
+    admin.add_view(admin_view.UserAdmin(User, db.session))
+    admin.add_view(admin_view.VttAdmin(Vtt, db.session))
+    admin.add_view(admin_view.SystemAdmin(System, db.session))
+
+    register_blueprints(app)
+    register_filters(app)
+    return app

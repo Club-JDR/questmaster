@@ -1,4 +1,4 @@
-from website import db
+from website.extensions import db
 from sqlalchemy import Enum
 from website.models.game import GAME_TYPES
 from sqlalchemy.dialects.postgresql import ENUM

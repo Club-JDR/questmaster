@@ -1,6 +1,6 @@
 import json, os
 from datetime import datetime
-from website.models import Game, User, System, Vtt, Session, Channel
+from website.models import Game, User, System, Vtt, GameSession, Channel
 
 users = json.loads(os.environ.get("USER_ID_LIST"))
 
@@ -99,6 +99,6 @@ def test_users():
 def test_sessions():
     start = datetime.strptime("2023-11-01 20:00", "%Y-%m-%d %H:%M")
     end = datetime.strptime("2023-11-01 23:30", "%Y-%m-%d %H:%M")
-    session = Session(start=start, end=end)
+    session = GameSession(start=start, end=end)
     assert session.start == start
     assert session.end == end

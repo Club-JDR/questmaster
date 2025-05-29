@@ -1,5 +1,5 @@
-from website import db
-from website.models.session import Session
+from website.extensions import db
+from website.models.game_session import GameSession
 from sqlalchemy import Enum, orm
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
@@ -60,7 +60,7 @@ class Game(db.Model):
     ambience = db.Column(pg.ARRAY(Enum(*AMBIENCES, name="game_ambience_enum")))
     complement = db.Column(db.Text())
     img = db.Column(db.String())
-    sessions = db.relationship("Session", backref="game")
+    sessions = db.relationship("GameSession", backref="game")
     channel = db.Column(db.String())
     msg_id = db.Column(db.String())
     role = db.Column(db.String())
@@ -69,6 +69,9 @@ class Game(db.Model):
         Enum(*GAME_STATUS, name="game_status_enum"),
         nullable=False,
         server_default="draft",
+    )
+    events = db.relationship(
+        "GameEvent", backref="game"
     )
 
     @orm.validates("classification")
@@ -79,3 +82,11 @@ class Game(db.Model):
             return value
         except SchemaError:
             raise ValueError(f"Invalid classification format {value}")
+
+    def log_event(self, event_type, description):
+        from website.models.game_event import GameEvent
+
+        event = GameEvent(
+            game_id=self.id, event_type=event_type, description=description
+        )
+        db.session.add(event)

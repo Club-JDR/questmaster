@@ -1,8 +1,8 @@
-from website import db
+from website.extensions import db
 
 
-class Session(db.Model):
-    __tablename__ = "session"
+class GameSession(db.Model):
+    __tablename__ = "game_session"
 
     id = db.Column(db.BigInteger, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey("game.id"))

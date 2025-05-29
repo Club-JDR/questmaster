@@ -1,8 +1,11 @@
-from flask import jsonify
-from website import app, db
+from flask import jsonify, Blueprint
+from website.extensions import db
 from datetime import datetime
 from sqlalchemy.sql import text
 import psutil, os
+
+
+health_bp = Blueprint("health", __name__)
 
 
 def dhms_from_seconds(seconds) -> str:
@@ -15,7 +18,7 @@ def dhms_from_seconds(seconds) -> str:
     return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
 
 
-@app.route("/health/", methods=["GET"])
+@health_bp.route("/", methods=["GET"])
 def health():
     """
     Health endpoint

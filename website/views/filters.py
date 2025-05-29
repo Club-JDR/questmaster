@@ -1,8 +1,7 @@
-from website import app
-import locale, datetime
+from flask import current_app
+import locale
 
 
-@app.template_filter("format_datetime")
 def format_datetime(value, format="%a %d/%m - %Hh%M"):
     """
     Jinja filter to format date like this: Sam 10/09 - 20h30

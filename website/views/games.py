@@ -5,19 +5,32 @@ from flask import (
     redirect,
     url_for,
     abort,
+    Blueprint,
 )
-from website import app, db, bot
-from website.models import Game, User, System, Vtt, Session, Channel
+from website.extensions import db
+from website.bot import get_bot
+from website.models import Game, User, System, Vtt, GameSession, GameEvent, Channel
 from website.views.auth import who, login_required
 from website.utils.discord import PLAYER_ROLE_PERMISSION
-from sqlalchemy import func
 
 from datetime import datetime, timedelta
 import re, yaml, locale
 
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+game_bp = Blueprint("annonces", __name__)
+
+# Configurables
 GAMES_PER_PAGE = 12
 GAME_LIST_TEMPLATE = "games.html"
 
+# Datetime format
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
 HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
@@ -57,10 +70,19 @@ def create_game_session(game, start, end):
     """
     Create a session for a game.
     """
-    session = Session(start=start, end=end)
+    session = GameSession(start=start, end=end)
     db.session.add(session)
     db.session.commit()
     game.sessions.append(session)
+
+def create_game_event(game, type, description=None):
+    """
+    Create an event for a game.
+    """
+    event = GameEvent(event_type=type, description=description)
+    db.session.add(event)
+    db.session.commit()
+    game.events.append(event)
 
 
 def delete_game_session(session):
@@ -83,6 +105,7 @@ def send_discord_embed(
     """
     Send Discord embed message for game.
     """
+    bot = get_bot()
     if type == "annonce":
         print(game.__dict__)
         if game.type == "campaign":
@@ -150,7 +173,7 @@ def send_discord_embed(
             "description": "<@&{}>\nVotre MJ a modifié la session ~~du {} au {}~~\nLa session a été décalée du **{}** au **{}**\nPensez à mettre à jour votre calendrier.".format(
                 game.role, old_start, old_end, start, end
             ),
-            "title": "Session modifiée",
+            "title": "GameSession modifiée",
             "color": 16771899,  # yellow
         }
         target = game.channel
@@ -159,7 +182,7 @@ def send_discord_embed(
             "description": "<@&{}>\nVotre MJ a annulé la session du **{}** au **{}**\nPensez à l'enlever de votre calendrier.".format(
                 game.role, start, end
             ),
-            "title": "Session annulée",
+            "title": "GameSession annulée",
             "color": 16007990,  # red
         }
         target = game.channel
@@ -187,8 +210,8 @@ def set_default_search_parameters(status, game_type, restriction):
     return status, game_type, restriction
 
 
-@app.route("/", methods=["GET"])
-@app.route("/annonces/", methods=["GET"])
+@game_bp.route("/", methods=["GET"])
+@game_bp.route("/annonces/", methods=["GET"])
 def search_games():
     """
     Search games.
@@ -236,12 +259,12 @@ def search_games():
         .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
     )
     next_url = (
-        url_for("search_games", page=games.next_num, **request_args)
+        url_for("annonces.search_games", page=games.next_num, **request_args)
         if games.has_next
         else None
     )
     prev_url = (
-        url_for("search_games", page=games.prev_num, **request_args)
+        url_for("annonces.search_games", page=games.prev_num, **request_args)
         if games.has_prev
         else None
     )
@@ -257,8 +280,8 @@ def search_games():
     )
 
 
-@app.route("/annonces/<game_id>/", methods=["GET"])
-def get_game_details(game_id) -> object:
+@game_bp.route("/annonces/<game_id>/", methods=["GET"])
+def get_game_details(game_id):
     """
     Get details for a given game.
     """
@@ -273,9 +296,9 @@ def get_game_details(game_id) -> object:
     )
 
 
-@app.route("/annonce/", methods=["GET"])
+@game_bp.route("/annonce/", methods=["GET"])
 @login_required
-def get_game_form() -> object:
+def get_game_form():
     """
     Get form to create a new game.
     """
@@ -311,17 +334,27 @@ def get_ambience(data):
     return ambience
 
 
-@app.route("/annonce/", methods=["POST"])
+@game_bp.route("/annonce/", methods=["POST"])
 @login_required
-def create_game() -> object:
+def create_game():
     """
     Create a new game and redirect to the game details.
     """
     payload = who()
+    bot = get_bot()
     if not payload["is_gm"] and not payload["is_admin"]:
+        logger.warning(
+            f"Unauthorized game creation attempt by user: {payload.get('user_id', 'Unknown')}"
+        )
         abort(403)
+
     data = request.values.to_dict()
     gm_id = data["gm_id"]
+
+    logger.info(
+        f"User {payload.get('user_id', 'Unknown')} is creating a game with GM ID {gm_id}"
+    )
+
     # Create the Game object
     new_game = Game(
         name=data["name"],
@@ -344,26 +377,37 @@ def create_game() -> object:
         status=data["action"],
         img=data.get("img"),
     )
+
+    logger.info(f"Game object created: {new_game.name}")
+
     new_game.party_selection = "party_selection" in data.keys()
-    if "restriction_tags" in data.keys():
+
+    if "restriction_tags" in data.keys() and data["restriction_tags"] != "":
         restriction_tags = ""
-        if data["restriction_tags"] != "":
-            for item in yaml.safe_load(data["restriction_tags"]):
-                restriction_tags += item["value"] + ", "
-            new_game.restriction_tags = restriction_tags[:-2]
+        for item in yaml.safe_load(data["restriction_tags"]):
+            restriction_tags += item["value"] + ", "
+        new_game.restriction_tags = restriction_tags[:-2]
+
     if data["action"] == "open":
         create_game_session(
             new_game,
             new_game.date,
             new_game.date + timedelta(hours=float(new_game.session_length)),
         )
-        # Create role and update object with role_id
+        logger.info("Initial game session created.")
+        create_game_event(
+            new_game,
+            "Game Created",
+        )
+        logger.info("Initial game event registered.")
+
         new_game.role = bot.create_role(
             role_name=data["name"],
             permissions=PLAYER_ROLE_PERMISSION,
             color=Game.COLORS[data["type"]],
         )["id"]
-        # Create channel and update object with channel_id
+        logger.info(f"Role created with ID: {new_game.role}")
+
         category = get_channel_category(new_game)
         new_game.channel = bot.create_channel(
             channel_name=re.sub("[^0-9a-zA-Z]+", "-", new_game.name.lower()),
@@ -371,26 +415,34 @@ def create_game() -> object:
             role_id=new_game.role,
             gm_id=gm_id,
         )["id"]
-        category.size = category.size + 1
+        logger.info(
+            f"Channel created with ID: {new_game.channel} under category: {category.id}"
+        )
+        category.size += 1
+        
     try:
-        # Save Game in database
         db.session.add(new_game)
         db.session.commit()
+        logger.info(f"Game saved in DB with ID: {new_game.id}")
+
         game = db.get_or_404(Game, new_game.id)
         game.msg_id = send_discord_embed(game)
         db.session.commit()
+        logger.info(f"Discord embed sent with message ID: {game.msg_id}")
     except Exception as e:
+        logger.error(f"Failed to save game: {e}", exc_info=True)
         if data["action"] == "open":
-            # Delete channel & role in case of error on post
+            logger.info("Rolling back channel and role creation due to error")
             bot.delete_channel(new_game.channel)
             bot.delete_role(new_game.role)
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=new_game.id))
+
+    return redirect(url_for("annonces.get_game_details", game_id=new_game.id))
 
 
-@app.route("/annonces/<game_id>/editer/", methods=["GET"])
+@game_bp.route("/annonces/<game_id>/editer/", methods=["GET"])
 @login_required
-def get_game_edit_form(game_id) -> object:
+def get_game_edit_form(game_id):
     """
     Get form to edit a game.
     """
@@ -405,13 +457,14 @@ def get_game_edit_form(game_id) -> object:
     )
 
 
-@app.route("/annonces/<game_id>/editer/", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/editer/", methods=["POST"])
 @login_required
-def edit_game(game_id) -> object:
+def edit_game(game_id):
     """
     Edit an existing game and redirect to the game details.
     """
     payload = who()
+    bot = get_bot()
     game = get_game_if_authorized(payload, game_id)
     data = request.values.to_dict()
     gm_id = data["gm_id"]
@@ -474,16 +527,17 @@ def edit_game(game_id) -> object:
             bot.delete_channel(game.channel)
             bot.delete_role(game.role)
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
-@app.route("/annonces/<game_id>/statut/", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/statut/", methods=["POST"])
 @login_required
-def change_game_status(game_id) -> object:
+def change_game_status(game_id):
     """
     Change game status and redirect to the game details.
     """
     payload = who()
+    bot = get_bot()
     game = get_game_if_authorized(payload, game_id)
     status = request.values.to_dict()["status"]
     game.status = status
@@ -494,12 +548,12 @@ def change_game_status(game_id) -> object:
             bot.delete_role(game.role)
     except Exception as e:
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
-@app.route("/annonces/<game_id>/sessions/ajouter", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/sessions/ajouter", methods=["POST"])
 @login_required
-def add_game_session(game_id) -> object:
+def add_game_session(game_id):
     """
     Add session to a game and redirect to the game details.
     """
@@ -526,18 +580,18 @@ def add_game_session(game_id) -> object:
         )
     except Exception as e:
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game_id))
+    return redirect(url_for("annonces.get_game_details", game_id=game_id))
 
 
-@app.route("/annonces/<game_id>/sessions/<session_id>/editer", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/sessions/<session_id>/editer", methods=["POST"])
 @login_required
-def edit_game_session(game_id, session_id) -> object:
+def edit_game_session(game_id, session_id):
     """
     Edit game session and redirect to the game details.
     """
     payload = who()
     game = get_game_if_authorized(payload, game_id)
-    session = db.get_or_404(Session, session_id)
+    session = db.get_or_404(GameSession, session_id)
     old_start = session.start.strftime(HUMAN_TIMEFORMAT)
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
     session.start = request.values.to_dict()["date_start"]
@@ -556,18 +610,18 @@ def edit_game_session(game_id, session_id) -> object:
         )
     except Exception as e:
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game_id))
+    return redirect(url_for("annonces.get_game_details", game_id=game_id))
 
 
-@app.route("/annonces/<game_id>/sessions/<session_id>/supprimer", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/sessions/<session_id>/supprimer", methods=["POST"])
 @login_required
-def remove_game_session(game_id, session_id) -> object:
+def remove_game_session(game_id, session_id):
     """
     Remove session from a game and redirect to the game details.
     """
     payload = who()
     game = get_game_if_authorized(payload, game_id)
-    session = db.get_or_404(Session, session_id)
+    session = db.get_or_404(GameSession, session_id)
     start = session.start
     end = session.end
     delete_game_session(session)
@@ -581,16 +635,17 @@ def remove_game_session(game_id, session_id) -> object:
         )
     except Exception as e:
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game_id))
+    return redirect(url_for("annonces.get_game_details", game_id=game_id))
 
 
-@app.route("/annonces/<game_id>/inscription/", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/inscription/", methods=["POST"])
 @login_required
-def register_game(game_id) -> object:
+def register_game(game_id):
     """
     Register a player to a game.
     """
     payload = who()
+    bot = get_bot()
     game = db.get_or_404(Game, game_id)
     if game.status in ["closed", "archived"]:
         abort(500)
@@ -605,16 +660,17 @@ def register_game(game_id) -> object:
         send_discord_embed(game, type="register", player=payload["user_id"])
     except Exception as e:
         abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
-@app.route("/annonces/<game_id>/gerer/", methods=["POST"])
+@game_bp.route("/annonces/<game_id>/gerer/", methods=["POST"])
 @login_required
-def manage_game_registration(game_id) -> object:
+def manage_game_registration(game_id):
     """
     Manage player registration for a game.
     """
     payload = who()
+    bot = get_bot()
     game = db.get_or_404(Game, game_id)
     if game.status == "archived":
         abort(500)
@@ -648,12 +704,12 @@ def manage_game_registration(game_id) -> object:
             send_discord_embed(game, type="register", player=uid)
         except Exception as e:
             abort(500, e)
-    return redirect(url_for("get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
-@app.route("/mes_annonces/", methods=["GET"])
+@game_bp.route("/mes_annonces/", methods=["GET"])
 @login_required
-def my_gm_games() -> object:
+def my_gm_games():
     """
     List all of games where current user is GM.
     """
@@ -672,9 +728,9 @@ def my_gm_games() -> object:
     )
 
 
-@app.route("/mes_parties/", methods=["GET"])
+@game_bp.route("/mes_parties/", methods=["GET"])
 @login_required
-def my_games() -> object:
+def my_games():
     """
     List all of current user non archived games "as player"
     """

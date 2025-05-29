@@ -1,4 +1,4 @@
-from website import db
+from website.extensions import db
 
 
 class Vtt(db.Model):
