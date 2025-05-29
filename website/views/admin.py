@@ -73,6 +73,10 @@ class VttAdmin(ModelView):
 
 
 class GameAdmin(ModelView):
+    column_searchable_list = ["gm_id", "type", "name"]
+    column_filters = ["gm_id", "type"]
+    page_size = 20
+
     def is_accessible(self):
         return is_admin_authenticated()
 
@@ -83,6 +87,9 @@ class GameAdmin(ModelView):
 class GameEventAdmin(ModelView):
     form_columns = ["game_id", "timestamp", "event_type", "description"]
     column_list = ["game_id", "timestamp", "event_type", "description"]
+    column_searchable_list = ["game_id", "event_type"]
+    column_filters = ["game_id", "event_type"]
+    page_size = 20
     can_create = False
     can_edit = False
 

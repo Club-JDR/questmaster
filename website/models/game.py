@@ -70,9 +70,7 @@ class Game(db.Model):
         nullable=False,
         server_default="draft",
     )
-    events = db.relationship(
-        "GameEvent", backref="game"
-    )
+    events = db.relationship("GameEvent", backref="game")
 
     @orm.validates("classification")
     def validate_classification(self, key, value):

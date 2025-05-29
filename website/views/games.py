@@ -6,6 +6,7 @@ from flask import (
     url_for,
     abort,
     Blueprint,
+    g,
 )
 from website.extensions import db
 from website.bot import get_bot
@@ -19,11 +20,13 @@ import re, yaml, locale
 import logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+class RequestLoggerAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        trace_id = getattr(g, "trace_id", "no-trace-id")
+        return f"[trace_id={trace_id}] {msg}", kwargs
 
+
+logger = RequestLoggerAdapter(logging.getLogger(__name__), {})
 game_bp = Blueprint("annonces", __name__)
 
 # Configurables
@@ -74,6 +77,7 @@ def create_game_session(game, start, end):
     db.session.add(session)
     db.session.commit()
     game.sessions.append(session)
+
 
 def create_game_event(game, type, description=None):
     """
@@ -419,7 +423,7 @@ def create_game():
             f"Channel created with ID: {new_game.channel} under category: {category.id}"
         )
         category.size += 1
-        
+
     try:
         db.session.add(new_game)
         db.session.commit()
@@ -541,6 +545,7 @@ def change_game_status(game_id):
     game = get_game_if_authorized(payload, game_id)
     status = request.values.to_dict()["status"]
     game.status = status
+    create_game_event(game, "Status Update", status)
     try:
         db.session.commit()
         if status == "archived":
@@ -652,11 +657,14 @@ def register_game(game_id):
     if game.gm_id == payload["user_id"]:
         abort(403)
     game.players.append(db.get_or_404(User, payload["user_id"]))
+    create_game_event(game, "Add Player", payload["user_id"])
     if len(game.players) == game.party_size and not game.party_selection:
         game.status = "closed"
     try:
         db.session.commit()
+        logger.info(f"User {payload['user_id']} registered to Game {game.id}")
         bot.add_role_to_user(payload["user_id"], game.role)
+        logger.info(f"Role {game.role} added to user {uid}")
         send_discord_embed(game, type="register", player=payload["user_id"])
     except Exception as e:
         abort(500, e)
@@ -682,8 +690,11 @@ def manage_game_registration(game_id):
             if player.id not in data:
                 try:
                     game.players.remove(db.get_or_404(User, player.id))
+                    create_game_event(game, "Remove Player", player.id)
                     db.session.commit()
+                    logger.info(f"User {player.id} removed from Game {game.id}")
                     bot.remove_role_from_user(player.id, game.role)
+                    logger.info(f"Role {game.role} removed from Player {player.id}")
                 except Exception as e:
                     abort(500, e)
     elif data["action"] == "add":
@@ -694,13 +705,17 @@ def manage_game_registration(game_id):
             new_player = User(id=str(uid))
             db.session.add(new_player)
             db.session.commit()
+            logger.info(f"User {uid} created in database")
             new_player.init_on_load()
         if not new_player.is_player:
             abort(500, "Cette personne n'est pas un·e joueur·euse sur le Discord")
         try:
             game.players.append(new_player)
+            create_game_event(game, "Add Player", uid)
             db.session.commit()
+            logger.info(f"User {uid} registered to Game {game.id}")
             bot.add_role_to_user(uid, game.role)
+            logger.info(f"Role {game.role} added to user {uid}")
             send_discord_embed(game, type="register", player=uid)
         except Exception as e:
             abort(500, e)

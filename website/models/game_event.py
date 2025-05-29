@@ -12,4 +12,3 @@ class GameEvent(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     event_type = db.Column(db.String(), nullable=False)
     description = db.Column(db.Text(), nullable=True)
-
