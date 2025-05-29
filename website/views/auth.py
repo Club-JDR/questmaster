@@ -18,7 +18,6 @@ def who():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
-        print("Getting user ", user.id, user.name, user.is_admin)
     return session
 
 
