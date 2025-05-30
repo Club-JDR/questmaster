@@ -9,6 +9,6 @@ class GameEvent(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True)
     game_id = db.Column(db.BigInteger, db.ForeignKey("game.id"))
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
     event_type = db.Column(db.String(), nullable=False)
     description = db.Column(db.Text(), nullable=True)

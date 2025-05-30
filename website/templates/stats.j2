@@ -1,8 +1,15 @@
 {% extends 'base.j2' %}
 {% block title %}Statistiques mensuelles{% endblock %}
 {% block content %}
-<h1>Statistiques du {{ base_day }} au {{ last_day }}</h1>
-
+<h1>Statistiques pour {{ month }}/{{ year }}</h1>
+<div class="d-flex justify-content-between my-3">
+  <a class="btn btn-outline-primary" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
+    ← Mois précédent
+  </a>
+  <a class="btn btn-outline-primary" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
+    Mois suivant →
+  </a>
+</div>
 <div class="row pt-4">
   <div class="col-3 text-center pb-4">
     <h2>Nombre de sessions</h2>
@@ -30,7 +37,8 @@
       <div class="col-6">
         <h2>Liste des campagnes</h2>
         {% for system in campaign %}
-        <strong>{{ system }} ({{ campaign[system]|length }} session{% if campaign[system]|length > 1 %}s{% endif %})</strong>
+        <strong>{{ system }} ({{ campaign[system]|length }} session{% if campaign[system]|length > 1 %}s{% endif
+          %})</strong>
         <ul>
           {% for element in campaign[system] %}<li>{{ element }}</li>{% endfor %}
         </ul>

@@ -6,6 +6,7 @@ from flask import (
     abort,
     Blueprint,
     g,
+    flash,
 )
 from website.extensions import db
 from website.bot import get_bot
@@ -21,7 +22,6 @@ import locale
 game_bp = Blueprint("annonces", __name__)
 
 # Configurables
-GAMES_PER_PAGE = 12
 GAME_LIST_TEMPLATE = "games.j2"
 
 # Datetime format
@@ -31,51 +31,8 @@ locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 @game_bp.route("/", methods=["GET"])
 @game_bp.route("/annonces/", methods=["GET"])
 def search_games():
-    """
-    Search games.
-    """
-    status = []
-    game_type = []
-    restriction = []
-    request_args = {}
-    name = request.args.get("name", type=str)
-    system = request.args.get("system", type=int)
-    vtt = request.args.get("vtt", type=int)
-    for s in ["open", "closed", "archived", "draft"]:
-        if request.args.get(s, type=bool):
-            status.append(s)
-            request_args[s] = "on"
-    for t in ["oneshot", "campaign"]:
-        if request.args.get(t, type=bool):
-            game_type.append(t)
-            request_args[t] = "on"
-    for r in ["all", "16+", "18+"]:
-        if request.args.get(r, type=bool):
-            restriction.append(r)
-            request_args[r] = "on"
-    status, game_type, restriction = set_default_search_parameters(
-        status, game_type, restriction
-    )
-    queries = [
-        Game.status.in_(status),
-        Game.restriction.in_(restriction),
-        Game.type.in_(game_type),
-    ]
-    if name:
-        request_args["name"] = name
-        queries.append(Game.name.ilike("%{}%".format(name)))
-    if system:
-        request_args["system"] = system
-        queries.append(Game.system_id == system)
-    if vtt:
-        request_args["vtt"] = vtt
-        queries.append(Game.vtt_id == vtt)
-    page = request.args.get("page", 1, type=int)
-    games = (
-        Game.query.filter(*queries)
-        .order_by(Game.date)
-        .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
-    )
+    games, request_args = get_filtered_games(request.args)
+
     next_url = (
         url_for("annonces.search_games", page=games.next_num, **request_args)
         if games.has_next
@@ -86,6 +43,7 @@ def search_games():
         if games.has_prev
         else None
     )
+
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=who(),
@@ -96,6 +54,19 @@ def search_games():
         systems=System.query.order_by("name").all(),
         vtts=Vtt.query.order_by("name").all(),
     )
+
+@game_bp.route("/annonces/cards/")
+def game_cards():
+    games, _ = get_filtered_games(request.args)
+    return render_template("game_cards_container.j2", games=games.items)
+
+
+
+@game_bp.route("/annonces/<int:game_id>/details")
+def get_game_details_partial(game_id):
+    payload=who()
+    game = db.get_or_404(Game, game_id)
+    return render_template("game_details_container.j2", game=game, payload=payload,)
 
 
 @game_bp.route("/annonces/<game_id>/", methods=["GET"])
@@ -214,7 +185,7 @@ def edit_game(game_id):
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         abort(500, e)
-
+    # card_html = render_template("partials/game_card.j2", game=game)
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
@@ -240,6 +211,7 @@ def change_game_status(game_id):
             logger.info(f"Game {game.id} role {game.role} has been deleted")
     except Exception as e:
         abort(500, e)
+
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
@@ -343,45 +315,44 @@ def remove_game_session(game_id, session_id):
 @game_bp.route("/annonces/<game_id>/inscription/", methods=["POST"])
 @login_required
 def register_game(game_id):
-    """
-    Register a player to a game.
-    """
+    """Register a player to a game."""
     payload = who()
+    user_id = payload["user_id"]
     bot = get_bot()
     game = db.get_or_404(Game, game_id)
+
     if game.status in ["closed", "archived"]:
-        abort(500)
-    if game.gm_id == payload["user_id"]:
-        abort(403)
-    game.players.append(db.get_or_404(User, payload["user_id"]))
-    create_game_event(game, "Player Add", payload["user_id"])
-    if len(game.players) == game.party_size and not game.party_selection:
-        game.status = "closed"
+        flash("Ce jeu est fermé aux inscriptions.", "warning")
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+
+    if game.gm_id == user_id:
+        flash("Vous ne pouvez pas vous inscrire à votre propre partie.", "warning")
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+
+    user = db.get_or_404(User, user_id)
     try:
-        db.session.commit()
-        logger.info(f"User {payload['user_id']} registered to Game {game.id}")
-        bot.add_role_to_user(payload["user_id"], game.role)
-        logger.info(f"Role {game.role} added to user {payload['user_id']}")
-        send_discord_embed(game, type="register", player=payload["user_id"])
+        register_user_to_game(game, user, bot)
+    except ValueError as ve:
+        flash(str(ve), "danger")
     except Exception as e:
-        abort(500, e)
+        logger.exception("Registration failed")
+        flash("Une erreur est survenue pendant l'inscription.", "danger")
+
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
 @game_bp.route("/annonces/<game_id>/gerer/", methods=["POST"])
 @login_required
 def manage_game_registration(game_id):
-    """
-    Manage player registration for a game.
-    """
+    """Manage player registration for a game."""
     payload = who()
+    user_id = payload["user_id"]
     bot = get_bot()
     game = db.get_or_404(Game, game_id)
 
-    # Authorization and validation
     if game.status == "archived":
         abort(500, "Cannot manage an archived game.")
-    if game.gm_id != payload["user_id"] and not payload["is_admin"]:
+    if game.gm_id != user_id and not payload["is_admin"]:
         abort(403)
 
     data = request.values.to_dict()

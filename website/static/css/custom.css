@@ -100,3 +100,20 @@ pre {
 .session-box {
   max-height: 15em;
 }
+
+.fc-event {
+  white-space: normal !important;
+  line-height: 1.2em;
+  padding: 2px;
+}
+
+.fc-event-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial;
+}
+
+.fc-daygrid-event {
+  font-size: 0.85em;
+  padding: 2px 4px;
+}

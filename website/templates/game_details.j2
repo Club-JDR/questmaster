@@ -8,17 +8,7 @@
   integrity="sha256-i1OgrNoqi0lw5oc4mQteQV4bzL+7Qj6ZgkL00zku/hY=" crossorigin="anonymous">
 {% endblock %}
 {% block content %}
-<div class="container">
-  <div class="row">
-    <h1>{{ game.name }}</h1>
-  </div>
-  <div class="row">
-    {% include 'game_details/basics.j2' %}
-    {% include 'game_details/requirements.j2' %}
-    {% include 'game_details/optional.j2' %}
-  </div>
-</div>
-{% include 'game_details/actions.j2' %}
+{% include 'game_details_container.j2' %}
 {% endblock %}
 {% block scripts %} {{ super() }}
 <script src="/static/js/tooltips.js"></script>
@@ -28,4 +18,5 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
   integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
 <script src="/static/js/game-sessions.js"></script>
+<script src="/static/js/game-details.js"></script>
 {% endblock %}

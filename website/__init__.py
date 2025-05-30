@@ -1,9 +1,8 @@
 import os, uuid
 from flask import Flask, g
 from flask_admin import Admin
-from flask_admin.contrib.sqla import ModelView
 from website.utils.discord import Discord
-from website.utils.logger import RequestLoggerAdapter, configure_logging
+from website.utils.logger import configure_logging
 from website.models import Channel, Game, GameSession, System, Vtt, User, GameEvent
 from website.bot import set_bot
 from website.views import admin as admin_view

@@ -25,8 +25,9 @@ CLASSIFICATION_SCHEMA = Schema(
 
 players_table = db.Table(
     "game_players",
-    db.Column("game_id", db.ForeignKey("game.id")),
-    db.Column("player_id", db.ForeignKey("user.id")),
+    db.Column("game_id", db.ForeignKey("game.id"), primary_key=True),
+    db.Column("player_id", db.ForeignKey("user.id"), primary_key=True),
+    db.UniqueConstraint('game_id', 'player_id', name='uix_game_user')
 )
 
 
@@ -80,6 +81,12 @@ class Game(db.Model):
             return value
         except SchemaError:
             raise ValueError(f"Invalid classification format {value}")
+        
+    @orm.validates("party_size")
+    def validate_party_size(self, key, value):
+        if int(value) < 1:
+            raise ValueError(f"Number of players must be > 1, was {value}")
+        return value
 
     def log_event(self, event_type, description):
         from website.models.game_event import GameEvent

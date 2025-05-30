@@ -1,11 +1,71 @@
 from flask import abort
+from datetime import datetime, timedelta
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload
 from website.utils.logger import logger
 from website.extensions import db
 from website.models import Game, GameSession, GameEvent, Channel, User
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT
-from datetime import datetime, timedelta
 import yaml
+
+
+GAMES_PER_PAGE = 12
+
+def get_filtered_games(request_args_source):
+    """
+    Extracts filters from request args, builds a query, and returns paginated games and request_args.
+    """
+    status = []
+    game_type = []
+    restriction = []
+    request_args = {}
+
+    name = request_args_source.get("name", type=str)
+    system = request_args_source.get("system", type=int)
+    vtt = request_args_source.get("vtt", type=int)
+
+    for s in ["open", "closed", "archived", "draft"]:
+        if request_args_source.get(s, type=bool):
+            status.append(s)
+            request_args[s] = "on"
+    for t in ["oneshot", "campaign"]:
+        if request_args_source.get(t, type=bool):
+            game_type.append(t)
+            request_args[t] = "on"
+    for r in ["all", "16+", "18+"]:
+        if request_args_source.get(r, type=bool):
+            restriction.append(r)
+            request_args[r] = "on"
+
+    status, game_type, restriction = set_default_search_parameters(
+        status, game_type, restriction
+    )
+
+    queries = [
+        Game.status.in_(status),
+        Game.restriction.in_(restriction),
+        Game.type.in_(game_type),
+    ]
+    if name:
+        request_args["name"] = name
+        queries.append(Game.name.ilike(f"%{name}%"))
+    if system:
+        request_args["system"] = system
+        queries.append(Game.system_id == system)
+    if vtt:
+        request_args["vtt"] = vtt
+        queries.append(Game.vtt_id == vtt)
+
+    page = request_args_source.get("page", 1, type=int)
+
+    games = (
+        Game.query.filter(*queries)
+        .order_by(Game.date)
+        .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
+    )
+
+    return games, request_args
 
 
 def get_channel_category(game):
@@ -104,19 +164,21 @@ def get_ambience(data):
 
 def handle_remove_players(game, data, bot):
     """Remove unchecked players from the game."""
-    for player in list(game.players):  # Copy to avoid mutation during iteration
+    removed = False
+    for player in list(game.players):
         if str(player.id) not in data:
-            user = db.get_or_404(User, player.id)
-            game.players.remove(user)
-            create_game_event(game, "Remove Player", user.id)
-            db.session.commit()
-            logger.info(f"User {user.id} removed from Game {game.id}")
-            bot.remove_role_from_user(user.id, game.role)
-            logger.info(f"Role {game.role} removed from Player {user.id}")
+            game.players.remove(player)
+            create_game_event(game, "Remove Player", player.id)
+            logger.info(f"User {player.id} removed from Game {game.id}")
+            bot.remove_role_from_user(player.id, game.role)
+            logger.info(f"Role {game.role} removed from Player {player.id}")
+            removed = True
+    if removed:
+        db.session.commit()
 
 
 def handle_add_player(game, data, bot):
-    """Add a new player to the game."""
+    """Add a new player to the game by Discord ID."""
     uid = data.get("discord_id")
     if not uid:
         abort(400, "Missing discord_id")
@@ -132,13 +194,59 @@ def handle_add_player(game, data, bot):
     if not user.is_player:
         abort(500, "Cette personne n'est pas un·e joueur·euse sur le Discord")
 
-    game.players.append(user)
-    create_game_event(game, "Add Player", uid)
-    db.session.commit()
-    logger.info(f"User {uid} registered to Game {game.id}")
-    bot.add_role_to_user(uid, game.role)
-    logger.info(f"Role {game.role} added to user {uid}")
-    send_discord_embed(game, type="register", player=uid)
+    register_user_to_game(game, user, bot)
+
+
+def register_user_to_game(original_game, user, bot):
+    """Concurrent-safe logic to register a user to a game and update state."""
+    try:
+        # Lock the game row and load players in a separate transaction.
+        game = db.session.query(Game)\
+            .filter_by(id=original_game.id)\
+            .with_for_update().first()
+
+        # Make sure to reload players in a separate query (without joinedload).
+        game = db.session.query(Game).filter_by(id=original_game.id).first()
+
+        # Check if the user is already in the game
+        if user in game.players:
+            logger.warning(f"User {user.id} already in Game {game.id}")
+            return  # No-op if already registered
+
+        # Check if the game is full
+        if len(game.players) >= game.party_size:
+            logger.warning(f"Game {game.id} is full. Cannot add user {user.id}")
+            raise ValueError("Désolé, la partie est déjà complète.")
+
+        # Add the player to the game
+        game.players.append(user)
+        create_game_event(game, "Add Player", user.id)
+
+        # Update game status to 'closed' if full and no party selection
+        if len(game.players) == game.party_size and not game.party_selection:
+            game.status = "closed"
+            create_game_event(game, "Status Update", "closed")
+
+        # Commit the transaction
+        db.session.commit()
+
+        logger.info(f"User {user.id} registered to Game {game.id}")
+        if game.status == "closed":
+            logger.info(f"Game status for {game.id} has been updated to closed")
+
+        # Add role to user via the bot
+        bot.add_role_to_user(user.id, game.role)
+        logger.info(f"Role {game.role} added to user {user.id}")
+
+        # Send Discord embed notification
+        send_discord_embed(game, type="register", player=user.id)
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.exception("Failed to register user due to DB error.")
+        raise
+
+
 
 
 def build_game_from_form(data, gm_id):

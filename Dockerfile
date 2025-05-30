@@ -16,6 +16,7 @@ FROM build AS code
 COPY requirements.txt /questmaster/requirements.txt
 RUN python -m pip install -r requirements.txt
 COPY questmaster.py  /questmaster/questmaster.py
+COPY config.py /questmaster/config.py
 COPY website/ /questmaster/website
 RUN chown -R questmaster: /questmaster
 
@@ -27,4 +28,4 @@ COPY tests/ /questmaster/tests
 FROM code AS app
 USER questmaster
 EXPOSE 8000
-CMD [ "gunicorn",  "--bind",  "0.0.0.0:8000",  "questmaster:app"]
+CMD [ "gunicorn",  "--workers=2", "--threads=4", "--bind",  "0.0.0.0:8000",  "questmaster:app"]

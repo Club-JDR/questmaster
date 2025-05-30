@@ -66,10 +66,10 @@
   <div class="row">
     <div class="mb-2">
       <label for="party_size" class="form-label"><strong>Nombre de joueur·euses :</strong></label>
-      <input type="number" step="1" max="99" name="party_size" id="party_size" class="form-control" {% if game
+      <input type="number" step="1" min="1" max="99" name="party_size" id="party_size" class="form-control" {% if game
         %}value="{{game.party_size}}" {% else %}value="4" {% endif %}required>
       <div class="invalid-feedback">
-        Vous devez entrer un nombre de joueur·euses.
+        Vous devez entrer un nombre de joueur·euses strictement positif.
       </div>
     </div>
   </div>
