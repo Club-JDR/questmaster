@@ -15,7 +15,8 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
         <form method="post" action="/annonces/{{game.id}}/statut/">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" name="status" value="archived" type="button" class="btn btn-danger">Archiver</button>
+          <button id="archiveBtn" type="submit" name="status" value="archived" class="btn btn-danger" disabled>Archiver
+            (10)</button>
         </form>
       </div>
     </div>

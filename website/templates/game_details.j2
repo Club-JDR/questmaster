@@ -48,8 +48,9 @@
               <strong>Informations complémentaires</strong>
               <p class="small text-muted">{{ game.complement }}</p>
             </div>
+            {% endif %}
           </div>
-          {% endif %}
+
           <div class="info-bottom">
             <div class="classification">
               <h6>Classification</h6>
@@ -202,10 +203,9 @@
           {% endif %}
 
           {% if game.status != 'archived' %}
-          <button type="submit" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i
+          <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i
               class="bi bi-archive"></i> Archiver</button>
           {% endif %}
-
           {% endif %}
         </form>
         {% include 'game_details/add_session.j2' %}
@@ -260,4 +260,5 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
     integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
   <script src="/static/js/game-sessions.js"></script>
+  <script src="/static/js/archive-modal.js"></script>
   {% endblock %}
