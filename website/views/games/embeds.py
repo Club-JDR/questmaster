@@ -94,7 +94,7 @@ def build_add_session_embed(game, start, end, *_):
 
 def build_edit_session_embed(game, start, end, _, old_start, old_end):
     embed = {
-        "title": "GameSession modifiée",
+        "title": "Session modifiée",
         "color": 0xFFCF48,  # yellow
         "description": (
             f"<@&{game.role}>\nVotre MJ a modifié la session ~~du {old_start} au {old_end}~~\n"
@@ -107,7 +107,7 @@ def build_edit_session_embed(game, start, end, _, old_start, old_end):
 
 def build_delete_session_embed(game, start, end, *_):
     embed = {
-        "title": "GameSession annulée",
+        "title": "Session annulée",
         "color": 0xF34242,  # red
         "description": (
             f"<@&{game.role}>\nVotre MJ a annulé la session du **{start}** au **{end}**\n"

@@ -8,4 +8,4 @@ function refreshCards() {
 }
 
 // Poll every 10 seconds
-setInterval(refreshCards, 5000);
+setInterval(refreshCards, 10000);

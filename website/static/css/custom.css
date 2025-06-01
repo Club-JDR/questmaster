@@ -78,12 +78,30 @@ figure {
 }
 
 .game-card:hover {
-  transform: scale(1.1);
-  transition-duration: 0.8s;
+  transform: scale(1.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
-.game-card {
-  transition-duration: 0.8s;
+.card.shiny {
+  position: relative;
+  overflow: hidden;
+}
+
+.card.shiny::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(120deg, transparent 40%, rgba(255, 255, 255, 0.4) 50%, transparent 60%);
+  transform: rotate(25deg);
+  transition: transform 0.5s ease-in-out;
+}
+
+.card.shiny:hover::before {
+  transform: rotate(25deg) translate(100%, 100%);
 }
 
 pre {
@@ -116,4 +134,358 @@ pre {
 .fc-daygrid-event {
   font-size: 0.85em;
   padding: 2px 4px;
+}
+
+/* Force FullCalendar buttons to use Bootstrap 5 primary styles */
+.fc .fc-button {
+  @apply btn btn-sm btn-primary;
+  /* if using Tailwind or similar (optional) */
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  text-transform: none;
+  /* Remove uppercase if applied */
+}
+
+/* Active (pressed) button state */
+.fc .fc-button-active,
+.fc .fc-button:active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+
+/* Disabled buttons */
+.fc .fc-button:disabled {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* Optional: Hover effect like Bootstrap */
+.fc .fc-button:hover {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  filter: brightness(95%);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #86b7fe;
+  border-color: #0d6efd;
+  color: var(--fc-button-text-color);
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.game-and-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  width: 100%;
+}
+
+.game-details-card {
+  display: flex;
+  flex-direction: row;
+  background: white;
+  border-radius: 0.375rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  flex: 1 1 60%;
+  min-width: 0;
+}
+
+.game-image {
+  width: 300px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+}
+
+.game-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+  justify-content: space-between;
+}
+
+.info-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.top-info h1 {
+  margin-bottom: 0.25rem;
+  font-size: 1.8rem;
+}
+
+.top-info .badges {
+  margin-left: 0.5rem;
+}
+
+.top-info .meta {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.description-section p {
+  margin: 0.3rem 0 0;
+}
+
+.additional-info {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.info-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bottom-subsection {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.bottom-subsection .restrictions,
+.bottom-subsection .ambience {
+  flex: 1;
+}
+
+.bottom-subsection .restrictions {
+  border-left: none;
+  border-right: none;
+  padding: 0;
+}
+
+.classification-columns {
+  display: flex;
+  gap: 1rem;
+}
+
+.classification-columns .column {
+  flex: 1;
+}
+
+
+.classification,
+.restrictions,
+.ambience {
+  flex: 1;
+}
+
+.classification .progress {
+  height: 6px;
+  margin-top: 0.3rem;
+}
+
+.ambience .badge {
+  margin-right: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.restrictions {
+  border-left: 1px solid #eee;
+  border-right: 1px solid #eee;
+  padding: 0 1rem;
+}
+
+.right-panel-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1 1 35%;
+  min-width: 0;
+}
+
+.player-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.player-list-card {
+  background: white;
+  border-radius: 0.375rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.07);
+}
+
+.player-list-card .card-header {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+}
+
+.player-list-card .card-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.player {
+  flex: 1 1 calc(40% - 0.75rem);
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.player img,
+.player .empty-seat {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-bottom: 0.25rem;
+  object-fit: cover;
+  background: #ccc;
+}
+
+.empty-seat {
+  background: #ddd;
+  opacity: 0.4;
+}
+
+.signup-btn {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.sessions-list {
+  margin-top: 2.5rem;
+}
+
+.sessions-list h3 {
+  margin-bottom: 1rem;
+}
+
+.sessions-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.session-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.07);
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
+.session-card .btn-group button {
+  min-width: 35px;
+}
+
+/* --- Responsive --- */
+
+@media (max-width: 991.98px) {
+  .game-and-players {
+    flex-direction: column;
+  }
+
+  .game-details-card,
+  .right-panel-wrapper {
+    flex: 1 1 100%;
+  }
+
+  .player {
+    flex: 1 1 40%;
+  }
+
+  .game-image {
+    width: 100%;
+    height: auto;
+    border-radius: 0.375rem 0.375rem 0 0;
+  }
+
+  .game-details-card {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .player {
+    flex: 1 1 40%;
+  }
+}
+
+[data-bs-theme="dark"] .game-details-card,
+[data-bs-theme="dark"] .player-list-card,
+[data-bs-theme="dark"] .session-card {
+  background-color: #1e1e1e;
+  color: #ddd;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .card-header {
+  background-color: #2a2a2a;
+  color: #ccc;
+  border-bottom-color: #444;
+}
+
+
+[data-bs-theme="dark"] .player img,
+[data-bs-theme="dark"] .player .empty-seat {
+  background-color: #444;
+}
+
+[data-bs-theme="light"] .badge-dynamic {
+  background-color: var(--bs-light);
+  color: var(--bs-dark);
+}
+
+[data-bs-theme="dark"] .badge-dynamic {
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+}
+
+[data-bs-theme="dark"] .badge-dynamic-inv {
+  background-color: var(--bs-light);
+  color: var(--bs-dark);
+}
+
+[data-bs-theme="light"] .badge-dynamic-inv {
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+}
+
+.calendar-wrapper {
+  display: inline-block;
+  text-align: center;
+}
+
+/* Ensures btn-group matches width of calendar button */
+.calendar-btn-group {
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.session-card add-to-calendar-button {
+  display: block;
+  margin-bottom: 0.25rem;
+  /* Reduce spacing */
 }

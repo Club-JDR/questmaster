@@ -1,10 +1,11 @@
 <div class="col" data-game-id="{{ game.id }}">
-  <div class="card game-card shadow h-100">
+  <div class="card game-card shadow h-100 shiny">
     <div
       class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
       <h5 class="card-title text-truncate">{{ game.name }}</h5>
     </div>
-    <img src="{{ game.img }}" class="card-img-bottom img-preview" alt="{{ game.name }}">
+    <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}" class="card-img-bottom img-preview"
+      alt="{{ game.name }}">
     <div class="card-body">
       <div class="row">
         <div class="col-6">
@@ -32,7 +33,7 @@
       </div>
       <a href="/annonces/{{ game.id }}/" class="stretched-link"></a>
     </div>
-    {% if game.restriction_tags %}{% set tags = game.restriction_tags.split(',') %}{% endif %}
+    {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
     <div class="card-footer text-center">
       {% if game.status=='draft' %}<span class="badge text-bg-secondary">brouillon</span>{% endif %} {% if
       game.restriction == 'all' %}

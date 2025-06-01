@@ -1,6 +1,7 @@
-from flask import render_template, Blueprint, jsonify, request
+from flask import render_template, Blueprint, jsonify, request, url_for
 from website.models import GameSession
 from website.views.auth import who
+from website.extensions import cache
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from collections import defaultdict, Counter
@@ -11,6 +12,7 @@ stats_bp = Blueprint("stats", __name__)
 
 
 @stats_bp.route("/stats/", methods=["GET"])
+@cache.cached(query_string=True)
 def get_stats():
     """
     Get monthly statistics for sessions, grouped by type and system.
@@ -33,8 +35,7 @@ def get_stats():
 
     # Query sessions within selected month
     sessions = GameSession.query.filter(
-        GameSession.start >= base_day,
-        GameSession.end <= last_day
+        GameSession.start >= base_day, GameSession.end <= last_day
     ).all()
 
     num_os = 0
@@ -81,16 +82,18 @@ def get_stats():
         prev_year=prev_month_date.year,
         prev_month=prev_month_date.month,
         next_year=next_month_date.year,
-        next_month=next_month_date.month
+        next_month=next_month_date.month,
     )
 
-@stats_bp.route('/calendrier/')
-def calendar():
+
+@stats_bp.route("/calendrier/")
+def get_calendar():
     payload = who()
-    return render_template('calendar.j2', payload=payload)
+    return render_template("calendar.j2", payload=payload)
 
 
 @stats_bp.route("/api/calendar/")
+@cache.cached(query_string=True)
 def get_month_games_json():
     # Get the start and end from query parameters
     start_str = request.args.get("start")
@@ -106,19 +109,20 @@ def get_month_games_json():
         return jsonify([]), 400
 
     sessions = GameSession.query.filter(
-        GameSession.start >= start,
-        GameSession.end <= end
+        GameSession.start >= start, GameSession.end <= end
     ).all()
 
     events = []
     for session in sessions:
-        events.append({
-            "id": session.id,
-            "title": f"{session.game.name} par {session.game.gm.name}",
-            "start": session.start.isoformat(),
-            "end": session.end.isoformat(),
-            "color": "#75b798" if session.game.type == 'oneshot' else "#0d6efd",
-            
-        })
+        events.append(
+            {
+                "id": session.id,
+                "title": f"{session.game.name} par {session.game.gm.name}",
+                "start": session.start.isoformat(),
+                "end": session.end.isoformat(),
+                "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
+                "url": url_for("annonces.get_game_details", game_id=session.game.id),
+            }
+        )
 
     return jsonify(events)

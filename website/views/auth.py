@@ -1,4 +1,5 @@
-from flask import redirect, url_for, session, abort, Blueprint
+from flask import redirect, url_for, session, abort, request, Blueprint
+from urllib.parse import urlparse, urljoin
 from website.extensions import db, discord
 from website.models import User
 import functools
@@ -29,7 +30,7 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if "user_id" not in session:
-            abort(403)
+            return redirect(url_for("auth.login"))
         return view(**kwargs)
 
     return wrapped_view
@@ -41,6 +42,10 @@ def login():
     Login using Discord OAuth2.
     """
     session.permanent = True
+    next_url = (
+        session.get("next_url") or request.referrer or url_for("annonces.search_games")
+    )
+    session["next_url"] = next_url
     return discord.create_session()
 
 
@@ -52,6 +57,12 @@ def logout():
     session.clear()
     discord.revoke()
     return redirect(url_for("annonces.search_games"))
+
+
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
 
 
 @auth_bp.route("/callback/")
@@ -77,4 +88,7 @@ def callback():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
-    return redirect(url_for("annonces.search_games"))
+    redirect_url = session.pop("next_url", url_for("annonces.search_games"))
+    if not is_safe_url(redirect_url):
+        redirect_url = url_for("annonces.search_games")
+    return redirect(redirect_url)

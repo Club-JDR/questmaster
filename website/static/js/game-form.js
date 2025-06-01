@@ -43,3 +43,12 @@ if ($(window).width() < 1024) {
         }, false)
     })
 })()
+
+  const labels = ['Absent', 'Mineur', 'Majeur'];
+
+  document.querySelectorAll('.form-range').forEach(slider => {
+    slider.addEventListener('input', function () {
+      const labelSpan = document.querySelector(`.form-range-label[data-for="${this.id}"]`);
+      labelSpan.textContent = labels[this.value];
+    });
+  });

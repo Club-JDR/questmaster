@@ -1,7 +1,7 @@
 {% extends 'base.j2' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<h1>{{ title }}</h1>
+<h1 class="text-center"><i class="bi bi-megaphone"></i> {{ title }}</h1>
 {% if request.path == '/' or request.path == '/annonces/' %}
 <nav class="navbar bg-body-tertiary" aria-label="SearchBar">
   <div class="container-fluid">

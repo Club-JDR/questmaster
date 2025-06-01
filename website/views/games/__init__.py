@@ -51,22 +51,15 @@ def search_games():
         title="Annonces",
         next_url=next_url,
         prev_url=prev_url,
-        systems=System.query.order_by("name").all(),
-        vtts=Vtt.query.order_by("name").all(),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )
+
 
 @game_bp.route("/annonces/cards/")
 def game_cards():
     games, _ = get_filtered_games(request.args)
     return render_template("game_cards_container.j2", games=games.items)
-
-
-
-@game_bp.route("/annonces/<int:game_id>/details")
-def get_game_details_partial(game_id):
-    payload=who()
-    game = db.get_or_404(Game, game_id)
-    return render_template("game_details_container.j2", game=game, payload=payload,)
 
 
 @game_bp.route("/annonces/<game_id>/", methods=["GET"])
@@ -96,8 +89,8 @@ def get_game_form():
     return render_template(
         "game_form.j2",
         payload=payload,
-        systems=System.query.order_by("name").all(),
-        vtts=Vtt.query.order_by("name").all(),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )
 
 
@@ -185,7 +178,6 @@ def edit_game(game_id):
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         abort(500, e)
-    # card_html = render_template("partials/game_card.j2", game=game)
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
@@ -384,8 +376,8 @@ def get_game_edit_form(game_id):
         "game_form.j2",
         payload=payload,
         game=game,
-        systems=System.query.order_by("name").all(),
-        vtts=Vtt.query.order_by("name").all(),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )
 
 

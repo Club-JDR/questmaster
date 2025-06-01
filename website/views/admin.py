@@ -74,15 +74,39 @@ class VttAdmin(ModelView):
 
 class GameAdmin(ModelView):
     column_list = [
-        "name", "type", "length", "gm_id", "system_id", "vtt_id",
-        "description", "restriction", "restriction_tags", "party_size",
-        "party_selection", "xp", "date", "session_length", "frequency",
-        "characters", "classification", "ambience", "complement", "img",
-        "channel", "msg_id", "role", "status"
+        "name",
+        "type",
+        "length",
+        "gm_id",
+        "system_id",
+        "vtt_id",
+        "description",
+        "restriction",
+        "restriction_tags",
+        "party_size",
+        "party_selection",
+        "xp",
+        "date",
+        "session_length",
+        "frequency",
+        "characters",
+        "classification",
+        "ambience",
+        "complement",
+        "img",
+        "channel",
+        "msg_id",
+        "role",
+        "status",
     ]
     form_columns = column_list + ["players"]
     column_editable_list = [
-        "name", "type", "length", "restriction", "party_size", "status"
+        "name",
+        "type",
+        "length",
+        "restriction",
+        "party_size",
+        "status",
     ]
 
     can_create = False

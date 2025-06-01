@@ -1,4 +1,4 @@
-from flask import abort
+from flask import abort, flash, redirect, url_for, request
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
@@ -11,6 +11,7 @@ import yaml
 
 
 GAMES_PER_PAGE = 12
+
 
 def get_filtered_games(request_args_source):
     """
@@ -141,16 +142,15 @@ def set_default_search_parameters(status, game_type, restriction):
 
 
 def get_classification(data):
+    prefix = "class-"
     classification = {}
-    for theme in ["action", "investigation", "interaction", "horror"]:
-        if data.get(f"class-{theme}") == "none":
-            classification[theme] = 0
-        elif data.get(f"class-{theme}") == "min":
-            classification[theme] = 1
-        elif data.get(f"class-{theme}") == "maj":
-            classification[theme] = 2
-    if all(value == 0 for value in classification.values()):
-        return None
+    for key in request.form:
+        if key.startswith(prefix):
+            clean_key = key[len(prefix) :]
+            try:
+                classification[clean_key] = int(request.form[key])
+            except (ValueError, TypeError):
+                classification[clean_key] = 0
     return classification
 
 
@@ -201,9 +201,12 @@ def register_user_to_game(original_game, user, bot):
     """Concurrent-safe logic to register a user to a game and update state."""
     try:
         # Lock the game row and load players in a separate transaction.
-        game = db.session.query(Game)\
-            .filter_by(id=original_game.id)\
-            .with_for_update().first()
+        game = (
+            db.session.query(Game)
+            .filter_by(id=original_game.id)
+            .with_for_update()
+            .first()
+        )
 
         # Make sure to reload players in a separate query (without joinedload).
         game = db.session.query(Game).filter_by(id=original_game.id).first()
@@ -216,7 +219,8 @@ def register_user_to_game(original_game, user, bot):
         # Check if the game is full
         if len(game.players) >= game.party_size:
             logger.warning(f"Game {game.id} is full. Cannot add user {user.id}")
-            raise ValueError("Désolé, la partie est déjà complète.")
+            flash("La partie est complète.", "danger")
+            return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
         # Add the player to the game
         game.players.append(user)
@@ -245,8 +249,6 @@ def register_user_to_game(original_game, user, bot):
         db.session.rollback()
         logger.exception("Failed to register user due to DB error.")
         raise
-
-
 
 
 def build_game_from_form(data, gm_id):

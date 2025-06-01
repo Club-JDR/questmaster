@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
 <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" /> {% endblock
 %} {% block content %}
-<h1>{% if game %}Éditer l'{% else %}Nouvelle {% endif%}annonce</h1>
+<h1 class="text-center">{% if game %}Éditer l'{% else %}Nouvelle {% endif%}annonce</h1>
 <form method="post" action="{% if game %}/annonces/{{ game.id }}/editer/{% else %}/annonce/{% endif %}"
   class="row needs-validation" novalidate>
   {% include 'game_form/basics.j2' %}

@@ -4,7 +4,7 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
 {% endblock%}
 {% block content %}
-<h1>{{ title }}</h1>
+<h1 class="text-center"><i class="bi bi-calendar4-week"></i> Le Calendrier du Club</h1>
 <div class="row gy-5 p-4">
   <div id="month-games-calendar"></div>
 </div>
@@ -13,41 +13,7 @@
 {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"
   integrity="sha256-i4vDW9EgtaJmeauDDymtNF2omPZ1fCKpf4w1gBlU1IE=" crossorigin="anonymous"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const calendarEl = document.getElementById("month-games-calendar");
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-      themeSystem: 'bootstrap5',
-      initialView: 'dayGridMonth',
-      locale: 'fr',
-      timeZone: 'local',
-      events: function (fetchInfo, successCallback, failureCallback) {
-        const start = fetchInfo.startStr;
-        const end = fetchInfo.endStr;
-
-        fetch(`/api/calendar?start=${start}&end=${end}`)
-          .then(response => {
-            if (!response.ok) throw new Error("Network error");
-            return response.json();
-          })
-          .then(data => successCallback(data))
-          .catch(error => failureCallback(error));
-      },
-      eventClick: function (info) {
-        if (info.event.url) {
-          window.open(info.event.url, "_blank");
-          info.jsEvent.preventDefault();
-        }
-      },
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,listMonth'
-      },
-    });
-
-    calendar.render();
-  });
+<script src="/static/js/calendar.js">
 </script>
 
 {% endblock %}

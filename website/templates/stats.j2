@@ -1,8 +1,12 @@
 {% extends 'base.j2' %}
 {% block title %}Statistiques mensuelles{% endblock %}
 {% block content %}
-<h1>Statistiques pour {{ month }}/{{ year }}</h1>
-<div class="d-flex justify-content-between my-3">
+<h1 class="mb-4 text-center"><i class="bi bi-graph-up"></i> Statistiques - {{ month }}/{{ year }}</h1>
+
+{% set random_int = (range(1, 7) | random) %}{% set random_int2 = (range(1, 7) | random) %}
+
+<!-- Navigation -->
+<div class="d-flex justify-content-between mb-4">
   <a class="btn btn-outline-primary" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
     ← Mois précédent
   </a>
@@ -10,64 +14,127 @@
     Mois suivant →
   </a>
 </div>
-<div class="row pt-4">
-  <div class="col-3 text-center pb-4">
-    <h2>Nombre de sessions</h2>
-    <div class="row text-primary">
-      <strong class="pb-2">OS : {{ num_os }}</strong>
-    </div>
-    <div class="row text-success">
-      <strong class="pb-2">Campagnes : {{ num_campaign }}</strong>
-    </div>
-    <div class="row">
-      <strong class="pb-2">Total : {{ num_os + num_campaign }}</strong>
+
+<!-- Sessions Summary Section -->
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+  <div class="col">
+    <div class="card h-100 text-center border-success">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-dice-{{ random_int}}"></i> Sessions OS</h5>
+        <p class="display-6 text-success">{{ num_os }}</p>
+      </div>
     </div>
   </div>
-  <div class="col-6">
+  <div class="col">
+    <div class="card h-100 text-center border-primary">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-book"></i> Sessions de Campagnes</h5>
+        <p class="display-6 text-primary">{{ num_campaign }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card h-100 text-center border-dark">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-bar-chart"></i> Total</h5>
+        <p class="display-6 fw-bold">{{ num_os + num_campaign }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OS and Campaign Tables Section -->
+<div class="card mb-4">
+  <div class="card-body">
     <div class="row">
-      <div class="col-6">
-        <h2>Liste des OS</h2>
+      <!-- OS Table -->
+      <div class="col-md-6">
+        <h5 class="mb-3"><i class="bi bi-dice-{{ random_int2 }}"></i> Liste des OS</h5>
         {% for system in os %}
-        <strong>{{ system }} ({{ os[system]|length }} session{% if os[system]|length > 1 %}s{% endif %})</strong>
-        <ul>
-          {% for element in os[system] %}<li>{{ element }}</li>{% endfor %}
-        </ul>
+        <div class="mb-3">
+          <h6 class="text-primary">{{ system }} <small class="text-muted">({{ os[system]|length }} session{% if
+              os[system]|length > 1 %}s{% endif %})</small></h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Nom de la session</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for element in os[system] %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td>{{ element }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
         {% endfor %}
       </div>
-      <div class="col-6">
-        <h2>Liste des campagnes</h2>
+
+      <!-- Campaign Table -->
+      <div class="col-md-6">
+        <h5 class="mb-3"><i class="bi bi-book"></i> Liste des campagnes</h5>
         {% for system in campaign %}
-        <strong>{{ system }} ({{ campaign[system]|length }} session{% if campaign[system]|length > 1 %}s{% endif
-          %})</strong>
-        <ul>
-          {% for element in campaign[system] %}<li>{{ element }}</li>{% endfor %}
-        </ul>
+        <div class="mb-3">
+          <h6 class="text-success">{{ system }} <small class="text-muted">({{ campaign[system]|length }} session{% if
+              campaign[system]|length > 1 %}s{% endif %})</small></h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Nom de la session</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for element in campaign[system] %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td>{{ element }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
         {% endfor %}
       </div>
     </div>
   </div>
-  <div class="col-3">
-    <h2>Classement des MJs</h2>
-    <table class="table table-striped text-center">
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">MJ</th>
-          <th scope="col">Nombre de sessions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% set counter = namespace(p=0) %}
-        {% for mj in mjs %}
-        {% set counter.p = counter.p + 1 %}
-        <tr>
-          <td>{{ counter.p }}</td>
-          <td>{{ mj }}</td>
-          <td>{{ mjs[mj] }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+</div>
+
+
+<!-- MJ Ranking Section -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title text-success text-center"><i class="bi bi-trophy"></i> Classement des MJs</h5>
+    <div class="table-responsive">
+      <table class="table table-striped text-center mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>MJ</th>
+            <th>Sessions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set counter = namespace(p=0) %}
+          {% for mj in mjs %}
+          {% set counter.p = counter.p + 1 %}
+          <tr>
+            <td>{{ counter.p }}</td>
+            <td>{{ mj }}</td>
+            <td>{{ mjs[mj] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

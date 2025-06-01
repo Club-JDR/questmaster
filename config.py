@@ -17,6 +17,7 @@ class Config:
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_HOST = os.environ.get("REDIS_HOST")
     CACHE_REDIS_PORT = 6379
-    CACHE_REDIS_DB = 1
+    CACHE_REDIS_DB = 0
     CACHE_DEFAULT_TIMEOUT = 300  # 5 minutes
+    CACHE_KEY_PREFIX = "QuestMaster:"
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
