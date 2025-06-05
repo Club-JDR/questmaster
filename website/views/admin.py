@@ -1,7 +1,8 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import AdminIndexView, expose
-from flask_admin import helpers as admin_helpers
-from flask import session, abort
+from flask import session, abort, request, flash, url_for, redirect
+from wtforms.validators import NumberRange
+from website.extensions import db
 
 
 def is_admin_authenticated():
@@ -16,13 +17,7 @@ class SecureAdminIndexView(AdminIndexView):
         return super().index()
 
 
-class UserAdmin(ModelView):
-    form_columns = ["id"]
-    column_list = ["id"]
-    column_editable_list = ["id"]
-    can_create = True
-    can_edit = False
-
+class AdminView(ModelView):
     def is_accessible(self):
         return is_admin_authenticated()
 
@@ -30,7 +25,15 @@ class UserAdmin(ModelView):
         abort(403)
 
 
-class ChannelAdmin(ModelView):
+class UserAdmin(AdminView):
+    form_columns = ["id"]
+    column_list = ["id"]
+    column_editable_list = ["id"]
+    can_create = True
+    can_edit = False
+
+
+class ChannelAdmin(AdminView):
     form_columns = ["id", "type", "size"]
     column_list = ["id", "type", "size"]
     column_editable_list = ["id", "type", "size"]
@@ -44,15 +47,7 @@ class ChannelAdmin(ModelView):
         abort(403)
 
 
-class SystemAdmin(ModelView):
-    def is_accessible(self):
-        return is_admin_authenticated()
-
-    def inaccessible_callback(self, name, **kwargs):
-        abort(403)
-
-
-class GameSessionAdmin(ModelView):
+class GameSessionAdmin(AdminView):
     form_columns = ["game_id", "start", "end"]
     column_list = ["game_id", "start", "end"]
     column_editable_list = ["start", "end"]
@@ -63,16 +58,7 @@ class GameSessionAdmin(ModelView):
     def inaccessible_callback(self, name, **kwargs):
         abort(403)
 
-
-class VttAdmin(ModelView):
-    def is_accessible(self):
-        return is_admin_authenticated()
-
-    def inaccessible_callback(self, name, **kwargs):
-        abort(403)
-
-
-class GameAdmin(ModelView):
+class GameAdmin(AdminView):
     column_list = [
         "name",
         "type",
@@ -116,14 +102,9 @@ class GameAdmin(ModelView):
     column_filters = ["gm_id", "type"]
     page_size = 20
 
-    def is_accessible(self):
-        return is_admin_authenticated()
-
-    def inaccessible_callback(self, name, **kwargs):
-        abort(403)
 
 
-class GameEventAdmin(ModelView):
+class GameEventAdmin(AdminView):
     form_columns = ["game_id", "timestamp", "event_type", "description"]
     column_list = ["game_id", "timestamp", "event_type", "description"]
     column_searchable_list = ["game_id", "event_type"]
@@ -132,8 +113,36 @@ class GameEventAdmin(ModelView):
     can_create = False
     can_edit = False
 
-    def is_accessible(self):
-        return is_admin_authenticated()
 
-    def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+class UserTrophyAdmin(AdminView):
+    form_columns = ("user", "trophy", "quantity")
+
+    column_list = ("user", "trophy", "quantity")
+    column_searchable_list = ("user.id", "trophy.name")
+    column_filters = ("user.id", "trophy.name")
+
+    form_args = {
+        "quantity": {
+            "default": 1,
+            "validators": [NumberRange(min=1)],
+        }
+    }
+
+    def on_model_change(self, form, model, is_created):
+        """
+        Enforce trophy uniqueness if it's a unique trophy.
+        """
+        trophy = model.trophy
+        if trophy.unique:
+            existing = self.session.query(self.model).filter_by(
+                user_id=model.user_id,
+                trophy_id=model.trophy_id
+            ).first()
+
+            if existing and (is_created or model != existing):
+                raise form.ValidationError(
+                    f"L'utilisateur possède déjà le trophée unique '{trophy.name}'."
+                )
+
+        if trophy.unique:
+            model.quantity = 1

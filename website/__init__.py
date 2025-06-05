@@ -3,7 +3,7 @@ from flask import Flask, g
 from flask_admin import Admin
 from website.utils.discord import Discord
 from website.utils.logger import configure_logging
-from website.models import Channel, Game, GameSession, System, Vtt, User, GameEvent
+from website import models
 from website.bot import set_bot
 from website.views import admin as admin_view
 from website.extensions import db, migrate, csrf, cache, discord
@@ -66,13 +66,17 @@ def create_app():
         template_mode="bootstrap4",
         index_view=admin_view.SecureAdminIndexView(),
     )
-    admin.add_view(admin_view.GameAdmin(Game, db.session))
-    admin.add_view(admin_view.GameEventAdmin(GameEvent, db.session))
-    admin.add_view(admin_view.GameSessionAdmin(GameSession, db.session))
-    admin.add_view(admin_view.ChannelAdmin(Channel, db.session))
-    admin.add_view(admin_view.UserAdmin(User, db.session))
-    admin.add_view(admin_view.VttAdmin(Vtt, db.session))
-    admin.add_view(admin_view.SystemAdmin(System, db.session))
+    admin.add_view(admin_view.GameAdmin(models.Game, db.session))
+    admin.add_view(admin_view.GameEventAdmin(models.GameEvent, db.session))
+    admin.add_view(admin_view.GameSessionAdmin(models.GameSession, db.session))
+    admin.add_view(admin_view.ChannelAdmin(models.Channel, db.session))
+    admin.add_view(admin_view.UserAdmin(models.User, db.session))
+    admin.add_view(admin_view.AdminView(models.Trophy, db.session))
+    admin.add_view(admin_view.UserTrophyAdmin(models.UserTrophy, db.session))
+    admin.add_view(admin_view.AdminView(models.Vtt, db.session))
+    admin.add_view(admin_view.AdminView(models.System, db.session))
+
+
 
     register_blueprints(app)
     register_filters(app)

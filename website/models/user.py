@@ -18,9 +18,21 @@ class User(db.Model):
 
     id = db.Column(db.String(), primary_key=True)
     games_gm = db.relationship("Game", backref="gm")
+    trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
     def __init__(self, id):
         self.id = id
+
+    @property
+    def trophy_summary(self):
+        summary = []
+        for ut in self.trophies:
+            summary.append({
+                "name": ut.trophy.name,
+                "icon": ut.trophy.icon,
+                "quantity": ut.quantity
+            })
+        return summary
 
     @orm.reconstructor
     def init_on_load(self):
