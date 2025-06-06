@@ -24,15 +24,17 @@ def get_stats():
         base_day = today.replace(day=1)
 
     last_day = datetime(
-    base_day.year,
-    base_day.month,
-    calendar.monthrange(base_day.year, base_day.month)[1],
-    23, 59, 59, 999999 # fix to avoid missing data on the last day
-)
+        base_day.year,
+        base_day.month,
+        calendar.monthrange(base_day.year, base_day.month)[1],
+        23,
+        59,
+        59,
+        999999,  # fix to avoid missing data on the last day
+    )
 
     sessions = GameSession.query.filter(
-        GameSession.start >= base_day,
-        GameSession.end <= last_day
+        GameSession.start >= base_day, GameSession.end <= last_day
     ).all()
 
     num_os = 0
@@ -78,7 +80,6 @@ def get_stats():
         next_year=next_month_date.year,
         next_month=next_month_date.month,
     )
-
 
 
 @stats_bp.route("/calendrier/")
