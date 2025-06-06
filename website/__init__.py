@@ -64,6 +64,7 @@ def create_app():
         app,
         name="QuestMaster Admin",
         template_mode="bootstrap4",
+        base_template='admin.j2',
         index_view=admin_view.SecureAdminIndexView(),
     )
     admin.add_view(admin_view.GameAdmin(models.Game, db.session))
@@ -75,8 +76,6 @@ def create_app():
     admin.add_view(admin_view.UserTrophyAdmin(models.UserTrophy, db.session))
     admin.add_view(admin_view.AdminView(models.Vtt, db.session))
     admin.add_view(admin_view.AdminView(models.System, db.session))
-
-
 
     register_blueprints(app)
     register_filters(app)

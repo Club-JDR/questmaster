@@ -14,55 +14,49 @@ stats_bp = Blueprint("stats", __name__)
 @stats_bp.route("/stats/", methods=["GET"])
 @cache.cached(query_string=True)
 def get_stats():
-    """
-    Get monthly statistics for sessions, grouped by type and system.
-    Accepts optional query parameters: ?year=YYYY&month=MM
-    """
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
 
     if year and month:
         base_day = datetime(year, month, 1)
     else:
-        # Default to current month
         today = datetime.today()
         base_day = today.replace(day=1)
 
-    # Get last day of that month
-    last_day = base_day.replace(
-        day=calendar.monthrange(base_day.year, base_day.month)[1]
-    )
+    last_day = datetime(
+    base_day.year,
+    base_day.month,
+    calendar.monthrange(base_day.year, base_day.month)[1],
+    23, 59, 59, 999999 # fix to avoid missing data on the last day
+)
 
-    # Query sessions within selected month
     sessions = GameSession.query.filter(
-        GameSession.start >= base_day, GameSession.end <= last_day
+        GameSession.start >= base_day,
+        GameSession.end <= last_day
     ).all()
 
     num_os = 0
     num_campaign = 0
-    os_games = set()
-    campaign_games = set()
+    os_games = defaultdict(lambda: defaultdict(lambda: {"count": 0, "gm": ""}))
+    campaign_games = defaultdict(lambda: defaultdict(lambda: {"count": 0, "gm": ""}))
     gm_names = []
 
     for session in sessions:
         game = session.game
+        system = game.system.name
+        game_name = game.name
+        gm_name = game.gm.name
+
         if game.type == "oneshot":
             num_os += 1
-            os_games.add(game)
+            os_games[system][game_name]["count"] += 1
+            os_games[system][game_name]["gm"] = gm_name
         else:
             num_campaign += 1
-            campaign_games.add(game)
-        gm_names.append(game.gm.name)
+            campaign_games[system][game_name]["count"] += 1
+            campaign_games[system][game_name]["gm"] = gm_name
 
-    # Group games by system
-    def group_games_by_system(games):
-        grouped = defaultdict(set)
-        for game in games:
-            grouped[game.system.name].add(game.name)
-        return grouped
-
-    os_dict = group_games_by_system(os_games)
-    campaign_dict = group_games_by_system(campaign_games)
+        gm_names.append(gm_name)
 
     prev_month_date = base_day - relativedelta(months=1)
     next_month_date = base_day + relativedelta(months=1)
@@ -74,8 +68,8 @@ def get_stats():
         last_day=last_day.strftime("%a %d/%m"),
         num_os=num_os,
         num_campaign=num_campaign,
-        os=os_dict,
-        campaign=campaign_dict,
+        os=os_games,
+        campaign=campaign_games,
         mjs=Counter(gm_names),
         year=base_day.year,
         month=base_day.month,
@@ -84,6 +78,7 @@ def get_stats():
         next_year=next_month_date.year,
         next_month=next_month_date.month,
     )
+
 
 
 @stats_bp.route("/calendrier/")

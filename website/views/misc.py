@@ -28,6 +28,7 @@ def list_systems():
         "list.j2", payload=who(), items=System.query.all(), title="Systèmes"
     )
 
+
 @misc_bp.route("/badges/", methods=["GET"])
 def list_badges():
     """
@@ -35,6 +36,7 @@ def list_badges():
     """
     payload = who()
     return render_template(
-        "trophies.j2", payload=payload, trophies=db.get_or_404(User, str(payload["user_id"])).trophy_summary
+        "trophies.j2",
+        payload=payload,
+        trophies=db.get_or_404(User, str(payload["user_id"])).trophy_summary,
     )
-

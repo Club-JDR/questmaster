@@ -58,6 +58,7 @@ class GameSessionAdmin(AdminView):
     def inaccessible_callback(self, name, **kwargs):
         abort(403)
 
+
 class GameAdmin(AdminView):
     column_list = [
         "name",
@@ -100,8 +101,7 @@ class GameAdmin(AdminView):
     can_delete = False
     column_searchable_list = ["gm_id", "type", "name"]
     column_filters = ["gm_id", "type"]
-    page_size = 20
-
+    page_size = 10
 
 
 class GameEventAdmin(AdminView):
@@ -134,10 +134,11 @@ class UserTrophyAdmin(AdminView):
         """
         trophy = model.trophy
         if trophy.unique:
-            existing = self.session.query(self.model).filter_by(
-                user_id=model.user_id,
-                trophy_id=model.trophy_id
-            ).first()
+            existing = (
+                self.session.query(self.model)
+                .filter_by(user_id=model.user_id, trophy_id=model.trophy_id)
+                .first()
+            )
 
             if existing and (is_created or model != existing):
                 raise form.ValidationError(

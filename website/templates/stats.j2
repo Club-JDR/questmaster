@@ -7,10 +7,10 @@
 
 <!-- Navigation -->
 <div class="d-flex justify-content-between mb-4">
-  <a class="btn btn-outline-primary" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
+  <a class="btn btn-primary" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
     ← Mois précédent
   </a>
-  <a class="btn btn-outline-primary" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
+  <a class="btn btn-primary" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
     Mois suivant →
   </a>
 </div>
@@ -34,7 +34,7 @@
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 text-center border-dark">
+    <div class="card h-100 text-center">
       <div class="card-body">
         <h5 class="card-title"><i class="bi bi-bar-chart"></i> Total</h5>
         <p class="display-6 fw-bold">{{ num_os + num_campaign }}</p>
@@ -50,23 +50,30 @@
       <!-- OS Table -->
       <div class="col-md-6">
         <h5 class="mb-3"><i class="bi bi-dice-{{ random_int2 }}"></i> Liste des OS</h5>
-        {% for system in os %}
+        {% for system, games in os.items() %}
         <div class="mb-3">
-          <h6 class="text-primary">{{ system }} <small class="text-muted">({{ os[system]|length }} session{% if
-              os[system]|length > 1 %}s{% endif %})</small></h6>
+          <h6 class="text-success">{{ system }} <small class="text-muted">({{ games|length }} scénario{% if games|length
+              >
+              1
+              %}s{% endif %})</small></h6>
           <div class="table-responsive">
             <table class="table table-sm table-striped table-bordered">
               <thead class="table-light">
                 <tr>
                   <th>#</th>
                   <th>Nom de la session</th>
+                  <th>MJ</th>
+                  <th>Sessions</th>
                 </tr>
               </thead>
               <tbody>
-                {% for element in os[system] %}
+                {% set game_list = os[system].items() | sort(attribute='1.count', reverse=true) %}
+                {% for game, info in game_list %}
                 <tr>
                   <td>{{ loop.index }}</td>
-                  <td>{{ element }}</td>
+                  <td>{{ game }}</td>
+                  <td>{{ info.gm }}</td>
+                  <td>{{ info.count }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -79,23 +86,28 @@
       <!-- Campaign Table -->
       <div class="col-md-6">
         <h5 class="mb-3"><i class="bi bi-book"></i> Liste des campagnes</h5>
-        {% for system in campaign %}
+        {% set game_list = campaign[system].items() | sort(attribute='1.count', reverse=true) %}
+        {% for game, info in game_list %}
         <div class="mb-3">
-          <h6 class="text-success">{{ system }} <small class="text-muted">({{ campaign[system]|length }} session{% if
-              campaign[system]|length > 1 %}s{% endif %})</small></h6>
+          <h6 class="text-primary">{{ system }} <small class="text-muted">({{ games|length }} campagne{% if games|length
+              > 1 %}s{% endif %})</small></h6>
           <div class="table-responsive">
             <table class="table table-sm table-striped table-bordered">
               <thead class="table-light">
                 <tr>
                   <th>#</th>
                   <th>Nom de la session</th>
+                  <th>MJ</th>
+                  <th>Sessions</th>
                 </tr>
               </thead>
               <tbody>
-                {% for element in campaign[system] %}
+                {% for game, info in campaign[system]|dictsort(by='value.count', reverse=true) %}
                 <tr>
                   <td>{{ loop.index }}</td>
-                  <td>{{ element }}</td>
+                  <td>{{ game }}</td>
+                  <td>{{ info.gm }}</td>
+                  <td>{{ info.count }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -104,6 +116,7 @@
         </div>
         {% endfor %}
       </div>
+
     </div>
   </div>
 </div>
@@ -112,7 +125,7 @@
 <!-- MJ Ranking Section -->
 <div class="card mb-4">
   <div class="card-body">
-    <h5 class="card-title text-success text-center"><i class="bi bi-trophy"></i> Classement des MJs</h5>
+    <h5 class="card-title text-center"><i class="bi bi-trophy"></i> Classement des MJs</h5>
     <div class="table-responsive">
       <table class="table table-striped text-center mb-0">
         <thead>

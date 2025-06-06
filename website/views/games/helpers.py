@@ -192,7 +192,8 @@ def handle_add_player(game, data, bot):
         user.init_on_load()
 
     if not user.is_player:
-        abort(500, "Cette personne n'est pas un·e joueur·euse sur le Discord")
+        flash("Cette personne n'est pas un·e joueur·euse sur le Discord", "danger")
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
     register_user_to_game(game, user, bot)
 

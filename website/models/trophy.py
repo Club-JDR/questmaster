@@ -4,6 +4,7 @@ from website.extensions import db
 from website.utils.logger import logger
 from .user import User
 
+
 class Trophy(db.Model):
     __tablename__ = "trophy"
 
@@ -15,6 +16,7 @@ class Trophy(db.Model):
     def __str__(self):
         return self.name
 
+
 class UserTrophy(db.Model):
     __tablename__ = "user_trophy"
 
@@ -25,12 +27,15 @@ class UserTrophy(db.Model):
     user = db.relationship("User", back_populates="trophies")
     trophy = db.relationship("Trophy")
 
+
 def add_trophy_to_user(user_id, trophy_id, amount=1):
     trophy = Trophy.query.get(trophy_id)
     if not trophy:
         return
 
-    user_trophy = UserTrophy.query.filter_by(user_id=user_id, trophy_id=trophy_id).first()
+    user_trophy = UserTrophy.query.filter_by(
+        user_id=user_id, trophy_id=trophy_id
+    ).first()
 
     if trophy.unique:
         if user_trophy is None:
@@ -43,7 +48,9 @@ def add_trophy_to_user(user_id, trophy_id, amount=1):
         if user_trophy:
             user_trophy.quantity += amount
         else:
-            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=amount)
+            user_trophy = UserTrophy(
+                user_id=user_id, trophy_id=trophy_id, quantity=amount
+            )
             db.session.add(user_trophy)
 
     db.session.commit()

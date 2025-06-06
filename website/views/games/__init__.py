@@ -343,9 +343,11 @@ def manage_game_registration(game_id):
     game = db.get_or_404(Game, game_id)
 
     if game.status == "archived":
-        abort(500, "Cannot manage an archived game.")
+        flash("Impossible de gérer les joueur·euses d'une partie archivée.", "danger")
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
     if game.gm_id != user_id and not payload["is_admin"]:
-        abort(403)
+        flash("Vous n'êtes pas autorisé·e à faire cette action.", "danger")
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
     data = request.values.to_dict()
     action = data.get("action")
@@ -356,10 +358,12 @@ def manage_game_registration(game_id):
         elif action == "add":
             handle_add_player(game, data, bot)
         else:
-            abort(400, "Invalid action.")
+            flash("Action demandée non gérée.", "danger")
+            return redirect(url_for("annonces.get_game_details", game_id=game.id))
     except Exception as e:
         logger.exception("Error during game registration management")
-        abort(500, str(e))
+        flash(f"Erreur pendant l'inscription: {e}.", "danger")
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
