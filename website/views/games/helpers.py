@@ -95,7 +95,8 @@ def get_game_if_authorized(payload, game_id):
     """
     game = db.get_or_404(Game, game_id)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
-        abort(403)
+        flash("Seul·e le·a MJ de l'annonce peut faire cette opération", "danger")
+        return redirect(url_for("annonces.get_game_details", game_id=game_id))
     return game
 
 

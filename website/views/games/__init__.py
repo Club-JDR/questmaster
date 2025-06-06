@@ -104,7 +104,8 @@ def create_game():
         logger.warning(
             f"Unauthorized game creation attempt by user: {payload.get('user_id', 'Unknown')}"
         )
-        abort(403)
+        flash("Vous devez être MJ pour poster une annonce.", "danger")
+        return redirect(url_for("annonces.search_games"))
 
     data = request.values.to_dict()
     gm_id = data["gm_id"]
@@ -137,7 +138,8 @@ def create_game():
         if is_open:
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
-        abort(500, e)
+        flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
+        return redirect(url_for("annonces.search_games"))
 
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
@@ -177,7 +179,7 @@ def edit_game(game_id):
         if post:
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
-        abort(500, e)
+        flash("Une erreur est survenue pendant l'enregistrement.", "danger")
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
@@ -202,7 +204,7 @@ def change_game_status(game_id):
             bot.delete_role(game.role)
             logger.info(f"Game {game.id} role {game.role} has been deleted")
     except Exception as e:
-        abort(500, e)
+        flash("Une erreur est survenue pendant la modification de statut.", "danger")
 
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
@@ -218,7 +220,11 @@ def add_game_session(game_id):
     start = request.values.to_dict()["date_start"]
     end = request.values.to_dict()["date_end"]
     if start > end:
-        abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
+        flash(
+            "Impossible d'ajouter une session qui se termine avant de commencer",
+            "danger",
+        )
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
     create_game_session(
         game,
         start,
@@ -237,7 +243,8 @@ def add_game_session(game_id):
             end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
         )
     except Exception as e:
-        abort(500, e)
+        flash("Une erreur est survenue pendant la création de la session.", "danger")
+        return redirect(url_for("annonces.search_games"))
     return redirect(url_for("annonces.get_game_details", game_id=game_id))
 
 
@@ -258,7 +265,11 @@ def edit_game_session(game_id, session_id):
         game, "Session Edit", f"{old_start}/{old_end} -> {session.start}/{session.end}"
     )
     if session.start > session.end:
-        abort(500, "Impossible d'ajouter une session qui se termine avant de commencer")
+        flash(
+            "Impossible d'ajouter une session qui se termine avant de commencer.",
+            "danger",
+        )
+        return redirect(url_for("annonces.get_game_details", game_id=game.id))
     try:
         db.session.commit()
         logger.info(
@@ -273,7 +284,7 @@ def edit_game_session(game_id, session_id):
             old_end=old_end,
         )
     except Exception as e:
-        abort(500, e)
+        flash("Erreur lors de la modification de la session.", "danger")
     return redirect(url_for("annonces.get_game_details", game_id=game_id))
 
 
@@ -300,7 +311,7 @@ def remove_game_session(game_id, session_id):
             end=end.strftime(HUMAN_TIMEFORMAT),
         )
     except Exception as e:
-        abort(500, e)
+        flash("Erreur lors de la suppression de la session.", "danger")
     return redirect(url_for("annonces.get_game_details", game_id=game_id))
 
 
@@ -368,11 +379,12 @@ def manage_game_registration(game_id):
     return redirect(url_for("annonces.get_game_details", game_id=game.id))
 
 
+@game_bp.route("/annonces/<game_id>/cloner/", methods=["GET"])
 @game_bp.route("/annonces/<game_id>/editer/", methods=["GET"])
 @login_required
 def get_game_edit_form(game_id):
     """
-    Get form to edit a game.
+    Get form to edit or clone a game.
     """
     payload = who()
     game = get_game_if_authorized(payload, game_id)
@@ -382,6 +394,7 @@ def get_game_edit_form(game_id):
         game=game,
         systems=System.get_systems(),
         vtts=Vtt.get_vtts(),
+        clone=True if "cloner" in request.path else False,
     )
 
 

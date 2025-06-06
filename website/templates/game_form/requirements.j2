@@ -5,8 +5,8 @@
       <div class="mb-2">
         <div class="btn-group" role="group" aria-label="SessionType">
           <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game
-            %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" %}disabled{% endif%} {% else
-            %}checked{%endif%}>
+            %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" and not clone %}disabled{%
+            endif%} {% else %}checked{%endif%}>
           <label class="btn btn-outline-success btn-sm" for="oneshot">One Shot</label>
           <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off" {% if game
             %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" %}disabled{% endif%}{%endif%}{%
