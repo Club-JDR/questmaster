@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from website.utils.logger import logger
 from website.extensions import db
-from website.models import Game, GameSession, GameEvent, Channel, User
+from website.models import Game, GameSession, GameEvent, Channel, User, Trophy, UserTrophy
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT
 from website.views.auth import who
@@ -23,6 +23,34 @@ def generate_game_slug(name, gm_name, existing_slugs):
         slug = f"{base_slug}-{i}"
         i += 1
     return slug
+
+def add_trophy_to_user(user_id, trophy_id, amount=1):
+    trophy = Trophy.query.get(trophy_id)
+    if not trophy:
+        return
+
+    user_trophy = UserTrophy.query.filter_by(
+        user_id=user_id, trophy_id=trophy_id
+    ).first()
+
+    if trophy.unique:
+        if user_trophy is None:
+            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=1)
+            db.session.add(user_trophy)
+        else:
+            # Do nothing if already has it
+            return
+    else:
+        if user_trophy:
+            user_trophy.quantity += amount
+        else:
+            user_trophy = UserTrophy(
+                user_id=user_id, trophy_id=trophy_id, quantity=amount
+            )
+            db.session.add(user_trophy)
+
+    db.session.commit()
+
 
 def get_filtered_games(request_args_source):
     """

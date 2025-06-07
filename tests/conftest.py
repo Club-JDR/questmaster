@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from website import create_app, db
 import pytest
 
 # Load env BEFORE importing app
@@ -68,18 +69,22 @@ Ce scénario n'existe pas, c'est uniquement une annonce qui sert à faire des te
         session["user_id"] = TestConfig.admin_id
 
 
-@pytest.fixture()
-def app():
-    website.app.config["WTF_CSRF_METHODS"] = []  # disable CSRF for tests
-    yield website.app
+@pytest.fixture(scope='module')
+def test_app():
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+@pytest.fixture
+def session(test_app):
+    with test_app.app_context():
+        yield db.session
 
 
-@pytest.fixture()
-def client(app):
-    return app.test_client()
-
-
-@pytest.fixture(autouse=True)
-def slow_down_tests():
-    yield
-    time.sleep(1)
+# @pytest.fixture(autouse=True)
+# def slow_down_tests():
+#     yield
+#     time.sleep(1)

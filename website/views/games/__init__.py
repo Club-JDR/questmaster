@@ -28,14 +28,6 @@ GAME_LIST_TEMPLATE = "games.j2"
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 
 
-
-@game_bp.route("/annonces/<int:game_id>/gerer/", methods=["POST"])
-@login_required
-def legacy_manage_game_registration(game_id):
-    game = Game.query.get_or_404(game_id)
-    return redirect(url_for("game.manage_game_registration", slug=game.slug), code=301)
-
-
 @game_bp.route("/", methods=["GET"])
 @game_bp.route("/annonces/", methods=["GET"])
 def search_games():

@@ -28,29 +28,4 @@ class UserTrophy(db.Model):
     trophy = db.relationship("Trophy")
 
 
-def add_trophy_to_user(user_id, trophy_id, amount=1):
-    trophy = Trophy.query.get(trophy_id)
-    if not trophy:
-        return
 
-    user_trophy = UserTrophy.query.filter_by(
-        user_id=user_id, trophy_id=trophy_id
-    ).first()
-
-    if trophy.unique:
-        if user_trophy is None:
-            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=1)
-            db.session.add(user_trophy)
-        else:
-            # Do nothing if already has it
-            return
-    else:
-        if user_trophy:
-            user_trophy.quantity += amount
-        else:
-            user_trophy = UserTrophy(
-                user_id=user_id, trophy_id=trophy_id, quantity=amount
-            )
-            db.session.add(user_trophy)
-
-    db.session.commit()
