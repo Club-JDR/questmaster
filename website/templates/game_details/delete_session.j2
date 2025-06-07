@@ -13,7 +13,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <form method="post" action="/annonces/{{game.id}}/sessions/{{session.id}}/supprimer">
+        <form method="post" action="/annonces/{{game.slug}}/sessions/{{session.id}}/supprimer">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" name="status" type="button" class="btn btn-danger">Supprimer</button>
         </form>

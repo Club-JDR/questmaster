@@ -6,6 +6,7 @@ from sqlalchemy.ext.mutable import MutableDict
 import sqlalchemy.dialects.postgresql as pg
 from schema import Schema, SchemaError
 
+
 GAME_TYPES = ("oneshot", "campaign")
 GAME_STATUS = ("draft", "open", "closed", "archived")
 GAME_FREQUENCIES = ("weekly", "bi-weekly", "monthly", "other")
@@ -36,6 +37,7 @@ class Game(db.Model):
     COLORS = {"oneshot": 0x198754, "campaign": 0x0D6EFD}
 
     id = db.Column(db.BigInteger(), primary_key=True)
+    slug = db.Column(db.String(), unique=True, index=True)
     name = db.Column(db.String(), nullable=False)
     type = db.Column("type", Enum(*GAME_TYPES, name="game_type_enum"), nullable=False)
     length = db.Column(db.String(), nullable=False)

@@ -1,5 +1,5 @@
 <div class="modal fade" id="editPlayers" tabindex="-1" aria-labelledby="editPlayers" aria-hidden="true">
-  <form method="post" action="/annonces/{{game.id}}/gerer/">
+  <form method="post" action="/annonces/{{game.slug}}/gerer/">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">

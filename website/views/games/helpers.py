@@ -7,11 +7,22 @@ from website.extensions import db
 from website.models import Game, GameSession, GameEvent, Channel, User
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT
+from website.views.auth import who
+from slugify import slugify
 import yaml
 
 
 GAMES_PER_PAGE = 12
 
+
+def generate_game_slug(name, gm_name, existing_slugs):
+    base_slug = slugify(f"{name}-par-{gm_name}")
+    slug = base_slug
+    i = 2
+    while slug in existing_slugs:
+        slug = f"{base_slug}-{i}"
+        i += 1
+    return slug
 
 def get_filtered_games(request_args_source):
     """
@@ -89,14 +100,14 @@ def abort_if_not_gm(payload):
         abort(403)
 
 
-def get_game_if_authorized(payload, game_id):
+def get_game_if_authorized(payload, slug):
     """
     Return game if user is either the game's GM or admin
     """
-    game = db.get_or_404(Game, game_id)
+    game = Game.query.filter_by(slug=slug).first_or_404()
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         flash("Seul·e le·a MJ de l'annonce peut faire cette opération", "danger")
-        return redirect(url_for("annonces.get_game_details", game_id=game_id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
     return game
 
 
@@ -194,59 +205,47 @@ def handle_add_player(game, data, bot):
 
     if not user.is_player:
         flash("Cette personne n'est pas un·e joueur·euse sur le Discord", "danger")
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=game.slug))
 
-    register_user_to_game(game, user, bot)
+    payload = who()
+    force = payload["user_id"] == game.gm.id or payload.get("is_admin", False)
+
+    register_user_to_game(game, user, bot, force=force)
 
 
-def register_user_to_game(original_game, user, bot):
+def register_user_to_game(original_game, user, bot, force=False):
     """Concurrent-safe logic to register a user to a game and update state."""
     try:
-        # Lock the game row and load players in a separate transaction.
         game = (
             db.session.query(Game)
             .filter_by(id=original_game.id)
             .with_for_update()
             .first()
         )
-
-        # Make sure to reload players in a separate query (without joinedload).
         game = db.session.query(Game).filter_by(id=original_game.id).first()
-
-        # Check if the user is already in the game
         if user in game.players:
             logger.warning(f"User {user.id} already in Game {game.id}")
-            return  # No-op if already registered
-
-        # Check if the game is full
-        if len(game.players) >= game.party_size:
+            return
+        if len(game.players) >= game.party_size and not force:
             logger.warning(f"Game {game.id} is full. Cannot add user {user.id}")
             flash("La partie est complète.", "danger")
-            return redirect(url_for("annonces.get_game_details", game_id=game.id))
-
-        # Add the player to the game
+            return redirect(url_for("annonces.get_game_details", slug=game.slug))
+        if game.status == "closed" and not force:
+            logger.warning(f"Game {game.id} is closed. Cannot add user {user.id}")
+            flash("La partie est fermée.", "danger")
+            return redirect(url_for("annonces.get_game_details", slug=game.slug))
         game.players.append(user)
         create_game_event(game, "Add Player", user.id)
-
-        # Update game status to 'closed' if full and no party selection
-        if len(game.players) == game.party_size and not game.party_selection:
+        if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
             create_game_event(game, "Status Update", "closed")
-
-        # Commit the transaction
         db.session.commit()
-
         logger.info(f"User {user.id} registered to Game {game.id}")
         if game.status == "closed":
             logger.info(f"Game status for {game.id} has been updated to closed")
-
-        # Add role to user via the bot
         bot.add_role_to_user(user.id, game.role)
         logger.info(f"Role {game.role} added to user {user.id}")
-
-        # Send Discord embed notification
         send_discord_embed(game, type="register", player=user.id)
-
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.exception("Failed to register user due to DB error.")
@@ -275,6 +274,9 @@ def build_game_from_form(data, gm_id):
         status=data["action"],
         img=data.get("img"),
     )
+    existing_slugs = {g.slug for g in Game.query.with_entities(Game.slug).all()}
+    gm_name = db.get_or_404(User, str(gm_id)).name
+    game.slug = generate_game_slug(data["name"], gm_name, existing_slugs)
     game.party_selection = "party_selection" in data
     game.restriction_tags = parse_restriction_tags(data)
     return game

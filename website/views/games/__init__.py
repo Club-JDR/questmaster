@@ -28,6 +28,14 @@ GAME_LIST_TEMPLATE = "games.j2"
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 
 
+
+@game_bp.route("/annonces/<int:game_id>/gerer/", methods=["POST"])
+@login_required
+def legacy_manage_game_registration(game_id):
+    game = Game.query.get_or_404(game_id)
+    return redirect(url_for("game.manage_game_registration", slug=game.slug), code=301)
+
+
 @game_bp.route("/", methods=["GET"])
 @game_bp.route("/annonces/", methods=["GET"])
 def search_games():
@@ -62,13 +70,13 @@ def game_cards():
     return render_template("game_cards_container.j2", games=games.items)
 
 
-@game_bp.route("/annonces/<game_id>/", methods=["GET"])
-def get_game_details(game_id):
+@game_bp.route("/annonces/<slug>/", methods=["GET"])
+def get_game_details(slug):
     """
     Get details for a given game.
     """
     payload = who()
-    game = db.get_or_404(Game, game_id)
+    game = Game.query.filter_by(slug=slug).first_or_404()
     is_player = False
     for player in game.players:
         if "user_id" in payload and payload["user_id"] == player.id:
@@ -141,17 +149,17 @@ def create_game():
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
         return redirect(url_for("annonces.search_games"))
 
-    return redirect(url_for("annonces.get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", slug=game.slug))
 
 
-@game_bp.route("/annonces/<game_id>/editer/", methods=["POST"])
+@game_bp.route("/annonces/<slug>/editer/", methods=["POST"])
 @login_required
-def edit_game(game_id):
+def edit_game(slug):
     payload = who()
     data = request.values.to_dict()
     bot = get_bot()
 
-    game = get_game_if_authorized(payload, game_id)
+    game = get_game_if_authorized(payload, slug)
     gm_id = data["gm_id"]
     post = game.status == "draft" and data["action"] == "open"
 
@@ -180,18 +188,18 @@ def edit_game(game_id):
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
-    return redirect(url_for("annonces.get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/statut/", methods=["POST"])
+@game_bp.route("/annonces/<slug>/statut/", methods=["POST"])
 @login_required
-def change_game_status(game_id):
+def change_game_status(slug):
     """
     Change game status and redirect to the game details.
     """
     payload = who()
     bot = get_bot()
-    game = get_game_if_authorized(payload, game_id)
+    game = get_game_if_authorized(payload, slug)
     status = request.values.to_dict()["status"]
     game.status = status
     create_game_event(game, "Status Update", status)
@@ -206,17 +214,17 @@ def change_game_status(game_id):
     except Exception as e:
         flash("Une erreur est survenue pendant la modification de statut.", "danger")
 
-    return redirect(url_for("annonces.get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/sessions/ajouter", methods=["POST"])
+@game_bp.route("/annonces/<slug>/sessions/ajouter", methods=["POST"])
 @login_required
-def add_game_session(game_id):
+def add_game_session(slug):
     """
     Add session to a game and redirect to the game details.
     """
     payload = who()
-    game = get_game_if_authorized(payload, game_id)
+    game = get_game_if_authorized(payload, slug)
     start = request.values.to_dict()["date_start"]
     end = request.values.to_dict()["date_end"]
     if start > end:
@@ -224,7 +232,7 @@ def add_game_session(game_id):
             "Impossible d'ajouter une session qui se termine avant de commencer",
             "danger",
         )
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
     create_game_session(
         game,
         start,
@@ -245,17 +253,17 @@ def add_game_session(game_id):
     except Exception as e:
         flash("Une erreur est survenue pendant la création de la session.", "danger")
         return redirect(url_for("annonces.search_games"))
-    return redirect(url_for("annonces.get_game_details", game_id=game_id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/sessions/<session_id>/editer", methods=["POST"])
+@game_bp.route("/annonces/<slug>/sessions/<session_id>/editer", methods=["POST"])
 @login_required
-def edit_game_session(game_id, session_id):
+def edit_game_session(slug, session_id):
     """
     Edit game session and redirect to the game details.
     """
     payload = who()
-    game = get_game_if_authorized(payload, game_id)
+    game = get_game_if_authorized(payload, slug)
     session = db.get_or_404(GameSession, session_id)
     old_start = session.start.strftime(HUMAN_TIMEFORMAT)
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
@@ -269,11 +277,11 @@ def edit_game_session(game_id, session_id):
             "Impossible d'ajouter une session qui se termine avant de commencer.",
             "danger",
         )
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
     try:
         db.session.commit()
         logger.info(
-            f"Session {old_start}/{old_end} of Game {game.id} has been updated to {session.start}/{session.end}"
+            f"Session {old_start}/{old_end} of Game {game.slug} has been updated to {session.start}/{session.end}"
         )
         send_discord_embed(
             game,
@@ -285,17 +293,17 @@ def edit_game_session(game_id, session_id):
         )
     except Exception as e:
         flash("Erreur lors de la modification de la session.", "danger")
-    return redirect(url_for("annonces.get_game_details", game_id=game_id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/sessions/<session_id>/supprimer", methods=["POST"])
+@game_bp.route("/annonces/<slug>/sessions/<session_id>/supprimer", methods=["POST"])
 @login_required
-def remove_game_session(game_id, session_id):
+def remove_game_session(slug, session_id):
     """
     Remove session from a game and redirect to the game details.
     """
     payload = who()
-    game = get_game_if_authorized(payload, game_id)
+    game = get_game_if_authorized(payload, slug)
     session = db.get_or_404(GameSession, session_id)
     start = session.start
     end = session.end
@@ -303,7 +311,7 @@ def remove_game_session(game_id, session_id):
     create_game_event(game, "Session Delete", f"{start}/{end}")
     try:
         db.session.commit()
-        logger.info(f"Session {start}/{end} of Game {game.id} has been removed")
+        logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
         send_discord_embed(
             game,
             type="del-session",
@@ -312,25 +320,25 @@ def remove_game_session(game_id, session_id):
         )
     except Exception as e:
         flash("Erreur lors de la suppression de la session.", "danger")
-    return redirect(url_for("annonces.get_game_details", game_id=game_id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/inscription/", methods=["POST"])
+@game_bp.route("/annonces/<slug>/inscription/", methods=["POST"])
 @login_required
-def register_game(game_id):
+def register_game(slug):
     """Register a player to a game."""
     payload = who()
     user_id = payload["user_id"]
     bot = get_bot()
-    game = db.get_or_404(Game, game_id)
+    game = Game.query.filter_by(slug=slug).first_or_404()
 
     if game.status in ["closed", "archived"]:
         flash("Ce jeu est fermé aux inscriptions.", "warning")
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
 
     if game.gm_id == user_id:
         flash("Vous ne pouvez pas vous inscrire à votre propre partie.", "warning")
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
 
     user = db.get_or_404(User, user_id)
     try:
@@ -341,24 +349,24 @@ def register_game(game_id):
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
 
-    return redirect(url_for("annonces.get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/gerer/", methods=["POST"])
+@game_bp.route("/annonces/<slug>/gerer/", methods=["POST"])
 @login_required
-def manage_game_registration(game_id):
+def manage_game_registration(slug):
     """Manage player registration for a game."""
     payload = who()
     user_id = payload["user_id"]
     bot = get_bot()
-    game = db.get_or_404(Game, game_id)
+    game = Game.query.filter_by(slug=slug).first_or_404()
 
     if game.status == "archived":
         flash("Impossible de gérer les joueur·euses d'une partie archivée.", "danger")
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
     if game.gm_id != user_id and not payload["is_admin"]:
         flash("Vous n'êtes pas autorisé·e à faire cette action.", "danger")
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
 
     data = request.values.to_dict()
     action = data.get("action")
@@ -370,24 +378,24 @@ def manage_game_registration(game_id):
             handle_add_player(game, data, bot)
         else:
             flash("Action demandée non gérée.", "danger")
-            return redirect(url_for("annonces.get_game_details", game_id=game.id))
+            return redirect(url_for("annonces.get_game_details", slug=slug))
     except Exception as e:
         logger.exception("Error during game registration management")
         flash(f"Erreur pendant l'inscription: {e}.", "danger")
-        return redirect(url_for("annonces.get_game_details", game_id=game.id))
+        return redirect(url_for("annonces.get_game_details", slug=slug))
 
-    return redirect(url_for("annonces.get_game_details", game_id=game.id))
+    return redirect(url_for("annonces.get_game_details", slug=slug))
 
 
-@game_bp.route("/annonces/<game_id>/cloner/", methods=["GET"])
-@game_bp.route("/annonces/<game_id>/editer/", methods=["GET"])
+@game_bp.route("/annonces/<slug>/cloner/", methods=["GET"])
+@game_bp.route("/annonces/<slug>/editer/", methods=["GET"])
 @login_required
-def get_game_edit_form(game_id):
+def get_game_edit_form(slug):
     """
     Get form to edit or clone a game.
     """
     payload = who()
-    game = get_game_if_authorized(payload, game_id)
+    game = get_game_if_authorized(payload, slug)
     return render_template(
         "game_form.j2",
         payload=payload,

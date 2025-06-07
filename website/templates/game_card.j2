@@ -1,4 +1,4 @@
-<div class="col" data-game-id="{{ game.id }}">
+<div class="col" data-game-id="{{game.slug}}">
   <div class="card game-card shadow h-100 shiny">
     <div
       class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
@@ -31,7 +31,7 @@
           <i class="bi bi-clock-history"></i>&nbsp; {{ game.length }}
         </div>
       </div>
-      <a href="/annonces/{{ game.id }}/" class="stretched-link"></a>
+      <a href="/annonces/{{game.slug}}/" class="stretched-link"></a>
     </div>
     {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
     <div class="card-footer text-center">

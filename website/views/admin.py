@@ -62,6 +62,7 @@ class GameSessionAdmin(AdminView):
 class GameAdmin(AdminView):
     column_list = [
         "name",
+        "slug",
         "type",
         "length",
         "gm_id",
@@ -89,6 +90,7 @@ class GameAdmin(AdminView):
     form_columns = column_list + ["players"]
     column_editable_list = [
         "name",
+        "slug",
         "type",
         "length",
         "restriction",

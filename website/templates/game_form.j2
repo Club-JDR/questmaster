@@ -9,13 +9,14 @@
   %}
   l'{% else %}Nouvelle {% endif%}annonce
 </h1>
-<form method="post" action="{% if game and not clone %}/annonces/{{ game.id }}/editer/{% else %}/annonce/{% endif %}"
+<form method="post" action="{% if game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}"
   class="row needs-validation" novalidate>
   {% include 'game_form/basics.j2' %}
   {% include 'game_form/requirements.j2' %}
   {% include 'game_form/optional.j2' %}
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="gm_id" value="{% if game %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
+  <input type="hidden" name="gm_id"
+    value="{% if game and not clone %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
 </form>
 {% endblock %}
 {% block scripts %} {{ super() }}

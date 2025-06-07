@@ -90,7 +90,7 @@
   <div class="row pt-2 mx-auto">
     <button type="submit" name="action" value="draft" class="btn btn-secondary">Enregistrer</button>
   </div>
-  {% if not game or game.status == 'draft' %}
+  {% if not game or game.status == 'draft' or clone %}
   <div class="row pt-2 mx-auto">
     <button type="submit" name="action" value="open" class="btn btn-primary">Publier</button>
   </div>{% elif game.status != 'open' %} {% endif %}

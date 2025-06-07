@@ -117,7 +117,7 @@ def get_month_games_json():
                 "start": session.start.isoformat(),
                 "end": session.end.isoformat(),
                 "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
-                "url": url_for("annonces.get_game_details", game_id=session.game.id),
+                "url": url_for("annonces.get_game_details", slug=session.game.slug),
             }
         )
 

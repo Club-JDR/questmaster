@@ -68,7 +68,7 @@ def build_annonce_embed(game, *_):
             {"name": "Avertissement", "value": restriction_msg},
             {
                 "name": "Pour s'inscrire :",
-                "value": f"https://questmaster.club-jdr.fr/annonces/{game.id}/",
+                "value": f"https://questmaster.club-jdr.fr/annonces/{game.slug}/",
             },
         ],
         "image": {"url": game.img},
@@ -85,7 +85,7 @@ def build_add_session_embed(game, start, end, *_):
         "description": (
             f"<@&{game.role}>\nVotre MJ a ajouté une nouvelle session : du **{start}** au **{end}**\n\n"
             f"Pour ne pas l'oublier, pensez à l'ajouter à votre calendrier depuis "
-            f"[l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{game.id}).\n"
+            f"[l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{game.slug}).\n"
             f"Si vous avez un empêchement, prévenez votre MJ en avance."
         ),
     }

@@ -6,7 +6,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form method="post" action="/annonces/{{game.id}}/sessions/ajouter" class="row">
+        <form method="post" action="/annonces/{{game.slug}}/sessions/ajouter" class="row">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="row">
             <div class="input-group mb-3">

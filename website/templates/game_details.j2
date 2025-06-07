@@ -11,7 +11,7 @@
 <div class="container my-4">
   <div class="main-content">
     <div class="game-and-players">
-      <div class="game-details-card" id="game-details-container" data-game-id="{{ game.id }}">
+      <div class="game-details-card" id="game-details-container" data-game-id="{{ game.slug }}">
         <img src="{{ game.img or '/static/img/placeholder.jpeg' }}" alt="{{ game.name }}" class="game-image" />
         <div class="game-info">
           <div class="info-top">
@@ -41,12 +41,13 @@
             </div>
             <div class="description-section">
               <h5>Description</h5>
-              <p style="white-space: pre-line;">{{ game.description or 'Aucune description.' }}</p>
+              <p style="white-space: pre-line;" class="preformatted-content">{{ (game.description or 'Aucune
+                description.') | urlize }}</p>
             </div>
             {% if game.complement != "" %}
             <div class="additional-info">
               <strong>Informations complémentaires</strong>
-              <p class="small text-muted">{{ game.complement }}</p>
+              <p class="small text-muted preformatted-content">{{ game.complement | urlize }}</p>
             </div>
             {% endif %}
           </div>
@@ -170,7 +171,7 @@
             </div>
           </div>
           {% if payload['user_id'] != game.gm.id and game.status == "open" %}
-          <form class="row" method="post" action="/annonces/{{ game.id }}/inscription/">
+          <form class="row" method="post" action="/annonces/{{ game.slug }}/inscription/">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
               data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% else %}S'inscrire à la partie.{% endif %}">
@@ -185,10 +186,10 @@
           {% endif %}
         </div>
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
-        <form class="actions mt-2" method="post" action="/annonces/{{game.id}}/statut/">
+        <form class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
             data-bs-title="Modifier le contenu de l'annonce.">
-            <a href="/annonces/{{game.id}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
+            <a href="/annonces/{{game.slug}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
               data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
           </span>
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
@@ -223,7 +224,7 @@
           {% endif %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
             data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
-            <a href="/annonces/{{game.id}}/cloner/" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
+            <a href="/annonces/{{game.slug}}/cloner/" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
               data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
           </span>
         </form>
@@ -252,7 +253,7 @@
             </add-to-calendar-button>
             {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
             <div class="btn-group calendar-btn-group" role="group">
-              <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
+              <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                 data-bs-target="#editSessionModal{{session.id}}">
                 <i class="bi bi-pencil-square"></i>
               </button>
