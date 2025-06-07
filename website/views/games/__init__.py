@@ -71,7 +71,7 @@ def get_game_details(game_id):
     game = db.get_or_404(Game, game_id)
     is_player = False
     for player in game.players:
-        if payload != {} and payload["user_id"] == player.id:
+        if "user_id" in payload and payload["user_id"] == player.id:
             is_player = True
     return render_template(
         "game_details.j2", payload=payload, game=game, is_player=is_player
