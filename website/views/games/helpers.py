@@ -15,10 +15,16 @@ from website.models import (
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.views.games.embeds import send_discord_embed, DEFAULT_TIMEFORMAT
 from website.views.auth import who
-from website.models.trophy import BADGE_OS_ID, BADGE_OS_GM_ID, BADGE_CAMPAIGN_ID, BADGE_CAMPAIGN_GM_ID
+from website.models.trophy import (
+    BADGE_OS_ID,
+    BADGE_OS_GM_ID,
+    BADGE_CAMPAIGN_ID,
+    BADGE_CAMPAIGN_GM_ID,
+)
 from slugify import slugify
 from config import GAME_DETAILS_ROUTE, GAMES_PER_PAGE
 import yaml
+
 
 def generate_game_slug(name, gm_name, existing_slugs):
     base_slug = slugify(f"{name}-par-{gm_name}")
@@ -347,7 +353,6 @@ def rollback_discord_resources(bot, game):
         logger.info(f"Role {game.role} deleted")
 
 
-
 def add_trophy_to_user(user_id, trophy_id, amount=1):
     trophy = Trophy.query.get(trophy_id)
     if not trophy:
@@ -378,15 +383,14 @@ def add_trophy_to_user(user_id, trophy_id, amount=1):
 
 def archive_game(game, bot):
     if game.type == "oneshot":
-      add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_OS_GM_ID)
-      for user in game.players:
-          add_trophy_to_user(user_id=user.id, trophy_id=BADGE_OS_ID)
+        add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_OS_GM_ID)
+        for user in game.players:
+            add_trophy_to_user(user_id=user.id, trophy_id=BADGE_OS_ID)
     elif game.type == "campaign":
-      add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
-      for user in game.players:
-          add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
+        add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
+        for user in game.players:
+            add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
     bot.delete_channel(game.channel)
     logger.info(f"Game {game.id} channel {game.channel} has been deleted")
     bot.delete_role(game.role)
     logger.info(f"Game {game.id} role {game.role} has been deleted")
-    

@@ -74,7 +74,6 @@ class Game(db.Model):
         server_default="draft",
     )
 
-
     @orm.validates("classification")
     def validate_classification(self, key, value):
         try:
@@ -89,4 +88,3 @@ class Game(db.Model):
         if int(value) < 1:
             raise ValueError(f"Number of players must be > 1, was {value}")
         return value
-

@@ -83,5 +83,4 @@ def create_app():
         db.create_all()
         seed_trophies()
 
-
     return app

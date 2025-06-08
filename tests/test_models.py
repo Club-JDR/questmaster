@@ -104,7 +104,6 @@ def test_game_session_model(session):
     assert session_obj.game == game
 
 
-
 def test_duplicate_unique_trophy(session):
     user = User(id="33333333333333333")
     trophy = Trophy(name="UniqueAward", icon="medal.png", unique=True)
