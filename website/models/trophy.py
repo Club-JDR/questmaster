@@ -5,6 +5,12 @@ from website.utils.logger import logger
 from .user import User
 
 
+BADGE_OS_ID = 1
+BADGE_OS_GM_ID = 2
+BADGE_CAMPAIGN_ID = 3
+BADGE_CAMPAIGN_GM_ID = 4
+
+
 class Trophy(db.Model):
     __tablename__ = "trophy"
 

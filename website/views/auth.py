@@ -2,6 +2,7 @@ from flask import redirect, url_for, session, abort, request, Blueprint
 from urllib.parse import urlparse, urljoin
 from website.extensions import db, discord
 from website.models import User
+from config import SEARCH_GAMES_ROUTE
 import functools
 
 auth_bp = Blueprint("auth", __name__)
@@ -43,7 +44,7 @@ def login():
     """
     session.permanent = True
     next_url = (
-        session.get("next_url") or request.referrer or url_for("annonces.search_games")
+        session.get("next_url") or request.referrer or url_for(SEARCH_GAMES_ROUTE)
     )
     session["next_url"] = next_url
     return discord.create_session()
@@ -56,7 +57,7 @@ def logout():
     """
     session.clear()
     discord.revoke()
-    return redirect(url_for("annonces.search_games"))
+    return redirect(url_for(SEARCH_GAMES_ROUTE))
 
 
 def is_safe_url(target):
@@ -88,7 +89,7 @@ def callback():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
-    redirect_url = session.pop("next_url", url_for("annonces.search_games"))
+    redirect_url = session.pop("next_url", url_for(SEARCH_GAMES_ROUTE))
     if not is_safe_url(redirect_url):
-        redirect_url = url_for("annonces.search_games")
+        redirect_url = url_for(SEARCH_GAMES_ROUTE)
     return redirect(redirect_url)

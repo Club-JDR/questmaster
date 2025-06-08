@@ -73,7 +73,7 @@ class Game(db.Model):
         nullable=False,
         server_default="draft",
     )
-    events = db.relationship("GameEvent", backref="game")
+
 
     @orm.validates("classification")
     def validate_classification(self, key, value):
@@ -90,10 +90,3 @@ class Game(db.Model):
             raise ValueError(f"Number of players must be > 1, was {value}")
         return value
 
-    def log_event(self, event_type, description):
-        from website.models.game_event import GameEvent
-
-        event = GameEvent(
-            game_id=self.id, event_type=event_type, description=description
-        )
-        db.session.add(event)

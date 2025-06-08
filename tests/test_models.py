@@ -7,7 +7,6 @@ from website.models import (
     System,
     Channel,
     Game,
-    GameEvent,
     GameSession,
 )
 from datetime import datetime, timedelta
@@ -28,7 +27,7 @@ def test_invalid_user_id():
 
 def test_trophy_and_user_trophy(session):
     user = User(id="11111111111111111")
-    trophy = Trophy(name="Badge OS", icon="icon.png", unique=True)
+    trophy = Trophy(name="Badge test", icon="icon.png", unique=True)
     session.add_all([user, trophy])
     session.commit()
 
@@ -104,14 +103,6 @@ def test_game_session_model(session):
     session.commit()
     assert session_obj.game == game
 
-
-def test_game_event_model(session):
-    game = Game.query.first()
-    event = GameEvent(game_id=game.id, event_type="Test", description="Testing event")
-    session.add(event)
-    session.commit()
-    assert event.event_type == "Test"
-    assert event.game == game
 
 
 def test_duplicate_unique_trophy(session):

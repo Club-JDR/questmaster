@@ -106,16 +106,6 @@ class GameAdmin(AdminView):
     page_size = 10
 
 
-class GameEventAdmin(AdminView):
-    form_columns = ["game_id", "timestamp", "event_type", "description"]
-    column_list = ["game_id", "timestamp", "event_type", "description"]
-    column_searchable_list = ["game_id", "event_type"]
-    column_filters = ["game_id", "event_type"]
-    page_size = 20
-    can_create = False
-    can_edit = False
-
-
 class UserTrophyAdmin(AdminView):
     form_columns = ("user", "trophy", "quantity")
 

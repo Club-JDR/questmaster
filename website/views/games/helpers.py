@@ -7,22 +7,18 @@ from website.extensions import db
 from website.models import (
     Game,
     GameSession,
-    GameEvent,
     Channel,
     User,
     Trophy,
     UserTrophy,
 )
 from website.utils.discord import PLAYER_ROLE_PERMISSION
-from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT
+from website.views.games.embeds import send_discord_embed, DEFAULT_TIMEFORMAT
 from website.views.auth import who
+from website.models.trophy import BADGE_OS_ID, BADGE_OS_GM_ID, BADGE_CAMPAIGN_ID, BADGE_CAMPAIGN_GM_ID
 from slugify import slugify
+from config import GAME_DETAILS_ROUTE, GAMES_PER_PAGE
 import yaml
-
-
-GAMES_PER_PAGE = 12
-GAME_DETAILS_ROUTE = "annonces.get_game_details"
-
 
 def generate_game_slug(name, gm_name, existing_slugs):
     base_slug = slugify(f"{name}-par-{gm_name}")
@@ -32,34 +28,6 @@ def generate_game_slug(name, gm_name, existing_slugs):
         slug = f"{base_slug}-{i}"
         i += 1
     return slug
-
-
-def add_trophy_to_user(user_id, trophy_id, amount=1):
-    trophy = Trophy.query.get(trophy_id)
-    if not trophy:
-        return
-
-    user_trophy = UserTrophy.query.filter_by(
-        user_id=user_id, trophy_id=trophy_id
-    ).first()
-
-    if trophy.unique:
-        if user_trophy is None:
-            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=1)
-            db.session.add(user_trophy)
-        else:
-            # Do nothing if already has it
-            return
-    else:
-        if user_trophy:
-            user_trophy.quantity += amount
-        else:
-            user_trophy = UserTrophy(
-                user_id=user_id, trophy_id=trophy_id, quantity=amount
-            )
-            db.session.add(user_trophy)
-
-    db.session.commit()
 
 
 def get_filtered_games(request_args_source):
@@ -160,16 +128,6 @@ def create_game_session(game, start, end):
     logger.info(f"Session added for game {game.id} from {start} to {end}")
 
 
-def create_game_event(game, type, description=None):
-    """
-    Create an event for a game.
-    """
-    event = GameEvent(event_type=type, description=description)
-    db.session.add(event)
-    db.session.commit()
-    game.events.append(event)
-
-
 def delete_game_session(session):
     """
     Delete a session for a game.
@@ -218,7 +176,6 @@ def handle_remove_players(game, data, bot):
     for player in list(game.players):
         if str(player.id) not in data:
             game.players.remove(player)
-            create_game_event(game, "Remove Player", player.id)
             logger.info(f"User {player.id} removed from Game {game.id}")
             bot.remove_role_from_user(player.id, game.role)
             logger.info(f"Role {game.role} removed from Player {player.id}")
@@ -273,10 +230,8 @@ def register_user_to_game(original_game, user, bot, force=False):
             flash("La partie est fermée.", "danger")
             return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
         game.players.append(user)
-        create_game_event(game, "Add Player", user.id)
         if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
-            create_game_event(game, "Status Update", "closed")
         db.session.commit()
         logger.info(f"User {user.id} registered to Game {game.id}")
         if game.status == "closed":
@@ -362,10 +317,6 @@ def setup_game_post_creation(game, bot):
         game.date + timedelta(hours=float(game.session_length)),
     )
     logger.info("Initial game session created.")
-
-    create_game_event(game, "Game Creation")
-    logger.info("Initial game event registered.")
-
     game.role = bot.create_role(
         role_name=game.name,
         permissions=PLAYER_ROLE_PERMISSION,
@@ -394,3 +345,48 @@ def rollback_discord_resources(bot, game):
     if game.role:
         bot.delete_role(game.role)
         logger.info(f"Role {game.role} deleted")
+
+
+
+def add_trophy_to_user(user_id, trophy_id, amount=1):
+    trophy = Trophy.query.get(trophy_id)
+    if not trophy:
+        return
+
+    user_trophy = UserTrophy.query.filter_by(
+        user_id=user_id, trophy_id=trophy_id
+    ).first()
+
+    if trophy.unique:
+        if user_trophy is None:
+            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=1)
+            db.session.add(user_trophy)
+        else:
+            # Do nothing if already has it
+            return
+    else:
+        if user_trophy:
+            user_trophy.quantity += amount
+        else:
+            user_trophy = UserTrophy(
+                user_id=user_id, trophy_id=trophy_id, quantity=amount
+            )
+            db.session.add(user_trophy)
+    db.session.commit()
+    logger.info(f"User {user_id} got a trophy: {trophy.name}")
+
+
+def archive_game(game, bot):
+    if game.type == "oneshot":
+      add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_OS_GM_ID)
+      for user in game.players:
+          add_trophy_to_user(user_id=user.id, trophy_id=BADGE_OS_ID)
+    elif game.type == "campaign":
+      add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
+      for user in game.players:
+          add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
+    bot.delete_channel(game.channel)
+    logger.info(f"Game {game.id} channel {game.channel} has been deleted")
+    bot.delete_role(game.role)
+    logger.info(f"Game {game.id} role {game.role} has been deleted")
+    

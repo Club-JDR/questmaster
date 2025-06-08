@@ -2,7 +2,7 @@ from flask import render_template, Blueprint, jsonify, request, url_for
 from website.models import GameSession
 from website.views.auth import who
 from website.extensions import cache
-from website.views.games.helpers import GAME_DETAILS_ROUTE
+from config import GAME_DETAILS_ROUTE
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from collections import defaultdict, Counter

@@ -6,7 +6,7 @@ from website.utils.logger import configure_logging
 from website import models
 from website.bot import set_bot
 from website.views import admin as admin_view
-from website.extensions import db, migrate, csrf, cache, discord
+from website.extensions import db, migrate, csrf, cache, discord, seed_trophies
 from website.views import register_blueprints, register_filters
 
 
@@ -68,7 +68,6 @@ def create_app():
         index_view=admin_view.SecureAdminIndexView(),
     )
     admin.add_view(admin_view.GameAdmin(models.Game, db.session))
-    admin.add_view(admin_view.GameEventAdmin(models.GameEvent, db.session))
     admin.add_view(admin_view.GameSessionAdmin(models.GameSession, db.session))
     admin.add_view(admin_view.ChannelAdmin(models.Channel, db.session))
     admin.add_view(admin_view.UserAdmin(models.User, db.session))
@@ -79,4 +78,10 @@ def create_app():
 
     register_blueprints(app)
     register_filters(app)
+
+    with app.app_context():
+        db.create_all()
+        seed_trophies()
+
+
     return app

@@ -1,6 +1,9 @@
 import os
 from datetime import timedelta
 
+GAMES_PER_PAGE = 12
+GAME_DETAILS_ROUTE = "annonces.get_game_details"
+SEARCH_GAMES_ROUTE = "annonces.search_games"
 
 class Config:
     DISCORD_CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID")

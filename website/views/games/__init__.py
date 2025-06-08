@@ -8,6 +8,7 @@ from flask import (
     g,
     flash,
 )
+from config import SEARCH_GAMES_ROUTE, GAME_DETAILS_ROUTE
 from website.extensions import db
 from website.bot import get_bot
 from website.models import Game, User, System, Vtt, GameSession
@@ -35,12 +36,12 @@ def search_games():
     games, request_args = get_filtered_games(request.args)
 
     next_url = (
-        url_for("annonces.search_games", page=games.next_num, **request_args)
+        url_for(SEARCH_GAMES_ROUTE, page=games.next_num, **request_args)
         if games.has_next
         else None
     )
     prev_url = (
-        url_for("annonces.search_games", page=games.prev_num, **request_args)
+        url_for(SEARCH_GAMES_ROUTE, page=games.prev_num, **request_args)
         if games.has_prev
         else None
     )
@@ -106,7 +107,7 @@ def create_game():
             f"Unauthorized game creation attempt by user: {payload.get('user_id', 'Unknown')}"
         )
         flash("Vous devez être MJ pour poster une annonce.", "danger")
-        return redirect(url_for("annonces.search_games"))
+        return redirect(url_for(SEARCH_GAMES_ROUTE))
 
     data = request.values.to_dict()
     gm_id = data["gm_id"]
@@ -140,7 +141,7 @@ def create_game():
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
-        return redirect(url_for("annonces.search_games"))
+        return redirect(url_for(SEARCH_GAMES_ROUTE))
     flash(msg, "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
 
@@ -197,15 +198,11 @@ def change_game_status(slug):
     game = get_game_if_authorized(payload, slug)
     status = request.values.to_dict()["status"]
     game.status = status
-    create_game_event(game, "Status Update", status)
     try:
         db.session.commit()
         logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
-            bot.delete_channel(game.channel)
-            logger.info(f"Game {game.id} channel {game.channel} has been deleted")
-            bot.delete_role(game.role)
-            logger.info(f"Game {game.id} role {game.role} has been deleted")
+            archive_game(game, bot)
     except Exception as e:
         flash("Une erreur est survenue pendant la modification de statut.", "danger")
     status_msg = ""
@@ -240,7 +237,6 @@ def add_game_session(slug):
         start,
         end,
     )
-    create_game_event(game, "Session Add", f"New session {start}/{end}")
     try:
         db.session.commit()
         logger.info(f"Session {start}/{end} created for Game {game.id}")
@@ -254,7 +250,7 @@ def add_game_session(slug):
         )
     except Exception as e:
         flash("Une erreur est survenue pendant la création de la session.", "danger")
-        return redirect(url_for("annonces.search_games"))
+        return redirect(url_for(SEARCH_GAMES_ROUTE))
     flash("Session ajoutée.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -272,9 +268,6 @@ def edit_game_session(slug, session_id):
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
     session.start = request.values.to_dict()["date_start"]
     session.end = request.values.to_dict()["date_end"]
-    create_game_event(
-        game, "Session Edit", f"{old_start}/{old_end} -> {session.start}/{session.end}"
-    )
     if session.start > session.end:
         flash(
             "Impossible d'ajouter une session qui se termine avant de commencer.",
@@ -312,7 +305,6 @@ def remove_game_session(slug, session_id):
     start = session.start
     end = session.end
     delete_game_session(session)
-    create_game_event(game, "Session Delete", f"{start}/{end}")
     try:
         db.session.commit()
         logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
