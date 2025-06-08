@@ -4,7 +4,15 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from website.utils.logger import logger
 from website.extensions import db
-from website.models import Game, GameSession, GameEvent, Channel, User, Trophy, UserTrophy
+from website.models import (
+    Game,
+    GameSession,
+    GameEvent,
+    Channel,
+    User,
+    Trophy,
+    UserTrophy,
+)
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT
 from website.views.auth import who
@@ -13,6 +21,7 @@ import yaml
 
 
 GAMES_PER_PAGE = 12
+GAME_DETAILS_ROUTE = "annonces.get_game_details"
 
 
 def generate_game_slug(name, gm_name, existing_slugs):
@@ -23,6 +32,7 @@ def generate_game_slug(name, gm_name, existing_slugs):
         slug = f"{base_slug}-{i}"
         i += 1
     return slug
+
 
 def add_trophy_to_user(user_id, trophy_id, amount=1):
     trophy = Trophy.query.get(trophy_id)
@@ -135,7 +145,7 @@ def get_game_if_authorized(payload, slug):
     game = Game.query.filter_by(slug=slug).first_or_404()
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         flash("Seul·e le·a MJ de l'annonce peut faire cette opération", "danger")
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     return game
 
 
@@ -233,7 +243,7 @@ def handle_add_player(game, data, bot):
 
     if not user.is_player:
         flash("Cette personne n'est pas un·e joueur·euse sur le Discord", "danger")
-        return redirect(url_for("annonces.get_game_details", slug=game.slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
 
     payload = who()
     force = payload["user_id"] == game.gm.id or payload.get("is_admin", False)
@@ -257,11 +267,11 @@ def register_user_to_game(original_game, user, bot, force=False):
         if len(game.players) >= game.party_size and not force:
             logger.warning(f"Game {game.id} is full. Cannot add user {user.id}")
             flash("La partie est complète.", "danger")
-            return redirect(url_for("annonces.get_game_details", slug=game.slug))
+            return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
         if game.status == "closed" and not force:
             logger.warning(f"Game {game.id} is closed. Cannot add user {user.id}")
             flash("La partie est fermée.", "danger")
-            return redirect(url_for("annonces.get_game_details", slug=game.slug))
+            return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
         game.players.append(user)
         create_game_event(game, "Add Player", user.id)
         if len(game.players) >= game.party_size and not game.party_selection:

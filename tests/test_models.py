@@ -1,11 +1,17 @@
 import pytest
 from website.models import (
-    User, Trophy, UserTrophy, Vtt, System,
-    Channel, Game, GameEvent, GameSession
+    User,
+    Trophy,
+    UserTrophy,
+    Vtt,
+    System,
+    Channel,
+    Game,
+    GameEvent,
+    GameSession,
 )
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
-
 
 
 def test_user_creation(session):
@@ -81,7 +87,7 @@ def test_game_model(session):
         classification={"action": 1, "investigation": 1, "interaction": 1, "horror": 1},
         ambience=["chill"],
         complement="Extra info.",
-        status="draft"
+        status="draft",
     )
     session.add(game)
     session.commit()

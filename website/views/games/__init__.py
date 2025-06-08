@@ -24,6 +24,7 @@ game_bp = Blueprint("annonces", __name__)
 # Configurables
 GAME_LIST_TEMPLATE = "games.j2"
 
+
 # Datetime format
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 
@@ -112,15 +113,15 @@ def create_game():
     logger.info(
         f"User {payload.get('user_id', 'Unknown')} is creating a game with GM ID {gm_id}"
     )
-
     game = build_game_from_form(data, gm_id)
     logger.info(f"Game object created: {game.name}")
-
+    msg = f"Annonce {game.name} enregistrée."
     is_open = data["action"] == "open"
     if is_open:
         logger.info("Game is being posted as open.")
         setup_game_post_creation(game, bot)
         logger.info("Game post-creation setup completed.")
+        msg = f"Annonce {game.name} postée."
 
     try:
         db.session.add(game)
@@ -140,8 +141,8 @@ def create_game():
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
         return redirect(url_for("annonces.search_games"))
-
-    return redirect(url_for("annonces.get_game_details", slug=game.slug))
+    flash(msg, "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
 
 
 @game_bp.route("/annonces/<slug>/editer/", methods=["POST"])
@@ -158,7 +159,7 @@ def edit_game(slug):
     logger.info(f"Editing game {game.id} - Post: {post}")
     update_game_from_form(game, data)
     logger.info(f"Game {game.id} updated with new data")
-
+    msg = f"Annonce {game.name} modifiée."
     if post:
         logger.info(
             "Game was draft, setting to open and creating session/channel/role."
@@ -166,6 +167,7 @@ def edit_game(slug):
         game.status = data["action"]
         setup_game_post_creation(game, bot)
         logger.info(f"Game {game.id} post-publishing setup completed.")
+        msg = f"Annonce {game.name} modifiée et postée."
 
     try:
         if post:
@@ -180,7 +182,8 @@ def edit_game(slug):
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+    flash(msg, "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/statut/", methods=["POST"])
@@ -205,8 +208,15 @@ def change_game_status(slug):
             logger.info(f"Game {game.id} role {game.role} has been deleted")
     except Exception as e:
         flash("Une erreur est survenue pendant la modification de statut.", "danger")
-
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+    status_msg = ""
+    if status == "open":
+        status_msg = "ouverte"
+    elif status == "closed":
+        status_msg = "fermée"
+    elif status == "archived":
+        status_msg = "archivée"
+    flash(f"Annonce {game.name} {status_msg}.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/sessions/ajouter", methods=["POST"])
@@ -224,7 +234,7 @@ def add_game_session(slug):
             "Impossible d'ajouter une session qui se termine avant de commencer",
             "danger",
         )
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     create_game_session(
         game,
         start,
@@ -245,7 +255,8 @@ def add_game_session(slug):
     except Exception as e:
         flash("Une erreur est survenue pendant la création de la session.", "danger")
         return redirect(url_for("annonces.search_games"))
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+    flash("Session ajoutée.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/sessions/<session_id>/editer", methods=["POST"])
@@ -269,7 +280,7 @@ def edit_game_session(slug, session_id):
             "Impossible d'ajouter une session qui se termine avant de commencer.",
             "danger",
         )
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     try:
         db.session.commit()
         logger.info(
@@ -285,7 +296,8 @@ def edit_game_session(slug, session_id):
         )
     except Exception as e:
         flash("Erreur lors de la modification de la session.", "danger")
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+    flash("Session modifiée.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/sessions/<session_id>/supprimer", methods=["POST"])
@@ -312,7 +324,8 @@ def remove_game_session(slug, session_id):
         )
     except Exception as e:
         flash("Erreur lors de la suppression de la session.", "danger")
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+    flash("Session supprimée.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/inscription/", methods=["POST"])
@@ -326,11 +339,11 @@ def register_game(slug):
 
     if game.status in ["closed", "archived"]:
         flash("Ce jeu est fermé aux inscriptions.", "warning")
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     if game.gm_id == user_id:
         flash("Vous ne pouvez pas vous inscrire à votre propre partie.", "warning")
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     user = db.get_or_404(User, user_id)
     try:
@@ -340,8 +353,8 @@ def register_game(slug):
     except Exception as e:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
-
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+    flash(f"{user.name} ajouté·e à la liste des joueur·euses.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/gerer/", methods=["POST"])
@@ -355,10 +368,10 @@ def manage_game_registration(slug):
 
     if game.status == "archived":
         flash("Impossible de gérer les joueur·euses d'une partie archivée.", "danger")
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     if game.gm_id != user_id and not payload["is_admin"]:
         flash("Vous n'êtes pas autorisé·e à faire cette action.", "danger")
-        return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     data = request.values.to_dict()
     action = data.get("action")
@@ -370,13 +383,13 @@ def manage_game_registration(slug):
             handle_add_player(game, data, bot)
         else:
             flash("Action demandée non gérée.", "danger")
-            return redirect(url_for("annonces.get_game_details", slug=slug))
+            return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     except Exception as e:
         logger.exception("Error during game registration management")
         flash(f"Erreur pendant l'inscription: {e}.", "danger")
-        return redirect(url_for("annonces.get_game_details", slug=slug))
-
-    return redirect(url_for("annonces.get_game_details", slug=slug))
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+    flash(f"Liste des joueur·euses mise à jour.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
 @game_bp.route("/annonces/<slug>/cloner/", methods=["GET"])
@@ -388,6 +401,7 @@ def get_game_edit_form(slug):
     """
     payload = who()
     game = get_game_if_authorized(payload, slug)
+    flash(f"Vous êtes en train de cloner une annonce.", "primary")
     return render_template(
         "game_form.j2",
         payload=payload,
@@ -410,6 +424,7 @@ def my_gm_games():
         games_as_gm = db.session.get(User, payload["user_id"]).games_gm
     except AttributeError:
         games_as_gm = {}
+    flash(f"Les parties pour lesquelles je suis MJ.", "primary")
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
@@ -435,6 +450,7 @@ def my_games():
                 active_games.append(game)
     except AttributeError:
         games = {}
+    flash(f"Les parties pour lesquelles je suis joueur·euse.", "primary")
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,

@@ -69,7 +69,7 @@ Ce scénario n'existe pas, c'est uniquement une annonce qui sert à faire des te
         session["user_id"] = TestConfig.admin_id
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def test_app():
     app = create_app()
     with app.app_context():
@@ -77,6 +77,7 @@ def test_app():
         yield app
         db.session.remove()
         db.drop_all()
+
 
 @pytest.fixture
 def session(test_app):

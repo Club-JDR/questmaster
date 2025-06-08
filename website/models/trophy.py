@@ -26,6 +26,3 @@ class UserTrophy(db.Model):
 
     user = db.relationship("User", back_populates="trophies")
     trophy = db.relationship("Trophy")
-
-
-
