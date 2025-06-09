@@ -91,26 +91,6 @@ def test_channel_id(test_app):
     return os.environ.get("UNITTEST_CHANNEL_ID")
 
 
-# @contextmanager
-# def captured_templates(test_app):
-#     recorded = []
-
-#     def record(sender, template, context, **extra):
-#         recorded.append((template, context))
-
-#     template_rendered.connect(record, test_app)
-#     try:
-#         yield recorded
-#     finally:
-#         template_rendered.disconnect(record, test_app)
-
-
-# @pytest.fixture
-# def templates(test_app):
-#     with captured_templates(test_app) as templates:
-#         yield templates
-
-
 # @pytest.fixture(autouse=True)
 # def slow_down_tests():
 #     yield

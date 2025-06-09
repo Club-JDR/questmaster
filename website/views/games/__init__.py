@@ -204,7 +204,7 @@ def change_game_status(slug):
         logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
             archive_game(game, bot)
-    except Exception as e:
+    except Exception:
         flash("Une erreur est survenue pendant la modification de statut.", "danger")
     status_msg = ""
     if status == "open":
@@ -249,7 +249,7 @@ def add_game_session(slug):
             ),
             end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
         )
-    except Exception as e:
+    except Exception:
         flash("Une erreur est survenue pendant la création de la session.", "danger")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
     flash("Session ajoutée.", "success")
@@ -288,7 +288,7 @@ def edit_game_session(slug, session_id):
             old_start=old_start,
             old_end=old_end,
         )
-    except Exception as e:
+    except Exception:
         flash("Erreur lors de la modification de la session.", "danger")
     flash("Session modifiée.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -315,7 +315,7 @@ def remove_game_session(slug, session_id):
             start=start.strftime(HUMAN_TIMEFORMAT),
             end=end.strftime(HUMAN_TIMEFORMAT),
         )
-    except Exception as e:
+    except Exception:
         flash("Erreur lors de la suppression de la session.", "danger")
     flash("Session supprimée.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -343,7 +343,7 @@ def register_game(slug):
         register_user_to_game(game, user, bot)
     except ValueError as ve:
         flash(str(ve), "danger")
-    except Exception as e:
+    except Exception:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
     flash("Vous êtes inscrit·e.", "success")
@@ -420,7 +420,7 @@ def my_gm_games():
         games_as_gm = db.session.get(User, payload["user_id"]).games_gm
     except AttributeError:
         games_as_gm = {}
-    flash(f"Les parties pour lesquelles je suis MJ.", "primary")
+    flash("Les parties pour lesquelles je suis MJ.", "primary")
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
@@ -446,7 +446,7 @@ def my_games():
                 active_games.append(game)
     except AttributeError:
         games = {}
-    flash(f"Les parties pour lesquelles je suis joueur·euse.", "primary")
+    flash("Les parties pour lesquelles je suis joueur·euse.", "primary")
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,

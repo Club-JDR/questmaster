@@ -155,7 +155,7 @@ def set_default_search_parameters(status, game_type, restriction):
     return status, game_type, restriction
 
 
-def get_classification(data):
+def get_classification():
     prefix = "class-"
     classification = {}
     for key in request.form:
@@ -245,7 +245,7 @@ def register_user_to_game(original_game, user, bot, force=False):
         bot.add_role_to_user(user.id, game.role)
         logger.info(f"Role {game.role} added to user {user.id}")
         send_discord_embed(game, type="register", player=user.id)
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.session.rollback()
         logger.exception("Failed to register user due to DB error.")
         raise
@@ -267,7 +267,7 @@ def build_game_from_form(data, gm_id):
         session_length=data["session_length"],
         frequency=data.get("frequency") or None,
         characters=data["characters"],
-        classification=get_classification(data),
+        classification=get_classification(),
         ambience=get_ambience(data),
         complement=data.get("complement"),
         status="open" if data["action"] == "open-silent" else data["action"],
@@ -296,7 +296,7 @@ def update_game_from_form(game, data):
     game.session_length = data["session_length"]
     game.frequency = data.get("frequency") or None
     game.characters = data["characters"]
-    game.classification = get_classification(data)
+    game.classification = get_classification()
     game.ambience = get_ambience(data)
     game.complement = data.get("complement")
     game.img = data.get("img")
