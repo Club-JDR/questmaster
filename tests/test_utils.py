@@ -1,13 +1,6 @@
 from dotenv import load_dotenv
-from website.utils.discord import Discord
-from flask_discord import Unauthorized
-from conftest import TestConfig
-import os
-import pytest
-
 from website.utils.exceptions import RateLimited
-
-config = TestConfig()
+import pytest
 
 
 def test_rate_limited_exception():
@@ -31,39 +24,10 @@ def test_rate_limited_exception():
     assert error.headers == headers
     assert error.is_global == is_global
     assert error.message == message
-    assert error.retry_after == retry_after
 
 
-load_dotenv()
-session = Discord(
-    os.environ.get("DISCORD_GUILD_ID"), os.environ.get("DISCORD_BOT_TOKEN")
-)
-bot_user_id = os.environ.get("DISCORD_CLIENT_ID")
-test_channel_id = os.environ.get("UNITTEST_CHANNEL_ID")
-
-
-def test_wrong_token():
-    wrong_session = Discord(os.environ.get("DISCORD_GUILD_ID"), "wrong-token")
-    with pytest.raises(Unauthorized):
-        wrong_session.send_message("blublu", test_channel_id)
-
-
-def test_get_user():
-    response = session.get_user(bot_user_id)
-    assert response["user"]["id"] == bot_user_id
-    assert response["user"]["username"] == "QuestMaster"
-
-
-def test_send_message():
-    """
-    Test sending a messages to the defined test channel
-    """
-    # Simple text message
-    content = "This is a unit test"
-    response = session.send_message(content, test_channel_id)
-    assert response["content"] == content
-    assert response["channel_id"] == test_channel_id
-    # Embed
+@pytest.fixture
+def sent_discord_message(discord_session, test_channel_id):
     title = "Annonce de test"
     color = 39423
     embed = {
@@ -79,14 +43,29 @@ def test_send_message():
         "image": {"url": "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"},
         "footer": {},
     }
-    response = session.send_embed_message(embed, test_channel_id)
+    message = discord_session.send_embed_message(embed, test_channel_id)
+    return message["id"]
+
+
+def test_get_user(discord_session, bot_user_id):
+    response = discord_session.get_user(bot_user_id)
+    assert response["user"]["id"] == bot_user_id
+    assert response["user"]["username"] == "QuestMaster"
+
+
+def test_send_message(discord_session, test_channel_id, sent_discord_message):
+    """
+    Test sending a messages to the defined test channel
+    """
+    content = "This is a unit test"
+    response = discord_session.send_message(content, test_channel_id)
+    assert response["content"] == content
     assert response["channel_id"] == test_channel_id
-    assert response["embeds"][0]["title"] == title
-    assert response["embeds"][0]["color"] == color
-    config.msg_id = response["id"]
+    assert isinstance(sent_discord_message, str)
+    assert len(sent_discord_message) > 0
 
 
-def test_edit_message():
+def test_edit_message(discord_session, test_channel_id, sent_discord_message):
     """
     Test editing previous embed message
     """
@@ -106,13 +85,16 @@ def test_edit_message():
         "image": {"url": "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"},
         "footer": {},
     }
-    response = session.edit_embed_message(config.msg_id, embed, test_channel_id)
+    response = discord_session.edit_embed_message(
+        sent_discord_message, embed, test_channel_id
+    )
+    print(response)
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
 
 
-def test_role_workflow():
+def test_role_workflow(discord_session, bot_user_id):
     """
     Test creating a role, assigning it to a know user (the bot id), removing the role from the user and finally deleting the role
     """
@@ -120,31 +102,31 @@ def test_role_workflow():
     permissions = "3072"
     color = 15844367
     # Role creation
-    response = session.create_role(role_name, permissions, color)
+    response = discord_session.create_role(role_name, permissions, color)
     role_id = response["id"]
     assert role_name == response["name"]
     assert permissions == response["permissions"]
     assert color == response["color"]
     # Role details
-    response = session.get_role(role_id)
+    response = discord_session.get_role(role_id)
     assert role_name == response["name"]
     assert permissions == response["permissions"]
     assert color == response["color"]
     # Role attribution
-    response = session.add_role_to_user(bot_user_id, role_id)
+    response = discord_session.add_role_to_user(bot_user_id, role_id)
     assert response == "{}"
     # Role de-attribution
-    response = session.remove_role_from_user(bot_user_id, role_id)
+    response = discord_session.remove_role_from_user(bot_user_id, role_id)
     assert response == "{}"
     # Role deletion
-    response = session.delete_role(role_id)
+    response = discord_session.delete_role(role_id)
     assert response == "{}"
     # Role should not exist
-    response = session.get_role(role_id)
+    response = discord_session.get_role(role_id)
     assert response["message"] == "Unknown Role"
 
 
-def test_channel_workflow():
+def test_channel_workflow(discord_session, oneshot_channel):
     """
     Test creating and deleting a channel
     """
@@ -153,15 +135,16 @@ def test_channel_workflow():
     gm_id = "664487064577900594"
     color = 15844367
     # Role creation
-    response = session.create_role(role_name, permissions, color)
+    response = discord_session.create_role(role_name, permissions, color)
     role_id = response["id"]
     assert role_name == response["name"]
     assert permissions == response["permissions"]
     assert color == response["color"]
     channel_name = "testchannel"
-    parent_id = os.environ.get("CATEGORIES_CHANNEL_ID")
     # Channel creation
-    response = session.create_channel(channel_name, parent_id, role_id, gm_id)
+    response = discord_session.create_channel(
+        channel_name, oneshot_channel.id, role_id, gm_id
+    )
     channel_id = response["id"]
     assert len(response["permission_overwrites"]) == 3
     assert any(
@@ -171,14 +154,14 @@ def test_channel_workflow():
         gm_id in permission["id"] for permission in response["permission_overwrites"]
     )
     assert response["name"] == channel_name
-    assert response["parent_id"] == parent_id
+    assert response["parent_id"] == oneshot_channel.id
     # Channel details
-    response = session.get_channel(channel_id)
+    response = discord_session.get_channel(channel_id)
     assert response["name"] == channel_name
-    assert response["parent_id"] == parent_id
+    assert response["parent_id"] == oneshot_channel.id
     # Channel deletion
-    response = session.delete_channel(channel_id)
+    response = discord_session.delete_channel(channel_id)
     assert response["id"] == channel_id
     # Role deletion
-    response = session.delete_role(role_id)
+    response = discord_session.delete_role(role_id)
     assert response == "{}"

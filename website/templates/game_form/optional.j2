@@ -87,11 +87,39 @@
       </div>
     </div>
   </div>
-  <div class="row pt-2 mx-auto">
-    <button type="submit" name="action" value="draft" class="btn btn-secondary">Enregistrer</button>
+  <div class="row pt-3 mx-auto">
+    <div class="col-12">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle w-100" type="button" id="gameActionDropdown"
+          data-bs-toggle="dropdown" aria-expanded="false">
+          Enregistrer
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="gameActionDropdown">
+          <li>
+            <button type="submit" name="action" value="draft" class="dropdown-item">
+              💾 Enregistrer {% if game %}les modifications{% else %}comme brouillon{% endif %}
+            </button>
+          </li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+          <li>
+            <button type="submit" name="action" value="open-silent" class="dropdown-item" {% if game and game.status
+              !='draft' and not clone %}disabled{% endif %}>
+              ▶️ Ouvrir (sans publier sur Discord)
+            </button>
+          </li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+          <li>
+            <button type="submit" name="action" value="open" class="dropdown-item" {% if game and game.status !='draft'
+              and not clone %}disabled{% endif %}>
+              📢 Publier sur Discord
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
-  {% if not game or game.status == 'draft' or clone %}
-  <div class="row pt-2 mx-auto">
-    <button type="submit" name="action" value="open" class="btn btn-primary">Publier</button>
-  </div>{% elif game.status != 'open' %} {% endif %}
 </div>

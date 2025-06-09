@@ -49,7 +49,7 @@ def seed_trophies():
     ]
 
     for trophy_data in trophies_to_ensure:
-        trophy = Trophy.query.filter_by(name=trophy_data["name"]).first()
+        trophy = db.session.get(Trophy, trophy_data["id"])
         if not trophy:
             new_trophy = Trophy(**trophy_data)
             db.session.add(new_trophy)

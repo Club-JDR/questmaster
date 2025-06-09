@@ -1,580 +1,339 @@
-from bs4 import BeautifulSoup
-from conftest import TestConfig
-from datetime import datetime
-import time
-
-config = TestConfig()
+from unittest.mock import patch
+import pytest
 
 
-def test_my_gm_games(client):
+@pytest.fixture
+def logged_in_admin(test_app, admin_user):
+    client = test_app.test_client()
     with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.get("/mes_annonces/")
+        session["user_id"] = admin_user.id
+    return client
+
+
+@pytest.fixture
+def logged_in_user(test_app, regular_user):
+    client = test_app.test_client()
+    with client.session_transaction() as session:
+        session["user_id"] = regular_user.id
+    return client
+
+
+def test_my_gm_games(logged_in_admin, logged_in_user):
+    response = logged_in_admin.get("/mes_annonces/")
     assert response.status_code == 200
-    assert b"<h1>Mes annonces</h1>" in response.data
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/mes_annonces/")
+    assert b"Mes annonces" in response.data
+    response = logged_in_user.get("/mes_annonces/")
     assert response.status_code == 403
 
 
-def test_my_games(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/mes_parties/")
+def test_my_games(logged_in_user):
+    response = logged_in_user.get("/mes_parties/")
     assert response.status_code == 200
-    assert b"<h1>Mes parties en cours</h1>" in response.data
+    assert b"Mes parties en cours" in response.data
 
 
-def test_game_form(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/annonce/")
+def test_game_form(logged_in_admin, logged_in_user):
+    response = logged_in_user.get("/annonce/")
     assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.get("/annonce/")
+    response = logged_in_admin.get("/annonce/")
     assert response.status_code == 200
-    assert b"<h1>Nouvelle annonce</h1>" in response.data
+    assert b"Nouvelle annonce" in response.data
+    assert b"Enregistrer" in response.data
+    assert b"Publier" in response.data
 
 
-def test_create_channel(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
+@patch("flask_wtf.csrf.validate_csrf", return_value=True)
+def test_e2e_scenario_1(
+    mock_csrf,
+    logged_in_admin,
+    logged_in_user,
+    admin_user,
+    default_system,
+    default_vtt,
+    regular_user,
+):
+    # Create open Game
+    title = "Les Masques de Nyarlathotep"
     data = {
-        "channel_id": config.os_category,
-        "channel_type": "campaign",
-        "channel_size": "10",
-    }
-    response = client.post("/channels/", data=data, follow_redirects=True)
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.post("/channels/", data=data, follow_redirects=True)
-    assert response.status_code == 200
-    assert bytes("{}".format(config.os_category), encoding="UTF-8") in response.data
+        "name": title,
+        "type": "campaign",
+        "length": "20+ sessions",
+        "gm_id": admin_user.id,
+        "system": default_system.id,
+        "vtt": default_vtt.id,
+        "description": """En avril 1919, Roger Carlyle, un richissime play-boy New-Yorkais, décide de financer et d'organiser une expédition archéologique. Accompagné des plus éminents égyptologues, photographes et médecins du moment, l'expédition fait une escale de quelques semaines à Londres afin de préparer les fouilles et d'étudier divers documents, avant de se rendre en Égypte, dans les régions de Gizeh, de Saqqarah et de Dahchour. Après deux mois de recherches, l'expédition décide d'aller se reposer quelques semaines au Kenya. Le groupe part pour un safari-photo de plusieurs jours le 3 août, et disparait. Il apparaît rapidement qu'il s'agit d'un crime à caractère raciste, et plusieurs membres d'une tribu kényane sont jugés et pendus. L'expédition de secours dirigée par la sœur de Roger Carlyle découvre un an plus tard les restes de l'expédition. Si les corps ne sont plus identifiables, le contenu des bagages prouve qu'il s'agit de l'expédition disparue.
 
-
-def test_edit_channel(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    data = {
-        "channel_id": config.os_category,
-        "channel_type": "oneshot",
-        "channel_size": "10",
-    }
-    response = client.post(
-        "/channels/{}".format(config.os_category), data=data, follow_redirects=True
-    )
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.post(
-        "/channels/{}".format(config.os_category), data=data, follow_redirects=True
-    )
-    assert response.status_code == 200
-    assert bytes('option value="oneshot" selected', encoding="UTF-8") in response.data
-
-
-def test_create_system(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    data = {"name": config.sys_name, "icon": config.sys_icon}
-    response = client.post("/systems/", data=data, follow_redirects=True)
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.post("/systems/", data=data, follow_redirects=True)
-    assert response.status_code == 200
-    assert bytes("{}".format(config.sys_name), encoding="UTF-8") in response.data
-    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
-    for form in BeautifulSoup(response.data.decode("utf-8"), "html.parser").find_all(
-        "form"
-    ):
-        for i in form.find_all("input"):
-            if i.get("name") == config.sys_name:
-                config.game_system = i.get("value")
-
-
-def test_edit_system(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    new_name = "{} modifié".format(config.sys_name)
-    data = {"name": new_name, "icon": config.sys_icon}
-    response = client.post(
-        "/systems/{}/".format(config.game_system), data=data, follow_redirects=True
-    )
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.post(
-        "/systems/{}/".format(config.game_vtt), data=data, follow_redirects=True
-    )
-    assert response.status_code == 200
-    assert bytes(new_name, encoding="UTF-8") in response.data
-    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
-
-
-def test_create_vtt(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    data = {"name": config.vtt_name, "icon": config.vtt_icon}
-    response = client.post("/vtts/", data=data, follow_redirects=True)
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.post("/vtts/", data=data, follow_redirects=True)
-    assert response.status_code == 200
-    assert bytes("{}".format(config.vtt_name), encoding="UTF-8") in response.data
-    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
-    for form in BeautifulSoup(response.data.decode("utf-8"), "html.parser").find_all(
-        "form"
-    ):
-        for i in form.find_all("input"):
-            if i.get("name") == config.vtt_name:
-                config.game_vtt = i.get("value")
-
-
-def test_edit_vtt(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    new_name = "{} modifié".format(config.vtt_name)
-    data = {"name": new_name, "icon": config.vtt_icon}
-    response = client.post(
-        "/vtts/{}/".format(config.game_vtt), data=data, follow_redirects=True
-    )
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.post(
-        "/vtts/{}/".format(config.game_vtt), data=data, follow_redirects=True
-    )
-    assert response.status_code == 200
-    assert bytes(new_name, encoding="UTF-8") in response.data
-    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
-
-
-def test_admin_form_vtt(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/admin/vtts/")
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.get("/admin/vtts/")
-    assert response.status_code == 200
-    assert bytes("{}".format(config.vtt_icon), encoding="UTF-8") in response.data
-
-
-def test_admin_form_sys(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/admin/systems/")
-    assert response.status_code == 403  # Not Admin
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.get("/admin/systems/")
-    assert response.status_code == 200
-    assert bytes("{}".format(config.sys_icon), encoding="UTF-8") in response.data
-
-
-def test_create_open_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    data = {
-        "name": config.game_name,
-        "type": config.game_type,
-        "length": config.game_length,
-        "gm_id": config.gm_id,
-        "system": config.game_system,
-        "vtt": config.game_vtt,
-        "description": config.game_description,
-        "restriction": config.game_restriction,
-        "restriction_tags": config.game_restriction_tags,
-        "party_size": config.game_party_size,
-        "party_selection": config.game_party_selection,
-        "xp": config.game_xp,
-        "frequency": config.game_frequency,
-        "characters": config.game_characters,
-        "complement": config.game_complement,
+Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cultes religieux d'Afrique et d'Asie, envoie un télégramme à son éditeur, lui indiquant qu'il possède des informations sur l'expédition Carlyle et qu'il dispose de documents prouvant que certains de ses membres ne sont pas morts. Il charge son vieil ami de trouver une équipe d'investigateurs susceptibles de l'aider dans ses recherches, et leur donne rendez-vous dans un hôtel.
+        """,
+        "restriction": "18+",
+        "restriction_tags": '[{"value":"meurtres"},{"value":"folie"}]',
+        "party_size": "1",
+        "xp": "all",
+        "frequency": "bi-weekly",
+        "characters": "self",
+        "complement": "",
         "serious": "on",
-        "class-action": "min",
-        "class-investigation": "maj",
-        "class-interaction": "maj",
-        "class-horror": "maj",
-        "img": config.game_img,
+        "class-action": "2",
+        "class-investigation": "2",
+        "class-interaction": "2",
+        "class-horror": "2",
+        "img": "https://anubisarchives.com/content/images/2018/12/cthulhu3.jpg",
         "action": "open",
-        "date": "2023-07-01 20:30",
+        "date": "2025-07-01 20:30",
         "session_length": "3.5",
     }
-    response = client.post("/annonce/", data=data, follow_redirects=True)
-    assert response.status_code == 403  # fails because not GM
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post("/annonce/", data=data, follow_redirects=True)
-    config.game_id = response.request.path.split("/")[-2]
+    response = logged_in_user.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
-    assert (
-        bytes("<h1>{}</h1>".format(config.game_name), encoding="UTF-8") in response.data
-    )
-    assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
-
-
-def test_add_game_session(client):
-    data = {"date_start": "2024-06-07 23:00", "date_end": "2024-06-07 20:00"}
-    url = "/annonces/{}/sessions/ajouter".format(config.game_id)
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.post(
-        url,
-        data=data,
-        follow_redirects=True,
-    )
-    assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        url,
-        data=data,
-        follow_redirects=True,
-    )
-    assert response.status_code == 500
-    data = {"date_start": "2024-06-07 20:00", "date_end": "2024-06-07 23:00"}
-    response = client.post(
-        url,
-        data=data,
-        follow_redirects=True,
-    )
+    assert response.request.path == "/annonces/"
+    assert "Vous devez être MJ pour poster une annonce." in response.data.decode()
+    response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
-    assert 'startDate="2024-06-07"' in response.data.decode()
-    assert 'endDate="2024-06-07"' in response.data.decode()
-
-
-def test_edit_game_session(client):
-    data = {"date_start": "2024-06-12 23:00", "date_end": "2024-06-12 20:00"}
-    url = "/annonces/{}/sessions/{}/editer".format(config.game_id, config.session_id)
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.post(
-        url,
-        data=data,
-        follow_redirects=True,
+    slug = response.request.path.strip("/").split("/")[-1]
+    assert slug == "les-masques-de-nyarlathotep-par-notsag"
+    assert all(
+        text in response.data.decode()
+        for text in [title, "Éditer", "Gérer", "Libre", "Fermer", "Archiver", "Cloner"]
     )
-    assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        url,
-        data=data,
-        follow_redirects=True,
-    )
-    assert response.status_code == 500
-    data = {"date_start": "2024-06-12 20:00", "date_end": "2024-06-12 23:00"}
-    response = client.post(
-        url,
-        data=data,
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
-    assert 'startDate="2024-06-12"' in response.data.decode()
-    assert 'endDate="2024-06-12"' in response.data.decode()
 
-
-def test_delete_game_session(client):
-    url = "/annonces/{}/sessions/{}/supprimer".format(config.game_id, config.session_id)
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.post(
-        url,
-        follow_redirects=True,
-    )
-    assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        url,
-        follow_redirects=True,
+    # Add session
+    data = {"date_start": "2025-07-07 23:00", "date_end": "2025-07-07 20:00"}
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/sessions/ajouter/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
     assert (
-        'action="/annonces/{}/sessions/{}/editer"'.format(
-            config.game_id, config.session_id
-        )
-        not in response.data.decode()
+        "Impossible d'ajouter une session qui se termine avant de commencer"
+        in response.data.decode()
     )
-
-
-def test_search_games(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/annonces/")
-    assert response.status_code == 200
-    assert b"<h1>Annonces</h1>" in response.data
-    assert "Recherche avancée" in response.data.decode()
-    response = client.get(
-        "/annonces/?name=test&open=on&oneshot=on&all=on&vtt={}&system={}".format(
-            config.game_vtt, config.game_system
-        )
+    data = {"date_start": "2025-07-07 20:00", "date_end": "2025-07-07 23:00"}
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/sessions/ajouter/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
+    assert 'startDate="2025-07-07"' in response.data.decode()
+    assert 'endDate="2025-07-07"' in response.data.decode()
 
-
-def test_create_draft_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    data = {
-        "name": config.game_name2,
-        "type": config.game_type2,
-        "length": config.game_length2,
-        "gm_id": config.gm_id,
-        "system": config.game_system,
-        "vtt": config.game_vtt,
-        "description": config.game_description2,
-        "restriction": config.game_restriction2,
-        "restriction_tags": "",
-        "party_size": config.game_party_size2,
-        "img": config.game_img2,
-        "action": "draft",
-        "date": "2023-11-01 20:30",
-        "xp": config.game_xp,
-        "frequency": "",
-        "characters": config.game_characters2,
-        "serious": "on",
-        "session_length": "3.5",
-    }
-    response = client.post("/annonce/", data=data, follow_redirects=True)
-    config.game_id2 = response.request.path.split("/")[-2]
+    # Edit session
+    data = {"date_start": "2025-07-07 23:00", "date_end": "2025-07-07 20:00"}
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True
+    )
     assert response.status_code == 200
     assert (
-        bytes("<h1>{}</h1>".format(config.game_name2), encoding="UTF-8")
-        in response.data
+        "Impossible d'ajouter une session qui se termine avant de commencer"
+        in response.data.decode()
     )
-    assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
-
-
-def test_get_game_details(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    # GET GAME DETAILS AS GAME GM
-    response = client.get("/annonces/{}/".format(config.game_id))
-    assert response.status_code == 200
-    assert (
-        bytes("<h1>{}</h1>".format(config.game_name), encoding="UTF-8") in response.data
+    data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True
     )
-    assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
-    assert "S'inscrire" not in response.data.decode()
-    time.sleep(1)
-    # GET GAME DETAILS AS ANOTHER (NON ADMIN) USER should NOT show the actions bar but allow to register
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/annonces/{}/".format(config.game_id))
     assert response.status_code == 200
-    assert '<i class="bi bi-pencil-square"></i> Éditer' not in response.data.decode()
-    assert "S'inscrire" in response.data.decode()
-    time.sleep(1)
-    # GET GAME DETAILS AS ANOTHER ADMIN USER should show the actions bar and allow to register
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.get("/annonces/{}/".format(config.game_id))
+    assert 'startDate="2025-07-08"' in response.data.decode()
+    assert 'endDate="2025-07-08"' in response.data.decode()
+
+    # Remove session
+    data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/sessions/2/supprimer/", data=data, follow_redirects=True
+    )
     assert response.status_code == 200
-    assert '<i class="bi bi-pencil-square"></i> Éditer' in response.data.decode()
+    assert 'startDate="2025-07-08"' not in response.data.decode()
+
+    # User do not see any actions but can register
+    response = logged_in_user.get(f"/annonces/{slug}/")
+    assert response.status_code == 200
+    assert all(
+        text not in response.data.decode()
+        for text in ["Éditer", "Gérer", "Fermer", "Archiver", "Cloner"]
+    )
+    assert response.data.decode().count("Libre") == 1
     assert "S'inscrire" in response.data.decode()
 
-
-def test_get_open_game_edit_form(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.get("/annonces/{}/editer/".format(config.game_id))
-    assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_admin_session(session)
-    response = client.get("/annonces/{}/editer/".format(config.game_id))
-    assert response.status_code == 200
-    assert (
-        bytes("<h1>Éditer l'annonce</h1>".format(config.game_name), encoding="UTF-8")
-        in response.data
-    )
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.get("/annonces/{}/editer/".format(config.game_id))
-    assert response.status_code == 200
-    assert (
-        bytes("<h1>Éditer l'annonce</h1>".format(config.game_name), encoding="UTF-8")
-        in response.data
-    )
-
-
-def test_get_draft_game_edit_form(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.get("/annonces/{}/editer/".format(config.game_id2))
-    assert response.status_code == 200
-    assert (
-        bytes("<h1>Éditer l'annonce</h1>".format(config.game_name), encoding="UTF-8")
-        in response.data
-    )
-    assert "Publier" in response.data.decode()
-
-
-def test_edit_publish_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    new_description = "Scénario bidon modifié pour les bienfaits des tests."
-    data = {
-        "name": config.game_name2,
-        "type": config.game_type2,
-        "length": config.game_length2,
-        "gm_id": config.gm_id,
-        "system": config.game_system,
-        "vtt": config.game_vtt,
-        "description": new_description,
-        "restriction": config.game_restriction2,
-        "restriction_tags": "",
-        "party_size": config.game_party_size2,
-        "img": config.game_img2,
-        "action": "open",
-        "date": "2023-11-01 20:30",
-        "xp": config.game_xp,
-        "frequency": "",
-        "characters": config.game_characters2,
-        "serious": "on",
-        "class-action": "min",
-        "class-investigation": "maj",
-        "class-interaction": "maj",
-        "class-horror": "none",
-        "session_length": "3.5",
-    }
-    response = client.post(
-        "/annonces/{}/editer/".format(config.game_id2), data=data, follow_redirects=True
-    )
-    assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/editer/".format(config.game_id2), data=data, follow_redirects=True
-    )
-    assert response.status_code == 200
-    assert new_description in response.data.decode()
-    assert "Brouillon" not in response.data.decode()
-
-
-def test_close_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.post(
-        "/annonces/{}/statut/".format(config.game_id),
-        data={"status": "closed"},
-        follow_redirects=True,
-    )
-    assert response.status_code == 403
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/statut/".format(config.game_id),
-        data={"status": "closed"},
-        follow_redirects=True,
+    # Close Game
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/statut/", data={"status": "closed"}, follow_redirects=True
     )
     assert response.status_code == 200
     assert "Complet" in response.data.decode()
+    assert f"Annonce {title} fermée." in response.data.decode()
+    assert "Ouvrir" in response.data.decode()
 
+    # User cannot register a closed game
+    response = logged_in_user.post(
+        f"/annonces/{slug}/inscription/", follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert response.data.decode().count("Libre") == 1
+    assert "Ce jeu est fermé aux inscriptions." in response.data.decode()
 
-def test_open_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/statut/".format(config.game_id),
-        data={"status": "open"},
-        follow_redirects=True,
+    # Open Game
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/statut/", data={"status": "open"}, follow_redirects=True
     )
     assert response.status_code == 200
     assert "Complet" not in response.data.decode()
+    assert f"Annonce {title} ouverte." in response.data.decode()
+    assert "Close" in response.data.decode()
 
-
-def test_archive_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/statut/".format(config.game_id),
-        data={"status": "archived"},
-        follow_redirects=True,
+    # GM cannot register to its own game
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/inscription/", follow_redirects=True
     )
-    assert response.status_code == 200
-    assert bytes("Archivée".format(config.game_name), encoding="UTF-8") in response.data
-
-
-def test_register_game(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/inscription/".format(config.game_id2),
-        follow_redirects=True,
-    )
-    assert response.status_code == 403  # cannot register to own game
-    time.sleep(1)
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.post(
-        "/annonces/{}/inscription/".format(config.game_id),
-        follow_redirects=True,
-    )
-    assert response.status_code == 500  # cannot register to archived game
-    time.sleep(1)
-    response = client.post(
-        "/annonces/{}/inscription/".format(config.game_id2),
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
-    assert config.user_id in response.data.decode()
-    assert "Complet" in response.data.decode()
-
-
-def test_manage_game_registration(client):
-    with client.session_transaction() as session:
-        TestConfig.set_user_session(session)
-    response = client.post(
-        "/annonces/{}/gerer/".format(config.game_id2),
-        follow_redirects=True,
-    )
-    assert response.status_code == 403  # cannot manage registration if not game's GM
-    time.sleep(1)
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/gerer/".format(config.game_id2),
-        data={"action": "manage"},  # unregister everyone
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
-    assert "Aucun·e joueur·euses pour le moment." in response.data.decode()
-    time.sleep(1)
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/gerer/".format(config.game_id2),
-        data={"action": "add", "discord_id": TestConfig.user_id},
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
-    assert TestConfig.user_id in response.data.decode()
-
-
-def test_cleanup(client):
-    with client.session_transaction() as session:
-        TestConfig.set_gm_session(session)
-    response = client.post(
-        "/annonces/{}/statut/".format(config.game_id2),
-        data={"status": "archived"},
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
-
-
-def test_stats(client):
-    response = client.get("/stats/")
     assert response.status_code == 200
     assert (
-        datetime.today()
-        .replace(day=1, month=datetime.today().month - 1)
-        .strftime("%a %d/%m")
+        "Vous ne pouvez pas vous inscrire à votre propre partie."
         in response.data.decode()
     )
+
+    # User can register, Game is full -> closed
+    response = logged_in_user.post(
+        f"/annonces/{slug}/inscription/", follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert response.data.decode().count("Libre") == 0
+    assert "Vous êtes inscrit·e." in response.data.decode()
+    assert "Complet" in response.data.decode()
+
+    # Archive Game
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/statut/", data={"status": "archived"}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert all(
+        text not in response.data.decode()
+        for text in ["Éditer<", "Gérer<", "Fermer", "Ouvrir", "Archiver<"]
+    )
+    assert "Cloner" in response.data.decode()
+    assert "Archivée" in response.data.decode()
+    assert f"Annonce {title} archivée." in response.data.decode()
+
+
+@patch("flask_wtf.csrf.validate_csrf", return_value=True)
+def test_e2e_scenario_2(
+    mock_csrf,
+    logged_in_admin,
+    logged_in_user,
+    admin_user,
+    regular_user,
+    default_system,
+    default_vtt,
+):
+    # Create draft Game
+    title = "La Nécropole"
+    data = {
+        "name": title,
+        "type": "oneshot",
+        "length": "1 session",
+        "gm_id": admin_user.id,
+        "system": default_system.id,
+        "vtt": default_vtt.id,
+        "description": """Quelles horreurs antiques renferme la tombe récemment découverte au cœur de la Vallée des Rois, en Égypte ?
+        Debout au sommet des marches qui s’enfoncent dans les ténèbres, le moment est mal choisi pour vous laisser troubler par les superstitions locales et les malheureux incidents survenus à l’ouverture du tombeau de Toutankhamon…""",
+        "restriction": "16+",
+        "restriction_tags": "[]",
+        "party_size": "4",
+        "xp": "all",
+        "frequency": "",
+        "characters": "pregen",
+        "complement": "",
+        "serious": "on",
+        "class-action": "2",
+        "class-investigation": "2",
+        "class-interaction": "1",
+        "class-horror": "2",
+        "img": "https://shop.novalisgames.com/product/image/large/escth13fr_illu1_20220112.jpg",
+        "action": "draft",
+        "date": "2025-07-10 20:30",
+        "session_length": "3.5",
+    }
+    response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
+    assert response.status_code == 200
+    slug = response.request.path.strip("/").split("/")[-1]
+    assert slug == "la-necropole-par-notsag"
+    assert all(
+        text in response.data.decode()
+        for text in [title, "Éditer", "Gérer", "Libre", "Brouillon", "Archiver"]
+    )
+
+    # Get edit form
+    response = logged_in_admin.get(f"/annonces/{slug}/editer/")
+    assert response.status_code == 200
+    assert "Vous êtes en train de modifier une annonce." in response.data.decode()
+    assert "Enregistrer" in response.data.decode()
+    assert "Publier" in response.data.decode()
+
+    # Edit draft Game
+    data["complement"] = "Scénario mortel pour les PJs."
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/editer/", data=data, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert "Annonce modifiée." in response.data.decode()
+    assert "Scénario mortel pour les PJs." in response.data.decode()
+
+    # GM add a player
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/gerer/",
+        data={"action": "add", "discord_id": regular_user.id},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert response.data.decode().count("Libre") == 3
+
+    # GM clears players
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/gerer/", data={"action": "manage"}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert response.data.decode().count("Libre") == 4
+
+    # Open Game without posting
+    data["action"] = "open-silent"
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/editer/", data=data, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert "Annonce modifiée et ouverte." in response.data.decode()
+    assert "Scénario mortel pour les PJs." in response.data.decode()
+
+    # Archive Game
+    response = logged_in_admin.post(
+        f"/annonces/{slug}/statut/", data={"status": "archived"}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert all(
+        text not in response.data.decode()
+        for text in ["Éditer<", "Gérer<", "Fermer", "Ouvrir", "Archiver<"]
+    )
+    assert "Cloner" in response.data.decode()
+    assert "Archivée" in response.data.decode()
+    assert f"Annonce {title} archivée." in response.data.decode()
+
+    # Get clone Game form
+    response = logged_in_admin.get(f"/annonces/{slug}/cloner/")
+    assert response.status_code == 200
+    assert "Vous êtes en train de cloner une annonce." in response.data.decode()
+    assert "Enregistrer" in response.data.decode()
+    assert "Publier" in response.data.decode()
+
+    # Clone Game
+    response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
+    assert response.status_code == 200
+    slug = response.request.path.strip("/").split("/")[-1]
+    assert slug == "la-necropole-par-notsag-2"
+    assert all(
+        text in response.data.decode()
+        for text in [title, "Éditer", "Gérer", "Libre", "Archiver"]
+    )
+
+
+def test_stats(logged_in_user):
+    response = logged_in_user.get("/stats/")
+    assert response.status_code == 200
+    assert "Statistiques" in response.data.decode()
+
+
+def test_calendar(logged_in_user):
+    response = logged_in_user.get("/calendrier/")
+    assert response.status_code == 200
+    assert "Le Calendrier du Club" in response.data.decode()

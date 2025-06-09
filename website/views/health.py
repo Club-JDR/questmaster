@@ -18,7 +18,7 @@ def dhms_from_seconds(seconds) -> str:
     return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
 
 
-@health_bp.route("/", methods=["GET"])
+@health_bp.route("/health/", methods=["GET"])
 def health():
     """
     Health endpoint

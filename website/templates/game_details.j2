@@ -187,6 +187,7 @@
         </div>
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
         <form class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
+          {% if game.status != 'archived' %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
             data-bs-title="Modifier le contenu de l'annonce.">
             <a href="/annonces/{{game.slug}}/editer/" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
@@ -197,6 +198,7 @@
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editPlayers"><i
                 class="bi bi-people"></i> Gérer</button>
           </span>
+          {% endif %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
             data-bs-title="Ajouter une session au calendrier et notifier le channel de partie.">
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSessionModal">
@@ -204,6 +206,7 @@
             </button>
           </span>
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if game.status != 'archived' %}
           {% if game.status == 'open' %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Fermer les inscriptions.">
             <button type="submit" name="status" value="closed" class="btn btn-warning"><i class="bi bi-lock"></i>
@@ -215,7 +218,6 @@
               Ouvrir</button>
           </span>
           {% endif %}
-          {% if game.status != 'archived' %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
             data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmArchive"><i
@@ -229,10 +231,11 @@
           </span>
         </form>
         {% endif %}
-
+        {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
         {% include 'game_details/add_session.j2' %}
         {% include 'game_details/edit_players.j2' %}
         {% include 'game_details/confirm_archive.j2' %}
+        {% endif %}
       </div>
     </div>
     <div class="sessions-list">
@@ -243,7 +246,6 @@
           <div class="calendar-wrapper">
             <add-to-calendar-button name="{{ game.name }} par {{ game.gm.name }} #{{loop.index}}"
               options="'Apple','Google','iCal','Outlook.com','Yahoo'"
-              location="https://discord.com/channels/789486751571116053/1115719113071927406"
               startDate="{{ session.start|format_datetime('%Y-%m-%d') }}"
               endDate="{{ session.end|format_datetime('%Y-%m-%d') }}"
               startTime="{{ session.start|format_datetime('%H:%M') }}"

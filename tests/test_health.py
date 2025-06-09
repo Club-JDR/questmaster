@@ -3,11 +3,12 @@ import json
 mimetype = "application/json"
 
 
-def test_health(session):
+def test_health(client):
     """
     Test /health/ endpoint.
     """
-    response = session.get("/health/")
+    response = client.get("/health/")
+    print(response.data)
     data = json.loads(response.data)
     assert response.content_type == mimetype
     assert response.status_code == 200

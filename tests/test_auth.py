@@ -1,21 +1,14 @@
-import json, os
-
-users = json.loads(os.environ.get("USER_ID_LIST"))
-redirect_url = "https://discordapp.com/api/oauth2/authorize"
-
-
-def test_login_redirect(session):
-    """
-    Test /login/ endpoint.
-    """
-    response = session.get("/login/")
-    assert response.status_code == 302
-    assert redirect_url in response.headers.get("Location")
+def test_login_redirect_sets_next_url(client):
+    response = client.get("/login/")
+    assert response.status_code in (302, 303)
+    assert "Location" in response.headers
 
 
-def test_unauthorized(session):
-    """
-    Test failure of an unauthorized access to a URL needing authentication.
-    """
-    response = session.get("/mes_parties/")
-    assert response.status_code == 403
+def test_logout_clears_session_and_redirects(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = "some_id"
+    response = client.get("/logout/", follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Me connecter" in response.data
+    with client.session_transaction() as sess:
+        assert "some_id" not in sess

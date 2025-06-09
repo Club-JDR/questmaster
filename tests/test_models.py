@@ -10,13 +10,13 @@ from website.models import (
     GameSession,
 )
 from datetime import datetime, timedelta
-from sqlalchemy.exc import IntegrityError
+import sqlalchemy.exc
 
 
-def test_user_creation(session):
+def test_user_creation(db_session):
     user = User(id="12345678901234567")
-    session.add(user)
-    session.commit()
+    db_session.add(user)
+    db_session.commit()
     assert user.id == "12345678901234567"
 
 
@@ -25,48 +25,37 @@ def test_invalid_user_id():
         User(id="invalid_id")
 
 
-def test_trophy_and_user_trophy(session):
-    user = User(id="11111111111111111")
-    trophy = Trophy(name="Badge test", icon="icon.png", unique=True)
-    session.add_all([user, trophy])
-    session.commit()
-
-    user_trophy = UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=1)
-    session.add(user_trophy)
-    session.commit()
-
-    assert user_trophy.quantity == 1
-    assert user_trophy.user == user
-    assert user_trophy.trophy == trophy
+def test_user_retrieval(regular_user):
+    print(regular_user)
+    assert regular_user.id == "698965618279317624"
+    assert not getattr(regular_user, "is_admin", False)
 
 
-def test_vtt_model(session):
+def test_vtt_model(db_session):
     vtt = Vtt(name="Roll20", icon="vtt.png")
-    session.add(vtt)
-    session.commit()
+    db_session.add(vtt)
+    db_session.commit()
     assert vtt.name == "Roll20"
 
 
-def test_system_model(session):
+def test_system_model(db_session):
     system = System(name="D&D 5e", icon="dnd.png")
-    session.add(system)
-    session.commit()
+    db_session.add(system)
+    db_session.commit()
     assert system.name == "D&D 5e"
 
 
-def test_channel_model(session):
+def test_channel_model(db_session):
     channel = Channel(id="99999999999999999", type="oneshot", size=5)
-    session.add(channel)
-    session.commit()
+    db_session.add(channel)
+    db_session.commit()
     assert channel.type == "oneshot"
 
 
-def test_game_model(session):
+def test_game_model(db_session, default_system, default_vtt):
     user = User(id="22222222222222222")
-    system = System(name="Pathfinder", icon=None)
-    vtt = Vtt(name="Foundry", icon=None)
-    session.add_all([user, system, vtt])
-    session.commit()
+    db_session.add_all([user, default_system, default_vtt])
+    db_session.commit()
 
     game = Game(
         slug="slug123",
@@ -74,8 +63,8 @@ def test_game_model(session):
         type="oneshot",
         length="3h",
         gm_id=user.id,
-        system_id=system.id,
-        vtt_id=vtt.id,
+        system_id=default_system.id,
+        vtt_id=default_vtt.id,
         description="An exciting test game.",
         restriction="all",
         party_size=4,
@@ -88,33 +77,45 @@ def test_game_model(session):
         complement="Extra info.",
         status="draft",
     )
-    session.add(game)
-    session.commit()
+    db_session.add(game)
+    db_session.commit()
     assert game.name == "Test Game"
     assert game.status == "draft"
 
 
-def test_game_session_model(session):
+def test_game_session_model(db_session):
     game = Game.query.first()
     start = datetime.now()
     end = start + timedelta(hours=3)
     session_obj = GameSession(game_id=game.id, start=start, end=end)
-    session.add(session_obj)
-    session.commit()
+    db_session.add(session_obj)
+    db_session.commit()
     assert session_obj.game == game
 
 
-def test_duplicate_unique_trophy(session):
-    user = User(id="33333333333333333")
-    trophy = Trophy(name="UniqueAward", icon="medal.png", unique=True)
-    session.add_all([user, trophy])
-    session.commit()
+def test_trophy_and_user_trophy(db_session, regular_user):
+    trophy = Trophy(id=100, name="Badge test", icon="icon.png", unique=True)
+    db_session.add_all([regular_user, trophy])
+    db_session.commit()
+    user_trophy = UserTrophy(user_id=regular_user.id, trophy_id=trophy.id, quantity=1)
+    db_session.add(user_trophy)
+    db_session.commit()
+    assert user_trophy.quantity == 1
+    assert user_trophy.user == regular_user
+    assert user_trophy.trophy == trophy
 
-    user_trophy1 = UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=1)
-    session.add(user_trophy1)
-    session.commit()
 
-    user_trophy2 = UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=1)
-    session.add(user_trophy2)
-    with pytest.raises(IntegrityError):
-        session.commit()
+def test_duplicate_unique_trophy(db_session, regular_user):
+    trophy = Trophy(id=200, name="UniqueAward", icon="medal.png", unique=True)
+    db_session.add_all([regular_user, trophy])
+    db_session.commit()
+    user_trophy1 = UserTrophy(user_id=regular_user.id, trophy_id=trophy.id, quantity=1)
+    db_session.add(user_trophy1)
+    db_session.commit()
+    user_trophy2 = UserTrophy(user_id=regular_user.id, trophy_id=trophy.id, quantity=1)
+    db_session.add(user_trophy2)
+    with pytest.raises(sqlalchemy.exc.IntegrityError) as exc_info:
+        db_session.commit()
+    assert "duplicate key" in str(exc_info.value) or "UNIQUE constraint" in str(
+        exc_info.value
+    )

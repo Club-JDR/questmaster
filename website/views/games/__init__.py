@@ -117,8 +117,8 @@ def create_game():
     game = build_game_from_form(data, gm_id)
     logger.info(f"Game object created: {game.name}")
     msg = f"Annonce {game.name} enregistrée."
-    is_open = data["action"] == "open"
-    if is_open:
+    post = data["action"] in ("open", "open-silent")
+    if post:
         logger.info("Game is being posted as open.")
         setup_game_post_creation(game, bot)
         logger.info("Game post-creation setup completed.")
@@ -129,7 +129,7 @@ def create_game():
         db.session.commit()
         logger.info(f"Game saved in DB with ID: {game.id}")
 
-        if is_open:
+        if post and data["status"] == "open-silent":
             game = db.get_or_404(Game, game.id)
             game.msg_id = send_discord_embed(game)
             db.session.commit()
@@ -137,7 +137,7 @@ def create_game():
 
     except Exception as e:
         logger.error(f"Failed to save game: {e}", exc_info=True)
-        if is_open:
+        if post and data["status"] == "open-silent":
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
@@ -154,24 +154,25 @@ def edit_game(slug):
     bot = get_bot()
 
     game = get_game_if_authorized(payload, slug)
-    gm_id = data["gm_id"]
-    post = game.status == "draft" and data["action"] == "open"
+    post = game.status == "draft" and data["action"] in ("open", "open-silent")
 
     logger.info(f"Editing game {game.id} - Post: {post}")
     update_game_from_form(game, data)
     logger.info(f"Game {game.id} updated with new data")
-    msg = f"Annonce {game.name} modifiée."
+    msg = "Annonce modifiée."
     if post:
         logger.info(
             "Game was draft, setting to open and creating session/channel/role."
         )
-        game.status = data["action"]
+        game.status = "open" if data["action"] == "open-silent" else data["action"]
         setup_game_post_creation(game, bot)
         logger.info(f"Game {game.id} post-publishing setup completed.")
-        msg = f"Annonce {game.name} modifiée et postée."
-
+        if data["action"] == "open-silent":
+            msg = "Annonce modifiée et ouverte."
+        else:
+            msg = "Annonce modifiée et postée."
     try:
-        if post:
+        if post and data["action"] == "open-silent":
             game.msg_id = send_discord_embed(game)
             logger.info(f"Embed sent for game {game.id}")
 
@@ -216,7 +217,7 @@ def change_game_status(slug):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
-@game_bp.route("/annonces/<slug>/sessions/ajouter", methods=["POST"])
+@game_bp.route("/annonces/<slug>/sessions/ajouter/", methods=["POST"])
 @login_required
 def add_game_session(slug):
     """
@@ -255,7 +256,7 @@ def add_game_session(slug):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
-@game_bp.route("/annonces/<slug>/sessions/<session_id>/editer", methods=["POST"])
+@game_bp.route("/annonces/<slug>/sessions/<session_id>/editer/", methods=["POST"])
 @login_required
 def edit_game_session(slug, session_id):
     """
@@ -293,7 +294,7 @@ def edit_game_session(slug, session_id):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
-@game_bp.route("/annonces/<slug>/sessions/<session_id>/supprimer", methods=["POST"])
+@game_bp.route("/annonces/<slug>/sessions/<session_id>/supprimer/", methods=["POST"])
 @login_required
 def remove_game_session(slug, session_id):
     """
@@ -345,7 +346,7 @@ def register_game(slug):
     except Exception as e:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
-    flash(f"{user.name} ajouté·e à la liste des joueur·euses.", "success")
+    flash("Vous êtes inscrit·e.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
@@ -380,7 +381,7 @@ def manage_game_registration(slug):
         logger.exception("Error during game registration management")
         flash(f"Erreur pendant l'inscription: {e}.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    flash(f"Liste des joueur·euses mise à jour.", "success")
+    flash("Liste des joueur·euses mise à jour.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
@@ -393,7 +394,10 @@ def get_game_edit_form(slug):
     """
     payload = who()
     game = get_game_if_authorized(payload, slug)
-    flash(f"Vous êtes en train de cloner une annonce.", "primary")
+    if request.path.endswith("/cloner/"):
+        flash("Vous êtes en train de cloner une annonce.", "primary")
+    else:
+        flash("Vous êtes en train de modifier une annonce.", "primary")
     return render_template(
         "game_form.j2",
         payload=payload,
