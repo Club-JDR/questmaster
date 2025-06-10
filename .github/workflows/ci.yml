@@ -48,7 +48,7 @@ jobs:
       - name: Tests with Pytest
         run: |
           docker compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
-      - name: Fix coverage paths and permissions
+      - name: Fix code coverage permissions and source paths
         run: |
           sudo chmod -R 777 test-results/
           sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
@@ -57,5 +57,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Check workspace structure and coverage
+        run: |
+          ls -al /github/workspace
+          grep '<source>' test-results/coverage.xml
       - name: Stop the stack
         run: docker compose down
