@@ -55,10 +55,8 @@ jobs:
               --cov website \
               --cov-report xml:test-results/coverage.xml \
               --junitxml=test-results/junit.xml
-      - name: Check workspace structure and coverage
-        run: |
-          ls -al /github/workspace
-          grep '<source>' test-results/coverage.xml
+      - name: Confirm coverage sources (debug)
+        run: grep '<source>' test-results/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
