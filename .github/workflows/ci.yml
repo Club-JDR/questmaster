@@ -45,21 +45,24 @@ jobs:
       - name: Lint with Black
         run: |
           docker compose run app-test black --check questmaster.py website
-      - name: Tests with Pytest
+      - name: Run tests with coverage
         run: |
-          docker compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
-      - name: Fix code coverage permissions and source paths
+          docker compose run \
+            --volume "$(pwd)":/github/workspace \
+            --workdir /github/workspace \
+            app-test \
+            python -m pytest tests/ \
+              --cov website \
+              --cov-report xml:test-results/coverage.xml \
+              --junitxml=test-results/junit.xml
+      - name: Check workspace structure and coverage
         run: |
-          sudo chmod -R 777 test-results/
-          sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
+          ls -al /github/workspace
+          grep '<source>' test-results/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: Check workspace structure and coverage
-        run: |
-          ls -al /github/workspace
-          grep '<source>' test-results/coverage.xml
       - name: Stop the stack
         run: docker compose down
