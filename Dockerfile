@@ -1,31 +1,46 @@
 FROM python:3.11-slim AS base
+
+# Set work directory and environment
 WORKDIR /questmaster
-RUN adduser --system --group questmaster && \
-  apt update && apt upgrade -y && \
-  apt install -y --no-install-recommends locales && \
-  apt clean && \
-  sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \
-  dpkg-reconfigure --frontend=noninteractive locales
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1 \
+  DEBIAN_FRONTEND=noninteractive \
+  LANG=fr_FR.UTF-8 \
+  LANGUAGE=fr_FR:fr \
+  LC_ALL=fr_FR.UTF-8
 
-FROM base AS build
+# System packages in one layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  locales \
+  gcc \
+  build-essential \
+  && sed -i 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen \
+  && locale-gen fr_FR.UTF-8 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN apt install -y --no-install-recommends build-essential gcc && apt clean && \
-  python -m pip install --upgrade pip
+# Add non-root user
+RUN adduser --system --group questmaster
 
-FROM build AS code
-COPY requirements.txt /questmaster/requirements.txt
-RUN python -m pip install -r requirements.txt
-COPY questmaster.py  /questmaster/questmaster.py
-COPY config.py /questmaster/config.py
-COPY website/ /questmaster/website
-RUN chown -R questmaster: /questmaster
+# Copy and install dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-FROM code AS app-test
-COPY tests/requirements.txt /questmaster/test-requirements.txt
-RUN python -m pip install -r test-requirements.txt
-COPY tests/ /questmaster/tests
+# Copy project files
+COPY questmaster.py config.py ./
+COPY website/ ./website
 
-FROM code AS app
+# Set permissions
+RUN chown -R questmaster:questmaster /questmaster
+
+# Test image
+FROM base AS app-test
+COPY tests/requirements.txt test-requirements.txt
+RUN pip install -r test-requirements.txt
+COPY tests/ ./tests
+
+# Final production image
+FROM base AS app
 USER questmaster
 EXPOSE 8000
-CMD [ "gunicorn",  "--workers=2", "--threads=4", "--bind",  "0.0.0.0:8000",  "questmaster:app"]
+CMD ["gunicorn", "--workers=2", "--threads=4", "--bind", "0.0.0.0:8000", "questmaster:app"]
