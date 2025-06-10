@@ -129,7 +129,7 @@ def create_game():
         db.session.commit()
         logger.info(f"Game saved in DB with ID: {game.id}")
 
-        if post and data["action"] == "open-silent":
+        if post and data["action"] == "open":
             game = db.get_or_404(Game, game.id)
             game.msg_id = send_discord_embed(game)
             db.session.commit()
@@ -172,7 +172,7 @@ def edit_game(slug):
         else:
             msg = "Annonce modifiée et postée."
     try:
-        if post and data["action"] == "open-silent":
+        if post and data["action"] == "open":
             game.msg_id = send_discord_embed(game)
             logger.info(f"Embed sent for game {game.id}")
 
