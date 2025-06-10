@@ -57,7 +57,7 @@ jobs:
               --junitxml=test-results/junit.xml
       - name: Fix coverage paths for SonarCloud
         run: |
-          sed -i 's|<source>/github/workspace/website|<source>website|' test-results/coverage.xml
+          sudo chmod -R 777 test-results/ && sed -i 's|<source>/github/workspace/website|<source>website|' test-results/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
