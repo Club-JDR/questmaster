@@ -354,7 +354,7 @@ def rollback_discord_resources(bot, game):
 
 
 def add_trophy_to_user(user_id, trophy_id, amount=1):
-    trophy = Trophy.query.get(trophy_id)
+    trophy = db.session.get(Trophy, trophy_id)
     if not trophy:
         return
 
