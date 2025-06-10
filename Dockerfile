@@ -11,16 +11,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # System packages in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  locales \
-  gcc \
   build-essential \
+  gcc \
+  locales \
   && sed -i 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen \
   && locale-gen fr_FR.UTF-8 \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-# Add non-root user
-RUN adduser --system --group questmaster
+  && rm -rf /var/lib/apt/lists/* \
+  && adduser --system --group questmaster
 
 # Copy and install dependencies
 COPY requirements.txt .
