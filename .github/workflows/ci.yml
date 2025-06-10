@@ -46,8 +46,6 @@ jobs:
         run: docker compose up -d --build app
       - name: Ensure app is running
         run: "sleep 5 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster-app-1"
-      - name: Init the database and run the migrations
-        run: docker exec questmaster-app-1 bash -c "flask db init && flask db migrate && flask db upgrade"
       - name: Lint with Black
         run: |
           docker compose run app-test black --check questmaster.py website
