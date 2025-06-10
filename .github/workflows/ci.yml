@@ -39,14 +39,13 @@ jobs:
           DISCORD_GM_ROLE_ID: "${{ secrets.DISCORD_GM_ROLE_ID }}"
           DISCORD_ADMIN_ROLE_ID: "${{ secrets.DISCORD_ADMIN_ROLE_ID }}"
           DISCORD_PLAYER_ROLE_ID: "${{ secrets.DISCORD_PLAYER_ROLE_ID }}"
-          USER_ID_LIST: "${{ secrets.USER_ID_LIST }}"
           FLASK_APP: "website"
       - name: Build the app
         run: docker compose build
       - name: Run the stack
         run: docker compose down && docker compose up -d db redis app
       - name: Ensure app is running
-        run: "sleep 10 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster_app_1"
+        run: "sleep 10 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster-app-1"
       - name: Init the database and run the migrations
         run: docker exec questmaster-app-1 bash -c "flask db init && flask db migrate && flask db upgrade"
       - name: Lint with Black
