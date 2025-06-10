@@ -15,10 +15,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
       - name: Create dotenv
         uses: iamsauravsharma/create-dotenv@v1.2.2
         env:
@@ -52,8 +48,6 @@ jobs:
       - name: Tests with Pytest
         run: |
           docker compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
-      - name: Fix code coverage permissions and path
-        run: sudo chmod -R 777 test-results/ && sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
