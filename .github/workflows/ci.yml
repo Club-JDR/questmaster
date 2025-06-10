@@ -55,8 +55,9 @@ jobs:
               --cov website \
               --cov-report xml:test-results/coverage.xml \
               --junitxml=test-results/junit.xml
-      - name: Confirm coverage sources (debug)
-        run: grep '<source>' test-results/coverage.xml
+      - name: Fix coverage paths for SonarCloud
+        run: |
+          sed -i 's|<source>/github/workspace/website|<source>website|' test-results/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
