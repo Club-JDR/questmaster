@@ -343,6 +343,10 @@ def test_e2e_scenario_2(
         text in response.data.decode()
         for text in [title, "Éditer", "Gérer", "Libre", "Archiver"]
     )
+    # Archive for cleanup
+    logged_in_admin.post(
+        f"/annonces/{slug}/statut/", data={"status": "archived"}, follow_redirects=True
+    )
 
 
 def test_calendar(logged_in_user):
