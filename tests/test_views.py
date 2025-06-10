@@ -131,6 +131,19 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert 'startDate="2025-07-08"' in response.data.decode()
     assert 'endDate="2025-07-08"' in response.data.decode()
 
+    # Get stats with two sessions
+    response = logged_in_user.get("/stats/?year=2025&month=7")
+    assert response.status_code == 200
+    assert "Statistiques" in response.data.decode()
+    assert "Les Masques de Nyarlathotep" in response.data.decode()
+    assert '<h6 class="text-primary">Appel de Cthulhu v7 <small class="text-muted">(1 campagne)</small></h6>' in response.data.decode()
+
+    # Get calendar info
+    response = logged_in_user.get("/api/calendar/?start=2025-06-01T00:00:00+02:00&end=2025-07-13T00:00:00+02:00")
+    assert response.status_code == 200
+    assert '"start": "2025-07-01T20:30:00"' in response.data.decode()
+    assert '"title": "Les Masques de Nyarlathotep par notsag"' in response.data.decode()
+
     # Remove session
     data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
     response = logged_in_admin.post(
@@ -325,12 +338,6 @@ def test_e2e_scenario_2(
         text in response.data.decode()
         for text in [title, "Éditer", "Gérer", "Libre", "Archiver"]
     )
-
-
-def test_stats(logged_in_user):
-    response = logged_in_user.get("/stats/")
-    assert response.status_code == 200
-    assert "Statistiques" in response.data.decode()
 
 
 def test_calendar(logged_in_user):

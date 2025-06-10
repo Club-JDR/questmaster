@@ -28,11 +28,11 @@ def seed_db():
 def test_app():
     app = create_app()
     with app.app_context():
-        db.session.remove()
-        db.drop_all()
         db.create_all()
         seed_db()
         yield app
+        db.session.remove()
+        db.drop_all()
 
 
 @pytest.fixture
@@ -89,9 +89,3 @@ def bot_user_id(test_app):
 @pytest.fixture
 def test_channel_id(test_app):
     return os.environ.get("UNITTEST_CHANNEL_ID")
-
-
-# @pytest.fixture(autouse=True)
-# def slow_down_tests():
-#     yield
-#     time.sleep(1)

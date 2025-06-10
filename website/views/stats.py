@@ -60,7 +60,6 @@ def get_stats():
             campaign_games[system][game_name]["gm"] = gm_name
 
         gm_names.append(gm_name)
-
     prev_month_date = base_day - relativedelta(months=1)
     next_month_date = base_day + relativedelta(months=1)
 

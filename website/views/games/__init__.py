@@ -129,7 +129,7 @@ def create_game():
         db.session.commit()
         logger.info(f"Game saved in DB with ID: {game.id}")
 
-        if post and data["status"] == "open-silent":
+        if post and data["action"] == "open-silent":
             game = db.get_or_404(Game, game.id)
             game.msg_id = send_discord_embed(game)
             db.session.commit()
@@ -137,7 +137,7 @@ def create_game():
 
     except Exception as e:
         logger.error(f"Failed to save game: {e}", exc_info=True)
-        if post and data["status"] == "open-silent":
+        if post and data["action"] == "open-silent":
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
