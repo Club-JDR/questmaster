@@ -1,10 +1,11 @@
-from website import db
-from website.models.session import Session
+from website.extensions import db
+from website.models.game_session import GameSession
 from sqlalchemy import Enum, orm
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 import sqlalchemy.dialects.postgresql as pg
 from schema import Schema, SchemaError
+
 
 GAME_TYPES = ("oneshot", "campaign")
 GAME_STATUS = ("draft", "open", "closed", "archived")
@@ -25,8 +26,9 @@ CLASSIFICATION_SCHEMA = Schema(
 
 players_table = db.Table(
     "game_players",
-    db.Column("game_id", db.ForeignKey("game.id")),
-    db.Column("player_id", db.ForeignKey("user.id")),
+    db.Column("game_id", db.ForeignKey("game.id"), primary_key=True),
+    db.Column("player_id", db.ForeignKey("user.id"), primary_key=True),
+    db.UniqueConstraint("game_id", "player_id", name="uix_game_user"),
 )
 
 
@@ -35,6 +37,7 @@ class Game(db.Model):
     COLORS = {"oneshot": 0x198754, "campaign": 0x0D6EFD}
 
     id = db.Column(db.BigInteger(), primary_key=True)
+    slug = db.Column(db.String(), unique=True, index=True)
     name = db.Column(db.String(), nullable=False)
     type = db.Column("type", Enum(*GAME_TYPES, name="game_type_enum"), nullable=False)
     length = db.Column(db.String(), nullable=False)
@@ -60,7 +63,7 @@ class Game(db.Model):
     ambience = db.Column(pg.ARRAY(Enum(*AMBIENCES, name="game_ambience_enum")))
     complement = db.Column(db.Text())
     img = db.Column(db.String())
-    sessions = db.relationship("Session", backref="game")
+    sessions = db.relationship("GameSession", backref="game")
     channel = db.Column(db.String())
     msg_id = db.Column(db.String())
     role = db.Column(db.String())
@@ -79,3 +82,9 @@ class Game(db.Model):
             return value
         except SchemaError:
             raise ValueError(f"Invalid classification format {value}")
+
+    @orm.validates("party_size")
+    def validate_party_size(self, key, value):
+        if int(value) < 1:
+            raise ValueError(f"Number of players must be > 1, was {value}")
+        return value

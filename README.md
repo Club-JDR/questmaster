@@ -45,12 +45,6 @@ Start the complete stack:
 docker compose up -d --build
 ```
 
-To init the database and run the migrations:
-
-```sh
-docker exec -it questmaster-app-1 bash -c "flask db init && flask db migrate && flask db upgrade"
-```
-
 To run the tests:
 
 ```sh
@@ -64,12 +58,6 @@ Run at least the database and eventually pgadmin:
 
 ```sh
 docker compose down && docker compose up -d --build db pgadmin
-```
-
-To init the database and run the migrations:
-
-```sh
-flask db init && flask db migrate && flask db upgrade
 ```
 
 Then, you can run the app:

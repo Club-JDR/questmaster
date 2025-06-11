@@ -3,3 +3,4 @@ pytest-cov==4.0.0
 black==22.10.0
 python-dotenv==0.21.0
 beautifulsoup4
+blinker>=1.6

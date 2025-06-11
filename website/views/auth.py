@@ -1,7 +1,11 @@
-from flask import redirect, url_for, current_app, session, abort
-from website import app, db
+from flask import redirect, url_for, session, abort, request, Blueprint
+from urllib.parse import urlparse, urljoin
+from website.extensions import db, discord
 from website.models import User
+from config import SEARCH_GAMES_ROUTE
 import functools
+
+auth_bp = Blueprint("auth", __name__)
 
 
 def who():
@@ -21,45 +25,55 @@ def who():
 
 def login_required(view):
     """
-    View decorator that redirects to 403 is not logged-in.
+    View decorator that redirects to 403 if not logged-in.
     """
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if "user_id" not in session:
-            abort(403)
+            return redirect(url_for("auth.login"))
         return view(**kwargs)
 
     return wrapped_view
 
 
-@app.route("/login/")
+@auth_bp.route("/login/")
 def login():
     """
     Login using Discord OAuth2.
     """
     session.permanent = True
-    return current_app.discord.create_session()
+    next_url = (
+        session.get("next_url") or request.referrer or url_for(SEARCH_GAMES_ROUTE)
+    )
+    session["next_url"] = next_url
+    return discord.create_session()
 
 
-@app.route("/logout/")
+@auth_bp.route("/logout/")
 def logout():
     """
     Logout by removing username from session.
     """
     session.clear()
-    current_app.discord.revoke()
-    return redirect(url_for("search_games"))
+    discord.revoke()
+    return redirect(url_for(SEARCH_GAMES_ROUTE))
 
 
-@app.route("/callback/")
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
+
+
+@auth_bp.route("/callback/")
 def callback():
     """
     Login callback redirect to homepage.
     """
-    current_app.discord.callback()
-    if current_app.discord.authorized:
-        uid = current_app.discord.fetch_user().id
+    discord.callback()
+    if discord.authorized:
+        uid = discord.fetch_user().id
         try:
             user = db.get_or_404(User, str(uid))
         except Exception:
@@ -75,4 +89,7 @@ def callback():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
-    return redirect(url_for("search_games"))
+    redirect_url = session.pop("next_url", url_for(SEARCH_GAMES_ROUTE))
+    if not is_safe_url(redirect_url):
+        redirect_url = url_for(SEARCH_GAMES_ROUTE)
+    return redirect(redirect_url)

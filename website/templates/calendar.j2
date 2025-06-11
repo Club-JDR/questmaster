@@ -1,0 +1,19 @@
+{% extends 'base.j2' %}
+{% block title %}Calendrier{% endblock %}
+{% block head %}{{ super() }}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
+{% endblock%}
+{% block content %}
+<h1 class="text-center"><i class="bi bi-calendar4-week"></i> Le Calendrier du Club</h1>
+<div class="row gy-5 p-4">
+  <div id="month-games-calendar"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"
+  integrity="sha256-i4vDW9EgtaJmeauDDymtNF2omPZ1fCKpf4w1gBlU1IE=" crossorigin="anonymous"></script>
+<script src="/static/js/calendar.js">
+</script>
+
+{% endblock %}

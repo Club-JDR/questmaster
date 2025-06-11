@@ -1,0 +1,30 @@
+{% extends 'base.j2' %}
+{% block head %} {{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"
+  integrity="sha256-GzSkJVLJbxDk36qko2cnawOGiqz/Y8GsQv/jMTUrx1Q=" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" /> {% endblock
+%} {% block content %}
+<h1 class="text-center">{% if game %}<i class="bi bi-pencil-square"></i>{% if clone %} Cloner {% else%} Éditer{% endif
+  %}
+  l'{% else %}Nouvelle {% endif%}annonce
+</h1>
+<form method="post" action="{% if game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}"
+  class="row needs-validation" novalidate>
+  {% include 'game_form/basics.j2' %}
+  {% include 'game_form/requirements.j2' %}
+  {% include 'game_form/optional.j2' %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="gm_id"
+    value="{% if game and not clone %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
+</form>
+{% endblock %}
+{% block scripts %} {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.17.8/dist/tagify.min.js"
+  integrity="sha256-cBY/Uc7f5GDeWDnEKtUMG00AZdN2Iwp6LqslivKpm2M=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
+  integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
+  integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
+<script src="/static/js/game-form.js"></script>
+{% endblock %}

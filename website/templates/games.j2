@@ -1,0 +1,39 @@
+{% extends 'base.j2' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1 class="text-center"><i class="bi bi-megaphone"></i> {{ title }}</h1>
+{% if request.path == '/' or request.path == '/annonces/' %}
+<nav class="navbar bg-body-tertiary" aria-label="SearchBar">
+  <div class="container-fluid">
+    <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-controls="searchBar"
+      aria-expanded="false" aria-label="Toggle search">Recherche avancée
+    </button>
+  </div>
+</nav>
+{% include 'searchbar.j2' %}
+{% endif %}
+{% if prev_url or next_url %}
+<nav class="navbar bg-body-tertiary fixed-bottom justify-content-center" aria-label="PageBar">
+  <div class="btn-group" role="group">
+    <a class="btn btn-outline-secondary {% if not prev_url %}disabled{% endif %}" href="{{ prev_url }}"
+      aria-label="Previous">Annonces précédentes</a>
+    <a class="btn btn-outline-secondary {% if not next_url %}disabled{% endif %}" href="{{ next_url }}"
+      aria-label="Previous">Annonces suivantes</a>
+  </div>
+</nav>
+{% endif %}
+<div class="row gy-5 p-4">
+  {% if games|length == 0 %}
+  <div class="alert alert-warning" role="alert">
+    Aucune annonce correspondant aux filtres sélectionnés !
+  </div>
+  {% else %}
+  <div id="game-cards-container" class="row row-cols-1 row-cols-md-3 g-4">
+    {% include "game_cards_container.j2" %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %} {{ super() }}
+<script src="/static/js/cards.js"></script>
+{% endblock %}

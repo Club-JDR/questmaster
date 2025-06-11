@@ -15,10 +15,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
       - name: Create dotenv
         uses: iamsauravsharma/create-dotenv@v1.2.2
         env:
@@ -39,27 +35,29 @@ jobs:
           DISCORD_GM_ROLE_ID: "${{ secrets.DISCORD_GM_ROLE_ID }}"
           DISCORD_ADMIN_ROLE_ID: "${{ secrets.DISCORD_ADMIN_ROLE_ID }}"
           DISCORD_PLAYER_ROLE_ID: "${{ secrets.DISCORD_PLAYER_ROLE_ID }}"
-          USER_ID_LIST: "${{ secrets.USER_ID_LIST }}"
           FLASK_APP: "website"
-      - name: Build the app
-        run: docker compose build
-      - name: Run the stack
-        run: docker compose down && docker compose up -d db redis app
+      - name: Run middleware
+        run: docker compose down && docker compose up -d db redis 
+      - name: Build and run the app
+        run: docker compose up -d --build app
       - name: Ensure app is running
-        run: "sleep 10 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster_app_1"
-      - name: Init the database and run the migrations
-        run: docker exec questmaster-app-1 bash -c "flask db init && flask db migrate && flask db upgrade"
+        run: "sleep 5 && curl -4 -s -X 'GET' 'http://localhost:8000/health/' -H 'accept: application/json' || docker logs questmaster-app-1"
       - name: Lint with Black
         run: |
           docker compose run app-test black --check questmaster.py website
-      - name: Seed test data
+      - name: Run tests with coverage
         run: |
-          docker exec questmaster-db-1 psql -h localhost -U clubjdr clubjdr -c "insert into public.user values('701747435097292830'), ('664487064577900594'), ('698965618279317624'); insert into public.channel values('1284847865776177217', 'campaign', 10), ('1247613296870162474', 'campaign', 5);"
-      - name: Tests with Pytest
+          docker compose run \
+            --volume "$(pwd)":/github/workspace \
+            --workdir /github/workspace \
+            app-test \
+            python -m pytest tests/ \
+              --cov website \
+              --cov-report xml:test-results/coverage.xml \
+              --junitxml=test-results/junit.xml
+      - name: Fix coverage paths for SonarCloud
         run: |
-          docker compose run app-test python -m pytest tests/ --cov website --cov-report xml:test-results/coverage.xml --junitxml=test-results/junit.xml
-      - name: Fix code coverage permissions and path
-        run: sudo chmod -R 777 test-results/ && sed -i 's@<source>/questmaster@<source>/github/workspace@g' test-results/coverage.xml
+          sudo chmod -R 777 test-results/ && sed -i 's|<source>/github/workspace/website|<source>website|' test-results/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:

@@ -6,6 +6,7 @@ from tenacity import (
 )  # for exponential backoff
 from website.utils.exceptions import RateLimited
 from flask_discord import Unauthorized
+from unidecode import unidecode
 import requests
 import json
 
@@ -82,7 +83,7 @@ class Discord:
 
     def create_channel(self, channel_name, parent_id, role_id, gm_id):
         payload = {
-            "name": channel_name,
+            "name": "-".join(unidecode(channel_name).split()),
             "type": 0,
             "parent_id": parent_id,
             "permission_overwrites": [
@@ -103,7 +104,7 @@ class Discord:
 
     def create_role(self, role_name, permissions, color):
         payload = {
-            "name": role_name,
+            "name": "_".join(unidecode(role_name).split()),
             "permissions": permissions,
             "color": color,
             "mentionable": True,

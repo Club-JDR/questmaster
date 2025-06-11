@@ -8,6 +8,7 @@ def test_health(client):
     Test /health/ endpoint.
     """
     response = client.get("/health/")
+    print(response.data)
     data = json.loads(response.data)
     assert response.content_type == mimetype
     assert response.status_code == 200

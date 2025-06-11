@@ -1,0 +1,125 @@
+<div class="col-lg-3 p-3">
+  <div class="row">
+    <div class="figure"><img id="imgPreview" alt="placeholder"
+        src="{% if game and game.img %}{{ game.img }}{% else %}/static/img/placeholder.jpeg{% endif %}"
+        class="figure-img img-fluid rounded img-preview" onerror="this.src='/static/img/placeholder.jpeg'"
+        role="presentation"></div>
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadImageModal" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5">Choisir une image</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="input-group mb-2">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="imgLink" name="img" {% if game and game.img
+                  %}value="{{ game.img }}" {% endif %}>
+                <label for="imgLink" class="form-label">Lien vers l'image :</label>
+              </div>
+              <button id="imgSelect" type="button" class="btn btn-primary" data-bs-dismiss="modal"
+                aria-label="Close">Choisir</button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <p>Vous pouvez utiliser <a href="https://imgur.com/upload" target="_blank" rel="noopener">imgur</a> pour
+              uploader vos propres images. Ensuite, faites un clic-droit sur l'image puis "Copier le lien de l'image".
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row mx-auto mb-2">
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal">Choisir
+      une image</button>
+  </div>
+  <div class="row">
+    <div class="mb-2">
+      <p class="form-label"><strong>Classification du scénario :</strong></p>
+
+      {% set classifications = [
+      ('Action', 'class-action', game.classification.action if game else 0),
+      ('Investigation', 'class-investigation', game.classification.investigation if game else 0),
+      ('Interaction', 'class-interaction', game.classification.interaction if game else 0),
+      ('Horreur', 'class-horror', game.classification.horror if game else 0),
+      ] %}
+
+      {% for label, name, value in classifications %}
+      <div class="row align-items-center mb-3">
+        <label class="col-sm-4 col-form-label">{{ label }}</label>
+        <div class="col-sm-5">
+          <input type="range" class="form-range" min="0" max="2" step="1" id="{{ name }}" name="{{ name }}"
+            value="{{ value }}">
+        </div>
+        <div class="col-sm-3">
+          <span class="form-range-label" data-for="{{ name }}">
+            {% if value == 1 %}Mineur{% elif value == 2 %}Majeur{% elif value == 0 %}Absent{% endif %}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="row">
+    <p class="form-label"><strong>Ambiance recherchée :</strong></p>
+    <div class="mb-2">
+      <div class="form-check form-switch">
+        <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" id="chill" name="chill" {% if
+          game and "chill" in game.ambience %}checked{% endif %}>
+        <label class="form-check-label" for="chill">😌 Décontractée</label>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" name="serious" id="serious"
+          {% if game and "serious" in game.ambience %}checked{% endif %}>
+        <label class="form-check-label" for="serious">⚠️ Sérieuse</label>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" name="comic" id="comic" {% if
+          game and "comic" in game.ambience %}checked{% endif %}>
+        <label class="form-check-label" for="comic">😄 Comique</label>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input" role="switch" type="checkbox" aria-checked="false" name="epic" id="epic" {% if
+          game and "epic" in game.ambience %}checked{% endif %}>
+        <label class="form-check-label" for="epic">🏆 Épique</label>
+      </div>
+    </div>
+  </div>
+  <div class="row pt-3 mx-auto">
+    <div class="col-12">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle w-100" type="button" id="gameActionDropdown"
+          data-bs-toggle="dropdown" aria-expanded="false">
+          Enregistrer
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="gameActionDropdown">
+          <li>
+            <button type="submit" name="action" value="draft" class="dropdown-item">
+              💾 Enregistrer {% if game %}les modifications{% else %}comme brouillon{% endif %}
+            </button>
+          </li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+          <li>
+            <button type="submit" name="action" value="open-silent" class="dropdown-item" {% if game and game.status
+              !='draft' and not clone %}disabled{% endif %}>
+              ▶️ Ouvrir (sans publier sur Discord)
+            </button>
+          </li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+          <li>
+            <button type="submit" name="action" value="open" class="dropdown-item" {% if game and game.status !='draft'
+              and not clone %}disabled{% endif %}>
+              📢 Publier sur Discord
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

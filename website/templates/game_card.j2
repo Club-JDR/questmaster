@@ -1,0 +1,46 @@
+<div class="col" data-game-id="{{game.slug}}">
+  <div class="card game-card shadow h-100 shiny">
+    <div
+      class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
+      <h5 class="card-title text-truncate">{{ game.name }}</h5>
+    </div>
+    <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}" class="card-img-bottom img-preview"
+      alt="{{ game.name }}">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-6">
+          <i class="bi bi-book"></i>&nbsp; {% if game.type=='campaign' %}Campagne{% else %}One Shot{% endif %}
+        </div>
+        <div class="col-6">
+          <i class="bi bi-joystick"></i>&nbsp; {{ game.system.name }}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <i class="bi bi-person"></i>&nbsp; {{ game.gm.name }}
+        </div>
+        <div class="col-6">
+          <i class="bi bi-calendar"></i>&nbsp; {{ game.date|format_datetime }}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <i class="bi bi-people"></i>&nbsp; {{ game.players|length }}/{{ game.party_size }}
+        </div>
+        <div class="col-6">
+          <i class="bi bi-clock-history"></i>&nbsp; {{ game.length }}
+        </div>
+      </div>
+      <a href="/annonces/{{game.slug}}/" class="stretched-link"></a>
+    </div>
+    {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
+    <div class="card-footer text-center">
+      {% if game.status=='draft' %}<span class="badge text-bg-secondary">brouillon</span>{% endif %} {% if
+      game.restriction == 'all' %}
+      <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
+      <span class="badge text-bg-warning">16+</span> {% else %}
+      <span class="badge text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge bg-secondary">{{
+        tag }}</span>{% endfor %}
+    </div>
+  </div>
+</div>

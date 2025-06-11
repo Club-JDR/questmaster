@@ -1,0 +1,75 @@
+<div class="collapse" id="searchBar">
+  <div class="p-4">
+    <form class="d-container-fluid" role="search" method="get" action="/annonces/">
+      <div class="row">
+        <div class="col-sm-4 pb-2">
+          <div class="input-group me-2">
+            <span class="input-group-text" id="name">Nom</span>
+            <input type="text" class="form-control" placeholder="Nom de l'annonce" aria-label="name"
+              aria-describedby="name" name="name" {% if request.args.get( 'name' )
+              %}value="{{ request.args.get('name') }}" {% endif %}>
+          </div>
+        </div>
+        <div class="col-sm-4 pb-2">
+          <div class="input-group me-2">
+            <span class="input-group-text" id="system">Système</span>
+            <select class="form-select" name="system" aria-describedby="Système">
+              <option value="None"></option>
+              {% for s in systems %}
+              <option value="{{ s.id }}" {% if request.args.get('system')|int==s.id %}selected{% endif %}>{{ s.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-sm-4 pb-2">
+          <div class="input-group me-2">
+            <span class="input-group-text" id="vtt">VTT</span>
+            <select class="form-select" name="vtt" aria-describedby="VTT">
+              <option value="None"></option>
+              {% for v in vtts %}
+              <option value="{{ v.id }}" {% if request.args.get('vtt')|int==v.id %}selected{% endif %}>{{ v.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-3 pb-2">
+          <div class="btn-group me-2">
+            <input type="checkbox" class="btn-check" id="oneshot" autocomplete="off" name="oneshot" checked>
+            <label class="btn btn-sm btn-outline-success" for="oneshot">Oneshots</label>
+            <input type="checkbox" class="btn-check" id="campaign" autocomplete="off" name="campaign" checked>
+            <label class="btn btn-sm btn-outline-primary" for="campaign">Campagnes</label>
+          </div>
+        </div>
+        <div class="col-sm-4 pb-2">
+          <div class="btn-group me-2">
+            <input type="checkbox" class="btn-check" id="open" autocomplete="off" name="open" checked>
+            <label class="btn btn-sm btn-outline-secondary" for="open">Ouvertes</label>
+            <input type="checkbox" class="btn-check" id="closed" autocomplete="off" name="closed">
+            <label class="btn btn-sm btn-outline-secondary" for="closed">Complètes</label>
+            <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived">
+            <label class="btn btn-sm btn-outline-secondary" for="archived">Archivées</label>
+            <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft">
+            <label class="btn btn-sm btn-outline-secondary" for="draft">Brouillons</label>
+          </div>
+        </div>
+        <div class="col-sm-3 pb-2">
+          <div class="btn-group me-2">
+            <input type="checkbox" class="btn-check" id="all" autocomplete="off" name="all" checked>
+            <label class="btn btn-sm btn-outline-success" for="all">Tout public</label>
+            <input type="checkbox" class="btn-check" id="16+" autocomplete="off" name="16+" checked>
+            <label class="btn btn-sm btn-outline-warning" for="16+">16+</label>
+            <input type="checkbox" class="btn-check" id="18+" autocomplete="off" name="18+" checked>
+            <label class="btn btn-sm btn-outline-danger" for="18+">18+</label>
+          </div>
+        </div>
+        <div class="col-sm-2 pb-2 d-grid">
+          <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

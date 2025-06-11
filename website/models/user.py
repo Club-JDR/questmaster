@@ -1,15 +1,16 @@
-from website import db, bot, cache
+from website.extensions import db, cache
 from sqlalchemy import orm
 from flask import current_app
+from website.bot import get_bot
+from website.utils.logger import logger
+import re
 
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 
-@cache.memoize(timeout=300)
+@cache.memoize()
 def get_user(user_id):
-    """
-    Wrapper to get user info from cache or Discord API.
-    """
+    bot = get_bot()
     return bot.get_user(user_id)
 
 
@@ -18,9 +19,27 @@ class User(db.Model):
 
     id = db.Column(db.String(), primary_key=True)
     games_gm = db.relationship("Game", backref="gm")
+    trophies = db.relationship(
+        "UserTrophy", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __init__(self, id):
+        if not re.fullmatch(r"\d{17,18}", id):
+            raise ValueError(f"{id} is not a valid Discord UID.")
         self.id = id
+
+    @property
+    def trophy_summary(self):
+        summary = []
+        for ut in self.trophies:
+            summary.append(
+                {
+                    "name": ut.trophy.name,
+                    "icon": ut.trophy.icon,
+                    "quantity": ut.quantity,
+                }
+            )
+        return summary
 
     @orm.reconstructor
     def init_on_load(self):
