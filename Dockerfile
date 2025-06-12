@@ -1,4 +1,3 @@
-# -- Stage 1: Builder --
 FROM python:3.13-alpine AS builder
 
 WORKDIR /app
@@ -18,7 +17,6 @@ RUN pip install --no-cache-dir --upgrade pip \
   && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
-# -- Stage 2: Base Runtime --
 FROM python:3.13-alpine AS base
 WORKDIR /questmaster
 RUN apk add --no-cache \
@@ -40,20 +38,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   LANGUAGE=fr_FR:fr \
   LC_ALL=fr_FR.UTF-8
 COPY --from=builder /install /usr/local
-
-# Copy common app files
 COPY questmaster.py config.py ./
 COPY website/ ./website
 COPY migrations/ ./migrations
 RUN chown -R questmaster:questmaster /questmaster
 
-# -- Stage 3: Test Image --
 FROM base AS app-test
 COPY tests/requirements.txt ./test-requirements.txt
 RUN pip install --no-cache-dir -r test-requirements.txt
 COPY tests/ ./tests
 
-# -- Stage 4: Production App --
 FROM base AS app
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && chown questmaster:questmaster /entrypoint.sh
