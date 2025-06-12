@@ -49,6 +49,7 @@ def create_app():
     cache.init_app(app)
     csrf.init_app(app)
     discord.init_app(app)
+    app.cli.add_command(seed_trophies)
 
     # Create bot instance and store it
     bot_instance = Discord(
@@ -78,9 +79,5 @@ def create_app():
 
     register_blueprints(app)
     register_filters(app)
-
-    with app.app_context():
-        db.create_all()
-        seed_trophies()
 
     return app

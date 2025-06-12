@@ -3,6 +3,8 @@ from flask_migrate import Migrate
 from flask_caching import Cache
 from flask_wtf.csrf import CSRFProtect
 from flask_discord import DiscordOAuth2Session
+from flask.cli import with_appcontext
+import click
 
 
 db = SQLAlchemy()
@@ -12,6 +14,8 @@ csrf = CSRFProtect()
 discord = DiscordOAuth2Session()
 
 
+@click.command("seed-trophies")
+@with_appcontext
 def seed_trophies():
     from website.models.trophy import (
         Trophy,
