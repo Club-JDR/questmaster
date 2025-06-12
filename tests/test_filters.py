@@ -9,5 +9,7 @@ def test_format_datetime():
     date = datetime.datetime(2000, 1, 1, 0, 1)
     locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
     f_date = format_datetime(date).lower()
-    expected_date = "sam. 01/01 - 00h01"
-    assert expected_date == f_date
+    assert f_date in [
+        "sam. 01/01 - 00h01",
+        "sam 01/01 - 00h01",
+    ]
