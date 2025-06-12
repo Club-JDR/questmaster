@@ -7,7 +7,6 @@ from flask.cli import with_appcontext
 import click
 
 
-
 db = SQLAlchemy()
 migrate = Migrate()
 cache = Cache()
