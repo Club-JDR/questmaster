@@ -3,6 +3,7 @@ services:
     build:
       context: .
       target: app
+    image: ghcr.io/club-jdr/questmaster:${TAG:-latest}
     ports:
       - "8000:8000"
     env_file:

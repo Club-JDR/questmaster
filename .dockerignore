@@ -8,3 +8,4 @@ __pycache__
 tests*.xml
 sonar-project.properties
 test-results
+.env
