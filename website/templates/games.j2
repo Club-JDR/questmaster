@@ -35,5 +35,7 @@
 </div>
 {% endblock %}
 {% block scripts %} {{ super() }}
+{% if request.path in ['/', '/annonces/'] %}
 <script src="/static/js/cards.js"></script>
+{% endif %}
 {% endblock %}
