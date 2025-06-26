@@ -42,6 +42,13 @@ def test_game_form(logged_in_admin, logged_in_user):
     assert b"Publier" in response.data
 
 
+def test_search(test_app, default_system, default_vtt):
+    filters = f"?name=&system={default_system}6&vtt={default_vtt}&campaign=on&open=on&closed=on&archived=on&draft=on&all=on&16%2B=on&18%2B=on"
+    client = test_app.test_client()
+    response = client.get(f'/annonces/{filters}')
+    assert response.status_code == 200
+
+
 @patch("flask_wtf.csrf.validate_csrf", return_value=True)
 def test_e2e_scenario_1(
     mock_csrf,
