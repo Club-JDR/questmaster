@@ -35,7 +35,7 @@
   </svg>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/">
+      <a id="brand" class="navbar-brand" href="/">
         <img src="/static/img/logo.png" alt="QuestMaster" height="50">
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -45,34 +45,56 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <a id="annoncesMenu" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
               Annonces
             </a>
-            <ul class="dropdown-menu">
+            <ul id="annoncesDropdown" class="dropdown-menu">
               <li>
                 <h6 class="dropdown-header">Pour les Joueur·euses</h6>
               </li>
-              <li><a class="dropdown-item" href="/annonces/">Annonces ouvertes</a></li>
-              <li><a class="dropdown-item {% if not payload['username'] %}disabled{% endif %}" href="/mes_parties/">Mes
+              <li><a id="openGames" class="dropdown-item" href="/annonces/">Annonces ouvertes</a></li>
+              <li><a id="myPlayerGames" class="dropdown-item {% if not payload['username'] %}disabled{% endif %}"
+                  href="/mes_parties/">Mes
                   parties</a></li>
               <li>
                 <h6 class="dropdown-header">Pour les MJs</h6>
               </li>
-              <li><a class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}"
+              <li><a id="myGmGames"
+                  class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}"
                   href="/mes_annonces/">Mes annonces</a></li>
-              <li><a class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}"
+              <li><a id="postNewGame"
+                  class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}"
                   href="/annonce/">Poster une annonce</a></li>
             </ul>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <a id="infoMenu" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
               Informations
             </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="/calendrier/">Calendrier</a></li>
-              <li><a class="dropdown-item" href="/stats/">Statistiques</a></li>
-              <li><a class="dropdown-item" href="/systemes/">Systèmes</a></li>
-              <li><a class="dropdown-item" href="/vtts/">VTTs</a></li>
+            <ul id="informationsDropdown" class="dropdown-menu">
+              <a id="calendarLink" class="dropdown-item" href="/calendrier/">Calendrier</a>
+              <a id="statsLink" class="dropdown-item" href="/stats/">Statistiques</a>
+              <a id="systemsLink" class="dropdown-item" href="/systemes/">Systèmes</a>
+              <a id="vttsLink" class="dropdown-item" href="/vtts/">VTTs</a>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a id="demoMenu" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              Aide
+            </a>
+            <ul id="demoDropdown" class="dropdown-menu">
+              <a id="playerDemo" class="dropdown-item" href="/demo/">Générale</a>
+              <a id="playerDemo" class="dropdown-item" href="/demo/inscription/">M'inscrire</a>
+              <li>
+                <h6 class="dropdown-header">Pour les MJs</h6>
+              </li>
+              <li><a class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}"
+                  href="/demo/poster/">Poster une annonce</a></li>
+              <li><a class="dropdown-item {% if not payload[ 'username'] or not payload['is_gm'] %}disabled{% endif %}"
+                  href="/demo/gerer/">Gérer une annonce</a></li>
             </ul>
           </li>
           {% if payload[ 'is_admin'] %}
@@ -138,7 +160,7 @@
               </li>
               {% else %}
               <li>
-                <a href="/login/" class="d-flex btn btn-outline-light">Me connecter</a>
+                <a id="loginButton" href="/login/" class="d-flex btn btn-outline-light">Me connecter</a>
               </li>
               {% endif %}
             </ul>
@@ -174,6 +196,12 @@
   <script src="https://cdn.jsdelivr.net/npm/konami@1.6.3/konami.min.js"></script>
   <script src="/static/js/konami.js"></script>
   <script src="/static/js/theme.js"></script>
+  <script>
+    window.userInfo = {
+      isAuthenticated: "{{ 'true' if payload.get('username') else 'false' }}",
+      isGM: "{{ 'true' if payload.get('is_gm') else 'false' }}"
+    };
+  </script>
   {% endblock %}
 </body>
 

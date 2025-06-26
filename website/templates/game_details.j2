@@ -51,7 +51,6 @@
             </div>
             {% endif %}
           </div>
-
           <div class="info-bottom">
             <div class="classification">
               <h6>Classification</h6>
@@ -116,7 +115,7 @@
       </div>
       <div class="right-panel-wrapper d-flex flex-column" style="flex: 1;">
         <div class="player-panel">
-          <div class="player-list-card">
+          <div id="playerListCard" class="player-list-card">
             <div class="card-header text-center">
               Joueur·euses<br />{% if game.party_selection and not game.status == "closed"%}(sur
               sélection){% endif %}
@@ -170,7 +169,7 @@
               </span>
             </div>
           </div>
-          {% if payload['user_id'] != game.gm.id and game.status == "open" %}
+          {% if request.path == '/demo/inscription/' or (payload['user_id'] != game.gm.id and game.status == "open") %}
           <form class="row" method="post" action="/annonces/{{ game.slug }}/inscription/">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
@@ -238,7 +237,7 @@
         {% endif %}
       </div>
     </div>
-    <div class="sessions-list">
+    <div id="sessions-list" class="sessions-list">
       <h3 class="text-center">Sessions</h3>
       <div class="sessions-cards">
         {% for session in game.sessions|sort(attribute='start') %}
@@ -285,4 +284,11 @@
     integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
   <script src="/static/js/game-sessions.js"></script>
   <script src="/static/js/game-events.js"></script>
+  {% if '/demo/' in request.path %}
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+  {% if request.path == '/demo/inscription/' %}
+  <script src="/static/js/intro-register.js"></script>
+  {% endif %}
+  {% endif %}
   {% endblock %}

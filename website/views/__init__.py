@@ -4,6 +4,7 @@ from .health import health_bp
 from .misc import misc_bp
 from .errors import error_bp
 from .stats import stats_bp
+from .demo import demo_bp
 from .filters import format_datetime
 
 
@@ -14,6 +15,7 @@ def register_blueprints(app):
     app.register_blueprint(misc_bp)
     app.register_blueprint(error_bp)
     app.register_blueprint(stats_bp)
+    app.register_blueprint(demo_bp)
 
 
 def register_filters(app):
