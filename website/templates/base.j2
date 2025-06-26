@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/static/css/custom.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
   <title>QuestMaster - {% block title %}Accueil{% endblock %}</title>
   {% endblock %}
 </head>
@@ -197,11 +198,14 @@
   <script src="/static/js/konami.js"></script>
   <script src="/static/js/theme.js"></script>
   <script>
-    window.userInfo = {
-      isAuthenticated: "{{ 'true' if payload.get('username') else 'false' }}",
-      isGM: "{{ 'true' if payload.get('is_gm') else 'false' }}"
-    };
+    window.pageContext = {
+      path: "{{ request.path }}",
+      isAuthenticated: {% if payload.get('username') %}true{% else %} false{% endif %},
+    isGM: {% if payload.get('is_gm') %} true{% else %} false{% endif %}
+  };
   </script>
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+  <script src="/static/js/intro-manager.js"></script>
   {% endblock %}
 </body>
 

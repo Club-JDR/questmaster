@@ -184,7 +184,7 @@
           </form>
           {% endif %}
         </div>
-        {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+        {% if ((payload['user_id'] == game.gm.id) or payload['is_admin']) and (request.path != '/demo/inscription/') %}
         <form class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
           {% if game.status != 'archived' %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
@@ -284,11 +284,4 @@
     integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
   <script src="/static/js/game-sessions.js"></script>
   <script src="/static/js/game-events.js"></script>
-  {% if '/demo/' in request.path %}
-  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
-  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-  {% if request.path == '/demo/inscription/' %}
-  <script src="/static/js/intro-register.js"></script>
-  {% endif %}
-  {% endif %}
   {% endblock %}

@@ -38,9 +38,4 @@
 {% if request.path in ['/', '/annonces/'] %}
 <script src="/static/js/cards.js"></script>
 {% endif %}
-{% if request.path == '/demo/' %}
-<link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
-<script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-<script src="/static/js/intro.js"></script>
-{% endif %}
 {% endblock %}
