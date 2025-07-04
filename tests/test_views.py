@@ -360,3 +360,30 @@ def test_calendar(logged_in_user):
     response = logged_in_user.get("/calendrier/")
     assert response.status_code == 200
     assert "Le Calendrier du Club" in response.data.decode()
+
+
+def test_demo(client):
+    response = client.get("/demo/")
+    assert response.status_code == 200
+    assert "La Tombe de l'Annihilation" in response.data.decode()
+    assert "Le Pensionnaire" in response.data.decode()
+
+
+def test_demo_inscription(client):
+    response = client.get("/demo/inscription/")
+    assert response.status_code == 200
+    assert "La Tombe de l'Annihilation" in response.data.decode()
+    assert "S'inscrire" in response.data.decode()
+
+
+def test_demo_post(client):
+    response = client.get("/demo/poster/")
+    assert response.status_code == 200
+    assert "Nouvelle annonce" in response.data.decode()
+
+
+def test_demo_gerer(client):
+    response = client.get("/demo/gerer/")
+    assert response.status_code == 200
+    assert "La Tombe de l'Annihilation" in response.data.decode()
+    assert "Éditer" in response.data.decode()

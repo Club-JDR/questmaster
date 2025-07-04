@@ -7,11 +7,12 @@ document.addEventListener('DOMContentLoaded', function () {
     runRegistrationIntro();
   } else if (path === '/demo/poster/') {
     runPostGameIntro();
+  } else if (path === '/demo/gerer/') {
+    runManageIntro();
   }
-  // Add more pages as needed
 });
 
-function showOutroMessage(message, redirectUrl) {
+function showOutroMessage(message='🎉 Félicitations, Vous savez maintenant utiliser QuestMaster.<br>Je vous redirige vers la page d\'accueil', redirectUrl='/') {
   const outro = introJs();
   outro.setOptions({
     steps: [
@@ -244,7 +245,7 @@ function runRegistrationIntro() {
     if (event.target === no) {
       hasRedirected = true;
       intro.exit();
-      showOutroMessage('🎉 Fin du tour, retour à l\'accueil.', '/');
+      showOutroMessage();
     }
   });
 
@@ -257,7 +258,7 @@ function runRegistrationIntro() {
 
   intro.onexit(() => {
     if (!hasRedirected) {
-      showOutroMessage('🎉 Fin du tour, retour à l\'accueil.', '/');
+      showOutroMessage();
     }
   });
 
@@ -431,12 +432,94 @@ function runPostGameIntro(redirectUrl = null) {
     }
   });
 
-  function redirectToManager() {
+  function redirectToManage() {
     window.location.href = '/demo/gerer/';
   }
 
-  intro.onexit(redirectToManager);
-  intro.oncomplete(redirectToManager);
+  intro.onexit(redirectToManage);
+  intro.oncomplete(redirectToManage);
+
+  intro.start();
+}
+
+function runManageIntro() {
+  const intro = introJs();
+  const steps = [
+    {
+      title: "Comment gérer sa partie en tant que MJ",
+      intro: "La page est la même que lorsqu'on veut s'inscrire."
+    },
+    {
+      element: '#actionsPanel',
+      intro: "Toutes les actions disponibles se trouvent ici. Passons les en revue.",
+      title: "Actions"
+    },
+    {
+      element: '#editButton',
+      intro: "Ce bouton vous ramène au formulaire vous permettant d'éditer le contenu de votre annonce.<br>" +
+        "Attention, une fois l'annonce ouverte, il n'est plus possible de changer le type ou le nom de l'annonce.",
+      title: "Éditer"
+    },
+    {
+      element: '#manageButton',
+      intro: "Ce bouton vous permet d'inscrire ou de désinscrire des joueur·euses.<br>" +
+        "Pour cela, il ouvre une boite de dialogue supplémentaire.<br>" +
+        "Veillez à bien lire les consignes de cette boite de dialogue avant toute action.",
+      title: "Gérer"
+    },
+    {
+      element: '#addSessionButton',
+      intro: "Ce bouton permet d'ajouter une nouvelle session de jeu.<br>" +
+        "La session sera alors automatiquement inscrite sur le calendrier et comptabilisée dans les statistiques mensuelles.<br>" +
+        "Un message avec la date et les horaires sera envoyé dans le canal de partie pour prévenir les joueur·euses.",
+      title: "Ajouter une session"
+    },
+    {
+      element: '#statusButton',
+      intro: "Ce bouton permet de changer le statut de votre annonce.<br>" +
+        "Lorsque l'annonce est ouverte, les inscriptions sont possibles et le bouton est jaune avec la mention \"Fermer\".<br>" +
+        "Lorsque l'annonce est fermée, les inscriptions ne sont plus possibles que par le MJ via le bouton \"Gérer\" et le bouton est vert avec la mention \"Ouvrir\".",
+      title: "Changer le statut"
+    },
+    {
+      element: '#archiveButton',
+      intro: "Ce bouton permet d'archiver votre annonce.<br>" +
+        "Pour cela, il ouvre une boite de dialogue supplémentaire avec des mentions importantes !<br>" +
+        "<strong>Archiver une annonce supprime le salon et le rôle associé et permet la distribution des badges.</strong>",
+      title: "Archiver"
+    },
+    {
+      element: '#cloneButton',
+      intro: "Ce bouton ouvre un formulaire pour poster une nouvelle annonce. Le formulaire est prérempli avec les informations de cette annonce.",
+      title: "Cloner"
+    },
+    {
+      element: '.calendar-btn-group',
+      intro: "Ces boutons vous permettent respectivement d'éditer ou de supprimer la session correspondant.<br>" +
+        "Le calendrier et les statistiques mensuelles seront automatiquement mis à jour.<br>" +
+        "Un message de modification avec la nouvelle date et les nouveaux horaires sera envoyé dans le canal de partie pour prévenir les joueur·euses.",
+      title: "Action sur les sessions"
+    }
+  ];
+
+  intro.setOptions({
+    steps,
+    nextLabel: 'Suivant',
+    prevLabel: 'Précédent',
+    doneLabel: 'Terminé',
+    showBullets: true,
+    showProgress: false,
+    exitOnOverlayClick: false,
+    disableInteraction: true,
+  });
+
+  intro.oncomplete(() => {
+    showOutroMessage();
+  });
+
+  intro.onexit(() => {
+    showOutroMessage();
+  });
 
   intro.start();
 }

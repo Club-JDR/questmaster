@@ -31,6 +31,7 @@ fake_games = [
         "characters": "with_gm",
         "complement": "Formulaire à remplir pour la sélection : https://questmaster.club-jdr.fr/ce-formulaire-n-existe-pas/",
         "party_selection": "on",
+        "status": "open",
         "ambience": ["chill", "epic"],
         "classification": {
             "action": 2,
@@ -99,3 +100,8 @@ def demo_register():
 @demo_bp.route("/demo/poster/")
 def demo_post():
     return render_template("game_form.j2")
+
+
+@demo_bp.route("/demo/gerer/")
+def demo_manage():
+    return render_template("game_details.j2", game=fake_games[0], is_player=False)
