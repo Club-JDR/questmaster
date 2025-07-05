@@ -2,7 +2,7 @@
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 <h1 class="text-center"><i class="bi bi-megaphone"></i> {{ title }}</h1>
-{% if request.path == '/' or request.path == '/annonces/' %}
+{% if request.path in ['/', '/annonces/', '/demo/'] %}
 <nav class="navbar bg-body-tertiary" aria-label="SearchBar">
   <div class="container-fluid">
     <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-controls="searchBar"
@@ -35,5 +35,7 @@
 </div>
 {% endblock %}
 {% block scripts %} {{ super() }}
+{% if request.path in ['/', '/annonces/'] %}
 <script src="/static/js/cards.js"></script>
+{% endif %}
 {% endblock %}

@@ -3,7 +3,7 @@
     <div class="mb-2">
       <p class="form-label"><strong>Type de session :</strong></p>
       <div class="mb-2">
-        <div class="btn-group" role="group" aria-label="SessionType">
+        <div class="btn-group" role="group" aria-label="SessionType" id="sessionType">
           <input type="radio" class="btn-check" name="type" value="oneshot" id="oneshot" autocomplete="off" {% if game
             %}{% if game.type=='oneshot' %}checked{% endif %} {% if game.status !="draft" and not clone %}disabled{%
             endif%} {% else %}checked{%endif%}>
@@ -29,7 +29,7 @@
   <div class="row">
     <div class="mb-2">
       <label for="length" class="form-label"><strong>Durée :</strong></label>
-      <div class="input-group mb-3">
+      <div class="input-group mb-3" id="lengthGroup">
         <select class="form-select" aria-label="Durée" id="length" name="length" required>
           <option value="1 session" {% if game and game.length=='1 session' %}selected{% endif %}>1</option>
           <option value="2 sessions" {% if game and game.length=='2 sessions' %}selected{% endif %}>2</option>
@@ -111,16 +111,16 @@
   <div class="row">
     <p class="form-label"><strong>Avertissement :</strong></p>
     <div class="mb-2">
-      <div class="btn-group" role="group" aria-label="Restriction">
-        <input type="radio" class="btn-check" name="restriction" value="all" id="all" autocomplete="off" {% if game %}{%
-          if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
-        <label class="btn btn-outline-success btn-sm" for="all">Tout public</label>
-        <input type="radio" class="btn-check" name="restriction" value="16+" id="16" autocomplete="off" {% if game and
-          game.restriction=='16+' %}checked{% endif %}>
-        <label class="btn btn-outline-warning btn-sm" for="16">16+</label>
-        <input type="radio" class="btn-check" name="restriction" value="18+" id="18" autocomplete="off" {% if game and
-          game.restriction=='18+' %}checked{% endif %}>
-        <label class="btn btn-outline-danger btn-sm" for="18">18+</label>
+      <div class="btn-group" role="group" aria-label="Restriction" id="restrictionGroup">
+        <input type="radio" class="btn-check" name="restriction" value="all" id="restriction-all" autocomplete="off" {%
+          if game %}{% if game.restriction=='all' %}checked{% endif %}{% else %}checked{% endif %}>
+        <label class="btn btn-outline-success btn-sm" for="restriction-all">Tout public</label>
+        <input type="radio" class="btn-check" name="restriction" value="16+" id="restriction-16" autocomplete="off" {%
+          if game and game.restriction=='16+' %}checked{% endif %}>
+        <label class="btn btn-outline-warning btn-sm" for="restriction-16">16+</label>
+        <input type="radio" class="btn-check" name="restriction" value="18+" id="restriction-18" autocomplete="off" {%
+          if game and game.restriction=='18+' %}checked{% endif %}>
+        <label class="btn btn-outline-danger btn-sm" for="restriction-18">18+</label>
       </div>
     </div>
   </div>

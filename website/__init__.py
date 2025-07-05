@@ -8,6 +8,7 @@ from website.bot import set_bot
 from website.views import admin as admin_view
 from website.extensions import db, migrate, csrf, cache, discord, seed_trophies
 from website.views import register_blueprints, register_filters
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 
 def create_app():
@@ -33,15 +34,13 @@ def create_app():
     def inject_payload():
         from flask import session
 
-        # Build your payload however you normally do
         payload = {
             "username": session.get("username"),
             "avatar": session.get("avatar"),
             "is_gm": session.get("is_gm"),
             "is_admin": session.get("is_admin"),
-            # Add more as needed
         }
-        return dict(payload=payload)
+        return {"payload": payload}
 
     # Extensions
     db.init_app(app)
@@ -79,5 +78,7 @@ def create_app():
 
     register_blueprints(app)
     register_filters(app)
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     return app

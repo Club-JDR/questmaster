@@ -42,6 +42,13 @@ def test_game_form(logged_in_admin, logged_in_user):
     assert b"Publier" in response.data
 
 
+def test_search(test_app, default_system, default_vtt):
+    filters = f"?name=&system={default_system}6&vtt={default_vtt}&campaign=on&open=on&closed=on&archived=on&draft=on&all=on&16%2B=on&18%2B=on"
+    client = test_app.test_client()
+    response = client.get(f"/annonces/{filters}")
+    assert response.status_code == 200
+
+
 @patch("flask_wtf.csrf.validate_csrf", return_value=True)
 def test_e2e_scenario_1(
     mock_csrf,
@@ -92,7 +99,15 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert slug == "les-masques-de-nyarlathotep-par-notsag"
     assert all(
         text in response.data.decode()
-        for text in [title, "Éditer", "Gérer", "Libre", "Fermer", "Archiver", "Cloner"]
+        for text in [
+            title,
+            "editButton",
+            "manageButton",
+            "Libre",
+            "statusButton",
+            "archiveButton",
+            "Cloner",
+        ]
     )
 
     # Add session
@@ -162,7 +177,13 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert response.status_code == 200
     assert all(
         text not in response.data.decode()
-        for text in ["Éditer", "Gérer", "Fermer", "Archiver", "Cloner"]
+        for text in [
+            "editButton",
+            "manageButton",
+            "statusButton",
+            "archiveButton",
+            "Cloner",
+        ]
     )
     assert response.data.decode().count("Libre") == 1
     assert "S'inscrire" in response.data.decode()
@@ -219,7 +240,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert response.status_code == 200
     assert all(
         text not in response.data.decode()
-        for text in ["Éditer<", "Gérer<", "Fermer", "Ouvrir", "Archiver<"]
+        for text in ["editButton", "manageButton", "statusButton", "archiveButton"]
     )
     assert "Cloner" in response.data.decode()
     assert "Archivée" in response.data.decode()
@@ -270,7 +291,14 @@ def test_e2e_scenario_2(
     assert slug == "la-necropole-par-notsag"
     assert all(
         text in response.data.decode()
-        for text in [title, "Éditer", "Gérer", "Libre", "Brouillon", "Archiver"]
+        for text in [
+            title,
+            "editButton",
+            "manageButton",
+            "Libre",
+            "Brouillon",
+            "archiveButton",
+        ]
     )
 
     # Get edit form
@@ -321,7 +349,7 @@ def test_e2e_scenario_2(
     assert response.status_code == 200
     assert all(
         text not in response.data.decode()
-        for text in ["Éditer<", "Gérer<", "Fermer", "Ouvrir", "Archiver<"]
+        for text in ["editButton", "manageButton", "statusButton", "archiveButton"]
     )
     assert "Cloner" in response.data.decode()
     assert "Archivée" in response.data.decode()
@@ -341,7 +369,7 @@ def test_e2e_scenario_2(
     assert slug == "la-necropole-par-notsag-2"
     assert all(
         text in response.data.decode()
-        for text in [title, "Éditer", "Gérer", "Libre", "Archiver"]
+        for text in [title, "editButton", "manageButton", "Libre", "archiveButton"]
     )
     # Archive for cleanup
     logged_in_admin.post(
@@ -353,3 +381,30 @@ def test_calendar(logged_in_user):
     response = logged_in_user.get("/calendrier/")
     assert response.status_code == 200
     assert "Le Calendrier du Club" in response.data.decode()
+
+
+def test_demo(client):
+    response = client.get("/demo/")
+    assert response.status_code == 200
+    assert "La Tombe de l'Annihilation" in response.data.decode()
+    assert "Le Pensionnaire" in response.data.decode()
+
+
+def test_demo_inscription(client):
+    response = client.get("/demo/inscription/")
+    assert response.status_code == 200
+    assert "La Tombe de l'Annihilation" in response.data.decode()
+    assert "S'inscrire" in response.data.decode()
+
+
+def test_demo_post(client):
+    response = client.get("/demo/poster/")
+    assert response.status_code == 200
+    assert "Nouvelle annonce" in response.data.decode()
+
+
+def test_demo_gerer(client):
+    response = client.get("/demo/gerer/")
+    assert response.status_code == 200
+    assert "La Tombe de l'Annihilation" in response.data.decode()
+    assert "editButton" in response.data.decode()

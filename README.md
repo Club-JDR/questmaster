@@ -33,6 +33,7 @@ CATEGORY_LONG_CHANNEL_ID=""
 DISCORD_GUILD_ID=""
 DISCORD_GM_ROLE_ID=""
 DISCORD_ADMIN_ROLE_ID=""
+DISCORD_PLAYER_ROLE_ID=""
 FLASK_APP="website"
 USER_ID_LIST="{ \"gm1\": \"<id of user with GM role>\", \"gm2\": \"<id of other user with GM role>\", \"notgm\": \"<id of user without GM role>\", \"admin\": \"<id of user with Admin role>\"}"
 ```
@@ -43,6 +44,8 @@ Start the complete stack:
 
 ```sh
 docker compose up -d --build
+# For the first start, you need to run the migrations to init the database:
+docker compose run app flask db upgrade
 ```
 
 To run the tests:
@@ -60,9 +63,10 @@ Run at least the database and eventually pgadmin:
 docker compose down && docker compose up -d --build db pgadmin
 ```
 
-Then, you can run the app:
+Then, you can run the migrations and start the app:
 
 ```sh
+flask db upgrade
 flask run -p 8000
 # Or in debug if you don't want to restart it at every code change
 flask --app website --debug run -p 8000

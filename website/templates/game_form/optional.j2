@@ -32,11 +32,12 @@
     </div>
   </div>
   <div class="row mx-auto mb-2">
-    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal">Choisir
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal"
+      id="uploadButton">Choisir
       une image</button>
   </div>
   <div class="row">
-    <div class="mb-2">
+    <div class="mb-2" id="classification">
       <p class="form-label"><strong>Classification du scénario :</strong></p>
 
       {% set classifications = [
@@ -62,7 +63,7 @@
       {% endfor %}
     </div>
   </div>
-  <div class="row">
+  <div class="row" id="ambience">
     <p class="form-label"><strong>Ambiance recherchée :</strong></p>
     <div class="mb-2">
       <div class="form-check form-switch">
@@ -96,7 +97,7 @@
         </button>
         <ul class="dropdown-menu" aria-labelledby="gameActionDropdown">
           <li>
-            <button type="submit" name="action" value="draft" class="dropdown-item">
+            <button id="saveButton" type="submit" name="action" value="draft" class="dropdown-item">
               💾 Enregistrer {% if game %}les modifications{% else %}comme brouillon{% endif %}
             </button>
           </li>
@@ -104,8 +105,8 @@
             <hr class="dropdown-divider">
           </li>
           <li>
-            <button type="submit" name="action" value="open-silent" class="dropdown-item" {% if game and game.status
-              !='draft' and not clone %}disabled{% endif %}>
+            <button id="openButton" type="submit" name="action" value="open-silent" class="dropdown-item" {% if game and
+              game.status !='draft' and not clone %}disabled{% endif %}>
               ▶️ Ouvrir (sans publier sur Discord)
             </button>
           </li>
@@ -113,8 +114,8 @@
             <hr class="dropdown-divider">
           </li>
           <li>
-            <button type="submit" name="action" value="open" class="dropdown-item" {% if game and game.status !='draft'
-              and not clone %}disabled{% endif %}>
+            <button id="publishButton" type="submit" name="action" value="open" class="dropdown-item" {% if game and
+              game.status !='draft' and not clone %}disabled{% endif %}>
               📢 Publier sur Discord
             </button>
           </li>
