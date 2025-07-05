@@ -424,6 +424,7 @@ function runPostGameIntro(redirectUrl = null) {
   });
 
   intro.onbeforechange(function (target) {
+    if (!target) return;
     if (target.id === 'postNewGame') {
       annoncesDropdown.show();
     }
@@ -433,6 +434,7 @@ function runPostGameIntro(redirectUrl = null) {
   });
 
   intro.onafterchange(function (target) {
+    if (!target) return;
     if (target.id !== 'postNewGame') {
       annoncesDropdown.hide();
     }
