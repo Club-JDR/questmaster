@@ -68,7 +68,6 @@ class GameAdmin(AdminView):
         "gm_id",
         "system_id",
         "vtt_id",
-        "description",
         "restriction",
         "restriction_tags",
         "party_size",
