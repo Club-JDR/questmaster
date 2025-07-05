@@ -12,21 +12,30 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-function showOutroMessage(message='🎉 Félicitations, Vous savez maintenant utiliser QuestMaster.<br>Je vous redirige vers la page d\'accueil', redirectUrl='/') {
+function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil') {
+  const redirectUrl='/';
   const outro = introJs();
   outro.setOptions({
     steps: [
       {
-        intro: message,
+        intro: '🎉 Félicitations, Vous savez maintenant utiliser <strong>QuestMaster</strong>.',
         title: "Fin du tour"
+      },
+      {
+        element: '#demoMenu',
+        intro: 'Vous pouvez revoir ce tutoriel à tout moment en cliquant sur ce menu.',
+        title: "Revoir l'aide"
+      },
+      {
+        intro: 'Je vous redirige maintenant vers la liste des annonces ouvertes.',
+        title: 'Retour à l\'accueil'
       }
     ],
     nextLabel: 'Continuer',
-    doneLabel: 'Continuer',
+    doneLabel: 'Terminer',
     showBullets: false,
     disableInteraction: true
   });
-
   outro.oncomplete(() => window.location.href = redirectUrl);
   outro.onexit(() => window.location.href = redirectUrl);
 
