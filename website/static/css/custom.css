@@ -446,7 +446,6 @@ pre {
   border-bottom-color: #444;
 }
 
-
 [data-bs-theme="dark"] .player img,
 [data-bs-theme="dark"] .player .empty-seat {
   background-color: #444;
@@ -477,7 +476,6 @@ pre {
   text-align: center;
 }
 
-/* Ensures btn-group matches width of calendar button */
 .calendar-btn-group {
   display: inline-flex;
   width: 100%;
@@ -487,5 +485,9 @@ pre {
 .session-card add-to-calendar-button {
   display: block;
   margin-bottom: 0.25rem;
-  /* Reduce spacing */
+}
+
+.introjs-tooltip {
+  min-width: 350px !important;
+  max-width: 500px !important;
 }

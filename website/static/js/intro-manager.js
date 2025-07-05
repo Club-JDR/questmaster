@@ -320,7 +320,7 @@ function runPostGameIntro(redirectUrl = null) {
         title: "Type de session"
       },
       {
-        element: '#calendar',
+        element: '#calendarInput',
         intro: "Sélectionnez la date de la première session.",
         title: "Date"
       },
