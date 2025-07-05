@@ -99,7 +99,15 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert slug == "les-masques-de-nyarlathotep-par-notsag"
     assert all(
         text in response.data.decode()
-        for text in [title, "editButton", "manageButton", "Libre", "statusButton", "archiveButton", "Cloner"]
+        for text in [
+            title,
+            "editButton",
+            "manageButton",
+            "Libre",
+            "statusButton",
+            "archiveButton",
+            "Cloner",
+        ]
     )
 
     # Add session
@@ -169,7 +177,13 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert response.status_code == 200
     assert all(
         text not in response.data.decode()
-        for text in ["editButton", "manageButton", "statusButton", "archiveButton", "Cloner"]
+        for text in [
+            "editButton",
+            "manageButton",
+            "statusButton",
+            "archiveButton",
+            "Cloner",
+        ]
     )
     assert response.data.decode().count("Libre") == 1
     assert "S'inscrire" in response.data.decode()
@@ -277,7 +291,14 @@ def test_e2e_scenario_2(
     assert slug == "la-necropole-par-notsag"
     assert all(
         text in response.data.decode()
-        for text in [title, "editButton", "manageButton", "Libre", "Brouillon", "archiveButton"]
+        for text in [
+            title,
+            "editButton",
+            "manageButton",
+            "Libre",
+            "Brouillon",
+            "archiveButton",
+        ]
     )
 
     # Get edit form

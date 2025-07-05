@@ -34,15 +34,13 @@ def create_app():
     def inject_payload():
         from flask import session
 
-        # Build your payload however you normally do
         payload = {
             "username": session.get("username"),
             "avatar": session.get("avatar"),
             "is_gm": session.get("is_gm"),
             "is_admin": session.get("is_admin"),
-            # Add more as needed
         }
-        return dict(payload=payload)
+        return {"payload": payload}
 
     # Extensions
     db.init_app(app)
