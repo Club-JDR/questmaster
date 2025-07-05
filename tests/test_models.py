@@ -112,6 +112,7 @@ def test_duplicate_unique_trophy(db_session, regular_user):
     user_trophy1 = UserTrophy(user_id=regular_user.id, trophy_id=trophy.id, quantity=1)
     db_session.add(user_trophy1)
     db_session.commit()
+    db_session.expunge(user_trophy1)
     user_trophy2 = UserTrophy(user_id=regular_user.id, trophy_id=trophy.id, quantity=1)
     db_session.add(user_trophy2)
     with pytest.raises(sqlalchemy.exc.IntegrityError) as exc_info:
