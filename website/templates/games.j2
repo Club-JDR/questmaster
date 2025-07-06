@@ -2,7 +2,21 @@
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 <h1 class="text-center"><i class="bi bi-megaphone"></i> {{ title }}</h1>
-{% if request.path in ['/', '/annonces/', '/demo/'] %}
+{% if request.path == '/mes_parties/' %}
+<div class="container mt-3">
+  <div class="alert alert-primary alert-dismissible fade show" role="alert">
+    Les parties pour lesquelles je suis joueur·euse.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+</div>
+{% elif request.path == '/mes_annonces/' %}
+<div class="container mt-3">
+  <div class="alert alert-primary alert-dismissible fade show" role="alert">
+    Les parties pour lesquelles je suis MJ.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+</div>
+{% endif %}
 <nav class="navbar bg-body-tertiary" aria-label="SearchBar">
   <div class="container-fluid">
     <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-controls="searchBar"
@@ -11,7 +25,6 @@
   </div>
 </nav>
 {% include 'searchbar.j2' %}
-{% endif %}
 {% if prev_url or next_url %}
 <nav class="navbar bg-body-tertiary fixed-bottom justify-content-center" aria-label="PageBar">
   <div class="btn-group" role="group">

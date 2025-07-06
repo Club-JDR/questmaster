@@ -73,8 +73,8 @@ def create_app():
     admin.add_view(admin_view.UserAdmin(models.User, db.session))
     admin.add_view(admin_view.AdminView(models.Trophy, db.session))
     admin.add_view(admin_view.UserTrophyAdmin(models.UserTrophy, db.session))
-    admin.add_view(admin_view.AdminView(models.Vtt, db.session))
-    admin.add_view(admin_view.AdminView(models.System, db.session))
+    admin.add_view(admin_view.VttAdmin(models.Vtt, db.session))
+    admin.add_view(admin_view.SystemAdmin(models.System, db.session))
 
     register_blueprints(app)
     register_filters(app)

@@ -420,7 +420,6 @@ def my_gm_games():
         games_as_gm = db.session.get(User, payload["user_id"]).games_gm
     except AttributeError:
         games_as_gm = {}
-    flash("Les parties pour lesquelles je suis MJ.", "primary")
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
@@ -446,7 +445,6 @@ def my_games():
                 active_games.append(game)
     except AttributeError:
         games = {}
-    flash("Les parties pour lesquelles je suis joueur·euse.", "primary")
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,

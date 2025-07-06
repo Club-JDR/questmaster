@@ -17,7 +17,7 @@
     </div>
   </div>
   <div class="row">
-    <div class="mb-2">
+    <div id="calendarInput" class="mb-2">
       <label for="calendar" class="form-label"><strong>Date :</strong></label>
       <input id="calendar" name="date" class="flatpickr flatpickr-input active form-control" type="text"
         autocomplete="off" {% if game %}value="{{game.date}}" {% endif %}required>
@@ -52,7 +52,7 @@
   </div>
   <div class="row">
     <div class="mb-2">
-      <label for="frequency" class="form-label"><strong>Fréquence :</strong></label>
+      <label for="frequency" class="form-label"><strong>Fréquence (optionnel) :</strong></label>
       <select class="form-select" name="frequency" id="frequency" aria-describedby="Fréquence">
         <option value="" selected></option>
         <option value="weekly" {% if game and game.frequency=="weekly" %}selected{% endif %}>Hebdomadaire</option>

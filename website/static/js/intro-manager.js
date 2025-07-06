@@ -320,7 +320,7 @@ function runPostGameIntro(redirectUrl = null) {
         title: "Type de session"
       },
       {
-        element: '#calendar',
+        element: '#calendarInput',
         intro: "Sélectionnez la date de la première session.",
         title: "Date"
       },
@@ -468,35 +468,35 @@ function runManageIntro() {
     {
       element: '#editButton',
       intro: "Ce bouton vous ramène au formulaire vous permettant d'éditer le contenu de votre annonce.<br>" +
-        "Attention, une fois l'annonce ouverte, il n'est plus possible de changer le type ou le nom de l'annonce.",
+        "<div class='alert alert-primary' role='alert'>Attention, une fois l'annonce ouverte, il n'est plus possible de changer le type ou le nom de l'annonce.</div>",
       title: "Éditer"
     },
     {
       element: '#manageButton',
       intro: "Ce bouton vous permet d'inscrire ou de désinscrire des joueur·euses.<br>" +
         "Pour cela, il ouvre une boite de dialogue supplémentaire.<br>" +
-        "Veillez à bien lire les consignes de cette boite de dialogue avant toute action.",
+        "<div class='alert alert-primary' role='alert'>Veillez à bien lire les consignes de cette boite de dialogue avant toute action.</div>",
       title: "Gérer"
     },
     {
       element: '#addSessionButton',
       intro: "Ce bouton permet d'ajouter une nouvelle session de jeu.<br>" +
-        "La session sera alors automatiquement inscrite sur le calendrier et comptabilisée dans les statistiques mensuelles.<br>" +
-        "Un message avec la date et les horaires sera envoyé dans le canal de partie pour prévenir les joueur·euses.",
+        "<div class='alert alert-primary' role='alert'>La session sera alors automatiquement inscrite sur le calendrier et comptabilisée dans les statistiques mensuelles.<br>" +
+        "Un message avec la date et les horaires sera envoyé dans le canal de partie pour prévenir les joueur·euses.</div>",
       title: "Ajouter une session"
     },
     {
       element: '#statusButton',
       intro: "Ce bouton permet de changer le statut de votre annonce.<br>" +
-        "Lorsque l'annonce est ouverte, les inscriptions sont possibles et le bouton est jaune avec la mention \"Fermer\".<br>" +
-        "Lorsque l'annonce est fermée, les inscriptions ne sont plus possibles que par le MJ via le bouton \"Gérer\" et le bouton est vert avec la mention \"Ouvrir\".",
+        "<div class='alert alert-primary' role='alert'>Lorsque l'annonce est ouverte, les inscriptions sont possibles et le bouton est jaune avec la mention \"Fermer\".<br>" +
+        "Lorsque l'annonce est fermée, les inscriptions ne sont plus possibles que par le MJ via le bouton \"Gérer\" et le bouton est vert avec la mention \"Ouvrir\".</div>",
       title: "Changer le statut"
     },
     {
       element: '#archiveButton',
       intro: "Ce bouton permet d'archiver votre annonce.<br>" +
         "Pour cela, il ouvre une boite de dialogue supplémentaire avec des mentions importantes !<br>" +
-        "<strong>Archiver une annonce supprime le salon et le rôle associé et permet la distribution des badges.</strong>",
+        "<div class='alert alert-danger' role='alert'><strong>Archiver une annonce supprime le salon et le rôle associé et permet la distribution des badges.</strong></div>",
       title: "Archiver"
     },
     {
