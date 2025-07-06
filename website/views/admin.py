@@ -47,6 +47,36 @@ class ChannelAdmin(AdminView):
         abort(403)
 
 
+class VttAdmin(AdminView):
+    form_columns = ["id", "name", "icon"]
+    column_list = ["id", "name", "icon"]
+    column_editable_list = ["id", "name", "icon"]
+    column_searchable_list = ["id", "name", "icon"]
+    can_create = True
+    can_edit = True
+
+    def is_accessible(self):
+        return is_admin_authenticated()
+
+    def inaccessible_callback(self, name, **kwargs):
+        abort(403)
+
+
+class SystemAdmin(AdminView):
+    form_columns = ["id", "name", "icon"]
+    column_list = ["id", "name", "icon"]
+    column_editable_list = ["id", "name", "icon"]
+    column_searchable_list = ["id", "name", "icon"]
+    can_create = True
+    can_edit = True
+
+    def is_accessible(self):
+        return is_admin_authenticated()
+
+    def inaccessible_callback(self, name, **kwargs):
+        abort(403)
+
+
 class GameSessionAdmin(AdminView):
     form_columns = ["game_id", "start", "end"]
     column_list = ["game_id", "start", "end"]
@@ -61,6 +91,7 @@ class GameSessionAdmin(AdminView):
 
 class GameAdmin(AdminView):
     column_list = [
+        "id",
         "name",
         "slug",
         "type",
@@ -100,8 +131,8 @@ class GameAdmin(AdminView):
     can_create = False
     can_edit = True
     can_delete = False
-    column_searchable_list = ["gm_id", "type", "name"]
-    column_filters = ["gm_id", "type"]
+    column_searchable_list = ["id", "gm_id", "type", "name"]
+    column_filters = ["id", "gm_id", "type"]
     page_size = 10
 
 
