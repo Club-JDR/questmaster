@@ -24,7 +24,7 @@ class User(db.Model):
     )
 
     def __init__(self, id):
-        if not re.fullmatch(r"\d{17,18}", id):
+        if not re.fullmatch(r"\d{17,21}", id):
             raise ValueError(f"{id} is not a valid Discord UID.")
         self.id = id
 

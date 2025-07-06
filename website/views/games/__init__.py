@@ -340,13 +340,16 @@ def register_game(slug):
 
     user = db.get_or_404(User, user_id)
     try:
-        register_user_to_game(game, user, bot)
+        force = False
+        if game.party_selection:
+            force = True
+        register_user_to_game(game, user, bot, force)
+        flash("Vous êtes inscrit·e.", "success")
     except ValueError as ve:
         flash(str(ve), "danger")
     except Exception:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
-    flash("Vous êtes inscrit·e.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 

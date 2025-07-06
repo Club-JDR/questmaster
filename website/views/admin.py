@@ -48,10 +48,13 @@ class ChannelAdmin(AdminView):
 
 
 class VttAdmin(AdminView):
-    form_columns = ["id", "name", "icon"]
+    form_columns = ["name", "icon"]
     column_list = ["id", "name", "icon"]
-    column_editable_list = ["id", "name", "icon"]
-    column_searchable_list = ["id", "name", "icon"]
+    column_editable_list = ["name", "icon"]
+    column_searchable_list = [
+        "id",
+        "name",
+    ]
     can_create = True
     can_edit = True
 
@@ -63,10 +66,13 @@ class VttAdmin(AdminView):
 
 
 class SystemAdmin(AdminView):
-    form_columns = ["id", "name", "icon"]
+    form_columns = ["name", "icon"]
     column_list = ["id", "name", "icon"]
-    column_editable_list = ["id", "name", "icon"]
-    column_searchable_list = ["id", "name", "icon"]
+    column_editable_list = ["name", "icon"]
+    column_searchable_list = [
+        "id",
+        "name",
+    ]
     can_create = True
     can_edit = True
 
@@ -95,6 +101,20 @@ class GameAdmin(AdminView):
         "name",
         "slug",
         "type",
+        "gm_id",
+        "party_size",
+        "party_selection",
+        "date",
+        "img",
+        "channel",
+        "role",
+        "status",
+    ]
+    form_columns = [
+        "id",
+        "name",
+        "slug",
+        "type",
         "length",
         "gm_id",
         "system_id",
@@ -116,16 +136,20 @@ class GameAdmin(AdminView):
         "msg_id",
         "role",
         "status",
+        "players",
     ]
-    form_columns = column_list + ["players"]
     column_editable_list = [
         "name",
         "slug",
         "type",
-        "length",
-        "restriction",
+        "gm_id",
         "party_size",
+        "party_selection",
+        "date",
         "status",
+        "channel",
+        "role",
+        "img",
     ]
 
     can_create = False
