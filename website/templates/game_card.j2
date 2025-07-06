@@ -26,6 +26,7 @@
       <div class="row">
         <div class="col-6">
           <i class="bi bi-people"></i>&nbsp; {{ game.players|length }}/{{ game.party_size }}
+          {% if game.party_selection %}(sur sélection){% endif %}
         </div>
         <div class="col-6">
           <i class="bi bi-clock-history"></i>&nbsp; {{ game.length }}
