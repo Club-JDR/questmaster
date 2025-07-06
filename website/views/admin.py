@@ -95,6 +95,20 @@ class GameAdmin(AdminView):
         "name",
         "slug",
         "type",
+        "gm_id",
+        "party_size",
+        "party_selection",
+        "date",
+        "img",
+        "channel",
+        "role",
+        "status",
+    ]
+    form_columns = [
+        "id",
+        "name",
+        "slug",
+        "type",
         "length",
         "gm_id",
         "system_id",
@@ -116,16 +130,20 @@ class GameAdmin(AdminView):
         "msg_id",
         "role",
         "status",
-    ]
-    form_columns = column_list + ["players"]
+        "players"
+        ]
     column_editable_list = [
         "name",
         "slug",
         "type",
-        "length",
-        "restriction",
+        "gm_id",
         "party_size",
+        "party_selection",
+        "date",
         "status",
+        "channel",
+        "role",
+        "img",
     ]
 
     can_create = False
