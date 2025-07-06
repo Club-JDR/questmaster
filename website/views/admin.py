@@ -51,7 +51,10 @@ class VttAdmin(AdminView):
     form_columns = ["name", "icon"]
     column_list = ["id", "name", "icon"]
     column_editable_list = ["name", "icon"]
-    column_searchable_list = ["id", "name",]
+    column_searchable_list = [
+        "id",
+        "name",
+    ]
     can_create = True
     can_edit = True
 
@@ -66,7 +69,10 @@ class SystemAdmin(AdminView):
     form_columns = ["name", "icon"]
     column_list = ["id", "name", "icon"]
     column_editable_list = ["name", "icon"]
-    column_searchable_list = ["id", "name",]
+    column_searchable_list = [
+        "id",
+        "name",
+    ]
     can_create = True
     can_edit = True
 
@@ -130,8 +136,8 @@ class GameAdmin(AdminView):
         "msg_id",
         "role",
         "status",
-        "players"
-        ]
+        "players",
+    ]
     column_editable_list = [
         "name",
         "slug",
