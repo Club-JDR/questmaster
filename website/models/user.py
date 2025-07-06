@@ -49,7 +49,10 @@ class User(db.Model):
         result = get_user(self.id)
         try:
             if result["nick"] == None:
-                self.name = result["user"]["username"]
+                if result["user"]["global_name"] == None:
+                    self.name = result["user"]["username"]
+                else:
+                    self.name = result["user"]["global_name"]
             else:
                 self.name = result["nick"]
             self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
