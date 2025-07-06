@@ -48,10 +48,10 @@ class ChannelAdmin(AdminView):
 
 
 class VttAdmin(AdminView):
-    form_columns = ["id", "name", "icon"]
+    form_columns = ["name", "icon"]
     column_list = ["id", "name", "icon"]
-    column_editable_list = ["id", "name", "icon"]
-    column_searchable_list = ["id", "name", "icon"]
+    column_editable_list = ["name", "icon"]
+    column_searchable_list = ["id", "name",]
     can_create = True
     can_edit = True
 
@@ -63,10 +63,10 @@ class VttAdmin(AdminView):
 
 
 class SystemAdmin(AdminView):
-    form_columns = ["id", "name", "icon"]
+    form_columns = ["name", "icon"]
     column_list = ["id", "name", "icon"]
-    column_editable_list = ["id", "name", "icon"]
-    column_searchable_list = ["id", "name", "icon"]
+    column_editable_list = ["name", "icon"]
+    column_searchable_list = ["id", "name",]
     can_create = True
     can_edit = True
 
