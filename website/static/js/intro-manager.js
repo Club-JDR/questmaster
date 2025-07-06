@@ -31,8 +31,9 @@ function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil'
         title: 'Retour à l\'accueil'
       }
     ],
-    nextLabel: 'Continuer',
-    doneLabel: 'Terminer',
+    nextLabel: 'Suivant',
+    prevLabel: 'Précédent',
+    doneLabel: 'Terminé',
     showBullets: false,
     disableInteraction: true
   });
