@@ -40,9 +40,9 @@
           <option value="20+ sessions" {% if game and game.length=='20+ sessions' %}selected{% endif %}>20+</option>
         </select>
         <label class="input-group-text" for="session_length">session(s) de</label>
-        <input type="number" step="0.5" value="3.5" class="form-control" id="session_length" name="session_length"
-          aria-describedby="Durée moyenne de session" autocomplete="off" {% if game %}value="{{game.session_length}}" {%
-          endif %} required>
+        <input type="number" step="0.5" value="{% if game %}{{ game.session_length }}{% else %}3.5{% endif %}"
+          class="form-control" id="session_length" name="session_length" aria-describedby="Durée moyenne de session"
+          autocomplete="off" required>
         <label class="input-group-text" for="session_length">heures</label>
       </div>
       <div class="invalid-feedback">
