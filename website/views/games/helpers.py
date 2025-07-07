@@ -324,7 +324,7 @@ def setup_game_post_creation(game, bot):
     )
     logger.info("Initial game session created.")
     game.role = bot.create_role(
-        role_name=game.name,
+        role_name="PJ_"+game.slug,
         permissions=PLAYER_ROLE_PERMISSION,
         color=Game.COLORS[game.type],
     )["id"]
@@ -332,7 +332,7 @@ def setup_game_post_creation(game, bot):
 
     category = get_channel_category(game)
     game.channel = bot.create_channel(
-        channel_name=game.name.lower(),
+        channel_name=game.slug.lower(),
         parent_id=category.id,
         role_id=game.role,
         gm_id=game.gm_id,
