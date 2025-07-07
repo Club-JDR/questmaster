@@ -62,7 +62,10 @@ class User(db.Model):
             self.is_player = (
                 current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
             )
-            self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
+            if "None" in result["user"]["avatar"]:
+                self.avatar = "/static/img/avatar.webp"
+            else:
+                self.avatar = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
         except Exception:
             self.name = "Inconnu"
             self.is_gm = False
