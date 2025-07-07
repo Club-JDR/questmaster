@@ -162,7 +162,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     )
     assert response.status_code == 200
     assert '"start":"2025-07-01T20:30:00"' in response.data.decode()
-    assert '"title":"Les Masques de Nyarlathotep par notsag"' in response.data.decode()
+    assert '"title":"Les Masques de Nyarlathotep par Notsag"' in response.data.decode()
 
     # Remove session
     data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
