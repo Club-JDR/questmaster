@@ -19,6 +19,7 @@ def send_discord_embed(
 
     embed_builders = {
         "annonce": build_annonce_embed,
+        "annonce_details": build_annonce_details_embed,
         "add-session": build_add_session_embed,
         "edit-session": build_edit_session_embed,
         "del-session": build_delete_session_embed,
@@ -76,6 +77,18 @@ def build_annonce_embed(game, *_):
     }
 
     return embed, current_app.config["POSTS_CHANNEL_ID"]
+
+
+def build_annonce_details_embed(game, *_):
+    embed = {
+        "title": "Tout est prêt.",
+        "color": 0x2196F3,  # blue
+        "description": (
+            f"<@{game.gm_id}> voici ton salon de partie.\nLe rôle associé est <@&{game.role}>\n"
+            f"Et voici le lien vers [la page de ton annonce](https://questmaster.club-jdr.fr/annonces/{game.slug}.\n)"
+        ),
+    }
+    return embed, game.channel
 
 
 def build_add_session_embed(game, start, end, *_):

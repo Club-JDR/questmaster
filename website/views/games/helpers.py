@@ -340,8 +340,8 @@ def setup_game_post_creation(game, bot):
     logger.info(
         f"Channel created with ID: {game.channel} under category: {category.id}"
     )
-
     category.size += 1
+    send_discord_embed(game, type="annonce_details")
 
 
 def rollback_discord_resources(bot, game):
