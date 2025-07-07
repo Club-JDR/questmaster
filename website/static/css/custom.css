@@ -491,3 +491,7 @@ pre {
   min-width: 350px !important;
   max-width: 500px !important;
 }
+
+.select2-container {
+  width: 100% !important;
+}

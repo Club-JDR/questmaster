@@ -12,7 +12,7 @@
   <div class="row">
     <div class="mb-2">
       <label for="system" class="form-label"><strong>Système :</strong></label>
-      <select class="form-select" id="system" name="system" aria-describedby="Système" required>
+      <select class="form-select select2" id="system" name="system" aria-describedby="Système" required>
         <option value="" selected></option>
         {% for s in systems %}
         <option value="{{ s.id }}" {% if game and game.system_id==s.id%}selected{% endif %}>{{ s.name }}</option>
