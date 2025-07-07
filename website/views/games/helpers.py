@@ -129,8 +129,8 @@ def create_game_session(game, start, end):
     """
     session = GameSession(start=start, end=end)
     db.session.add(session)
-    db.session.commit()
     game.sessions.append(session)
+    db.session.commit()
     logger.info(f"Session added for game {game.id} from {start} to {end}")
 
 
@@ -324,7 +324,7 @@ def setup_game_post_creation(game, bot):
     )
     logger.info("Initial game session created.")
     game.role = bot.create_role(
-        role_name=game.name,
+        role_name="PJ_" + game.slug,
         permissions=PLAYER_ROLE_PERMISSION,
         color=Game.COLORS[game.type],
     )["id"]
@@ -332,7 +332,7 @@ def setup_game_post_creation(game, bot):
 
     category = get_channel_category(game)
     game.channel = bot.create_channel(
-        channel_name=game.name.lower(),
+        channel_name=game.slug.lower(),
         parent_id=category.id,
         role_id=game.role,
         gm_id=game.gm_id,
@@ -340,8 +340,8 @@ def setup_game_post_creation(game, bot):
     logger.info(
         f"Channel created with ID: {game.channel} under category: {category.id}"
     )
-
     category.size += 1
+    send_discord_embed(game, type="annonce_details")
 
 
 def rollback_discord_resources(bot, game):

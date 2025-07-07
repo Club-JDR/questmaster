@@ -31,10 +31,13 @@ function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil'
         title: 'Retour à l\'accueil'
       }
     ],
-    nextLabel: 'Continuer',
-    doneLabel: 'Terminer',
-    showBullets: false,
-    disableInteraction: true
+    nextLabel: 'Suivant',
+    prevLabel: 'Précédent',
+    doneLabel: 'Terminé',
+    showBullets: true,
+    showProgress: false,
+    exitOnOverlayClick: false,
+    disableInteraction: true,
   });
   outro.oncomplete(() => window.location.href = redirectUrl);
   outro.onexit(() => window.location.href = redirectUrl);
@@ -151,7 +154,10 @@ function runHomepageIntro() {
     nextLabel: 'Suivant',
     prevLabel: 'Précédent',
     doneLabel: 'Terminé',
-    disableInteraction: true
+    showBullets: true,
+    showProgress: false,
+    exitOnOverlayClick: false,
+    disableInteraction: true,
   });
 
   intro.onbeforechange(function (target) {
@@ -239,7 +245,7 @@ function runRegistrationIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
-    showButtons: !showYesNo // 🔥 Disable buttons only on Yes/No step
+    showButtons: !showYesNo
   });
 
   document.addEventListener('click', (event) => {
@@ -411,7 +417,6 @@ function runPostGameIntro(redirectUrl = null) {
         title: "Publier sur Discord"
       },
       {
-        element: '#publishButton',
         title: "Gérer ses parties",
         intro: "Voyons maintenant comment gérer une annonce."
       }
@@ -419,8 +424,10 @@ function runPostGameIntro(redirectUrl = null) {
     nextLabel: 'Suivant',
     prevLabel: 'Précédent',
     doneLabel: 'Terminé',
+    showBullets: true,
+    showProgress: false,
     exitOnOverlayClick: false,
-    disableInteraction: true
+    disableInteraction: true,
   });
 
   intro.onbeforechange(function (target) {
