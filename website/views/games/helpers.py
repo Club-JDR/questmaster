@@ -128,8 +128,8 @@ def create_game_session(game, start, end):
     Create a session for a game.
     """
     session = GameSession(start=start, end=end)
-    game.sessions.append(session)
     db.session.add(session)
+    game.sessions.append(session)
     db.session.commit()
     logger.info(f"Session added for game {game.id} from {start} to {end}")
 

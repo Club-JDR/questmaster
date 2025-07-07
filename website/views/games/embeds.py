@@ -35,7 +35,6 @@ def send_discord_embed(
         response = bot.edit_embed_message(game.msg_id, embed, target)
     else:
         response = bot.send_embed_message(embed, target)
-
     return response["id"]
 
 
