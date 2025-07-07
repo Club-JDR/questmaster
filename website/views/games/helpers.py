@@ -324,7 +324,7 @@ def setup_game_post_creation(game, bot):
     )
     logger.info("Initial game session created.")
     game.role = bot.create_role(
-        role_name="PJ_"+game.slug,
+        role_name="PJ_" + game.slug,
         permissions=PLAYER_ROLE_PERMISSION,
         color=Game.COLORS[game.type],
     )["id"]
