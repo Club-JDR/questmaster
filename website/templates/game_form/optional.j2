@@ -12,6 +12,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
+          <div class="row">
+            <p>Vous devez utiliser <strong>un lien vers un image</strong>.</p>
+            <p>Pour cela, il est recommandé d'utiliser <a href="https://imgur.com/upload" target="_blank" rel="noopener">imgur</a> pour
+              uploader vos propres images. Ensuite, faites un <span class='text-danger fw-semibold'>clic-droit sur l'image</span> puis <span class='text-danger fw-semibold'>"Copier l'adresse de l'image"</span> et <strong>coller ce lien dans le champ ci-dessous</strong>. Enfin, cliquez sur le bouton <strong>"Choisir".</strong></p>
+            <p><em>Si votre image ne s'affiche pas correctement après avoir cliqué sur "Choisir", c'est que le lien ne fonctionne pas correctement. Vous avez sûrement copié le lien <u>de la page et non pas de l'image</u>.</em></p>
+          </div>
             <div class="input-group mb-2">
               <div class="form-floating">
                 <input type="text" class="form-control" id="imgLink" name="img" {% if game and game.img
@@ -22,11 +28,7 @@
                 aria-label="Close">Choisir</button>
             </div>
           </div>
-          <div class="modal-footer">
-            <p>Vous pouvez utiliser <a href="https://imgur.com/upload" target="_blank" rel="noopener">imgur</a> pour
-              uploader vos propres images. Ensuite, faites un clic-droit sur l'image puis "Copier le lien de l'image".
-            </p>
-          </div>
+          
         </div>
       </div>
     </div>
