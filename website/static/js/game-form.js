@@ -6,6 +6,7 @@ flatpickr('#calendar', {
     enableTime: true,
     allowInput: true,
     defaultHour: 20,
+    disableMobile: "true",
 });
 
 // Update image when URL is set

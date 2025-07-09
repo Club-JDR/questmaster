@@ -5,6 +5,7 @@ flatpickr('.flatpickr-start', {
   allowInput: true,
   defaultHour: 20,
   defaultMinute: 30,
+  disableMobile: "true",
 });
 flatpickr('.flatpickr-end', {
   "locale": "fr",
@@ -12,6 +13,7 @@ flatpickr('.flatpickr-end', {
   enableTime: true,
   allowInput: true,
   defaultHour: 23,
+  disableMobile: "true",
 });
 
 function validateDateRange(start, end, button) {
