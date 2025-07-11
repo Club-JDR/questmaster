@@ -21,6 +21,7 @@ FROM python:3.13-alpine AS base
 WORKDIR /questmaster
 RUN apk add --no-cache \
   bash \
+  curl \
   jpeg \
   libffi \
   libpq \
