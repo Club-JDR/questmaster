@@ -9,8 +9,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     links:
       - db
       - redis
@@ -23,8 +25,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     links:
       - db
       - redis
@@ -37,9 +41,19 @@ services:
       - .env
     volumes:
     - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
   redis: 
      image: redis:7.4-alpine
      restart: always
+     healthcheck:
+       test: ["CMD", "redis-cli", "ping"]
+       interval: 5s
+       timeout: 3s
+       retries: 5
      ports:
        - '6379:6379' 
   pgadmin:
