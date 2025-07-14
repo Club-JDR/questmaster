@@ -398,7 +398,9 @@ def archive_game(game, bot):
             if category:
                 category.size = max(0, category.size - 1)
                 db.session.commit()
-                logger.info(f"Decreased size of category {category.id} to {category.size}")
+                logger.info(
+                    f"Decreased size of category {category.id} to {category.size}"
+                )
     except Exception as e:
         logger.warning(f"Failed to adjust category size for game {game.id}: {e}")
     bot.delete_channel(game.channel)
