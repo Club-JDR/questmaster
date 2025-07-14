@@ -362,7 +362,8 @@ def test_e2e_scenario_2(
     assert "Enregistrer" in response.data.decode()
     assert "Publier" in response.data.decode()
 
-    # Clone Game
+    # Clone Game in draft
+    data['action'] = 'draft'
     response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
     slug = response.request.path.strip("/").split("/")[-1]

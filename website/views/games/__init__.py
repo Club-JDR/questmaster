@@ -203,13 +203,16 @@ def change_game_status(slug):
     payload = who()
     bot = get_bot()
     game = get_game_if_authorized(payload, slug)
-    status = request.values.to_dict()["status"]
+    status = request.values.get("status")
+    award_trophies = "award_trophies" in request.form
+
     game.status = status
+
     try:
         db.session.commit()
         logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
-            archive_game(game, bot)
+            archive_game(game, bot, award_trophies=award_trophies)
         elif game.msg_id:
             try:
                 send_discord_embed(game, type="annonce")
