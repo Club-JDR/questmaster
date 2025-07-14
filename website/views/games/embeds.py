@@ -84,7 +84,7 @@ def build_annonce_details_embed(game, *_):
         "color": 0x2196F3,  # blue
         "description": (
             f"<@{game.gm_id}> voici ton salon de partie.\nLe rôle associé est <@&{game.role}>\n"
-            f"Et voici le lien vers [la page de ton annonce](https://questmaster.club-jdr.fr/annonces/{game.slug}.\n)"
+            f"Et voici le lien vers [la page de ton annonce](https://questmaster.club-jdr.fr/annonces/{game.slug}).\n"
         ),
     }
     return embed, game.channel

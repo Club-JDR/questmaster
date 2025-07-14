@@ -47,18 +47,26 @@ def get_stats():
     for session in sessions:
         game = session.game
         system = game.system.name
+        slug = game.slug
         game_name = game.name
         gm_name = game.gm.name
-
+        entry = {
+            "name": game_name,
+            "gm": gm_name,
+            "count": 1,
+        }
         if game.type == "oneshot":
             num_os += 1
-            os_games[system][game_name]["count"] += 1
-            os_games[system][game_name]["gm"] = gm_name
+            if slug in os_games[system]:
+                os_games[system][slug]["count"] += 1
+            else:
+                os_games[system][slug] = entry
         else:
             num_campaign += 1
-            campaign_games[system][game_name]["count"] += 1
-            campaign_games[system][game_name]["gm"] = gm_name
-
+            if slug in campaign_games[system]:
+                campaign_games[system][slug]["count"] += 1
+            else:
+                campaign_games[system][slug] = entry
         gm_names.append(gm_name)
     prev_month_date = base_day - relativedelta(months=1)
     next_month_date = base_day + relativedelta(months=1)
