@@ -390,6 +390,17 @@ def archive_game(game, bot):
         add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
         for user in game.players:
             add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
+    try:
+        discord_channel = bot.get_channel(game.channel)
+        parent_id = discord_channel.get("parent_id")
+        if parent_id:
+            category = Channel.query.filter_by(id=parent_id).first()
+            if category:
+                category.size = max(0, category.size - 1)
+                db.session.commit()
+                logger.info(f"Decreased size of category {category.id} to {category.size}")
+    except Exception as e:
+        logger.warning(f"Failed to adjust category size for game {game.id}: {e}")
     bot.delete_channel(game.channel)
     logger.info(f"Game {game.id} channel {game.channel} has been deleted")
     bot.delete_role(game.role)
@@ -397,6 +408,8 @@ def archive_game(game, bot):
     if game.msg_id:
         try:
             bot.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
+            game.msg_id = None
+            db.session.commit()
             logger.info(
                 f"Discord embed message {game.msg_id} deleted for archived game {game.id}"
             )
