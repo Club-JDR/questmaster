@@ -407,6 +407,7 @@ figure {
   display: inline-flex;
   width: 100%;
   justify-content: center;
+  overflow-x: auto;
 }
 
 .session-card add-to-calendar-button {
@@ -454,6 +455,32 @@ figure {
 @media (max-width: 575.98px) {
   .player {
     flex: 1 1 40%;
+  }
+}
+
+@media (max-width: 767.98px) {
+
+  /* smaller fonts inside events */
+  .fc .fc-event,
+  .fc .fc-daygrid-event {
+    font-size: 0.75rem;
+    padding: 1px 2px;
+  }
+
+  /* shrink the day numbers */
+  .fc .fc-daygrid-day-number {
+    font-size: 0.85rem;
+  }
+
+  /* allow horizontal scroll if grid overflows */
+  #month-games-calendar .fc-daygrid {
+    overflow-x: auto;
+  }
+
+  /* reduce header button padding */
+  .fc .fc-toolbar-chunk button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -530,5 +557,10 @@ figure {
   .select2-container--bootstrap-5 .select2-results__option--highlighted {
     background-color: var(--bs-link-hover-color-bg);
     color: var(--bs-body-color);
+  }
+
+  .fc-cell-shaded {
+    background-color: var(--bs-dark) !important;
+    color: var(--bs-body-color) !important;
   }
 }
