@@ -381,15 +381,16 @@ def add_trophy_to_user(user_id, trophy_id, amount=1):
     logger.info(f"User {user_id} got a trophy: {trophy.name}")
 
 
-def archive_game(game, bot):
-    if game.type == "oneshot":
-        add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_OS_GM_ID)
-        for user in game.players:
-            add_trophy_to_user(user_id=user.id, trophy_id=BADGE_OS_ID)
-    elif game.type == "campaign":
-        add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
-        for user in game.players:
-            add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
+def archive_game(game, bot, award_trophies=True):
+    if award_trophies:
+        if game.type == "oneshot":
+            add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_OS_GM_ID)
+            for user in game.players:
+                add_trophy_to_user(user_id=user.id, trophy_id=BADGE_OS_ID)
+        elif game.type == "campaign":
+            add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
+            for user in game.players:
+                add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
     try:
         discord_channel = bot.get_channel(game.channel)
         parent_id = discord_channel.get("parent_id")
