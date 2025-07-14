@@ -56,11 +56,13 @@ def get_stats():
             "count": 1,
         }
         if game.type == "oneshot":
+            num_os += 1
             if slug in os_games[system]:
                 os_games[system][slug]["count"] += 1
             else:
                 os_games[system][slug] = entry
         else:
+            num_campaign += 1
             if slug in campaign_games[system]:
                 campaign_games[system][slug]["count"] += 1
             else:
