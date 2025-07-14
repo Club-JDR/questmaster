@@ -285,8 +285,8 @@ figure {
 }
 
 .badge-dynamic-inv {
-  background-color: var(--bs-body-color);
-  color: var(--bs-dark);
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
 }
 
 /* === Buttons and Actions === */
@@ -512,7 +512,7 @@ figure {
   }
 
   .badge-dynamic-inv {
-    background-color: var(--bs-body-color);
+    background-color: var(--bs-light);
     color: var(--bs-dark);
   }
 
@@ -520,12 +520,12 @@ figure {
   .select2-container--bootstrap-5 .select2-selection--single,
   .select2-container--bootstrap-5 .select2-selection--multiple {
     background-color: var(--bs-dark);
-    color: var(--bs-body-color);
+    color: var(--bs-light);
     border-color: var(--bs-border-color);
   }
 
   .select2-container--bootstrap-5 .select2-selection__rendered {
-    color: var(--bs-body-color);
+    color: var(--bs-light) !important;
   }
 
   .select2-container--bootstrap-5 .select2-selection__placeholder {
@@ -534,33 +534,33 @@ figure {
 
   .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
     background-color: var(--bs-dark);
-    color: var(--bs-body-color);
+    color: var(--bs-light);
     border-color: var(--bs-border-color);
   }
 
   .select2-container--bootstrap-5 .select2-dropdown {
     background-color: var(--bs-dark);
-    color: var(--bs-body-color);
+    color: var(--bs-light);
     border-color: var(--bs-border-color);
   }
 
   .select2-container--bootstrap-5 .select2-results__option {
     background-color: var(--bs-dark);
-    color: var(--bs-body-color);
+    color: var(--bs-light);
   }
 
   .select2-search__field {
     background-color: var(--bs-dark) !important;
-    color: var(--bs-body-color) !important;
+    color: var(--bs-light) !important;
   }
 
   .select2-container--bootstrap-5 .select2-results__option--highlighted {
     background-color: var(--bs-link-hover-color-bg);
-    color: var(--bs-body-color);
+    color: var(--bs-light);
   }
 
   .fc-cell-shaded {
     background-color: var(--bs-dark) !important;
-    color: var(--bs-body-color) !important;
+    color: var(--bs-light) !important;
   }
 }

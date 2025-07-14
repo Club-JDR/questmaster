@@ -1,4 +1,4 @@
-from flask import abort, flash, redirect, url_for, request
+from flask import abort, flash, redirect, url_for, request, current_app
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
@@ -394,3 +394,11 @@ def archive_game(game, bot):
     logger.info(f"Game {game.id} channel {game.channel} has been deleted")
     bot.delete_role(game.role)
     logger.info(f"Game {game.id} role {game.role} has been deleted")
+    if game.msg_id:
+        try:
+            bot.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
+            logger.info(
+                f"Discord embed message {game.msg_id} deleted for archived game {game.id}"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to delete message for archived game {game.id}: {e}")

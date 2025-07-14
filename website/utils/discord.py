@@ -67,6 +67,11 @@ class Discord:
             route=f"/channels/{channel_id}/messages", method="POST", payload=payload
         )
 
+    def delete_message(self, msg_id, channel_id):
+        return self._request(
+            route=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE"
+        )
+
     def send_embed_message(self, embed, channel_id):
         payload = {"embeds": [embed]}
         return self._request(

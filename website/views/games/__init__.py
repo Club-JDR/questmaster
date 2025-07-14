@@ -184,6 +184,12 @@ def edit_game(slug):
             logger.info("Rolling back channel and role creation due to error")
             rollback_discord_resources(bot, game)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
+    if game.msg_id:
+        try:
+            send_discord_embed(game, type="annonce")
+            logger.info(f"Embed updated for game {game.id}")
+        except Exception as e:
+            logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
     flash(msg, "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -204,6 +210,14 @@ def change_game_status(slug):
         logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
             archive_game(game, bot)
+        elif game.msg_id:
+            try:
+                send_discord_embed(game, type="annonce")
+                logger.info(f"Embed updated due to status change for game {game.id}")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to update embed on status change for game {game.id}: {e}"
+                )
     except Exception:
         flash("Une erreur est survenue pendant la modification de statut.", "danger")
     status_msg = ""

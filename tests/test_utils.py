@@ -88,10 +88,14 @@ def test_edit_message(discord_session, test_channel_id, sent_discord_message):
     response = discord_session.edit_embed_message(
         sent_discord_message, embed, test_channel_id
     )
-    print(response)
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
+
+
+def test_delete_message(discord_session, test_channel_id, sent_discord_message):
+    response = discord_session.delete_message(sent_discord_message, test_channel_id)
+    assert response == "{}"
 
 
 def test_role_workflow(discord_session, bot_user_id):
