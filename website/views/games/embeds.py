@@ -52,25 +52,34 @@ def build_annonce_embed(game, *_):
     if game.restriction_tags:
         restriction_msg += f" {game.restriction_tags}"
 
+    # Add "(complet)" in the title if the game is closed
+    title = game.name
+    if game.status == "closed":
+        title += " (complet)"
+
+    # Build normal fields
+    fields = [
+        {"name": "MJ", "value": game.gm.name, "inline": True},
+        {"name": "Système", "value": game.system.name, "inline": True},
+        {"name": "Type de session", "value": session_type, "inline": True},
+        {"name": "Date", "value": game.date.strftime(HUMAN_TIMEFORMAT), "inline": True},
+        {"name": "Durée", "value": game.length, "inline": True},
+        {"name": "Avertissement", "value": restriction_msg},
+        {
+            "name": "Pour s'inscrire :",
+            "value": f"https://questmaster.club-jdr.fr/annonces/{game.slug}/",
+        },
+    ]
+
+    # Apply strikethrough if closed
+    if game.status == "closed":
+        for field in fields:
+            field["value"] = f"~~{field['value']}~~"
+
     embed = {
-        "title": game.name,
+        "title": title,
         "color": Game.COLORS[game.type],
-        "fields": [
-            {"name": "MJ", "value": game.gm.name, "inline": True},
-            {"name": "Système", "value": game.system.name, "inline": True},
-            {"name": "Type de session", "value": session_type, "inline": True},
-            {
-                "name": "Date",
-                "value": game.date.strftime(HUMAN_TIMEFORMAT),
-                "inline": True,
-            },
-            {"name": "Durée", "value": game.length, "inline": True},
-            {"name": "Avertissement", "value": restriction_msg},
-            {
-                "name": "Pour s'inscrire :",
-                "value": f"https://questmaster.club-jdr.fr/annonces/{game.slug}/",
-            },
-        ],
+        "fields": fields,
         "image": {"url": game.img},
         "footer": {},
     }

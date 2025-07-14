@@ -94,6 +94,11 @@ def test_edit_message(discord_session, test_channel_id, sent_discord_message):
     assert response["embeds"][0]["color"] == color
 
 
+def test_delete_message(discord_session, test_channel_id, sent_discord_message):
+    response = discord_session.delete_message(sent_discord_message, test_channel_id)
+    assert response["status_code"] == 204
+
+
 def test_role_workflow(discord_session, bot_user_id):
     """
     Test creating a role, assigning it to a know user (the bot id), removing the role from the user and finally deleting the role
