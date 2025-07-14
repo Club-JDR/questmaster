@@ -95,7 +95,7 @@ def test_edit_message(discord_session, test_channel_id, sent_discord_message):
 
 def test_delete_message(discord_session, test_channel_id, sent_discord_message):
     response = discord_session.delete_message(sent_discord_message, test_channel_id)
-    assert response == {}
+    assert response == '{}'
 
 
 def test_role_workflow(discord_session, bot_user_id):
