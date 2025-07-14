@@ -68,10 +68,10 @@
               </thead>
               <tbody>
                 {% set game_list = os[system].items() | sort(attribute='1.count', reverse=true) %}
-                {% for game, info in game_list %}
+                {% for slug, info in game_list %}
                 <tr>
                   <td>{{ loop.index }}</td>
-                  <td>{{ game }}</td>
+                  <td>{{ info.name }}</td>
                   <td>{{ info.gm }}</td>
                   <td>{{ info.count }}</td>
                 </tr>
@@ -102,10 +102,10 @@
               </thead>
               <tbody>
                 {% set game_list = campaign[system].items() | sort(attribute='1.count', reverse=true) %}
-                {% for game, info in game_list %}
+                {% for slug, info in game_list %}
                 <tr>
                   <td>{{ loop.index }}</td>
-                  <td>{{ game }}</td>
+                  <td>{{ info.name }}</td>
                   <td>{{ info.gm }}</td>
                   <td>{{ info.count }}</td>
                 </tr>
