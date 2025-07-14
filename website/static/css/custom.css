@@ -46,8 +46,7 @@ figure {
 }
 
 .item-img {
-  max-height: 10vw;
-  max-width: inherit;
+  max-width: 100%;
   object-fit: cover;
 }
 
