@@ -47,7 +47,8 @@
             {% if game.complement != "" %}
             <div class="additional-info">
               <strong>Informations complémentaires</strong>
-              <p class="small text-muted preformatted-content">{{ game.complement | urlize }}</p>
+              <p style="white-space: pre-line;" class="small text-muted preformatted-content">{{ game.complement |
+                urlize }}</p>
             </div>
             {% endif %}
           </div>
