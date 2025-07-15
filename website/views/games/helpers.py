@@ -179,7 +179,7 @@ def get_ambience(data):
 def handle_remove_players(game, data, bot):
     """Remove unchecked players from the game."""
     removed = False
-    for player in list(game.players):
+    for player in game.players:
         if str(player.id) not in data:
             game.players.remove(player)
             logger.info(f"User {player.id} removed from Game {game.id}")
