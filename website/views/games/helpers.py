@@ -429,7 +429,6 @@ def adjust_category_size(bot, game):
 def delete_discord_resources(bot, game):
     bot.delete_channel(game.channel)
     logger.info(f"Game {game.id} channel {game.channel} has been deleted")
-
     bot.delete_role(game.role)
     logger.info(f"Game {game.id} role {game.role} has been deleted")
 
@@ -449,10 +448,7 @@ def delete_game_message(bot, game):
 def archive_game(game, bot, award_trophies=True):
     if award_trophies:
         award_game_trophies(game)
-
     adjust_category_size(bot, game)
     delete_discord_resources(bot, game)
-
     log_game_event("delete", game.id, "Annonce archivée.")
-
     delete_game_message(bot, game)
