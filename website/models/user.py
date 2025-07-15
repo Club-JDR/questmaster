@@ -29,7 +29,6 @@ class User(db.Model):
         self.id = id
         self.name = name
 
-
     def __repr__(self):
         return f"{self.name} <{self.id}>"
 
