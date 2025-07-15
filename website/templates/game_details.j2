@@ -290,7 +290,7 @@
       </div>
     </div>
     {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
-    <div class="mt-5">
+    <div id="event-list" class="mt-5">
       <h3 class="text-center">Journal d’activité</h3>
       {% if game.events %}
       <div class="table-responsive">
