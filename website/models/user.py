@@ -17,6 +17,7 @@ class User(db.Model):
     __tablename__ = "user"
 
     id = db.Column(db.String(), primary_key=True)
+    name = db.Column(db.String(), nullable=True, index=True)
     games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship(
         "UserTrophy", back_populates="user", cascade="all, delete-orphan"
@@ -43,72 +44,37 @@ class User(db.Model):
             )
         return summary
 
-    @property
-    def name(self):
+    @orm.reconstructor
+    def init_on_load(self):
+        """
+        Retrieve distant data on user when the oject is loaded.
+        """
+        result = get_user(self.id)
+        self.avatar = "/static/img/avatar.webp"
         try:
-            result = get_user(self.id)
-            if result.get("nick"):
-                return result["nick"]
-            return result["user"].get("global_name") or result["user"]["username"]
+            if result["nick"] == None:
+                if result["user"]["global_name"] == None:
+                    self.name = result["user"]["username"]
+                else:
+                    self.name = result["user"]["global_name"]
+            else:
+                self.name = result["nick"]
+            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
+            self.is_admin = (
+                current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
+            )
+            self.is_player = (
+                current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
+            )
+            avatar_url = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
+            try:
+                response = requests.head(avatar_url)
+                if response.status_code == 200:
+                    self.avatar = avatar_url
+            except requests.RequestException:
+                pass
         except Exception:
-            return "Inconnu"
-
-    @property
-    def avatar(self):
-        result = get_user(self.id)
-        avatar_hash = result.get("user").get("avatar")
-        return (
-            AVATAR_BASE_URL.format(self.id, avatar_hash)
-            if avatar_hash
-            else "/static/img/avatar.webp"
-        )
-
-    @property
-    def is_gm(self):
-        result = get_user(self.id)
-        return current_app.config["DISCORD_GM_ROLE_ID"] in result.get("roles", [])
-
-    @property
-    def is_admin(self):
-        result = get_user(self.id)
-        return current_app.config["DISCORD_ADMIN_ROLE_ID"] in result.get("roles", [])
-
-    @property
-    def is_player(self):
-        result = get_user(self.id)
-        return current_app.config["DISCORD_PLAYER_ROLE_ID"] in result.get("roles", [])
-
-    # @orm.reconstructor
-    # def init_on_load(self):
-    #     """
-    #     Retrieve distant data on user when the oject is loaded.
-    #     """
-    #     result = get_user(self.id)
-    #     self.avatar = "/static/img/avatar.webp"
-    #     try:
-    #         if result["nick"] == None:
-    #             if result["user"]["global_name"] == None:
-    #                 self.name = result["user"]["username"]
-    #             else:
-    #                 self.name = result["user"]["global_name"]
-    #         else:
-    #             self.name = result["nick"]
-    #         self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
-    #         self.is_admin = (
-    #             current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
-    #         )
-    #         self.is_player = (
-    #             current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
-    #         )
-    #         avatar_url = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
-    #         try:
-    #             response = requests.head(avatar_url)
-    #             if response.status_code == 200:
-    #                 self.avatar = avatar_url
-    #         except requests.RequestException:
-    #             pass
-    #     except Exception:
-    #         self.name = "Inconnu"
-    #         self.is_gm = False
-    #         self.is_admin = False
-    #         self.is_player = False
+            self.name = "Inconnu"
+            self.is_gm = False
+            self.is_admin = False
+            self.is_player = False
