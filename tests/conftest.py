@@ -13,8 +13,8 @@ import pytest, os
 def seed_db():
     db.session.add_all(
         [
-            User(id="664487064577900594"),
-            User(id="698965618279317624"),
+            User(id="664487064577900594", name="Notsag"),
+            User(id="698965618279317624", name="Grew"),
         ]
     )
     db.session.add(System(name="Appel de Cthulhu v7", icon="cthulhu.png"))

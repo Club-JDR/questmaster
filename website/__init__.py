@@ -67,14 +67,25 @@ def create_app():
         base_template="admin.j2",
         index_view=admin_view.SecureAdminIndexView(),
     )
-    admin.add_view(admin_view.GameAdmin(models.Game, db.session))
-    admin.add_view(admin_view.GameSessionAdmin(models.GameSession, db.session))
-    admin.add_view(admin_view.ChannelAdmin(models.Channel, db.session))
-    admin.add_view(admin_view.UserAdmin(models.User, db.session))
-    admin.add_view(admin_view.AdminView(models.Trophy, db.session))
-    admin.add_view(admin_view.UserTrophyAdmin(models.UserTrophy, db.session))
-    admin.add_view(admin_view.VttAdmin(models.Vtt, db.session))
-    admin.add_view(admin_view.SystemAdmin(models.System, db.session))
+    admin.add_view(admin_view.GameAdmin(models.Game, db.session, name="Annonces"))
+    admin.add_view(
+        admin_view.GameSessionAdmin(models.GameSession, db.session, name="Sessions")
+    )
+    admin.add_view(admin_view.UserAdmin(models.User, db.session, name="Utilisateurs"))
+    admin.add_view(
+        admin_view.UserTrophyAdmin(
+            models.UserTrophy, db.session, name="Association Utilisateurs/Badges"
+        )
+    )
+    admin.add_view(admin_view.AdminView(models.Trophy, db.session, name="Badges"))
+    admin.add_view(admin_view.VttAdmin(models.Vtt, db.session, name="VTTs"))
+    admin.add_view(admin_view.SystemAdmin(models.System, db.session, name="Systèmes"))
+    admin.add_view(
+        admin_view.ChannelAdmin(models.Channel, db.session, name="Catégories (salons)")
+    )
+    admin.add_view(
+        admin_view.GameEventAdmin(models.GameEvent, db.session, name="Journaux")
+    )
 
     register_blueprints(app)
     register_filters(app)

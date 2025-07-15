@@ -13,7 +13,7 @@ from website.extensions import db
 from website.bot import get_bot
 from website.models import Game, User, System, Vtt, GameSession
 from website.views.auth import who, login_required
-from website.utils.logger import logger
+from website.utils.logger import logger, log_game_event
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
 from .helpers import *
 from datetime import datetime
@@ -127,6 +127,11 @@ def create_game():
     try:
         db.session.add(game)
         db.session.commit()
+        log_game_event(
+            "create",
+            game.id,
+            f"Annonce créée avec le statut {game.status}.",
+        )
         logger.info(f"Game saved in DB with ID: {game.id}")
 
         if post and data["action"] == "open":
@@ -177,6 +182,11 @@ def edit_game(slug):
             logger.info(f"Embed sent for game {game.id}")
 
         db.session.commit()
+        log_game_event(
+            "edit",
+            game.id,
+            "Le contenu de l'annonce a été édité.",
+        )
         logger.info(f"Game {game.id} changes saved")
     except Exception as e:
         logger.error(f"Failed to edit game {game.id}: {e}", exc_info=True)
@@ -210,6 +220,11 @@ def change_game_status(slug):
 
     try:
         db.session.commit()
+        log_game_event(
+            "edit",
+            game.id,
+            f"Le statut de l'annonce à changé en {status}.",
+        )
         logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
             archive_game(game, bot, award_trophies=award_trophies)
@@ -257,6 +272,11 @@ def add_game_session(slug):
     )
     try:
         db.session.commit()
+        log_game_event(
+            "create-session",
+            game.id,
+            f"Une session a été créée de {start} à {end}.",
+        )
         logger.info(f"Session {start}/{end} created for Game {game.id}")
         send_discord_embed(
             game,
@@ -294,6 +314,11 @@ def edit_game_session(slug, session_id):
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     try:
         db.session.commit()
+        log_game_event(
+            "edit-session",
+            game.id,
+            f"Une session a été éditée : {old_start} to {old_end}, a changé en {session.start} à {session.end}.",
+        )
         logger.info(
             f"Session {old_start}/{old_end} of Game {game.slug} has been updated to {session.start}/{session.end}"
         )
@@ -325,6 +350,11 @@ def remove_game_session(slug, session_id):
     delete_game_session(session)
     try:
         db.session.commit()
+        log_game_event(
+            "delete-session",
+            game.id,
+            f"Une session a été supprimée de {start} à {end}.",
+        )
         logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
         send_discord_embed(
             game,

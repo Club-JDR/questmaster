@@ -517,7 +517,13 @@ function runManageIntro() {
         "Le calendrier et les statistiques mensuelles seront automatiquement mis à jour.<br>" +
         "Un message de modification avec la nouvelle date et les nouveaux horaires sera envoyé dans le canal de partie pour prévenir les joueur·euses.",
       title: "Action sur les sessions"
-    }
+    },
+    {
+      element: '#event-list',
+      intro: "La liste des événements de la partie se trouve dans cette zone.<br>" +
+        "Vous pourrez consulter toutes les opérations en lien avec votre annonce (inscriptions, modifications...).",
+      title: "Sessions de jeu"
+    },
   ];
 
   intro.setOptions({

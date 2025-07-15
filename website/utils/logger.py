@@ -1,5 +1,7 @@
 import logging
 from flask import g
+from website.extensions import db
+from website.models import GameEvent
 
 
 class RequestLoggerAdapter(logging.LoggerAdapter):
@@ -22,3 +24,13 @@ def configure_logging(level=logging.INFO):
 
 
 logger = RequestLoggerAdapter(logging.getLogger(__name__), {})
+
+
+def log_game_event(action, game_id, description=None):
+    event = GameEvent(
+        action=action,
+        game_id=game_id,
+        description=description,
+    )
+    db.session.add(event)
+    db.session.commit()

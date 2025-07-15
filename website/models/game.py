@@ -42,6 +42,7 @@ class Game(db.Model):
     type = db.Column("type", Enum(*GAME_TYPES, name="game_type_enum"), nullable=False)
     length = db.Column(db.String(), nullable=False)
     gm_id = db.Column(db.String(), db.ForeignKey("user.id"), nullable=False)
+    gm = db.relationship("User", back_populates="games_gm", foreign_keys=[gm_id])
     system_id = db.Column(db.Integer(), db.ForeignKey("system.id"), nullable=False)
     vtt_id = db.Column(db.Integer(), db.ForeignKey("vtt.id"), nullable=True)
     description = db.Column(db.Text(), nullable=False)

@@ -2,7 +2,6 @@ from website.extensions import db, cache
 from sqlalchemy import orm
 from flask import current_app
 from website.bot import get_bot
-from website.utils.logger import logger
 import re, requests
 
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
@@ -18,15 +17,20 @@ class User(db.Model):
     __tablename__ = "user"
 
     id = db.Column(db.String(), primary_key=True)
-    games_gm = db.relationship("Game", backref="gm")
+    name = db.Column(db.String(), nullable=False, index=True)
+    games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship(
         "UserTrophy", back_populates="user", cascade="all, delete-orphan"
     )
 
-    def __init__(self, id):
+    def __init__(self, id, name="Inconnu"):
         if not re.fullmatch(r"\d{17,21}", id):
             raise ValueError(f"{id} is not a valid Discord UID.")
         self.id = id
+        self.name = name
+
+    def __repr__(self):
+        return f"{self.name} <{self.id}>"
 
     @property
     def trophy_summary(self):

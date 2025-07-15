@@ -1,8 +1,10 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import AdminIndexView, expose
-from flask import session, abort, request, flash, url_for, redirect
+from flask import (
+    session,
+    abort,
+)
 from wtforms.validators import NumberRange
-from website.extensions import db
 
 
 def is_admin_authenticated():
@@ -27,10 +29,11 @@ class AdminView(ModelView):
 
 class UserAdmin(AdminView):
     form_columns = ["id"]
-    column_list = ["id"]
+    column_list = ["id", "name", "avatar"]
     column_editable_list = ["id"]
     can_create = True
     can_edit = False
+    page_size = 10
 
 
 class ChannelAdmin(AdminView):
@@ -57,6 +60,28 @@ class VttAdmin(AdminView):
     ]
     can_create = True
     can_edit = True
+
+    def is_accessible(self):
+        return is_admin_authenticated()
+
+    def inaccessible_callback(self, name, **kwargs):
+        abort(403)
+
+
+class GameEventAdmin(AdminView):
+    column_list = ["timestamp", "action", "game.slug", "description"]
+    column_searchable_list = ["action", "game.slug", "description"]
+    column_filters = ["action", "game.slug", "description"]
+    column_labels = {
+        "timestamp": "Timestamp (UTC)",
+        "action": "Action",
+        "game.slug": "Annonce",
+        "description": "Détails",
+    }
+    page_size = 50
+    can_create = False
+    can_edit = False
+    can_delete = False
 
     def is_accessible(self):
         return is_admin_authenticated()
@@ -101,7 +126,7 @@ class GameAdmin(AdminView):
         "name",
         "slug",
         "type",
-        "gm_id",
+        "gm",
         "party_size",
         "party_selection",
         "date",
@@ -116,7 +141,7 @@ class GameAdmin(AdminView):
         "slug",
         "type",
         "length",
-        "gm_id",
+        "gm",
         "system_id",
         "vtt_id",
         "restriction",
@@ -142,7 +167,7 @@ class GameAdmin(AdminView):
         "name",
         "slug",
         "type",
-        "gm_id",
+        "gm",
         "party_size",
         "party_selection",
         "date",
@@ -155,8 +180,7 @@ class GameAdmin(AdminView):
     can_create = False
     can_edit = True
     can_delete = False
-    column_searchable_list = ["id", "gm_id", "type", "name"]
-    column_filters = ["id", "gm_id", "type"]
+    column_filters = ["id", "name", "gm_id", "type"]
     page_size = 10
 
 

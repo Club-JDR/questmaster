@@ -2,7 +2,7 @@ from flask import abort, flash, redirect, url_for, request, current_app
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-from website.utils.logger import logger
+from website.utils.logger import logger, log_game_event
 from website.extensions import db
 from website.models import (
     Game,
@@ -179,13 +179,18 @@ def get_ambience(data):
 def handle_remove_players(game, data, bot):
     """Remove unchecked players from the game."""
     removed = False
-    for player in list(game.players):
+    for player in game.players:
         if str(player.id) not in data:
             game.players.remove(player)
             logger.info(f"User {player.id} removed from Game {game.id}")
             bot.remove_role_from_user(player.id, game.role)
             logger.info(f"Role {game.role} removed from Player {player.id}")
             removed = True
+            log_game_event(
+                "unregister",
+                game.id,
+                f"{player} a été désinscrit de l'annonce.",
+            )
     if removed:
         db.session.commit()
 
@@ -238,10 +243,23 @@ def register_user_to_game(original_game, user, bot, force=False):
         game.players.append(user)
         if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
-        db.session.commit()
-        logger.info(f"User {user.id} registered to Game {game.id}")
-        if game.status == "closed":
+            send_discord_embed(game, type="annonce")
+            log_game_event(
+                "edit",
+                game.id,
+                f"Annonce fermée automatiquement après avoir atteint le nombre max de joueur·euses ({game.party_size}).",
+            )
             logger.info(f"Game status for {game.id} has been updated to closed")
+        db.session.commit()
+        if force:
+            log_game_event(
+                "register",
+                game.id,
+                f"{user} a été inscrit à l'annonce par le MJ ou un admin.",
+            )
+        else:
+            log_game_event("register", game.id, f"{user} s'est inscrit sur l'annonce.")
+        logger.info(f"User {user.id} registered to Game {game.id}")
         bot.add_role_to_user(user.id, game.role)
         logger.info(f"Role {game.role} added to user {user.id}")
         send_discord_embed(game, type="register", player=user.id)
@@ -381,16 +399,19 @@ def add_trophy_to_user(user_id, trophy_id, amount=1):
     logger.info(f"User {user_id} got a trophy: {trophy.name}")
 
 
-def archive_game(game, bot, award_trophies=True):
-    if award_trophies:
-        if game.type == "oneshot":
-            add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_OS_GM_ID)
-            for user in game.players:
-                add_trophy_to_user(user_id=user.id, trophy_id=BADGE_OS_ID)
-        elif game.type == "campaign":
-            add_trophy_to_user(user_id=game.gm.id, trophy_id=BADGE_CAMPAIGN_GM_ID)
-            for user in game.players:
-                add_trophy_to_user(user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID)
+def award_game_trophies(game):
+    trophy_map = {
+        "oneshot": (BADGE_OS_GM_ID, BADGE_OS_ID),
+        "campaign": (BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID),
+    }
+    gm_trophy, player_trophy = trophy_map.get(game.type, (None, None))
+    if gm_trophy:
+        add_trophy_to_user(user_id=game.gm.id, trophy_id=gm_trophy)
+        for user in game.players:
+            add_trophy_to_user(user_id=user.id, trophy_id=player_trophy)
+
+
+def adjust_category_size(bot, game):
     try:
         discord_channel = bot.get_channel(game.channel)
         parent_id = discord_channel.get("parent_id")
@@ -404,17 +425,31 @@ def archive_game(game, bot, award_trophies=True):
                 )
     except Exception as e:
         logger.warning(f"Failed to adjust category size for game {game.id}: {e}")
+
+
+def delete_discord_resources(bot, game):
     bot.delete_channel(game.channel)
     logger.info(f"Game {game.id} channel {game.channel} has been deleted")
     bot.delete_role(game.role)
     logger.info(f"Game {game.id} role {game.role} has been deleted")
-    if game.msg_id:
-        try:
-            bot.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
-            game.msg_id = None
-            db.session.commit()
-            logger.info(
-                f"Discord embed message {game.msg_id} deleted for archived game {game.id}"
-            )
-        except Exception as e:
-            logger.warning(f"Failed to delete message for archived game {game.id}: {e}")
+
+
+def delete_game_message(bot, game):
+    if not game.msg_id:
+        return
+    try:
+        bot.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
+        game.msg_id = None
+        db.session.commit()
+        logger.info(f"Discord embed message deleted for archived game {game.id}")
+    except Exception as e:
+        logger.warning(f"Failed to delete message for archived game {game.id}: {e}")
+
+
+def archive_game(game, bot, award_trophies=True):
+    if award_trophies:
+        award_game_trophies(game)
+    adjust_category_size(bot, game)
+    delete_discord_resources(bot, game)
+    log_game_event("delete", game.id, "Annonce archivée.")
+    delete_game_message(bot, game)

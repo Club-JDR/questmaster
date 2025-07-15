@@ -5,7 +5,8 @@
 
   .nav-tabs,
   .table-responsive,
-  .admin-form {
+  .admin-form,
+  #filter_form {
     max-width: 80%;
     margin: auto;
   }
