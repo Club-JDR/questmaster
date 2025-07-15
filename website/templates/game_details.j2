@@ -263,7 +263,7 @@
             </add-to-calendar-button>
             {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
             {% if request.path != '/demo/inscription/' %}
-            <form class="row" method="post" action="/annonces/{{ game.slug }}/inscription/">
+            <div class="row">
               <div class="btn-group calendar-btn-group" role="group">
                 <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                   data-bs-target="#editSessionModal{{session.id}}">
@@ -280,22 +280,22 @@
               {% endif %}
               {% endif %}
               {% endif %}
+            </div>
           </div>
+          {% else %}
+          <p class="text-muted">Aucune session</p>
+          {% endfor %}
         </div>
-        {% else %}
-        <p class="text-muted">Aucune session</p>
-        {% endfor %}
       </div>
     </div>
-  </div>
-  {% endblock %}
-  {% block scripts %} {{ super() }}
-  <script src="/static/js/tooltips.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
-    integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
-    integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
-  <script src="/static/js/game-sessions.js"></script>
-  <script src="/static/js/game-events.js"></script>
-  {% endblock %}
+    {% endblock %}
+    {% block scripts %} {{ super() }}
+    <script src="/static/js/tooltips.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
+      integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
+      integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
+    <script src="/static/js/game-sessions.js"></script>
+    <script src="/static/js/game-events.js"></script>
+    {% endblock %}

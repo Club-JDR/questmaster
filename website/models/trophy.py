@@ -1,7 +1,4 @@
-from collections import Counter
-from sqlalchemy.orm import object_session
 from website.extensions import db
-from website.utils.logger import logger
 from .user import User
 
 

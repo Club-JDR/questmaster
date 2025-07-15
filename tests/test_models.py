@@ -8,6 +8,7 @@ from website.models import (
     Channel,
     Game,
     GameSession,
+    GameEvent,
 )
 from datetime import datetime, timedelta
 import sqlalchemy.exc
@@ -91,6 +92,24 @@ def test_game_session_model(db_session):
     db_session.add(session_obj)
     db_session.commit()
     assert session_obj.game == game
+
+
+def test_game_event_model(db_session):
+    game = Game.query.first()
+    event = GameEvent(
+        action="create",
+        game_id=game.id,
+        description="Game created by GM.",
+    )
+    db_session.add(event)
+    db_session.commit()
+
+    assert event.id is not None
+    assert event.timestamp is not None
+    assert event.action == "create"
+    assert event.game_id == game.id
+    assert event.description == "Game created by GM."
+    assert event.game == game
 
 
 def test_trophy_and_user_trophy(db_session, regular_user):

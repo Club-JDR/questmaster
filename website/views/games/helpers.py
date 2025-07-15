@@ -2,7 +2,7 @@ from flask import abort, flash, redirect, url_for, request, current_app
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-from website.utils.logger import logger
+from website.utils.logger import logger, log_game_event
 from website.extensions import db
 from website.models import (
     Game,
@@ -186,6 +186,11 @@ def handle_remove_players(game, data, bot):
             bot.remove_role_from_user(player.id, game.role)
             logger.info(f"Role {game.role} removed from Player {player.id}")
             removed = True
+            log_game_event(
+                "unregister",
+                game.id,
+                f"User {player} was unregistered from game {game.slug} by GM {game.gm}",
+            )
     if removed:
         db.session.commit()
 
@@ -238,10 +243,24 @@ def register_user_to_game(original_game, user, bot, force=False):
         game.players.append(user)
         if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
-        db.session.commit()
-        logger.info(f"User {user.id} registered to Game {game.id}")
-        if game.status == "closed":
+            log_game_event(
+                "edit",
+                game.id,
+                f"Game {game.slug} was closed automatically after reaching max players ({game.party_size})",
+            )
             logger.info(f"Game status for {game.id} has been updated to closed")
+        db.session.commit()
+        if force:
+            log_game_event(
+                "register",
+                game.id,
+                f"User {user} was registered to game {game.slug} by GM {game.gm}",
+            )
+        else:
+            log_game_event(
+                "register", game.id, f"User {user} registered to game {game.slug}"
+            )
+        logger.info(f"User {user.id} registered to Game {game.id}")
         bot.add_role_to_user(user.id, game.role)
         logger.info(f"Role {game.role} added to user {user.id}")
         send_discord_embed(game, type="register", player=user.id)

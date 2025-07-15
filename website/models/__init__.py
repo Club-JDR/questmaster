@@ -5,3 +5,4 @@ from .user import User
 from .vtt import Vtt
 from .channel import Channel
 from .trophy import Trophy, UserTrophy
+from .game_event import GameEvent
