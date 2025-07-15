@@ -99,7 +99,7 @@ class UserAdmin(AdminView):
     column_editable_list = ["id"]
     can_create = True
     can_edit = False
-    page_size = 50
+    page_size = 10
 
 
 class ChannelAdmin(AdminView):
