@@ -243,6 +243,7 @@ def register_user_to_game(original_game, user, bot, force=False):
         game.players.append(user)
         if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
+            send_discord_embed(game, type="annonce")
             log_game_event(
                 "edit",
                 game.id,
