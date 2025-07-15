@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table("user", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("name", sa.String(), nullable=True))
+        batch_op.add_column(sa.Column("name", sa.String(), nullable=False))
         batch_op.create_index(batch_op.f("ix_user_name"), ["name"], unique=False)
 
 
