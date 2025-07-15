@@ -189,7 +189,7 @@ def handle_remove_players(game, data, bot):
             log_game_event(
                 "unregister",
                 game.id,
-                f"User {player} was unregistered from game {game.slug} by GM {game.gm}",
+                f"{player} a été désinscrit de l'annonce.",
             )
     if removed:
         db.session.commit()
@@ -246,7 +246,7 @@ def register_user_to_game(original_game, user, bot, force=False):
             log_game_event(
                 "edit",
                 game.id,
-                f"Game {game.slug} was closed automatically after reaching max players ({game.party_size})",
+                f"Annonce fermée automatiquement après avoir atteint le nombre max de joueur·euses ({game.party_size}).",
             )
             logger.info(f"Game status for {game.id} has been updated to closed")
         db.session.commit()
@@ -254,11 +254,11 @@ def register_user_to_game(original_game, user, bot, force=False):
             log_game_event(
                 "register",
                 game.id,
-                f"User {user} was registered to game {game.slug} by GM {game.gm}",
+                f"{user} a été inscrit à l'annonce par le MJ ou un admin.",
             )
         else:
             log_game_event(
-                "register", game.id, f"User {user} registered to game {game.slug}"
+                "register", game.id, f"{user} s'est inscrit sur l'annonce."
             )
         logger.info(f"User {user.id} registered to Game {game.id}")
         bot.add_role_to_user(user.id, game.role)

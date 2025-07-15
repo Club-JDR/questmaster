@@ -130,7 +130,7 @@ def create_game():
         log_game_event(
             "create",
             game.id,
-            f"User {game.gm} created the ({game.status}) game {game.slug} with status {game.status}",
+            f"Annonce créée avec le statut {game.status}.",
         )
         logger.info(f"Game saved in DB with ID: {game.id}")
 
@@ -185,7 +185,7 @@ def edit_game(slug):
         log_game_event(
             "edit",
             game.id,
-            f"User {game.gm} edited the ({game.status}) game {game.slug}",
+            "Le contenu de l'annonce a été édité.",
         )
         logger.info(f"Game {game.id} changes saved")
     except Exception as e:
@@ -223,7 +223,7 @@ def change_game_status(slug):
         log_game_event(
             "edit",
             game.id,
-            f"User {game.gm} changed the status of game {game.slug} to {status}",
+            f"Le statut de l'annonce à changé en {status}.",
         )
         logger.info(f"Game status for {game.id} has been updated to {status}")
         if status == "archived":
@@ -275,7 +275,7 @@ def add_game_session(slug):
         log_game_event(
             "create-session",
             game.id,
-            f"User {game.gm} created session for game {game.slug} from {start} to {end}",
+            f"Une session a été créée de {start} à {end}.",
         )
         logger.info(f"Session {start}/{end} created for Game {game.id}")
         send_discord_embed(
@@ -317,7 +317,7 @@ def edit_game_session(slug, session_id):
         log_game_event(
             "edit-session",
             game.id,
-            f"User {game.gm} edit session for game {game.slug}: was from {old_start} to {old_end}, is now {session.start} to {session.end}",
+            f"Une session a été éditée : {old_start} to {old_end}, a changé en {session.start} à {session.end}.",
         )
         logger.info(
             f"Session {old_start}/{old_end} of Game {game.slug} has been updated to {session.start}/{session.end}"
@@ -353,7 +353,7 @@ def remove_game_session(slug, session_id):
         log_game_event(
             "delete-session",
             game.id,
-            f"User {game.gm} created session for game {game.slug} from {start} to {end}",
+            f"Une session a été supprimée de {start} à {end}.",
         )
         logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
         send_discord_embed(
