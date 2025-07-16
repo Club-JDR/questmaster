@@ -136,13 +136,21 @@
           </tr>
         </thead>
         <tbody>
-          {% set counter = namespace(p=0) %}
-          {% for mj in mjs %}
-          {% set counter.p = counter.p + 1 %}
+          {% for mj, count in mjs %}
           <tr>
-            <td>{{ counter.p }}</td>
+            <td>
+            {% if loop.index == 1 %}
+              🥇
+            {% elif loop.index == 2 %}
+              🥈
+            {% elif loop.index == 3 %}
+              🥉
+            {% else %}
+              {{ loop.index }}
+            {% endif %}
+            </td>
             <td>{{ mj }}</td>
-            <td>{{ mjs[mj] }}</td>
+            <td>{{ count }}</td>
           </tr>
           {% endfor %}
         </tbody>

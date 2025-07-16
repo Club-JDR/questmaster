@@ -80,7 +80,7 @@ def get_stats():
         num_campaign=num_campaign,
         os=os_games,
         campaign=campaign_games,
-        mjs=Counter(gm_names),
+        mjs=sorted(Counter(gm_names).items(), key=lambda x: x[1], reverse=True),
         year=base_day.year,
         month=base_day.month,
         prev_year=prev_month_date.year,
