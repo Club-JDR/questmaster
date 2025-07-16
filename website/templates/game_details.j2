@@ -249,6 +249,7 @@
     </div>
     <div id="sessions-list" class="sessions-list">
       <h3 class="text-center">Sessions</h3>
+      {% if game.sessions %}
       <div class="sessions-cards">
         {% for session in game.sessions|sort(attribute='start') %}
         <div class="session-card p-3 mb-4 rounded shadow-sm text-center">
@@ -283,61 +284,63 @@
               {% endif %}
             </div>
           </div>
-          {% else %}
-          <p class="text-muted">Aucune session</p>
-          {% endfor %}
         </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-center text-muted">Aucune session</p>
+        {% endif %}
       </div>
     </div>
-    {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
-    <div id="event-list" class="mt-5">
-      <h3 class="text-center">Journal d’activité</h3>
-      {% if game.events %}
-      <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead>
-            <tr>
-              <th scope="col">Date</th>
-              <th scope="col">Action</th>
-              <th scope="col">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for event in game.events|sort(attribute='timestamp')|reverse %}
-            <tr>
-              <td>{{ event.timestamp|format_datetime('%d/%m/%Y %H:%M') }}</td>
-              <td>
-                {% if event.action == 'create' %}Création
-                {% elif event.action == 'edit' %}Édition
-                {% elif event.action == 'delete' %}Suppression
-                {% elif event.action == 'create-session' %}Ajout session
-                {% elif event.action == 'edit-session' %}Édition session
-                {% elif event.action == 'delete-session' %}Suppression session
-                {% elif event.action == 'register' %}Inscription
-                {% elif event.action == 'unregister' %}Désinscription
-                {% elif event.action == 'alert' %}Alerte
-                {% else %}{{ event.action }}
-                {% endif %}
-              </td>
-              <td>{{ event.description or '—' }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-center text-muted">Aucune activité enregistrée pour cette partie.</p>
-      {% endif %}
+  </div>
+  {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+  <div id="event-list" class="mt-5">
+    <h3 class="text-center">Journal d’activité</h3>
+    {% if game.events %}
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Action</th>
+            <th scope="col">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in game.events|sort(attribute='timestamp')|reverse %}
+          <tr>
+            <td>{{ event.timestamp|format_datetime('%d/%m/%Y %H:%M') }}</td>
+            <td>
+              {% if event.action == 'create' %}Création
+              {% elif event.action == 'edit' %}Édition
+              {% elif event.action == 'delete' %}Suppression
+              {% elif event.action == 'create-session' %}Ajout session
+              {% elif event.action == 'edit-session' %}Édition session
+              {% elif event.action == 'delete-session' %}Suppression session
+              {% elif event.action == 'register' %}Inscription
+              {% elif event.action == 'unregister' %}Désinscription
+              {% elif event.action == 'alert' %}Alerte
+              {% else %}{{ event.action }}
+              {% endif %}
+            </td>
+            <td>{{ event.description or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+    {% else %}
+    <p class="text-center text-muted">Aucune activité enregistrée pour cette partie.</p>
     {% endif %}
-    {% endblock %}
-    {% block scripts %} {{ super() }}
-    <script src="/static/js/tooltips.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
-      integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
-      integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
-    <script src="/static/js/game-sessions.js"></script>
-    <script src="/static/js/game-events.js"></script>
-    {% endblock %}
+  </div>
+  {% endif %}
+  {% endblock %}
+  {% block scripts %} {{ super() }}
+  <script src="/static/js/tooltips.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
+    integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
+    integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
+  <script src="/static/js/game-sessions.js"></script>
+  <script src="/static/js/game-events.js"></script>
+  {% endblock %}
