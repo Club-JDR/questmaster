@@ -58,11 +58,13 @@ def _seed_trophies():
 
     db.session.commit()
 
+
 @click.command("seed-trophies")
 @with_appcontext
 def seed_trophies():
     """CLI command to seed trophies."""
     _seed_trophies()
+
 
 def seed_trophies_for_tests():
     """Call this function in tests to seed trophies."""

@@ -243,7 +243,9 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
 
     # Archive Game
     response = logged_in_admin.post(
-        f"/annonces/{slug}/statut/", data={"status": "archived", "award_trophies": "on"}, follow_redirects=True
+        f"/annonces/{slug}/statut/",
+        data={"status": "archived", "award_trophies": "on"},
+        follow_redirects=True,
     )
     assert response.status_code == 200
     assert all(
