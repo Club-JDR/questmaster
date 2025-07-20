@@ -184,6 +184,14 @@
             </span>
           </form>
           {% endif %}
+          {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status != "archived" %}
+          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+            data-bs-title="Faire un signalement concernant cette annonce aux Admins.">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alertModal">
+              <i class="bi bi-bell"></i> Signaler
+            </button>
+          </span>
+          {% endif %}
         </div>
         {% if ((payload['user_id'] == game.gm.id) or payload['is_admin']) and (request.path != '/demo/inscription/') %}
         <form id="actionsPanel" class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
@@ -244,6 +252,7 @@
         {% include 'game_details/edit_players.j2' %}
         {% include 'game_details/confirm_archive.j2' %}
         {% endif %}
+        {% include 'game_details/alert_admin.j2' %}
         {% endif %}
       </div>
     </div>

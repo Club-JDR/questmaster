@@ -249,6 +249,40 @@ def change_game_status(slug):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
+@game_bp.route("/annonces/<slug>/alert/", methods=["POST"])
+@login_required
+def send_alert(slug):
+    """
+    Send an alert message to the Discord channel and register a game event.
+    """
+    payload = who()
+    game = Game.query.filter_by(slug=slug).first_or_404()
+
+    if (
+        game.gm_id != payload["user_id"]
+        and not payload["is_admin"]
+        and not any(player.id == payload["user_id"] for player in game.players)
+    ):
+        flash(
+            "Vous n'êtes pas autorisé·e à envoyer une alerte pour cette partie.",
+            "danger",
+        )
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+    alert_message = request.form.get("alertMessage")
+    try:
+        send_discord_embed(
+            game, type="alert", alert_message=alert_message, player=payload["user_id"]
+        )
+        flash("Signalement effectué.", "success")
+        log_game_event("alert", game.id, "Un signalement a été fait.")
+    except Exception as e:
+        flash("Une erreur est survenue lors du signalement.", "danger")
+        logger.error(f"Failed to send alert: {e}", exc_info=True)
+
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+
 @game_bp.route("/annonces/<slug>/sessions/ajouter/", methods=["POST"])
 @login_required
 def add_game_session(slug):
