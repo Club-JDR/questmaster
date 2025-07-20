@@ -15,7 +15,7 @@ def get_user(user_id):
     bot = get_bot()
     user_data = bot.get_user(user_id)
     cache.set(cache_key, user_data)
-    
+
     return user_data
 
 
