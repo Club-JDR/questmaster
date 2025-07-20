@@ -38,6 +38,7 @@ jobs:
           REDIS_HOST: "redis"
           UNITTEST_CHANNEL_ID: ${{ secrets.UNITTEST_CHANNEL_ID }}
           POSTS_CHANNEL_ID: ${{ secrets.POSTS_CHANNEL_ID }}
+          ADMIN_CHANNEL_ID: ${{ secrets.ADMIN_CHANNEL_ID }}
           DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
           DISCORD_GM_ROLE_ID: ${{ secrets.DISCORD_GM_ROLE_ID }}
           DISCORD_ADMIN_ROLE_ID: ${{ secrets.DISCORD_ADMIN_ROLE_ID }}

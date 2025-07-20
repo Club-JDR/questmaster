@@ -14,6 +14,7 @@ def send_discord_embed(
     player=None,
     old_start=None,
     old_end=None,
+    alert_message=None,
 ):
     bot = get_bot()
 
@@ -24,12 +25,15 @@ def send_discord_embed(
         "edit-session": build_edit_session_embed,
         "del-session": build_delete_session_embed,
         "register": build_register_embed,
+        "alert": build_alert_embed,
     }
 
     if type not in embed_builders:
         raise ValueError(f"Unknown embed type: {type}")
 
-    embed, target = embed_builders[type](game, start, end, player, old_start, old_end)
+    embed, target = embed_builders[type](
+        game, start, end, player, old_start, old_end, alert_message
+    )
 
     if type == "annonce" and game.msg_id:
         response = bot.edit_embed_message(game.msg_id, embed, target)
@@ -145,3 +149,16 @@ def build_register_embed(game, _, __, player, *___):
         "description": f"<@{player}> s'est inscrit. Bienvenue :wave:",
     }
     return embed, game.channel
+
+
+def build_alert_embed(game, _, __, player, ___, ____, alert_message):
+    embed = {
+        "title": "Signalement",
+        "color": 0xF34242,  # red
+        "description": (
+            f"<@{player}> a fait un signalement concernant l'annonce "
+            f"https://questmaster.club-jdr.fr/annonces/{game.slug}\n"
+            f"**Signalement :**\n{alert_message}"
+        ),
+    }
+    return embed, current_app.config["ADMIN_CHANNEL_ID"]

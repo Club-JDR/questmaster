@@ -1,0 +1,29 @@
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="alertForm" method="POST" action="/annonces/{{ game.slug }}/alert/">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="alertModalLabel">Effectuer un signalement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="alertMessage" class="form-label">Expliquez succinctement les faits à remonter aux admins
+              :</label>
+            <textarea class="form-control" id="alertMessage" name="alertMessage" rows="4" required></textarea>
+          </div>
+          <div class="mb-3">
+            <p>Votre signalement sera directement transmis aux admins du serveur qui vous contacterons en MP.</p>
+            {% if not payload['user_id'] == game.gm.id %}
+            <p>Le·a MJ saura uniquement qu'un signalement a été fait.</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary">Signaler</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
