@@ -189,13 +189,6 @@
   <script src="https://cdn.jsdelivr.net/npm/konami@1.6.3/konami.min.js"></script>
   <script src="/static/js/konami.js"></script>
   <script src="/static/js/theme.js"></script>
-  <script>
-    window.pageContext = {
-      path: "{{ request.path }}",
-      isAuthenticated: {% if payload.get('username') %}true{% else %} false{% endif %},
-    isGM: {% if payload.get('is_gm') %} true{% else %} false{% endif %}
-  };
-  </script>
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
   <script src="/static/js/intro-manager.js"></script>
   {% endblock %}

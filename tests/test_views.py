@@ -234,7 +234,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Complet" in response.data.decode()
 
     # User can signal something on the game
-    data = {"alertMessage": "Le MJ ne vient plus aux sessiosn."}
+    data = {"alertMessage": "Le MJ ne vient plus."}
     response = logged_in_user.post(
         f"/annonces/{slug}/alert/", follow_redirects=True, data=data
     )
@@ -243,7 +243,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
 
     # Archive Game
     response = logged_in_admin.post(
-        f"/annonces/{slug}/statut/", data={"status": "archived"}, follow_redirects=True
+        f"/annonces/{slug}/statut/", data={"status": "archived", "award_trophies": "on"}, follow_redirects=True
     )
     assert response.status_code == 200
     assert all(
@@ -253,18 +253,19 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Cloner" in response.data.decode()
     assert "Archivée" in response.data.decode()
     assert f"Annonce {title} archivée." in response.data.decode()
+    assert "Annonce archivée. Badges distribués." in response.data.decode()
 
     # Get trophies
     response = logged_in_user.get("/badges/", follow_redirects=True)
     assert response.status_code == 200
-    assert "Badge Campagne" in response.data.decode()
+    assert "Badge Campagne (1)" in response.data.decode()
 
     # Get trophies someone else's trophies
     response = logged_in_user.get(
-        f"/badges/?user_id={admin_user.id}/", follow_redirects=True
+        f"/badges/?user_id={admin_user.id}", follow_redirects=True
     )
     assert response.status_code == 200
-    assert "Badge Campagne GM" in response.data.decode()
+    assert "Badge Campagne GM (1)" in response.data.decode()
 
     # Get trophies leaderboard
     response = logged_in_user.get("/badges/classement/", follow_redirects=True)

@@ -447,9 +447,13 @@ def delete_game_message(bot, game):
 
 
 def archive_game(game, bot, award_trophies=True):
+    msg = "Annonce archivée."
     if award_trophies:
         award_game_trophies(game)
+        msg += " Badges distribués."
+    else:
+        msg += " Badges non-distribués."
     adjust_category_size(bot, game)
     delete_discord_resources(bot, game)
-    log_game_event("delete", game.id, "Annonce archivée.")
+    log_game_event("delete", game.id, msg)
     delete_game_message(bot, game)

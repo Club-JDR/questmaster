@@ -5,6 +5,7 @@ config = load_dotenv()
 from website import create_app, db
 from website.models import User, System, Vtt, Channel
 from website.utils.discord import Discord
+from website.extensions import seed_trophies_for_tests
 from flask import template_rendered
 from contextlib import contextmanager
 import pytest, os
@@ -30,6 +31,7 @@ def test_app():
     with app.app_context():
         db.create_all()
         seed_db()
+        seed_trophies_for_tests()
         yield app
         db.session.remove()
         db.drop_all()
