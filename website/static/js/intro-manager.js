@@ -209,6 +209,13 @@ function runRegistrationIntro() {
       title: "S'inscrire"
     },
     {
+      element: '#alert-btn',
+      intro: "<div class='alert alert-primary' role='alert'>Vous devez être inscrit·e sur l'annonce (ou en être le·a MJ) pour faire un signalement.</div>" +
+        "Cliquer sur ce bouton vous permettra de signaler aux admins un comportement contraire au règlement de la part du MJ ou d'un·e joueur·euse.<br>" +
+        "Suite à ce signalement, vous serez recontacté par un admin en MP.",
+      title: "Faire un signalement"
+    },
+    {
       element: '#sessions-list',
       intro: "La liste des sessions de la partie se trouve dans cette zone.<br>" +
         "Votre MJ pourra ajouter des sessions ou les modifier au fur et à mesure.",

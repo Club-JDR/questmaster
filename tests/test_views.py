@@ -235,7 +235,9 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
 
     # User can signal something on the game
     data = {"alertMessage": "Le MJ ne vient plus aux sessiosn."}
-    response = logged_in_user.post(f"/annonces/{slug}/alert/", follow_redirects=True, data=data)
+    response = logged_in_user.post(
+        f"/annonces/{slug}/alert/", follow_redirects=True, data=data
+    )
     assert response.status_code == 200
     assert "Signalement effectué." in response.data.decode()
 

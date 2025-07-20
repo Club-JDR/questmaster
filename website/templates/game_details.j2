@@ -187,7 +187,8 @@
           {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status != "archived" %}
           <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
             data-bs-title="Faire un signalement concernant cette annonce aux Admins.">
-            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alertModal">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alertModal"
+              id="alert-btn">
               <i class="bi bi-bell"></i> Signaler
             </button>
           </span>
