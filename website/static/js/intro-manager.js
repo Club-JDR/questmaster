@@ -97,6 +97,16 @@ function runHomepageIntro() {
       title: "Informations"
     },
     {
+      element: '#trophiesLink',
+      intro: "Affichez vos badges ou ceux de n'importe quel autre membre du serveur.",
+      title: "Classement des badges"
+    },
+    {
+      element: '#trophiesLeaderboardLink',
+      intro: "Affichez le classement des badges.",
+      title: "Classement des badges"
+    },
+    {
       element: '#calendarLink',
       intro: "Consultez le calendrier des parties, mois par mois.",
       title: "Calendrier"

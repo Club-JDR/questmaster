@@ -254,6 +254,22 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Archivée" in response.data.decode()
     assert f"Annonce {title} archivée." in response.data.decode()
 
+    # Get trophies
+    response = logged_in_user.get("/badges/", follow_redirects=True)
+    assert response.status_code == 200
+    assert "Badge Campagne (1)" in response.data.decode()
+
+    # Get trophies someone else's trophies
+    response = logged_in_user.get(
+        f"/badges/?user_id={admin_user.id}/", follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert "Badge Campagne GM (1)" in response.data.decode()
+
+    # Get trophies leaderboard
+    response = logged_in_user.get("/badges/classement/", follow_redirects=True)
+    assert response.status_code == 200
+
 
 @patch("flask_wtf.csrf.validate_csrf", return_value=True)
 def test_e2e_scenario_2(
