@@ -234,9 +234,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Complet" in response.data.decode()
 
     # User can signal something on the game
-    response = logged_in_user.post(
-        f"/annonces/{slug}/alert/", follow_redirects=True
-    )
+    response = logged_in_user.post(f"/annonces/{slug}/alert/", follow_redirects=True)
     assert response.status_code == 200
     assert "Signalement effectué." in response.data.decode()
 
