@@ -14,9 +14,7 @@ csrf = CSRFProtect()
 discord = DiscordOAuth2Session()
 
 
-@click.command("seed-trophies")
-@with_appcontext
-def seed_trophies():
+def _seed_trophies():
     from website.models.trophy import (
         Trophy,
         BADGE_OS_ID,
@@ -59,3 +57,15 @@ def seed_trophies():
             db.session.add(new_trophy)
 
     db.session.commit()
+
+
+@click.command("seed-trophies")
+@with_appcontext
+def seed_trophies():
+    """CLI command to seed trophies."""
+    _seed_trophies()
+
+
+def seed_trophies_for_tests():
+    """Call this function in tests to seed trophies."""
+    _seed_trophies()

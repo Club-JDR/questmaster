@@ -75,6 +75,8 @@
               Informations
             </a>
             <ul id="informationsDropdown" class="dropdown-menu">
+              <a id="trophiesLink" class="dropdown-item" href="/badges/">Badges</a>
+              <a id="trophiesLeaderboardLink" class="dropdown-item" href="/badges/classement/">Badges (classement)</a>
               <a id="calendarLink" class="dropdown-item" href="/calendrier/">Calendrier</a>
               <a id="statsLink" class="dropdown-item" href="/stats/">Statistiques</a>
               <a id="systemsLink" class="dropdown-item" href="/systemes/">Systèmes</a>
@@ -145,10 +147,6 @@
                     <span class="d-none d-sm-inline mx-1">{{ payload['username'] }}</span>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/badges">Mes badges</a></li>
-                    <li>
-                      <hr class="dropdown-divider">
-                    </li>
                     <li><a class="dropdown-item" href="/logout/">Me déconnecter</a></li>
                   </ul>
                 </div>
@@ -191,13 +189,6 @@
   <script src="https://cdn.jsdelivr.net/npm/konami@1.6.3/konami.min.js"></script>
   <script src="/static/js/konami.js"></script>
   <script src="/static/js/theme.js"></script>
-  <script>
-    window.pageContext = {
-      path: "{{ request.path }}",
-      isAuthenticated: {% if payload.get('username') %}true{% else %} false{% endif %},
-    isGM: {% if payload.get('is_gm') %} true{% else %} false{% endif %}
-  };
-  </script>
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
   <script src="/static/js/intro-manager.js"></script>
   {% endblock %}

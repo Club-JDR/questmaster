@@ -1,0 +1,137 @@
+{% extends 'base.j2' %}
+
+{% block title %}Classement des badges{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 text-center"><i class="bi bi-trophy"></i> Classement des badges</h1>
+
+<div class="container">
+  <div class="row">
+    <!-- Player Trophies (OS and Campaign) -->
+    <div class="col-md-6">
+      <h3 class="text-center text-success">🏅 Top 10 joueurs - OS</h3>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Nombre de badges</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(rank=1) %}
+          {% for player, total in os_leaderboard %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ total }}</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+          {% for i in range(10 - os_leaderboard|length) %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>---</td>
+            <td>---</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3 class="text-center text-primary">🏅 Top 10 joueurs - Campagnes</h3>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Nombre de badges</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(rank=1) %}
+          {% for player, total in campaign_leaderboard %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ total }}</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+          {% for i in range(10 - campaign_leaderboard|length) %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>---</td>
+            <td>---</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- GM Trophies (OS and Campaign) -->
+    <div class="col-md-6">
+      <h3 class="text-center text-success">🏅 Top 10 MJs - OS</h3>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Nombre de badges</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(rank=1) %}
+          {% for player, total in os_gm_leaderboard %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ total }}</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+          {% for i in range(10 - os_gm_leaderboard|length) %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>---</td>
+            <td>---</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3 class="text-center text-primary">🏅 Top 10 MJs - Campagnes</h3>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Nombre de badges</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(rank=1) %}
+          {% for player, total in campaign_gm_leaderboard %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ total }}</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+          {% for i in range(10 - campaign_gm_leaderboard|length) %}
+          <tr>
+            <td>{{ ns.rank }}</td>
+            <td>---</td>
+            <td>---</td>
+          </tr>
+          {% set ns.rank = ns.rank + 1 %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
