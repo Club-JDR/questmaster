@@ -247,7 +247,7 @@
           </span>
         </form>
         {% endif %}
-        {% if request.path != '/demo/gerer/' %}
+        {% if request.path not in ['/demo/gerer/', '/demo/inscription/'] %}
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
         {% include 'game_details/add_session.j2' %}
         {% include 'game_details/edit_players.j2' %}
@@ -302,7 +302,7 @@
       </div>
     </div>
   </div>
-  {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
+  {% if (payload['user_id'] == game.gm.id or payload['is_admin']) and request.path != '/demo/inscription/' %}
   <div id="event-list" class="mt-5">
     <h3 class="text-center">Journal d’activité</h3>
     {% if game.events %}
