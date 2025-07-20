@@ -7,10 +7,16 @@ import re, requests
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 
-@cache.memoize()
 def get_user(user_id):
+    cache_key = f"get_user_{user_id}"
+    cached_user = cache.get(cache_key)
+    if cached_user:
+        return cached_user
     bot = get_bot()
-    return bot.get_user(user_id)
+    user_data = bot.get_user(user_id)
+    cache.set(cache_key, user_data)
+    
+    return user_data
 
 
 class User(db.Model):

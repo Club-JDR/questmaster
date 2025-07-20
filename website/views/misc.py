@@ -62,7 +62,7 @@ def list_user_badges():
 
 
 @misc_bp.route("/badges/classement/", methods=["GET"])
-@cache.cached()
+@cache.cached(3600)
 def trophies_leaderboard():
     """
     View the leaderboard for the permanent trophies.
