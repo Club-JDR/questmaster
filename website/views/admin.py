@@ -27,15 +27,6 @@ class AdminView(ModelView):
         abort(403)
 
 
-class UserAdmin(AdminView):
-    form_columns = ["id"]
-    column_list = ["id", "name", "avatar"]
-    column_editable_list = ["id"]
-    can_create = True
-    can_edit = False
-    page_size = 10
-
-
 class ChannelAdmin(AdminView):
     form_columns = ["id", "type", "size"]
     column_list = ["id", "type", "size"]
@@ -100,18 +91,6 @@ class SystemAdmin(AdminView):
     ]
     can_create = True
     can_edit = True
-
-    def is_accessible(self):
-        return is_admin_authenticated()
-
-    def inaccessible_callback(self, name, **kwargs):
-        abort(403)
-
-
-class GameSessionAdmin(AdminView):
-    form_columns = ["game_id", "start", "end"]
-    column_list = ["game_id", "start", "end"]
-    column_editable_list = ["start", "end"]
 
     def is_accessible(self):
         return is_admin_authenticated()
