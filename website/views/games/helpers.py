@@ -208,8 +208,8 @@ def handle_add_player(game, data, bot):
         db.session.commit()
         logger.info(f"User {uid} created in database")
         user.init_on_load()
-        user.refresh_roles()
 
+    user.refresh_roles()
     if not user.is_player:
         flash("Cette personne n'est pas un·e joueur·euse sur le Discord", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
