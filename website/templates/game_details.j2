@@ -170,83 +170,88 @@
               </span>
             </div>
           </div>
-          {% if request.path == '/demo/inscription/' or (payload['user_id'] != game.gm.id and game.status == "open") %}
-          <form class="row" method="post" action="/annonces/{{ game.slug }}/inscription/">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="actions mt-2">
+            {% if request.path == '/demo/inscription/' or (payload['user_id'] != game.gm.id and game.status == "open")
+            %}
+            <form method="post" action="/annonces/{{ game.slug }}/inscription/">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% else %}S'inscrire à la partie.{% endif %}">
+                {% if not is_player %}
+                <button type="submit" class="btn btn-success signup-btn" id="signup-btn" {% if 'user_id' not in payload
+                  or (payload['user_id']==game.gm.id) %}disabled{% endif %}>
+                  <i class="bi bi-check-circle"></i> S'inscrire <span id="signup-timer"></span>
+                </button>
+                {% endif %}
+              </span>
+            </form>
+            {% endif %}
+            {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status != "archived"
+            %}
             <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-              data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% else %}S'inscrire à la partie.{% endif %}">
-              {% if not is_player %}
-              <button type="submit" class="btn btn-success signup-btn" id="signup-btn" {% if 'user_id' not in payload or
-                (payload['user_id']==game.gm.id) %}disabled{% endif %}>
-                <i class="bi bi-check-circle"></i> S'inscrire <span id="signup-timer"></span>
+              data-bs-title="Faire un signalement concernant cette annonce aux Admins.">
+              <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alertModal"
+                id="alert-btn">
+                <i class="bi bi-bell"></i> Signaler
               </button>
-              {% endif %}
             </span>
-          </form>
-          {% endif %}
-          {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status != "archived" %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-            data-bs-title="Faire un signalement concernant cette annonce aux Admins.">
-            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alertModal"
-              id="alert-btn">
-              <i class="bi bi-bell"></i> Signaler
-            </button>
-          </span>
-          {% endif %}
+            {% endif %}
+            {% if ((payload['user_id'] == game.gm.id) or payload['is_admin']) and (request.path != '/demo/inscription/')
+            %}
+            <form id="actionsPanel" class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
+              {% if game.status != 'archived' %}
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                data-bs-title="Modifier le contenu de l'annonce.">
+                <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/editer/{% endif %}"
+                  id="editButton" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
+                  data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
+              </span>
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                data-bs-title="Gérer les inscriptions des joueur·euses.{% if game.status == 'draft' %} Désactivé sur les brouillons.{% elif game.status == 'open' %}Désactivé sur les parties ouvertes.{% endif %}">
+                <button id="manageButton" type="button"
+                  class="btn btn-primary {% if game.status in ['draft', 'open'] %}disabled{% endif %}"
+                  data-bs-toggle="modal" data-bs-target="#editPlayers"><i class="bi bi-people"></i> Gérer</button>
+              </span>
+              {% endif %}
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                data-bs-title="Ajouter une session au calendrier et notifier le channel de partie.{% if game.status == 'draft' %} Désactivé sur les brouillons.{% endif %}">
+                <button id="addSessionButton" type="button"
+                  class="btn btn-primary {% if game.status == 'draft' %}disabled{% endif %}" data-bs-toggle="modal"
+                  data-bs-target="#addSessionModal">
+                  <i class="bi bi-plus-circle"></i> Ajouter une session
+                </button>
+              </span>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% if game.status != 'archived' %}
+              {% if game.status == 'open' %}
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Fermer les inscriptions.">
+                <button id="statusButton" type="submit" name="status" value="closed" class="btn btn-warning"><i
+                    class="bi bi-lock"></i>
+                  Fermer</button>
+              </span>
+              {% elif game.status == 'closed' %}
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Ouvrir les inscriptions.">
+                <button id="statusButton" type="submit" name="status" value="open" class="btn btn-success"><i
+                    class="bi bi-unlock"></i>
+                  Ouvrir</button>
+              </span>
+              {% endif %}
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
+                <button id="archiveButton" type="button" class="btn btn-danger" data-bs-toggle="modal"
+                  data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
+              </span>
+              {% endif %}
+              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
+                <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/cloner/{% endif %}"
+                  id="cloneButton" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
+                  data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
+              </span>
+            </form>
+            {% endif %}
+          </div>
         </div>
-        {% if ((payload['user_id'] == game.gm.id) or payload['is_admin']) and (request.path != '/demo/inscription/') %}
-        <form id="actionsPanel" class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
-          {% if game.status != 'archived' %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-            data-bs-title="Modifier le contenu de l'annonce.">
-            <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/editer/{% endif %}"
-              id="editButton" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
-              data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
-          </span>
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-            data-bs-title="Gérer les inscriptions des joueur·euses.{% if game.status == 'draft' %} Désactivé sur les brouillons.{% elif game.status == 'open' %}Désactivé sur les parties ouvertes.{% endif %}">
-            <button id="manageButton" type="button"
-              class="btn btn-primary {% if game.status in ['draft', 'open'] %}disabled{% endif %}"
-              data-bs-toggle="modal" data-bs-target="#editPlayers"><i class="bi bi-people"></i> Gérer</button>
-          </span>
-          {% endif %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-            data-bs-title="Ajouter une session au calendrier et notifier le channel de partie.{% if game.status == 'draft' %} Désactivé sur les brouillons.{% endif %}">
-            <button id="addSessionButton" type="button"
-              class="btn btn-primary {% if game.status == 'draft' %}disabled{% endif %}" data-bs-toggle="modal"
-              data-bs-target="#addSessionModal">
-              <i class="bi bi-plus-circle"></i> Ajouter une session
-            </button>
-          </span>
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          {% if game.status != 'archived' %}
-          {% if game.status == 'open' %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Fermer les inscriptions.">
-            <button id="statusButton" type="submit" name="status" value="closed" class="btn btn-warning"><i
-                class="bi bi-lock"></i>
-              Fermer</button>
-          </span>
-          {% elif game.status == 'closed' %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Ouvrir les inscriptions.">
-            <button id="statusButton" type="submit" name="status" value="open" class="btn btn-success"><i
-                class="bi bi-unlock"></i>
-              Ouvrir</button>
-          </span>
-          {% endif %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-            data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
-            <button id="archiveButton" type="button" class="btn btn-danger" data-bs-toggle="modal"
-              data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
-          </span>
-          {% endif %}
-          <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-            data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
-            <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/cloner/{% endif %}"
-              id="cloneButton" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
-              data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
-          </span>
-        </form>
-        {% endif %}
         {% if request.path not in ['/demo/gerer/', '/demo/inscription/'] %}
         {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
         {% include 'game_details/add_session.j2' %}
