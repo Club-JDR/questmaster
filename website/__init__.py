@@ -69,10 +69,6 @@ def create_app():
     )
     admin.add_view(admin_view.GameAdmin(models.Game, db.session, name="Annonces"))
     admin.add_view(
-        admin_view.GameSessionAdmin(models.GameSession, db.session, name="Sessions")
-    )
-    admin.add_view(admin_view.UserAdmin(models.User, db.session, name="Utilisateurs"))
-    admin.add_view(
         admin_view.UserTrophyAdmin(
             models.UserTrophy, db.session, name="Association Utilisateurs/Badges"
         )
