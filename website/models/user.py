@@ -9,7 +9,7 @@ AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 def get_user_profile(user_id):
     """
-    Returns profile info (name/avatar), cached for 24 hours.
+    Returns parsed profile info (name and avatar_url), cached for 24h.
     """
     cache_key = f"user_profile_{user_id}"
     cached = cache.get(cache_key)
@@ -17,15 +17,43 @@ def get_user_profile(user_id):
         return cached
 
     bot = get_bot()
-    user_data = bot.get_user(user_id)
-    profile = {
-        "nick": user_data.get("nick"),
-        "username": user_data["user"].get("username"),
-        "global_name": user_data["user"].get("global_name"),
-        "avatar": user_data["user"].get("avatar"),
-    }
-    cache.set(cache_key, profile, timeout=60 * 60 * 24)  # 24 hours
-    return profile
+    try:
+        user_data = bot.get_user(user_id)
+        if not user_data or "user" not in user_data:
+            raise ValueError(f"Invalid user data for {user_id}: {user_data}")
+
+        user = user_data["user"]
+
+        if user_data.get("nick"):
+            name = user_data["nick"]
+        else:
+            name = user.get("global_name") or user.get("username") or "Inconnu"
+
+        avatar_url = "/static/img/avatar.webp"
+        avatar_hash = user.get("avatar")
+        if avatar_hash:
+            potential_url = AVATAR_BASE_URL.format(user_id, avatar_hash)
+            try:
+                response = requests.head(potential_url)
+                if response.status_code == 200:
+                    avatar_url = potential_url
+            except requests.RequestException:
+                pass
+
+        profile = {
+            "name": name,
+            "avatar": avatar_url,
+            "raw": user_data,  # optional, keep raw for debugging
+        }
+
+        cache.set(cache_key, profile, timeout=60 * 60 * 24)
+        return profile
+
+    except Exception as e:
+        from flask import current_app
+
+        current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
+        return {"name": "Inconnu", "avatar": "/static/img/avatar.webp", "raw": None}
 
 
 def get_user_roles(user_id):
@@ -73,7 +101,7 @@ class User(db.Model):
                 return profile["global_name"] or profile["username"]
             except Exception:
                 return f"<{self.id}>"
-        return self.name
+        return f"{self.name} <{self.id}>"
 
     @property
     def trophy_summary(self):
@@ -91,25 +119,11 @@ class User(db.Model):
     @orm.reconstructor
     def init_on_load(self):
         """
-        Load lightweight user data: name and avatar only.
+        Load name and avatar from cached profile.
         """
         profile = get_user_profile(self.id)
-        self.avatar = "/static/img/avatar.webp"
-        try:
-            if profile["nick"] is None:
-                self.name = profile["global_name"] or profile["username"]
-            else:
-                self.name = profile["nick"]
-
-            avatar_url = AVATAR_BASE_URL.format(self.id, profile["avatar"])
-            try:
-                response = requests.head(avatar_url)
-                if response.status_code == 200:
-                    self.avatar = avatar_url
-            except requests.RequestException:
-                pass
-        except Exception:
-            self.name = "Inconnu"
+        self.name = profile["name"]
+        self.avatar = profile["avatar"]
 
     def refresh_roles(self):
         """
