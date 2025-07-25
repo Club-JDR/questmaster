@@ -14,6 +14,7 @@ def who():
     """
     if "user_id" in session:
         user = db.get_or_404(User, str(session["user_id"]))
+        user.refresh_roles()
         session["user_id"] = user.id
         session["username"] = user.name
         session["avatar"] = user.avatar

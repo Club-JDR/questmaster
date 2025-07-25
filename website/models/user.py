@@ -7,16 +7,41 @@ import re, requests
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 
-def get_user(user_id):
-    cache_key = f"get_user_{user_id}"
-    cached_user = cache.get(cache_key)
-    if cached_user:
-        return cached_user
+def get_user_profile(user_id):
+    """
+    Returns profile info (name/avatar), cached for 24 hours.
+    """
+    cache_key = f"user_profile_{user_id}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     bot = get_bot()
     user_data = bot.get_user(user_id)
-    cache.set(cache_key, user_data)
+    profile = {
+        "nick": user_data.get("nick"),
+        "username": user_data["user"].get("username"),
+        "global_name": user_data["user"].get("global_name"),
+        "avatar": user_data["user"].get("avatar"),
+    }
+    cache.set(cache_key, profile, timeout=60 * 60 * 24)  # 24 hours
+    return profile
 
-    return user_data
+
+def get_user_roles(user_id):
+    """
+    Returns roles, cached for 5 minutes.
+    """
+    cache_key = f"user_roles_{user_id}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    bot = get_bot()
+    user_data = bot.get_user(user_id)
+    roles = user_data.get("roles", [])
+    cache.set(cache_key, roles, timeout=300)  # 5 minutes
+    return roles
 
 
 class User(db.Model):
@@ -39,6 +64,18 @@ class User(db.Model):
         return f"{self.name} <{self.id}>"
 
     @property
+    def display_name(self):
+        if not self.name or self.name == "Inconnu":
+            try:
+                profile = get_user_profile(self.id)
+                if profile["nick"]:
+                    return profile["nick"]
+                return profile["global_name"] or profile["username"]
+            except Exception:
+                return f"<{self.id}>"
+        return self.name
+
+    @property
     def trophy_summary(self):
         summary = []
         for ut in self.trophies:
@@ -54,26 +91,17 @@ class User(db.Model):
     @orm.reconstructor
     def init_on_load(self):
         """
-        Retrieve distant data on user when the oject is loaded.
+        Load lightweight user data: name and avatar only.
         """
-        result = get_user(self.id)
+        profile = get_user_profile(self.id)
         self.avatar = "/static/img/avatar.webp"
         try:
-            if result["nick"] == None:
-                if result["user"]["global_name"] == None:
-                    self.name = result["user"]["username"]
-                else:
-                    self.name = result["user"]["global_name"]
+            if profile["nick"] is None:
+                self.name = profile["global_name"] or profile["username"]
             else:
-                self.name = result["nick"]
-            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
-            self.is_admin = (
-                current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
-            )
-            self.is_player = (
-                current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
-            )
-            avatar_url = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
+                self.name = profile["nick"]
+
+            avatar_url = AVATAR_BASE_URL.format(self.id, profile["avatar"])
             try:
                 response = requests.head(avatar_url)
                 if response.status_code == 200:
@@ -82,6 +110,17 @@ class User(db.Model):
                 pass
         except Exception:
             self.name = "Inconnu"
+
+    def refresh_roles(self):
+        """
+        Refresh role info from Discord (cached for 5 minutes).
+        """
+        try:
+            roles = get_user_roles(self.id)
+            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in roles
+            self.is_admin = current_app.config["DISCORD_ADMIN_ROLE_ID"] in roles
+            self.is_player = current_app.config["DISCORD_PLAYER_ROLE_ID"] in roles
+        except Exception:
             self.is_gm = False
             self.is_admin = False
             self.is_player = False
