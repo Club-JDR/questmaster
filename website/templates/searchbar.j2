@@ -52,8 +52,10 @@
             <label class="btn btn-sm btn-outline-secondary" for="closed">Complètes</label>
             <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived">
             <label class="btn btn-sm btn-outline-secondary" for="archived">Archivées</label>
+            {% if payload['is_gm'] or payload['is_admin'] %}
             <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft">
             <label class="btn btn-sm btn-outline-secondary" for="draft">Brouillons</label>
+            {% endif %}
           </div>
         </div>
         <div class="col-sm-3 pb-2">
