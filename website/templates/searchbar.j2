@@ -1,3 +1,7 @@
+{% set has_status_filter = request.args.get('open') or request.args.get('closed') or request.args.get('archived') or
+request.args.get('draft') %}
+{% set has_type_filter = request.args.get('oneshot') or request.args.get('campaign') %}
+{% set has_restriction_filter = request.args.get('all') or request.args.get('16+') or request.args.get('18+') %}
 <div class="collapse" id="searchBar">
   <div class="p-4">
     <form class="d-container-fluid" role="search" method="get" action="/annonces/">
@@ -38,33 +42,42 @@
       <div class="row">
         <div class="col-sm-3 pb-2">
           <div class="btn-group me-2">
-            <input type="checkbox" class="btn-check" id="oneshot" autocomplete="off" name="oneshot" checked>
+            <input type="checkbox" class="btn-check" id="oneshot" autocomplete="off" name="oneshot" {% if
+              request.args.get('oneshot') or not has_type_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-success" for="oneshot">Oneshots</label>
-            <input type="checkbox" class="btn-check" id="campaign" autocomplete="off" name="campaign" checked>
+            <input type="checkbox" class="btn-check" id="campaign" autocomplete="off" name="campaign" {% if
+              request.args.get('campaign') or not has_type_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-primary" for="campaign">Campagnes</label>
           </div>
         </div>
         <div class="col-sm-4 pb-2">
           <div class="btn-group me-2">
-            <input type="checkbox" class="btn-check" id="open" autocomplete="off" name="open" checked>
+            <input type="checkbox" class="btn-check" id="open" autocomplete="off" name="open" {% if
+              request.args.get('open') or not has_status_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="open">Ouvertes</label>
-            <input type="checkbox" class="btn-check" id="closed" autocomplete="off" name="closed">
+            <input type="checkbox" class="btn-check" id="closed" autocomplete="off" name="closed" {% if
+              request.args.get('closed') %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="closed">Complètes</label>
-            <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived">
+            <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived" {% if
+              request.args.get('archived') %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="archived">Archivées</label>
             {% if payload['is_gm'] or payload['is_admin'] %}
-            <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft">
+            <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft" {% if
+              request.args.get('draft') %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="draft">Brouillons</label>
             {% endif %}
           </div>
         </div>
         <div class="col-sm-3 pb-2">
           <div class="btn-group me-2">
-            <input type="checkbox" class="btn-check" id="all" autocomplete="off" name="all" checked>
+            <input type="checkbox" class="btn-check" id="all" autocomplete="off" name="all" {% if
+              request.args.get('all') or not has_restriction_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-success" for="all">Tout public</label>
-            <input type="checkbox" class="btn-check" id="16+" autocomplete="off" name="16+" checked>
+            <input type="checkbox" class="btn-check" id="16+" autocomplete="off" name="16+" {% if
+              request.args.get('16+') or not has_restriction_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-warning" for="16+">16+</label>
-            <input type="checkbox" class="btn-check" id="18+" autocomplete="off" name="18+" checked>
+            <input type="checkbox" class="btn-check" id="18+" autocomplete="off" name="18+" {% if
+              request.args.get('18+') or not has_restriction_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-danger" for="18+">18+</label>
           </div>
         </div>
