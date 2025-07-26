@@ -2,6 +2,8 @@ from flask import abort, flash, redirect, url_for, request, current_app
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
+from sqlalchemy import case, asc
+from sqlalchemy.sql import func
 from website.utils.logger import logger, log_game_event
 from website.extensions import db
 from website.models import (
@@ -83,9 +85,21 @@ def get_filtered_games(request_args_source):
 
     page = request_args_source.get("page", 1, type=int)
 
+    status_order = case(
+        (Game.status == "draft", 0),
+        (Game.status == "open", 1),
+        (Game.status == "closed", 2),
+        (Game.status == "archived", 3),
+    )
+
+    now = datetime.utcnow()
+
+    is_future = case((Game.date >= now, 0), else_=1)
+    time_distance = func.abs(func.extract('epoch', Game.date - now))
+
     games = (
         Game.query.filter(*queries)
-        .order_by(Game.date)
+        .order_by(status_order, is_future, time_distance)
         .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
     )
 
