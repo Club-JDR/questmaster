@@ -209,6 +209,7 @@ def handle_add_player(game, data, bot):
         logger.info(f"User {uid} created in database")
         user.init_on_load()
 
+    user.refresh_roles()
     if not user.is_player:
         flash("Cette personne n'est pas un·e joueur·euse sur le Discord", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
@@ -255,10 +256,12 @@ def register_user_to_game(original_game, user, bot, force=False):
             log_game_event(
                 "register",
                 game.id,
-                f"{user} a été inscrit à l'annonce par le MJ ou un admin.",
+                f"{user.display_name} a été inscrit à l'annonce par le MJ ou un admin.",
             )
         else:
-            log_game_event("register", game.id, f"{user} s'est inscrit sur l'annonce.")
+            log_game_event(
+                "register", game.id, f"{user.display_name} s'est inscrit sur l'annonce."
+            )
         logger.info(f"User {user.id} registered to Game {game.id}")
         bot.add_role_to_user(user.id, game.role)
         logger.info(f"Role {game.role} added to user {user.id}")

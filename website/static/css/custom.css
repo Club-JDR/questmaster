@@ -305,6 +305,10 @@ figure {
   margin-top: 0.75rem;
 }
 
+#actionsPanel {
+  margin-top: 0px !important;
+}
+
 /* === Sessions List === */
 .sessions-list {
   margin-top: 2.5rem;

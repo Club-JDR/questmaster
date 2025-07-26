@@ -7,16 +7,69 @@ import re, requests
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 
-def get_user(user_id):
-    cache_key = f"get_user_{user_id}"
-    cached_user = cache.get(cache_key)
-    if cached_user:
-        return cached_user
+def get_user_profile(user_id):
+    """
+    Returns parsed profile info (name and avatar_url), cached for 24h.
+    """
+    cache_key = f"user_profile_{user_id}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    bot = get_bot()
+    try:
+        user_data = bot.get_user(user_id)
+        if not user_data or "user" not in user_data:
+            raise ValueError(f"Invalid user data for {user_id}: {user_data}")
+
+        user = user_data["user"]
+
+        if user_data.get("nick"):
+            name = user_data["nick"]
+        else:
+            name = user.get("global_name") or user.get("username") or "Inconnu"
+
+        avatar_url = "/static/img/avatar.webp"
+        avatar_hash = user.get("avatar")
+        if avatar_hash:
+            potential_url = AVATAR_BASE_URL.format(user_id, avatar_hash)
+            try:
+                response = requests.head(potential_url)
+                if response.status_code == 200:
+                    avatar_url = potential_url
+            except requests.RequestException:
+                pass
+
+        profile = {
+            "name": name,
+            "avatar": avatar_url,
+            "raw": user_data,  # optional, keep raw for debugging
+        }
+
+        cache.set(cache_key, profile, timeout=60 * 60 * 24)
+        return profile
+
+    except Exception as e:
+        from flask import current_app
+
+        current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
+        return {"name": "Inconnu", "avatar": "/static/img/avatar.webp", "raw": None}
+
+
+def get_user_roles(user_id):
+    """
+    Returns roles, cached for 5 minutes.
+    """
+    cache_key = f"user_roles_{user_id}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     bot = get_bot()
     user_data = bot.get_user(user_id)
-    cache.set(cache_key, user_data)
-
-    return user_data
+    roles = user_data.get("roles", [])
+    cache.set(cache_key, roles, timeout=300)  # 5 minutes
+    return roles
 
 
 class User(db.Model):
@@ -39,6 +92,18 @@ class User(db.Model):
         return f"{self.name} <{self.id}>"
 
     @property
+    def display_name(self):
+        if not self.name or self.name == "Inconnu":
+            try:
+                profile = get_user_profile(self.id)
+                if profile["nick"]:
+                    return profile["nick"]
+                return profile["global_name"] or profile["username"]
+            except Exception:
+                return f"<{self.id}>"
+        return f"{self.name} <{self.id}>"
+
+    @property
     def trophy_summary(self):
         summary = []
         for ut in self.trophies:
@@ -54,34 +119,22 @@ class User(db.Model):
     @orm.reconstructor
     def init_on_load(self):
         """
-        Retrieve distant data on user when the oject is loaded.
+        Load name and avatar from cached profile.
         """
-        result = get_user(self.id)
-        self.avatar = "/static/img/avatar.webp"
+        profile = get_user_profile(self.id)
+        self.name = profile["name"]
+        self.avatar = profile["avatar"]
+
+    def refresh_roles(self):
+        """
+        Refresh role info from Discord (cached for 5 minutes).
+        """
         try:
-            if result["nick"] == None:
-                if result["user"]["global_name"] == None:
-                    self.name = result["user"]["username"]
-                else:
-                    self.name = result["user"]["global_name"]
-            else:
-                self.name = result["nick"]
-            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in result["roles"]
-            self.is_admin = (
-                current_app.config["DISCORD_ADMIN_ROLE_ID"] in result["roles"]
-            )
-            self.is_player = (
-                current_app.config["DISCORD_PLAYER_ROLE_ID"] in result["roles"]
-            )
-            avatar_url = AVATAR_BASE_URL.format(self.id, result["user"]["avatar"])
-            try:
-                response = requests.head(avatar_url)
-                if response.status_code == 200:
-                    self.avatar = avatar_url
-            except requests.RequestException:
-                pass
+            roles = get_user_roles(self.id)
+            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in roles
+            self.is_admin = current_app.config["DISCORD_ADMIN_ROLE_ID"] in roles
+            self.is_player = current_app.config["DISCORD_PLAYER_ROLE_ID"] in roles
         except Exception:
-            self.name = "Inconnu"
             self.is_gm = False
             self.is_admin = False
             self.is_player = False
