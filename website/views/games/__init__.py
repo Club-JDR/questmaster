@@ -119,7 +119,7 @@ def create_game():
     msg = f"Annonce {game.name} enregistrée."
     post = data["action"] in ("open", "open-silent")
     if post:
-        logger.info("Game is being posted as open.")
+        logger.info(f"Game is being posted as {data['action']}.")
         setup_game_post_creation(game, bot)
         logger.info("Game post-creation setup completed.")
         msg = f"Annonce {game.name} postée."
