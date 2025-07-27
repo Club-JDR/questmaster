@@ -500,16 +500,27 @@ def my_gm_games():
     """
     payload = who()
     abort_if_not_gm(payload)
-    try:
-        games_as_gm = db.session.get(User, payload["user_id"]).games_gm
-    except AttributeError:
-        games_as_gm = {}
+    games, request_args = get_filtered_user_games(
+        request.args, payload["user_id"], role="gm"
+    )
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
-        games=games_as_gm,
+        games=games.items,
         gm_only=True,
         title="Mes annonces",
+        next_url=(
+            url_for("game.my_gm_games", page=games.next_num, **request_args)
+            if games.has_next
+            else None
+        ),
+        prev_url=(
+            url_for("game.my_gm_games", page=games.prev_num, **request_args)
+            if games.has_prev
+            else None
+        ),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )
 
 
@@ -520,18 +531,24 @@ def my_games():
     List all of current user non archived games "as player"
     """
     payload = who()
-    try:
-        user = db.session.get(User, payload["user_id"])
-        games = user.games
-        active_games = []
-        for game in games:
-            if game.status != "archived":
-                active_games.append(game)
-    except AttributeError:
-        games = {}
+    games, request_args = get_filtered_user_games(
+        request.args, payload["user_id"], role="player"
+    )
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
-        games=active_games,
+        games=games.items,
         title="Mes parties en cours",
+        next_url=(
+            url_for("game.my_games", page=games.next_num, **request_args)
+            if games.has_next
+            else None
+        ),
+        prev_url=(
+            url_for("game.my_games", page=games.prev_num, **request_args)
+            if games.has_prev
+            else None
+        ),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )

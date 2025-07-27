@@ -1,7 +1,8 @@
 from flask import abort, flash, redirect, url_for, request, current_app
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import joinedload
+from sqlalchemy import case
+from sqlalchemy.sql import func, or_, and_
 from website.utils.logger import logger, log_game_event
 from website.extensions import db
 from website.models import (
@@ -36,60 +37,116 @@ def generate_game_slug(name, gm_name, existing_slugs):
     return slug
 
 
-def get_filtered_games(request_args_source):
-    """
-    Extracts filters from request args, builds a query, and returns paginated games and request_args.
-    """
-    status = []
-    game_type = []
-    restriction = []
+def parse_multi_checkbox_filter(source, keys):
+    filters = []
+    args = {}
+    for key in keys:
+        if source.get(key, type=bool):
+            filters.append(key)
+            args[key] = "on"
+    return filters, args
+
+
+def build_base_filters(request_args, name, system, vtt):
+    filters = []
+    if name:
+        request_args["name"] = name
+        filters.append(Game.name.ilike(f"%{name}%"))
+    if system:
+        request_args["system"] = system
+        filters.append(Game.system_id == system)
+    if vtt:
+        request_args["vtt"] = vtt
+        filters.append(Game.vtt_id == vtt)
+    return filters
+
+
+def build_status_filters(statuses, user_payload):
+    filters = []
+    for s in statuses:
+        if s != "draft":
+            filters.append(Game.status == s)
+        elif user_payload.get("is_admin"):
+            filters.append(Game.status == "draft")
+        else:
+            filters.append(
+                and_(Game.status == "draft", Game.gm_id == user_payload.get("user_id"))
+            )
+    return or_(*filters)
+
+
+def get_filtered_games(request_args_source, base_query=None):
     request_args = {}
+    now = datetime.utcnow()
+    user_payload = who()
 
-    name = request_args_source.get("name", type=str)
-    system = request_args_source.get("system", type=int)
-    vtt = request_args_source.get("vtt", type=int)
+    # Parse filters
+    status, status_args = parse_multi_checkbox_filter(
+        request_args_source, ["open", "closed", "archived", "draft"]
+    )
+    game_type, type_args = parse_multi_checkbox_filter(
+        request_args_source, ["oneshot", "campaign"]
+    )
+    restriction, restriction_args = parse_multi_checkbox_filter(
+        request_args_source, ["all", "16+", "18+"]
+    )
+    request_args.update(status_args)
+    request_args.update(type_args)
+    request_args.update(restriction_args)
 
-    for s in ["open", "closed", "archived", "draft"]:
-        if request_args_source.get(s, type=bool):
-            status.append(s)
-            request_args[s] = "on"
-    for t in ["oneshot", "campaign"]:
-        if request_args_source.get(t, type=bool):
-            game_type.append(t)
-            request_args[t] = "on"
-    for r in ["all", "16+", "18+"]:
-        if request_args_source.get(r, type=bool):
-            restriction.append(r)
-            request_args[r] = "on"
-
+    # Normalize defaults
     status, game_type, restriction = set_default_search_parameters(
         status, game_type, restriction
     )
 
+    # Build queries
     queries = [
-        Game.status.in_(status),
         Game.restriction.in_(restriction),
         Game.type.in_(game_type),
     ]
-    if name:
-        request_args["name"] = name
-        queries.append(Game.name.ilike(f"%{name}%"))
-    if system:
-        request_args["system"] = system
-        queries.append(Game.system_id == system)
-    if vtt:
-        request_args["vtt"] = vtt
-        queries.append(Game.vtt_id == vtt)
 
+    name = request_args_source.get("name", type=str)
+    system = request_args_source.get("system", type=int)
+    vtt = request_args_source.get("vtt", type=int)
+    queries += build_base_filters(request_args, name, system, vtt)
+    queries.append(build_status_filters(status, user_payload))
+
+    # Sorting
+    status_order = case(
+        (Game.status == "draft", 0),
+        (Game.status == "open", 1),
+        (Game.status == "closed", 2),
+        (Game.status == "archived", 3),
+    )
+    is_future = case((Game.date >= now, 0), else_=1)
+    time_distance = func.abs(func.extract("epoch", Game.date - now))
+
+    # Pagination
     page = request_args_source.get("page", 1, type=int)
-
+    query = base_query or Game.query
     games = (
-        Game.query.filter(*queries)
-        .order_by(Game.date)
+        query.filter(*queries)
+        .order_by(status_order, is_future, time_distance)
         .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
     )
 
     return games, request_args
+
+
+def get_filtered_user_games(request_args_source, user_id, role="gm"):
+    user = db.session.get(User, user_id)
+    if not user:
+        return [], {}
+
+    if role == "gm":
+        base_query = Game.query.filter(Game.gm_id == user_id)
+    elif role == "player":
+        game_ids = [game.id for game in user.games]
+        base_query = Game.query.filter(Game.id.in_(game_ids))
+    else:
+        raise ValueError("Invalid role passed to get_filtered_user_games")
+
+    return get_filtered_games(request_args_source, base_query)
 
 
 def get_channel_category(game):
