@@ -75,7 +75,7 @@ def build_status_filters(statuses, user_payload):
     return or_(*filters)
 
 
-def get_filtered_games(request_args_source):
+def get_filtered_games(request_args_source, base_query=None):
     request_args = {}
     now = datetime.utcnow()
     user_payload = who()
@@ -123,13 +123,30 @@ def get_filtered_games(request_args_source):
 
     # Pagination
     page = request_args_source.get("page", 1, type=int)
+    query = base_query or Game.query
     games = (
-        Game.query.filter(*queries)
+        query.filter(*queries)
         .order_by(status_order, is_future, time_distance)
         .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
     )
 
     return games, request_args
+
+
+def get_filtered_user_games(request_args_source, user_id, role="gm"):
+    user = db.session.get(User, user_id)
+    if not user:
+        return [], {}
+
+    if role == "gm":
+        base_query = Game.query.filter(Game.gm_id == user_id)
+    elif role == "player":
+        game_ids = [game.id for game in user.games]
+        base_query = Game.query.filter(Game.id.in_(game_ids))
+    else:
+        raise ValueError("Invalid role passed to get_filtered_user_games")
+
+    return get_filtered_games(request_args_source, base_query)
 
 
 def get_channel_category(game):

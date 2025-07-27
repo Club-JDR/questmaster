@@ -4,7 +4,7 @@ request.args.get('draft') %}
 {% set has_restriction_filter = request.args.get('all') or request.args.get('16+') or request.args.get('18+') %}
 <div class="collapse" id="searchBar">
   <div class="p-4">
-    <form class="d-container-fluid" role="search" method="get" action="/annonces/">
+    <form class="d-container-fluid" role="search" method="get" action="{{ request.path }}">
       <div class="row">
         <div class="col-sm-4 pb-2">
           <div class="input-group me-2">

@@ -249,40 +249,6 @@ def change_game_status(slug):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
-@game_bp.route("/annonces/<slug>/alert/", methods=["POST"])
-@login_required
-def send_alert(slug):
-    """
-    Send an alert message to the Discord channel and register a game event.
-    """
-    payload = who()
-    game = Game.query.filter_by(slug=slug).first_or_404()
-
-    if (
-        game.gm_id != payload["user_id"]
-        and not payload["is_admin"]
-        and not any(player.id == payload["user_id"] for player in game.players)
-    ):
-        flash(
-            "Vous n'êtes pas autorisé·e à envoyer une alerte pour cette partie.",
-            "danger",
-        )
-        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-
-    alert_message = request.form.get("alertMessage")
-    try:
-        send_discord_embed(
-            game, type="alert", alert_message=alert_message, player=payload["user_id"]
-        )
-        flash("Signalement effectué.", "success")
-        log_game_event("alert", game.id, "Un signalement a été fait.")
-    except Exception as e:
-        flash("Une erreur est survenue lors du signalement.", "danger")
-        logger.error(f"Failed to send alert: {e}", exc_info=True)
-
-    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-
-
 @game_bp.route("/annonces/<slug>/sessions/ajouter/", methods=["POST"])
 @login_required
 def add_game_session(slug):
@@ -500,16 +466,27 @@ def my_gm_games():
     """
     payload = who()
     abort_if_not_gm(payload)
-    try:
-        games_as_gm = db.session.get(User, payload["user_id"]).games_gm
-    except AttributeError:
-        games_as_gm = {}
+    games, request_args = get_filtered_user_games(
+        request.args, payload["user_id"], role="gm"
+    )
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
-        games=games_as_gm,
+        games=games.items,
         gm_only=True,
         title="Mes annonces",
+        next_url=(
+            url_for("game.my_gm_games", page=games.next_num, **request_args)
+            if games.has_next
+            else None
+        ),
+        prev_url=(
+            url_for("game.my_gm_games", page=games.prev_num, **request_args)
+            if games.has_prev
+            else None
+        ),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )
 
 
@@ -520,18 +497,24 @@ def my_games():
     List all of current user non archived games "as player"
     """
     payload = who()
-    try:
-        user = db.session.get(User, payload["user_id"])
-        games = user.games
-        active_games = []
-        for game in games:
-            if game.status != "archived":
-                active_games.append(game)
-    except AttributeError:
-        games = {}
+    games, request_args = get_filtered_user_games(
+        request.args, payload["user_id"], role="player"
+    )
     return render_template(
         GAME_LIST_TEMPLATE,
         payload=payload,
-        games=active_games,
+        games=games.items,
         title="Mes parties en cours",
+        next_url=(
+            url_for("game.my_games", page=games.next_num, **request_args)
+            if games.has_next
+            else None
+        ),
+        prev_url=(
+            url_for("game.my_games", page=games.prev_num, **request_args)
+            if games.has_prev
+            else None
+        ),
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
     )
