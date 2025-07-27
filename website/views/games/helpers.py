@@ -301,7 +301,16 @@ def register_user_to_game(original_game, user, bot, force=False):
         game.players.append(user)
         if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
-            send_discord_embed(game, type="annonce")
+            if game.msg_id:
+                try:
+                    send_discord_embed(game, type="annonce")
+                    logger.info(
+                        f"Embed updated due to status change for game {game.id}"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to update embed on status change for game {game.id}: {e}"
+                    )
             log_game_event(
                 "edit",
                 game.id,
