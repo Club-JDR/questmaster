@@ -1,3 +1,4 @@
+{% set is_my_games_view = request.path.startswith('/mes_') %}
 {% set has_status_filter = request.args.get('open') or request.args.get('closed') or request.args.get('archived') or
 request.args.get('draft') %}
 {% set has_type_filter = request.args.get('oneshot') or request.args.get('campaign') %}
@@ -56,14 +57,14 @@ request.args.get('draft') %}
               request.args.get('open') or not has_status_filter %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="open">Ouvertes</label>
             <input type="checkbox" class="btn-check" id="closed" autocomplete="off" name="closed" {% if
-              request.args.get('closed') %}checked{% endif %}>
+              request.args.get('closed') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="closed">Complètes</label>
             <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived" {% if
-              request.args.get('archived') %}checked{% endif %}>
+              request.args.get('archived') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="archived">Archivées</label>
             {% if payload['is_gm'] or payload['is_admin'] %}
             <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft" {% if
-              request.args.get('draft') %}checked{% endif %}>
+              request.args.get('draft') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
             <label class="btn btn-sm btn-outline-secondary" for="draft">Brouillons</label>
             {% endif %}
           </div>
