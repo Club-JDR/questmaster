@@ -1,5 +1,5 @@
 from flask import abort, flash, redirect, url_for, request, current_app
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import case
 from sqlalchemy.sql import func, or_, and_
@@ -75,9 +75,15 @@ def build_status_filters(statuses, user_payload):
     return or_(*filters)
 
 
-def get_filtered_games(request_args_source, base_query=None):
+def get_filtered_games(
+    request_args_source,
+    base_query=None,
+    default_status=None,
+    default_type=None,
+    default_restriction=None,
+):
     request_args = {}
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     user_payload = who()
 
     # Parse filters
@@ -96,7 +102,12 @@ def get_filtered_games(request_args_source, base_query=None):
 
     # Normalize defaults
     status, game_type, restriction = set_default_search_parameters(
-        status, game_type, restriction
+        status,
+        game_type,
+        restriction,
+        default_status=default_status,
+        default_type=default_type,
+        default_restriction=default_restriction,
     )
 
     # Build queries
@@ -146,7 +157,11 @@ def get_filtered_user_games(request_args_source, user_id, role="gm"):
     else:
         raise ValueError("Invalid role passed to get_filtered_user_games")
 
-    return get_filtered_games(request_args_source, base_query)
+    return get_filtered_games(
+        request_args_source,
+        base_query,
+        default_status=["draft", "open", "closed", "archived"],  # All statuses
+    )
 
 
 def get_channel_category(game):
@@ -202,13 +217,20 @@ def delete_game_session(session):
     )
 
 
-def set_default_search_parameters(status, game_type, restriction):
-    if len(status) == 0:
-        status = ["open"]
-    if len(game_type) == 0:
-        game_type = ["oneshot", "campaign"]
-    if len(restriction) == 0:
-        restriction = ["all", "16+", "18+"]
+def set_default_search_parameters(
+    status,
+    game_type,
+    restriction,
+    default_status=None,
+    default_type=None,
+    default_restriction=None,
+):
+    if not status:
+        status = default_status or ["open"]
+    if not game_type:
+        game_type = default_type or ["oneshot", "campaign"]
+    if not restriction:
+        restriction = default_restriction or ["all", "16+", "18+"]
     return status, game_type, restriction
 
 
