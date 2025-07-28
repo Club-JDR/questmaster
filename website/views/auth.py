@@ -77,11 +77,13 @@ def callback():
         uid = discord.fetch_user().id
         try:
             user = db.get_or_404(User, str(uid))
+            user.refresh_roles()
         except Exception:
             user = User(id=str(uid))
             db.session.add(user)
             db.session.commit()
             user.init_on_load()
+            user.refresh_roles()
         if not user.is_player:
             abort(403, "Vous n'êtes pas un·e joueur·euse sur le Discord Club JDR")
         session["user_id"] = user.id
