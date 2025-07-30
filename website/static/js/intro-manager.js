@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil') {
   const redirectUrl='/';
-  const outro = introJs();
+  const outro = introJs.tour();
   outro.setOptions({
     steps: [
       {
@@ -38,6 +38,7 @@ function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil'
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
   outro.oncomplete(() => window.location.href = redirectUrl);
   outro.onexit(() => window.location.href = redirectUrl);
@@ -158,7 +159,7 @@ function runHomepageIntro() {
     steps = steps.filter(step => step.id !== 'loginStep');
   }
 
-  const intro = introJs();
+  const intro = introJs.tour();
   intro.setOptions({
     steps,
     nextLabel: 'Suivant',
@@ -168,6 +169,7 @@ function runHomepageIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
 
   intro.onbeforechange(function (target) {
@@ -190,13 +192,14 @@ function runHomepageIntro() {
     searchBar.hide();
     annoncesDropdown.hide();
     informationsDropdown.hide();
+    showOutroMessage();
   });
 
   intro.start();
 }
 
 function runRegistrationIntro() {
-  const intro = introJs();
+  const intro = introJs.tour();
   let hasRedirected = false;
 
   const steps = [
@@ -262,6 +265,7 @@ function runRegistrationIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
     showButtons: !showYesNo
   });
 
@@ -301,7 +305,7 @@ function runRegistrationIntro() {
 function runPostGameIntro(redirectUrl = null) {
   const annoncesDropdown = new bootstrap.Dropdown(document.querySelector('#annoncesDropdown'));
   const gameActionDropdown = new bootstrap.Dropdown(document.querySelector('#gameActionDropdown'));
-  const intro = introJs();
+  const intro = introJs.tour();
 
   intro.setOptions({
     steps: [
@@ -445,6 +449,7 @@ function runPostGameIntro(redirectUrl = null) {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
 
   intro.onbeforechange(function (target) {
@@ -471,14 +476,16 @@ function runPostGameIntro(redirectUrl = null) {
     window.location.href = '/demo/gerer/';
   }
 
-  intro.onexit(redirectToManage);
+  intro.onexit(() => {
+    showOutroMessage();
+  });
   intro.oncomplete(redirectToManage);
 
   intro.start();
 }
 
 function runManageIntro() {
-  const intro = introJs();
+  const intro = introJs.tour();
   const steps = [
     {
       title: "Comment gérer sa partie en tant que MJ",
@@ -552,6 +559,7 @@ function runManageIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
 
   intro.oncomplete(() => {
