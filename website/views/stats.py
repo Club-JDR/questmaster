@@ -12,12 +12,16 @@ import calendar
 stats_bp = Blueprint("stats", __name__)
 
 
-@stats_bp.route("/stats/", methods=["GET"])
-@cache.cached(query_string=True)
-def get_stats():
-    year = request.args.get("year", type=int)
-    month = request.args.get("month", type=int)
+def default_game_entry():
+    return {"count": 0, "gm": ""}
 
+
+def default_system_dict():
+    return defaultdict(default_game_entry)
+
+
+@cache.memoize(timeout=3600)
+def get_cached_stats_for_period(year, month):
     if year and month:
         base_day = datetime(year, month, 1)
     else:
@@ -31,7 +35,7 @@ def get_stats():
         23,
         59,
         59,
-        999999,  # fix to avoid missing data on the last day
+        999999,
     )
 
     sessions = GameSession.query.filter(
@@ -40,8 +44,9 @@ def get_stats():
 
     num_os = 0
     num_campaign = 0
-    os_games = defaultdict(lambda: defaultdict(lambda: {"count": 0, "gm": ""}))
-    campaign_games = defaultdict(lambda: defaultdict(lambda: {"count": 0, "gm": ""}))
+    os_games = defaultdict(default_system_dict)
+    campaign_games = defaultdict(default_system_dict)
+
     gm_names = []
 
     for session in sessions:
@@ -50,11 +55,8 @@ def get_stats():
         slug = game.slug
         game_name = game.name
         gm_name = game.gm.name
-        entry = {
-            "name": game_name,
-            "gm": gm_name,
-            "count": 1,
-        }
+        entry = {"name": game_name, "gm": gm_name, "count": 1}
+
         if game.type == "oneshot":
             num_os += 1
             if slug in os_games[system]:
@@ -67,7 +69,29 @@ def get_stats():
                 campaign_games[system][slug]["count"] += 1
             else:
                 campaign_games[system][slug] = entry
+
         gm_names.append(gm_name)
+
+    return {
+        "base_day": base_day,
+        "last_day": last_day,
+        "num_os": num_os,
+        "num_campaign": num_campaign,
+        "os_games": os_games,
+        "campaign_games": campaign_games,
+        "gm_names": gm_names,
+    }
+
+
+@stats_bp.route("/stats/", methods=["GET"])
+def get_stats():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+
+    stats = get_cached_stats_for_period(year, month)
+
+    base_day = stats["base_day"]
+    last_day = stats["last_day"]
     prev_month_date = base_day - relativedelta(months=1)
     next_month_date = base_day + relativedelta(months=1)
 
@@ -76,11 +100,13 @@ def get_stats():
         payload=who(),
         base_day=base_day.strftime("%B %Y"),
         last_day=last_day.strftime("%a %d/%m"),
-        num_os=num_os,
-        num_campaign=num_campaign,
-        os=os_games,
-        campaign=campaign_games,
-        mjs=sorted(Counter(gm_names).items(), key=lambda x: x[1], reverse=True),
+        num_os=stats["num_os"],
+        num_campaign=stats["num_campaign"],
+        os=stats["os_games"],
+        campaign=stats["campaign_games"],
+        mjs=sorted(
+            Counter(stats["gm_names"]).items(), key=lambda x: x[1], reverse=True
+        ),
         year=base_day.year,
         month=base_day.month,
         prev_year=prev_month_date.year,

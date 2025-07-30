@@ -61,13 +61,9 @@ def list_user_badges():
     )
 
 
-@misc_bp.route("/badges/classement/", methods=["GET"])
-@cache.cached(3600)
-def trophies_leaderboard():
-    """
-    View the leaderboard for the permanent trophies.
-    """
-    os_leaderboard = (
+@cache.cached(timeout=3600, key_prefix="leaderboard_os")
+def get_os_leaderboard():
+    return (
         db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
         .join(UserTrophy)
         .filter(UserTrophy.trophy_id == BADGE_OS_ID)
@@ -77,7 +73,10 @@ def trophies_leaderboard():
         .all()
     )
 
-    campaign_leaderboard = (
+
+@cache.cached(timeout=3600, key_prefix="leaderboard_campaign")
+def get_campaign_leaderboard():
+    return (
         db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
         .join(UserTrophy)
         .filter(UserTrophy.trophy_id == BADGE_CAMPAIGN_ID)
@@ -87,7 +86,10 @@ def trophies_leaderboard():
         .all()
     )
 
-    os_gm_leaderboard = (
+
+@cache.cached(timeout=3600, key_prefix="leaderboard_os_gm")
+def get_os_gm_leaderboard():
+    return (
         db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
         .join(UserTrophy)
         .filter(UserTrophy.trophy_id == BADGE_OS_GM_ID)
@@ -97,7 +99,10 @@ def trophies_leaderboard():
         .all()
     )
 
-    campaign_gm_leaderboard = (
+
+@cache.cached(timeout=3600, key_prefix="leaderboard_campaign_gm")
+def get_campaign_gm_leaderboard():
+    return (
         db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
         .join(UserTrophy)
         .filter(UserTrophy.trophy_id == BADGE_CAMPAIGN_GM_ID)
@@ -107,10 +112,16 @@ def trophies_leaderboard():
         .all()
     )
 
+
+@misc_bp.route("/badges/classement/", methods=["GET"])
+def trophies_leaderboard():
+    """
+    View the leaderboard for the permanent trophies.
+    """
     return render_template(
         "trophies_leaderboard.j2",
-        os_leaderboard=os_leaderboard,
-        campaign_leaderboard=campaign_leaderboard,
-        os_gm_leaderboard=os_gm_leaderboard,
-        campaign_gm_leaderboard=campaign_gm_leaderboard,
+        os_leaderboard=get_os_leaderboard(),
+        campaign_leaderboard=get_campaign_leaderboard(),
+        os_gm_leaderboard=get_os_gm_leaderboard(),
+        campaign_gm_leaderboard=get_campaign_gm_leaderboard(),
     )
