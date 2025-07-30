@@ -38,6 +38,7 @@ function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil'
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
   outro.oncomplete(() => window.location.href = redirectUrl);
   outro.onexit(() => window.location.href = redirectUrl);
@@ -168,6 +169,7 @@ function runHomepageIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
 
   intro.onbeforechange(function (target) {
@@ -263,6 +265,7 @@ function runRegistrationIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
     showButtons: !showYesNo
   });
 
@@ -446,6 +449,7 @@ function runPostGameIntro(redirectUrl = null) {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
 
   intro.onbeforechange(function (target) {
@@ -472,7 +476,9 @@ function runPostGameIntro(redirectUrl = null) {
     window.location.href = '/demo/gerer/';
   }
 
-  intro.onexit(redirectToManage);
+  intro.onexit(() => {
+    showOutroMessage();
+  });
   intro.oncomplete(redirectToManage);
 
   intro.start();
@@ -553,6 +559,7 @@ function runManageIntro() {
     showProgress: false,
     exitOnOverlayClick: false,
     disableInteraction: true,
+    exitOnEsc: false,
   });
 
   intro.oncomplete(() => {
