@@ -157,6 +157,7 @@ figure {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  overflow-wrap: anywhere;
 }
 
 .top-info h1 {
