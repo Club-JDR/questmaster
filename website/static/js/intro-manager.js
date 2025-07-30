@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function showOutroMessage(message='<br>Je vous redirige vers la page d\'accueil') {
   const redirectUrl='/';
-  const outro = introJs();
+  const outro = introJs.tour();
   outro.setOptions({
     steps: [
       {
@@ -158,7 +158,7 @@ function runHomepageIntro() {
     steps = steps.filter(step => step.id !== 'loginStep');
   }
 
-  const intro = introJs();
+  const intro = introJs.tour();
   intro.setOptions({
     steps,
     nextLabel: 'Suivant',
@@ -197,7 +197,7 @@ function runHomepageIntro() {
 }
 
 function runRegistrationIntro() {
-  const intro = introJs();
+  const intro = introJs.tour();
   let hasRedirected = false;
 
   const steps = [
@@ -302,7 +302,7 @@ function runRegistrationIntro() {
 function runPostGameIntro(redirectUrl = null) {
   const annoncesDropdown = new bootstrap.Dropdown(document.querySelector('#annoncesDropdown'));
   const gameActionDropdown = new bootstrap.Dropdown(document.querySelector('#gameActionDropdown'));
-  const intro = introJs();
+  const intro = introJs.tour();
 
   intro.setOptions({
     steps: [
@@ -479,7 +479,7 @@ function runPostGameIntro(redirectUrl = null) {
 }
 
 function runManageIntro() {
-  const intro = introJs();
+  const intro = introJs.tour();
   const steps = [
     {
       title: "Comment gérer sa partie en tant que MJ",
