@@ -117,7 +117,7 @@ def build_add_session_embed(game, start, end, *_):
     return embed, game.channel
 
 
-def build_edit_session_embed(game, start, end, _, old_start, old_end):
+def build_edit_session_embed(game, start, end, _, old_start, old_end, *__):
     embed = {
         "title": "Session modifiée",
         "color": 0xFFCF48,  # yellow
