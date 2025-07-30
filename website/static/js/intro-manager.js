@@ -190,6 +190,7 @@ function runHomepageIntro() {
     searchBar.hide();
     annoncesDropdown.hide();
     informationsDropdown.hide();
+    showOutroMessage();
   });
 
   intro.start();
