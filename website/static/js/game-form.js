@@ -11,6 +11,17 @@ flatpickr('#calendar', {
 
 // Update image when URL is set
 $('#imgSelect').click(function() {
+      let input = $('#imgLink');
+      let url = input.val().trim();
+
+      // Check if it's a standard Imgur page link (not direct image link)
+      let match = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)$/);
+
+      if (match) {
+        let imageId = match[1];
+        let newUrl = `https://i.imgur.com/${imageId}.png`;
+        input.val(newUrl);
+      }
     $('#imgPreview').attr('src', $("#imgLink").val());
     $('#imgPreview').attr('style', '');
 });
