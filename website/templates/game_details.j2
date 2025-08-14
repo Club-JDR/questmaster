@@ -92,7 +92,7 @@
                 {% if game.restriction_tags %} {% set tags =
                 game.restriction_tags.split(',') %} {% endif %} {% for tag in tags %}<span
                   class="badge badge-dynamic ">{{
-                  tag
+                  tag|truncate(25)
                   }}</span> {% endfor
                 %}
               </div>
@@ -118,7 +118,8 @@
         <div class="player-panel">
           <div id="playerListCard" class="player-list-card">
             <div class="card-header text-center">
-              Joueur·euses<br />{% if game.party_selection and not game.status == "closed"%}(sur
+              {{ game.players|length }}/{{ game.party_size }}<br />Joueur·euses<br />{% if game.party_selection and
+              not game.status == "closed"%}(sur
               sélection){% endif %}
             </div>
             <div class="card-body">
