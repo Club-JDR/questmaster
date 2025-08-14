@@ -379,7 +379,7 @@ def build_game_from_form(data, gm_id):
         classification=get_classification(),
         ambience=get_ambience(data),
         complement=data.get("complement"),
-        status="open" if data["action"] == "open-silent" else data["action"],
+        status="closed" if data["action"] == "open-silent" else data["action"],
         img=data.get("img"),
     )
     existing_slugs = {g.slug for g in Game.query.with_entities(Game.slug).all()}
