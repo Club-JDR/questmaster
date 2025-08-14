@@ -96,12 +96,10 @@ class User(db.Model):
         if not self.name or self.name == "Inconnu":
             try:
                 profile = get_user_profile(self.id)
-                if profile["nick"]:
-                    return profile["nick"]
-                return profile["global_name"] or profile["username"]
+                self.name=profile["name"]
             except Exception:
-                return f"<{self.id}>"
-        return f"{self.name} <{self.id}>"
+                return f"<@{self.id}>"
+        return f"{self.name} <@{self.id}>"
 
     @property
     def trophy_summary(self):
