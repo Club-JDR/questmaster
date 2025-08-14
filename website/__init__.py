@@ -42,6 +42,16 @@ def create_app():
         }
         return {"payload": payload}
 
+    def get_app_version():
+        version = os.environ.get("TAG")
+        if not version:
+            version = "dev"
+        return version
+
+    @app.context_processor
+    def inject_version():
+        return {"app_version": get_app_version()}
+
     # Extensions
     db.init_app(app)
     migrate.init_app(app, db)
