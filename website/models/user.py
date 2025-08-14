@@ -96,7 +96,7 @@ class User(db.Model):
         if not self.name or self.name == "Inconnu":
             try:
                 profile = get_user_profile(self.id)
-                self.name=profile["name"]
+                self.name = profile["name"]
             except Exception:
                 return f"<@{self.id}>"
         return f"{self.name} <@{self.id}>"
