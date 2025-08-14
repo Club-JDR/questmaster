@@ -92,7 +92,7 @@
                 {% if game.restriction_tags %} {% set tags =
                 game.restriction_tags.split(',') %} {% endif %} {% for tag in tags %}<span
                   class="badge badge-dynamic ">{{
-                  tag
+                  tag|truncate(25)
                   }}</span> {% endfor
                 %}
               </div>
