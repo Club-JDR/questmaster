@@ -41,6 +41,16 @@ def create_app():
             "is_admin": session.get("is_admin"),
         }
         return {"payload": payload}
+    
+    def get_app_version():
+        version = os.environ.get("TAG")
+        if not version:
+            version = "dev"
+        return version
+    
+    @app.context_processor
+    def inject_version():
+        return { "app_version": get_app_version() }
 
     # Extensions
     db.init_app(app)
@@ -57,7 +67,7 @@ def create_app():
     set_bot(bot_instance)
 
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"  # Dev only
-
+    
     # Admin
     app.config["FLASK_ADMIN_SWATCH"] = "cosmo"
     admin = Admin(
