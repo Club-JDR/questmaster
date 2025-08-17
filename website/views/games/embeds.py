@@ -156,9 +156,9 @@ def build_alert_embed(game, _, __, player, ___, ____, alert_message):
         "title": "Signalement",
         "color": 0xF34242,  # red
         "description": (
-            f"<@{player}> a fait un signalement concernant l'annonce "
-            f"https://questmaster.club-jdr.fr/annonces/{game.slug}\n"
-            f"**Signalement :**\n{alert_message}"
+            f"**Signalement de <@{player}> :**\n{alert_message}\n"
+            f"**Salon :**\n<#{game.channel}>\n"
+            f"**Annonce :**\nhttps://questmaster.club-jdr.fr/annonces/{game.slug}\n"
         ),
     }
     return embed, current_app.config["ADMIN_CHANNEL_ID"]
