@@ -510,12 +510,12 @@ def my_gm_games():
         gm_only=True,
         title="Mes annonces",
         next_url=(
-            url_for("game.my_gm_games", page=games.next_num, **request_args)
+            url_for("annonces.my_gm_games", page=games.next_num, **request_args)
             if games.has_next
             else None
         ),
         prev_url=(
-            url_for("game.my_gm_games", page=games.prev_num, **request_args)
+            url_for("annonces.my_gm_games", page=games.prev_num, **request_args)
             if games.has_prev
             else None
         ),
@@ -540,12 +540,12 @@ def my_games():
         games=games.items,
         title="Mes parties en cours",
         next_url=(
-            url_for("game.my_games", page=games.next_num, **request_args)
+            url_for("annonces.my_games", page=games.next_num, **request_args)
             if games.has_next
             else None
         ),
         prev_url=(
-            url_for("game.my_games", page=games.prev_num, **request_args)
+            url_for("annonces.my_games", page=games.prev_num, **request_args)
             if games.has_prev
             else None
         ),
