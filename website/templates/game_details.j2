@@ -187,8 +187,14 @@
               </span>
             </form>
             {% endif %}
-            {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status != "archived"
+            {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status not in ["archived", "draft"]
             %}
+            <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+              data-bs-title="Accéder directement au salon de la partie.">
+              <a href="https://discord.com/channels/{{ DISCORD_GUILD_ID }}/{{ game.channel }}" type="button" class="btn btn-primary" id="channel-btn">
+                <i class="bi bi-discord"></i> Discuter
+              </a>
+            </span>
             <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
               data-bs-title="Faire un signalement concernant cette annonce aux Admins.">
               <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alertModal"
