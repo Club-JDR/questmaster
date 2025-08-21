@@ -144,12 +144,19 @@ def get_month_games_json():
 
     events = []
     for session in sessions:
+        start = session.start
+        end = session.end
+
+        # If it crosses midnight, force the end to same day
+        if end.date() > start.date():
+            end = start.replace(hour=23, minute=59, second=59)
+
         events.append(
             {
                 "id": session.id,
                 "title": f"{session.game.name} par {session.game.gm.name}",
-                "start": session.start.isoformat(),
-                "end": session.end.isoformat(),
+                "start": start.isoformat(),
+                "end": end.isoformat(),
                 "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
                 "url": url_for(GAME_DETAILS_ROUTE, slug=session.game.slug),
             }
