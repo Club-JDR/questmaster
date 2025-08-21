@@ -356,6 +356,14 @@ figure {
   padding: 2px 4px;
 }
 
+.fc-event.event-oneshot {
+  color: #75b798 !important;
+}
+
+.fc-event.event-campaign {
+  color: #0d6efd !important;
+}
+
 .fc .fc-button {
   background-color: var(--bs-primary);
   border-color: var(--bs-primary);

@@ -122,6 +122,11 @@ def get_calendar():
     return render_template("calendar.j2", payload=payload)
 
 
+@stats_bp.route("/calendrier/widget/")
+def get_calendar_widget():
+    return render_template("calendar_widget.j2")
+
+
 @stats_bp.route("/api/calendar/")
 @cache.cached(query_string=True)
 def get_month_games_json():
@@ -158,6 +163,11 @@ def get_month_games_json():
                 "start": start.isoformat(),
                 "end": end.isoformat(),
                 "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
+                "className": (
+                    "event-oneshot"
+                    if session.game.type == "oneshot"
+                    else "event-campaign"
+                ),
                 "url": url_for(GAME_DETAILS_ROUTE, slug=session.game.slug),
             }
         )
