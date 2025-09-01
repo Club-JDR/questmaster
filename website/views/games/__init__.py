@@ -227,6 +227,29 @@ def change_game_status(slug):
             logger.error(e)
         return redirect("/")
 
+    if status == "publish":
+        if game.msg_id:
+            flash("Annonce déjà publiée.", "danger")
+        elif len(game.players) >= game.party_size:
+            flash("Impossible de publier une annonce complète.", "danger")
+        else:
+            try:
+                game.status = "open"
+                message_id = send_discord_embed(game, type="annonce")
+                game.msg_id = message_id
+                db.session.commit()
+                logger.info(f"Game {game.id} published and opened.")
+                log_game_event(
+                    "edit",
+                    game.id,
+                    "L'annonce a été publiée et ouverte.",
+                )
+                flash("Annonce publiée avec succès.", "success")
+            except Exception as e:
+                logger.error(f"Failed to publish game {game.id}: {e}")
+                flash("Une erreur est survenue pendant la publication.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
     game.status = status
 
     try:
