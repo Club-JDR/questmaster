@@ -48,7 +48,7 @@ def login():
         session.get("next_url") or request.referrer or url_for(SEARCH_GAMES_ROUTE)
     )
     session["next_url"] = next_url
-    return discord.create_session()
+    return discord.create_session(scope=["identify"])
 
 
 @auth_bp.route("/logout/")
