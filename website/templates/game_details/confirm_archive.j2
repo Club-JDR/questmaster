@@ -2,11 +2,16 @@
   <div class="modal-dialog">
     <form method="post" action="/annonces/{{game.slug}}/statut/" class="modal-content">
       <div class="modal-header bg-danger">
+        {% if game.status == 'draft' %}
+        <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr de vouloir supprimer ce brouillon ?</h1>
+        {% else %}
         <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr d'avoir terminé votre partie ?</h1>
+        {% endif%}
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
         <h1><i class="bi bi-exclamation-triangle"></i><br />Danger</h1>
+        {% if game.status != 'draft' %}
         <p>N'archivez votre annonce que si votre partie est terminée.<br />L'archivage va supprimer le salon et le rôle
           lié à cette annonce.</p>
         <p><strong>Cette action est définitive</strong>.</p>
@@ -15,13 +20,21 @@
             game.status !='draft' %}checked{% endif %}>
           <label class="form-check-label" for="awardTrophies">Distribuer les badges</label>
         </div>
+        {% endif %}
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if game.status == 'draft' %}
+        <button id="deleteBtn" type="submit" name="status" value="deleted" class="btn btn-danger">Supprimer
+          le brouillon</button>
+        {% else %}
         <button id="archiveBtn" type="submit" name="status" value="archived" class="btn btn-danger" disabled>Archiver
           (10)</button>
+        {% endif %}
       </div>
+
     </form>
   </div>
 </div>
