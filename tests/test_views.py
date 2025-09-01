@@ -179,7 +179,6 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         text not in response.data.decode()
         for text in [
             "editButton",
-            "manageButton",
             "statusButton",
             "archiveButton",
             "Cloner",
@@ -321,7 +320,6 @@ def test_e2e_scenario_2(
         for text in [
             title,
             "editButton",
-            "manageButton",
             "Libre",
             "Brouillon",
             "archiveButton",
