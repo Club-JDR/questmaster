@@ -216,6 +216,17 @@ def change_game_status(slug):
     status = request.values.get("status")
     award_trophies = "award_trophies" in request.form
 
+    if status == "deleted":
+        try:
+            Game.query.filter(Game.id == game.id).delete()
+            db.session.commit()
+            logger.info(f"Game {game.id} has been deleted.")
+            flash("Annonce supprimée avec succès.", "success")
+        except Exception as e:
+            flash("Une erreur est survenue pendant la suppression.", "danger")
+            logger.error(e)
+        return redirect("/")
+
     game.status = status
 
     try:

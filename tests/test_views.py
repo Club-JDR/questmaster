@@ -399,9 +399,9 @@ def test_e2e_scenario_2(
         text in response.data.decode()
         for text in [title, "editButton", "manageButton", "Libre", "archiveButton"]
     )
-    # Archive for cleanup
+    # Delete draft
     logged_in_admin.post(
-        f"/annonces/{slug}/statut/", data={"status": "archived"}, follow_redirects=True
+        f"/annonces/{slug}/statut/", data={"status": "deleted"}, follow_redirects=True
     )
 
 

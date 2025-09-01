@@ -246,7 +246,13 @@
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
                 data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
                 <button id="archiveButton" type="button" class="btn btn-danger" data-bs-toggle="modal"
-                  data-bs-target="#confirmArchive"><i class="bi bi-archive"></i> Archiver</button>
+                  data-bs-target="#confirmArchive">
+                  {% if game.status == 'draft' %}
+                  <i class="bi bi-trash"></i> Supprimer le brouillon
+                  {% else %}
+                  <i class="bi bi-archive"></i> Archiver
+                  {% endif %}
+                </button>
               </span>
               {% endif %}
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"

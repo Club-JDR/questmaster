@@ -24,9 +24,11 @@ class GameEvent(db.Model):
         nullable=False,
     )
     action = db.Column(Enum(*EVENT_ACTIONS, name="action_type_enum"), nullable=False)
-    game_id = db.Column(db.Integer, db.ForeignKey("game.id"), nullable=False)
+    game_id = db.Column(
+        db.Integer, db.ForeignKey("game.id", ondelete="CASCADE"), nullable=False
+    )
     description = db.Column(db.Text)
-    game = db.relationship("Game", backref="events")
+    game = db.relationship("Game", backref="events", cascade="all,delete")
 
     __table_args__ = (
         db.Index("ix_gameevent_timestamp", "timestamp"),
