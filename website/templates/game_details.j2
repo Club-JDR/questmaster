@@ -232,44 +232,44 @@
               </span>
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               {% if game.status != 'archived' %}
-              {% if game.status != 'draft' and not game.msg_id %}
-              <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Publier l'annonce.">
+              {% if game.status != 'draft' and not game.msg_id and game.players|length < game.party_size %} <span
+                class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Publier l'annonce.">
                 <button id="publishButton" type="submit" name="status" value="publish" class="btn btn-primary"><i
                     class="bi bi-send"></i>
                   Publier</button>
-              </span>
-              {% endif %}
-              {% if game.status == 'open' %}
-              <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Fermer les inscriptions.">
-                <button id="statusButton" type="submit" name="status" value="closed" class="btn btn-warning"><i
-                    class="bi bi-lock"></i>
-                  Fermer</button>
-              </span>
-              {% elif game.status == 'closed' %}
-              <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Ouvrir les inscriptions.">
-                <button id="statusButton" type="submit" name="status" value="open" class="btn btn-success"><i
-                    class="bi bi-unlock"></i>
-                  Ouvrir</button>
-              </span>
-              {% endif %}
-              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-                data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
-                <button id="archiveButton" type="button" class="btn btn-danger" data-bs-toggle="modal"
-                  data-bs-target="#confirmArchive">
-                  {% if game.status == 'draft' %}
-                  <i class="bi bi-trash"></i> Supprimer le brouillon
-                  {% else %}
-                  <i class="bi bi-archive"></i> Archiver
-                  {% endif %}
-                </button>
-              </span>
-              {% endif %}
-              <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-                data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
-                <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/cloner/{% endif %}"
-                  id="cloneButton" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
-                  data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
-              </span>
+                </span>
+                {% endif %}
+                {% if game.status == 'open' %}
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Fermer les inscriptions.">
+                  <button id="statusButton" type="submit" name="status" value="closed" class="btn btn-warning"><i
+                      class="bi bi-lock"></i>
+                    Fermer</button>
+                </span>
+                {% elif game.status == 'closed' %}
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Ouvrir les inscriptions.">
+                  <button id="statusButton" type="submit" name="status" value="open" class="btn btn-success"><i
+                      class="bi bi-unlock"></i>
+                    Ouvrir</button>
+                </span>
+                {% endif %}
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                  data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
+                  <button id="archiveButton" type="button" class="btn btn-danger" data-bs-toggle="modal"
+                    data-bs-target="#confirmArchive">
+                    {% if game.status == 'draft' %}
+                    <i class="bi bi-trash"></i> Supprimer le brouillon
+                    {% else %}
+                    <i class="bi bi-archive"></i> Archiver
+                    {% endif %}
+                  </button>
+                </span>
+                {% endif %}
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                  data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
+                  <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/cloner/{% endif %}"
+                    id="cloneButton" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
+                    data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
+                </span>
             </form>
             {% endif %}
           </div>
