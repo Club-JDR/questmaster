@@ -10,7 +10,7 @@ from unidecode import unidecode
 import requests
 import json
 
-DISCORD_API_BASE_URL = "https://discordapp.com/api/v9"
+DISCORD_API_BASE_URL = "https://discordapp.com/api/v10"
 PLAYER_ROLE_PERMISSION = "3072"
 GM_ROLE_PERMISSION = "292057967632"
 
