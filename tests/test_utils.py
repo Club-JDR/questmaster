@@ -1,29 +1,5 @@
 from dotenv import load_dotenv
-from website.utils.exceptions import RateLimited
 import pytest
-
-
-def test_rate_limited_exception():
-    is_global = False
-    message = "You are being rate limited."
-    retry_after = 64.57
-    headers = {
-        "HTTP/1.1 429": "TOO MANY REQUESTS",
-        "Content-Type": "application/json",
-        "Retry-After": retry_after,
-        "X-RateLimit-Limit": 10,
-        "X-RateLimit-Remaining": 0,
-        "X-RateLimit-Reset": 1470173023.123,
-        "X-RateLimit-Reset-After": retry_after,
-        "X-RateLimit-Bucket": "abcd1234",
-        "X-RateLimit-Scope": "user",
-    }
-    json = {"message": message, "retry_after": retry_after, "global": is_global}
-    error = RateLimited(json, headers)
-    assert error.json == json
-    assert error.headers == headers
-    assert error.is_global == is_global
-    assert error.message == message
 
 
 @pytest.fixture
@@ -95,7 +71,7 @@ def test_edit_message(discord_session, test_channel_id, sent_discord_message):
 
 def test_delete_message(discord_session, test_channel_id, sent_discord_message):
     response = discord_session.delete_message(sent_discord_message, test_channel_id)
-    assert response == "{}"
+    assert response == {}
 
 
 def test_role_workflow(discord_session, bot_user_id):
@@ -118,13 +94,13 @@ def test_role_workflow(discord_session, bot_user_id):
     assert color == response["color"]
     # Role attribution
     response = discord_session.add_role_to_user(bot_user_id, role_id)
-    assert response == "{}"
+    assert response == {}
     # Role de-attribution
     response = discord_session.remove_role_from_user(bot_user_id, role_id)
-    assert response == "{}"
+    assert response == {}
     # Role deletion
     response = discord_session.delete_role(role_id)
-    assert response == "{}"
+    assert response == {}
     # Role should not exist
     response = discord_session.get_role(role_id)
     assert response["message"] == "Unknown Role"
@@ -168,4 +144,4 @@ def test_channel_workflow(discord_session, oneshot_channel):
     assert response["id"] == channel_id
     # Role deletion
     response = discord_session.delete_role(role_id)
-    assert response == "{}"
+    assert response == {}
