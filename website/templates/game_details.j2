@@ -232,7 +232,7 @@
               </span>
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               {% if game.status != 'archived' %}
-              {% if not game.msg_id %}
+              {% if game.status != 'draft' and not game.msg_id %}
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Publier l'annonce.">
                 <button id="publishButton" type="submit" name="status" value="publish" class="btn btn-primary"><i
                     class="bi bi-send"></i>
