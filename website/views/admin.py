@@ -158,7 +158,7 @@ class GameAdmin(AdminView):
 
     can_create = False
     can_edit = True
-    can_delete = False
+    can_delete = True
     column_filters = ["id", "name", "gm_id", "type"]
     page_size = 10
 
