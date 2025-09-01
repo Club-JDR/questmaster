@@ -254,12 +254,6 @@
                 </span>
                 {% endif %}
                 <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-                  data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
-                  <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/cloner/{% endif %}"
-                    id="cloneButton" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
-                    data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
-                </span>
-                <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
                   data-bs-title="Supprimer le salon, le rôle et distribuer les badges.">
                   <button id="archiveButton" type="button" class="btn btn-danger" data-bs-toggle="modal"
                     data-bs-target="#confirmArchive">
@@ -271,6 +265,12 @@
                   </button>
                 </span>
                 {% endif %}
+                <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
+                  data-bs-title="Créer une nouvelle annonce à partir de celle-ci.">
+                  <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{game.slug}}/cloner/{% endif %}"
+                    id="cloneButton" type="button" class="btn btn-secondary" data-bs-toggle="tooltip"
+                    data-bs-title="Cloner l'annonce."><i class="bi bi-files"></i> Cloner</a>
+                </span>
             </form>
             {% endif %}
           </div>
