@@ -223,9 +223,9 @@ def change_game_status(slug):
             logger.info(f"Game {game.id} has been deleted.")
             flash("Annonce supprimée avec succès.", "success")
         except Exception as e:
-          flash("Une erreur est survenue pendant la suppression.", "danger")
-          logger.error(e)
-        return redirect('/')
+            flash("Une erreur est survenue pendant la suppression.", "danger")
+            logger.error(e)
+        return redirect("/")
 
     game.status = status
 
