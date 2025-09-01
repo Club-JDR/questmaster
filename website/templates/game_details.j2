@@ -215,12 +215,13 @@
                   id="editButton" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
                   data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
               </span>
+              {% if game.status not in ['draft', 'open'] or request.path == '/demo/gerer/' %}
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-                data-bs-title="Gérer les inscriptions des joueur·euses.{% if game.status == 'draft' %} Désactivé sur les brouillons.{% elif game.status == 'open' %}Désactivé sur les parties ouvertes.{% endif %}">
-                <button id="manageButton" type="button"
-                  class="btn btn-primary {% if game.status in ['draft', 'open'] %}disabled{% endif %}"
-                  data-bs-toggle="modal" data-bs-target="#editPlayers"><i class="bi bi-people"></i> Gérer</button>
+                data-bs-title="Gérer les inscriptions des joueur·euses.">
+                <button id="manageButton" type="button" class="btn btn-primary" data-bs-toggle="modal"
+                  data-bs-target="#editPlayers"><i class="bi bi-people"></i> Gérer</button>
               </span>
+              {% endif %}
               {% endif %}
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
                 data-bs-title="Ajouter une session au calendrier et notifier le channel de partie.{% if game.status == 'draft' %} Désactivé sur les brouillons.{% endif %}">
@@ -241,13 +242,13 @@
                 {% endif %}
                 {% if game.status == 'open' %}
                 <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Fermer les inscriptions.">
-                  <button id="statusButton" type="submit" name="status" value="closed" class="btn btn-warning"><i
+                  <button id="statusButton" type="submit" name="status" value="closed" class="btn btn-primary"><i
                       class="bi bi-lock"></i>
                     Fermer</button>
                 </span>
                 {% elif game.status == 'closed' %}
                 <span class="d-inline-block d-grid" data-bs-toggle="tooltip" data-bs-title="Ouvrir les inscriptions.">
-                  <button id="statusButton" type="submit" name="status" value="open" class="btn btn-success"><i
+                  <button id="statusButton" type="submit" name="status" value="open" class="btn btn-primary"><i
                       class="bi bi-unlock"></i>
                     Ouvrir</button>
                 </span>

@@ -102,7 +102,6 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         for text in [
             title,
             "editButton",
-            "manageButton",
             "Libre",
             "statusButton",
             "archiveButton",
@@ -179,7 +178,6 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         text not in response.data.decode()
         for text in [
             "editButton",
-            "manageButton",
             "statusButton",
             "archiveButton",
             "Cloner",
@@ -321,7 +319,6 @@ def test_e2e_scenario_2(
         for text in [
             title,
             "editButton",
-            "manageButton",
             "Libre",
             "Brouillon",
             "archiveButton",
@@ -404,7 +401,7 @@ def test_e2e_scenario_2(
     assert slug == "la-necropole-par-notsag-2"
     assert all(
         text in response.data.decode()
-        for text in [title, "editButton", "manageButton", "Libre", "archiveButton"]
+        for text in [title, "editButton", "Libre", "archiveButton"]
     )
     # Delete draft
     logged_in_admin.post(

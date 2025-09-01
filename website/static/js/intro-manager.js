@@ -523,6 +523,11 @@ function runManageIntro() {
       title: "Ajouter une session"
     },
     {
+      element: '#publishButton',
+      intro: "Ce bouton permet de poster l'annonce sur Discord lorsqu'elle a été ouverte sans annonce.<div class='alert alert-primary' role='alert'>L'annonce ne doit pas avoir déjà été publiée, être en brouillon, ou être déjà complète.</div>",
+      title: "Publier"
+    },
+    {
       element: '#statusButton',
       intro: "Ce bouton permet de changer le statut de votre annonce.<br>" +
         "<div class='alert alert-primary' role='alert'>Lorsque l'annonce est ouverte, les inscriptions sont possibles et le bouton est jaune avec la mention \"Fermer\".<br>" +
@@ -530,16 +535,16 @@ function runManageIntro() {
       title: "Changer le statut"
     },
     {
+      element: '#cloneButton',
+      intro: "Ce bouton ouvre un formulaire pour poster une nouvelle annonce. Le formulaire est prérempli avec les informations de cette annonce.",
+      title: "Cloner"
+    },
+    {
       element: '#archiveButton',
       intro: "Ce bouton permet d'archiver votre annonce.<br>" +
         "Pour cela, il ouvre une boite de dialogue supplémentaire avec des mentions importantes !<br>" +
         "<div class='alert alert-danger' role='alert'><strong>Archiver une annonce supprime le salon et le rôle associé et permet la distribution des badges.</strong></div>",
       title: "Archiver"
-    },
-    {
-      element: '#cloneButton',
-      intro: "Ce bouton ouvre un formulaire pour poster une nouvelle annonce. Le formulaire est prérempli avec les informations de cette annonce.",
-      title: "Cloner"
     },
     {
       element: '.calendar-btn-group',
