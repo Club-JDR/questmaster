@@ -215,7 +215,7 @@
                   id="editButton" type="button" class="btn btn-primary" data-bs-toggle="tooltip"
                   data-bs-title="Éditer l'annonce."><i class="bi bi-pencil-square"></i> Éditer</a>
               </span>
-              {% if game.status not in ['draft', 'open'] %}
+              {% if game.status not in ['draft', 'open'] or request.path == '/demo/gerer/' %}
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
                 data-bs-title="Gérer les inscriptions des joueur·euses.">
                 <button id="manageButton" type="button" class="btn btn-primary" data-bs-toggle="modal"
