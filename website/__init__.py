@@ -42,6 +42,10 @@ def create_app():
         }
         return {"payload": payload}
 
+    @app.context_processor
+    def inject_guild_id():
+        return {"DISCORD_GUILD_ID": app.config["DISCORD_GUILD_ID"]}
+
     def get_app_version():
         version = os.environ.get("TAG")
         if not version:

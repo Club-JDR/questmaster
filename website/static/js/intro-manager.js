@@ -222,6 +222,12 @@ function runRegistrationIntro() {
       title: "S'inscrire"
     },
     {
+      element: '#channel-btn',
+      intro: "<div class='alert alert-primary' role='alert'>Vous devez être inscrit·e sur l'annonce (ou en être le·a MJ) pour voir à ce bouton.</div>" +
+        "Cliquer sur ce bouton vous permettra d'accéder directement au salon de partie sur Discord.",
+      title: "Faire un signalement"
+    },
+    {
       element: '#alert-btn',
       intro: "<div class='alert alert-primary' role='alert'>Vous devez être inscrit·e sur l'annonce (ou en être le·a MJ) pour faire un signalement.</div>" +
         "Cliquer sur ce bouton vous permettra de signaler aux admins un comportement contraire au règlement de la part du MJ ou d'un·e joueur·euse.<br>" +
