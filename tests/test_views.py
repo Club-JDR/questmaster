@@ -370,9 +370,8 @@ def test_e2e_scenario_2(
     assert "Scénario mortel pour les PJs." in response.data.decode()
 
     # Post game afterwards
-    data["action"] = "publish"
     response = logged_in_admin.post(
-        f"/annonces/{slug}/editer/", data=data, follow_redirects=True
+        f"/annonces/{slug}/statut/", data={"status": "publish"}, follow_redirects=True
     )
     assert response.status_code == 200
     assert "Annonce publiée avec succès." in response.data.decode()
