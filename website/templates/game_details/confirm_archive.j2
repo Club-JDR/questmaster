@@ -1,4 +1,5 @@
-<div class="modal fade" id="confirmArchive" tabindex="-1" aria-labelledby="confirmArchiveLabel" aria-hidden="true">
+<div class="modal fade modal-lg" id="confirmArchive" tabindex="-1" aria-labelledby="confirmArchiveLabel"
+  aria-hidden="true">
   <div class="modal-dialog">
     <form method="post" action="/annonces/{{game.slug}}/statut/" class="modal-content">
       <div class="modal-header bg-danger">
@@ -6,19 +7,36 @@
         <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr de vouloir supprimer ce brouillon ?</h1>
         {% else %}
         <h1 class="modal-title fs-5" id="confirmArchiveLabel">Êtes-vous sûr d'avoir terminé votre partie ?</h1>
-        {% endif%}
+        {% endif %}
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
         <h1><i class="bi bi-exclamation-triangle"></i><br />Danger</h1>
+        <h2>Cette action est définitive.</h2>
         {% if game.status != 'draft' %}
-        <p>N'archivez votre annonce que si votre partie est terminée.<br />L'archivage va supprimer le salon et le rôle
-          lié à cette annonce.</p>
-        <p><strong>Cette action est définitive</strong>.</p>
-        <div class="form-check form-switch" style="display: inline-block;">
-          <input class="form-check-input" type="checkbox" role="switch" id="awardTrophies" name="award_trophies" {% if
-            game.status !='draft' %}checked{% endif %}>
+        <div class="alert alert-danger" role="alert">
+          <p class="mt-3"><strong>N'archivez votre annonce que si votre partie est terminée.<br />L'archivage va
+              supprimer le salon et le
+              rôle lié à cette annonce.</strong></p>
+        </div>
+        <div class="alert alert-warning" role="alert">
+          <p class="mt-3"><strong>En cas d’erreur, n’archivez pas !<br />Contactez un administrateur via le bouton
+              "Signaler" pour
+              obtenir de l’aide.</strong></p>
+        </div>
+        <p>Pour distribuer les badges (en cas de partie terminée uniquement), cochez l'option suivante :</p>
+        <div class="form-check form-switch mb-2" style="display: inline-block;">
+          <input class="form-check-input" type="checkbox" role="switch" id="awardTrophies" name="award_trophies">
           <label class="form-check-label" for="awardTrophies">Distribuer les badges</label>
+        </div>
+        <br>
+        {% set sessions = game.sessions | length %}
+        <p class="mt-3">Vous avez reseigné <strong>{{ sessions }} session{% if sessions>1 %}s{% endif
+            %}</strong> pour cette partie.</p>
+        <div class="form-check form-switch mb-2" style="display: inline-block; max-width: 80%;">
+          <input class="form-check-input" type="checkbox" role="switch" id="validateSessions" name="validate_sessions">
+          <label class="form-check-label" for="validateSessions">Je confirme que toutes les sessions de jeu sont
+            renseignées correctement.</label>
         </div>
         {% endif %}
       </div>
@@ -27,14 +45,13 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if game.status == 'draft' %}
-        <button id="deleteBtn" type="submit" name="status" value="deleted" class="btn btn-danger">Supprimer
-          le brouillon</button>
+        <button id="deleteBtn" type="submit" name="status" value="deleted" class="btn btn-danger">Supprimer le
+          brouillon</button>
         {% else %}
         <button id="archiveBtn" type="submit" name="status" value="archived" class="btn btn-danger" disabled>Archiver
           (10)</button>
         {% endif %}
       </div>
-
     </form>
   </div>
 </div>
