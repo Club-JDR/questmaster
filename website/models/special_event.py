@@ -5,7 +5,7 @@ class SpecialEvent(db.Model):
     __tablename__ = "special_event"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)  # e.g. "Halloween 2025"
+    name = db.Column(db.String, unique=True, nullable=False)
     color = db.Column(db.Integer, nullable=True)
     active = db.Column(db.Boolean, default=False, nullable=False)
 

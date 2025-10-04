@@ -5,7 +5,7 @@ from .misc import misc_bp
 from .errors import error_bp
 from .stats import stats_bp
 from .demo import demo_bp
-from .filters import format_datetime
+from .filters import format_datetime, hex_color, text_color
 
 
 def register_blueprints(app):
@@ -20,3 +20,4 @@ def register_blueprints(app):
 
 def register_filters(app):
     app.add_template_filter(format_datetime, name="format_datetime")
+    app.jinja_env.globals.update(hex_color=hex_color, text_color=text_color)

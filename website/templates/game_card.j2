@@ -1,7 +1,23 @@
 <div class="col" data-game-id="{{game.slug}}">
   <div class="card game-card shadow h-100 shiny">
-    <div
-      class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
+    <div class="card-header text-light" style="
+    {% if game.special_event %}
+      background-color: {{ hex_color(game.special_event.color) }};
+      color: {{ text_color(hex_color(game.special_event.color)) }};
+    {% elif game.status == 'draft' %}
+      background-color: var(--bs-secondary);
+      color: white;
+    {% elif game.status == 'archived' %}
+      background-color: var(--bs-danger);
+      color: white;
+    {% elif game.status == 'closed' %}
+      background-color: var(--bs-dark);
+      color: white;
+    {% else %}
+      background-color: {% if game.type == 'campaign' %}var(--bs-primary){% else %}var(--bs-success){% endif %};
+      color: white;
+    {% endif %}
+  ">
       <h5 class="card-title text-truncate">{{ game.name }}</h5>
     </div>
     <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}" class="card-img-bottom img-preview"

@@ -34,7 +34,6 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table("game", schema=None) as batch_op:
-        batch_op.drop_constraint(None, type_="foreignkey")
+        batch_op.drop_index(batch_op.f("ix_special_event_name"))
         batch_op.drop_column("special_event_id")
-
     op.drop_table("special_event")
