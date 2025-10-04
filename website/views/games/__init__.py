@@ -48,7 +48,6 @@ def search_games():
 
     return render_template(
         GAME_LIST_TEMPLATE,
-        payload=who(),
         games=games.items,
         title="Annonces",
         next_url=next_url,
@@ -75,9 +74,7 @@ def get_game_details(slug):
     for player in game.players:
         if "user_id" in payload and payload["user_id"] == player.id:
             is_player = True
-    return render_template(
-        "game_details.j2", payload=payload, game=game, is_player=is_player
-    )
+    return render_template("game_details.j2", game=game, is_player=is_player)
 
 
 @game_bp.route("/annonce/", methods=["GET"])
@@ -90,7 +87,6 @@ def get_game_form():
     abort_if_not_gm(payload)
     return render_template(
         "game_form.j2",
-        payload=payload,
         systems=System.get_systems(),
         vtts=Vtt.get_vtts(),
     )
@@ -518,7 +514,6 @@ def get_game_edit_form(slug):
         flash("Vous êtes en train de modifier une annonce.", "primary")
     return render_template(
         "game_form.j2",
-        payload=payload,
         game=game,
         systems=System.get_systems(),
         vtts=Vtt.get_vtts(),
@@ -539,7 +534,6 @@ def my_gm_games():
     )
     return render_template(
         GAME_LIST_TEMPLATE,
-        payload=payload,
         games=games.items,
         gm_only=True,
         title="Mes annonces",
@@ -570,7 +564,6 @@ def my_games():
     )
     return render_template(
         GAME_LIST_TEMPLATE,
-        payload=payload,
         games=games.items,
         title="Mes parties en cours",
         next_url=(

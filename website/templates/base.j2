@@ -1,6 +1,30 @@
 <!doctype html>
 <html lang="fr" data-bs-theme="dark">
 
+{% macro hex_color(color) %}
+{% if color is string %}
+{% if color.startswith('#') %}
+{{ color }}
+{% else %}
+#{{ color.zfill(6) }}
+{% endif %}
+{% elif color is number %}
+#{{ "%06x"|format(color) }}
+{% else %}
+#000000
+{% endif %}
+{% endmacro %}
+{% macro text_color(bg_color) %}
+{# Convert #RRGGBB to r,g,b integers #}
+{% set r = bg_color[1:3] | int(16) %}
+{% set g = bg_color[3:5] | int(16) %}
+{% set b = bg_color[5:7] | int(16) %}
+{% set luminance = (0.299*r + 0.587*g + 0.114*b) %}
+{{ 'black' if luminance > 186 else 'white' }}
+{% endmacro %}
+
+
+
 <head>
   {% block head %}
   <meta charset="utf-8">
@@ -51,6 +75,21 @@
               Annonces
             </a>
             <ul id="annoncesDropdown" class="dropdown-menu">
+              {% if payload.active_events %}
+              <li>
+                <h6 class="dropdown-header">Événements</h6>
+              </li>
+              {% for event in payload.active_events %}
+              {% set bg = hex_color(event.color) %}
+              <a class="dropdown-item" href="/annonces/evenement/{{ event.id }}/"
+                style="background-color: {{ bg }}; color: {{ text_color(bg) }};">
+                {{ event.name }}
+              </a>
+              {% endfor %}
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              {% endif %}
               <li>
                 <h6 class="dropdown-header">Pour les Joueur·euses</h6>
               </li>
@@ -184,7 +223,6 @@
           <a class="text-reset" href="https://github.com/club-jdr/questmaster"><i class="bi bi-github"
               alt="github"></i></a>
         </p>
-
       </div>
     </footer>
   </main>
