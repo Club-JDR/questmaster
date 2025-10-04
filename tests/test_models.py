@@ -143,7 +143,8 @@ def test_duplicate_unique_trophy(db_session, regular_user):
 
 
 def test_special_event(db_session):
-    event = SpecialEvent(name="Halloween 2025", color=0xFF6600, active=True)
+    event = SpecialEvent(name="Halloween", color=0x198754)
+    assert str(event) == "Halloween (#198754)"
+    db_session.add(event)
     db_session.add(event)
     db_session.commit()
-    return event
