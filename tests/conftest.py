@@ -29,12 +29,12 @@ def seed_db():
 def test_app():
     app = create_app()
     with app.app_context():
-        db.create_all()
-        seed_db()
-        seed_trophies_for_tests()
+        # db.create_all()
+        # seed_db()
+        # seed_trophies_for_tests()
         yield app
-        db.session.remove()
-        db.drop_all()
+        # db.session.remove()
+        # db.drop_all()
 
 
 @pytest.fixture

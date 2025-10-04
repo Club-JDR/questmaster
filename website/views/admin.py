@@ -5,6 +5,11 @@ from flask import (
     abort,
 )
 from wtforms.validators import NumberRange
+from markupsafe import Markup
+from wtforms import fields
+from wtforms.widgets import html_params
+from website.models import SpecialEvent
+from website.extensions import db
 
 
 def is_admin_authenticated():
@@ -113,6 +118,7 @@ class GameAdmin(AdminView):
         "channel",
         "role",
         "status",
+        "special_event",
     ]
     form_columns = [
         "id",
@@ -141,6 +147,7 @@ class GameAdmin(AdminView):
         "role",
         "status",
         "players",
+        "special_event",
     ]
     column_editable_list = [
         "name",
@@ -154,6 +161,7 @@ class GameAdmin(AdminView):
         "channel",
         "role",
         "img",
+        "special_event",
     ]
 
     can_create = False
@@ -161,6 +169,15 @@ class GameAdmin(AdminView):
     can_delete = True
     column_filters = ["id", "name", "gm_id", "type"]
     page_size = 10
+
+    form_args = {
+        "special_event": {
+            "query_factory": lambda: db.session.query(SpecialEvent).order_by(
+                SpecialEvent.name
+            ),
+            "label": "Special Event",
+        }
+    }
 
 
 class UserTrophyAdmin(AdminView):
@@ -196,3 +213,83 @@ class UserTrophyAdmin(AdminView):
 
         if trophy.unique:
             model.quantity = 1
+
+
+class ColorInputWidget:
+    """Render a <input type='color'> element."""
+
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault("type", "color")
+
+        # Normalize DB value (int or string) into valid CSS hex (#RRGGBB)
+        value = field.data
+        if isinstance(value, int):
+            value = f"#{value:06x}"
+        elif isinstance(value, str):
+            if not value.startswith("#"):
+                # handle strings like 'FF6600' or '0xFF6600'
+                value = value.replace("0x", "").replace("0X", "")
+                value = f"#{value.zfill(6)}"
+        else:
+            value = "#000000"
+
+        kwargs.setdefault("value", value)
+        return Markup(f"<input {html_params(name=field.name, **kwargs)}>")
+
+
+class ColorField(fields.StringField):
+    widget = ColorInputWidget()
+
+
+class SpecialEventAdmin(ModelView):
+    can_view_details = True
+    column_list = ["name", "color_preview", "active"]
+
+    form_overrides = {"color": ColorField}
+
+    form_widget_args = {
+        "color": {
+            "style": "width: 80px; height: 40px; padding: 0; border: none; cursor: pointer;"
+        }
+    }
+
+    # --- Proper color preview in list view ---
+    def _color_preview(view, context, model, name):
+        color_value = model.color
+
+        # Convert DB value (int or string) into valid hex color for CSS
+        if isinstance(color_value, int):
+            color_hex = f"#{color_value:06x}"
+        elif isinstance(color_value, str):
+            color_value = color_value.strip()
+            if color_value.startswith("#"):
+                color_hex = color_value
+            elif color_value.startswith("0x") or color_value.startswith("0X"):
+                color_hex = f"#{int(color_value, 16):06x}"
+            else:
+                color_hex = f"#{color_value.zfill(6)}"
+        else:
+            color_hex = "#000000"
+
+        return Markup(
+            f'<div style="background-color: {color_hex}; '
+            'width: 40px; height: 20px; border-radius: 4px; border: 1px solid #ccc;"></div>'
+        )
+
+    column_formatters = {
+        "color_preview": _color_preview,
+    }
+
+    column_labels = {"color_preview": "Color"}
+
+    def scaffold_list_columns(self):
+        columns = super().scaffold_list_columns()
+        if "color_preview" not in columns:
+            columns.append("color_preview")
+        return columns
+
+    def is_accessible(self):
+        return is_admin_authenticated()
+
+    def inaccessible_callback(self, name, **kwargs):
+        abort(403)
