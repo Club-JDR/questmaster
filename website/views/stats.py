@@ -97,7 +97,6 @@ def get_stats():
 
     return render_template(
         "stats.j2",
-        payload=who(),
         base_day=base_day.strftime("%B %Y"),
         last_day=last_day.strftime("%a %d/%m"),
         num_os=stats["num_os"],

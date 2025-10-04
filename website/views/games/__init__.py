@@ -11,7 +11,7 @@ from flask import (
 from config import SEARCH_GAMES_ROUTE, GAME_DETAILS_ROUTE
 from website.extensions import db
 from website.bot import get_bot
-from website.models import Game, User, System, Vtt, GameSession
+from website.models import Game, User, System, Vtt, GameSession, SpecialEvent
 from website.views.auth import who, login_required
 from website.utils.logger import logger, log_game_event
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
@@ -48,13 +48,61 @@ def search_games():
 
     return render_template(
         GAME_LIST_TEMPLATE,
-        payload=who(),
         games=games.items,
         title="Annonces",
         next_url=next_url,
         prev_url=prev_url,
         systems=System.get_systems(),
         vtts=Vtt.get_vtts(),
+    )
+
+
+@game_bp.route("/annonces/evenement/<int:event_id>/", methods=["GET"])
+def search_games_by_event(event_id):
+    event = db.session.get(SpecialEvent, event_id)
+    if not event:
+        flash("L'événement demandé n'existe pas.", "warning")
+        return redirect(url_for(SEARCH_GAMES_ROUTE))
+
+    base_query = Game.query.filter(Game.special_event_id == event_id)
+
+    games, request_args = get_filtered_games(
+        request.args,
+        base_query=base_query,
+        default_status=["open"],
+        default_type=["oneshot"],
+    )
+
+    next_url = (
+        url_for(
+            "game.search_games_by_event",
+            event_id=event_id,
+            page=games.next_num,
+            **request_args,
+        )
+        if games.has_next
+        else None
+    )
+    prev_url = (
+        url_for(
+            "game.search_games_by_event",
+            event_id=event_id,
+            page=games.prev_num,
+            **request_args,
+        )
+        if games.has_prev
+        else None
+    )
+
+    return render_template(
+        GAME_LIST_TEMPLATE,
+        games=games.items,
+        title=f"Annonces – {event.name}",
+        next_url=next_url,
+        prev_url=prev_url,
+        systems=System.get_systems(),
+        vtts=Vtt.get_vtts(),
+        special_event=event,
     )
 
 
@@ -75,9 +123,7 @@ def get_game_details(slug):
     for player in game.players:
         if "user_id" in payload and payload["user_id"] == player.id:
             is_player = True
-    return render_template(
-        "game_details.j2", payload=payload, game=game, is_player=is_player
-    )
+    return render_template("game_details.j2", game=game, is_player=is_player)
 
 
 @game_bp.route("/annonce/", methods=["GET"])
@@ -90,7 +136,6 @@ def get_game_form():
     abort_if_not_gm(payload)
     return render_template(
         "game_form.j2",
-        payload=payload,
         systems=System.get_systems(),
         vtts=Vtt.get_vtts(),
     )
@@ -372,8 +417,11 @@ def edit_game_session(slug, session_id):
     session = db.get_or_404(GameSession, session_id)
     old_start = session.start.strftime(HUMAN_TIMEFORMAT)
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
-    session.start = request.values.to_dict()["date_start"]
-    session.end = request.values.to_dict()["date_end"]
+    session.start = datetime.strptime(
+        request.values.get("date_start"), DEFAULT_TIMEFORMAT
+    )
+    session.end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
+
     if session.start > session.end:
         flash(
             "Impossible d'ajouter une session qui se termine avant de commencer.",
@@ -518,7 +566,6 @@ def get_game_edit_form(slug):
         flash("Vous êtes en train de modifier une annonce.", "primary")
     return render_template(
         "game_form.j2",
-        payload=payload,
         game=game,
         systems=System.get_systems(),
         vtts=Vtt.get_vtts(),
@@ -539,7 +586,6 @@ def my_gm_games():
     )
     return render_template(
         GAME_LIST_TEMPLATE,
-        payload=payload,
         games=games.items,
         gm_only=True,
         title="Mes annonces",
@@ -570,7 +616,6 @@ def my_games():
     )
     return render_template(
         GAME_LIST_TEMPLATE,
-        payload=payload,
         games=games.items,
         title="Mes parties en cours",
         next_url=(

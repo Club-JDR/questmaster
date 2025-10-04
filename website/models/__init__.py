@@ -6,3 +6,4 @@ from .vtt import Vtt
 from .channel import Channel
 from .trophy import Trophy, UserTrophy
 from .game_event import GameEvent
+from .special_event import SpecialEvent

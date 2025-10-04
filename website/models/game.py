@@ -74,6 +74,10 @@ class Game(db.Model):
         nullable=False,
         server_default="draft",
     )
+    special_event_id = db.Column(
+        db.Integer, db.ForeignKey("special_event.id"), nullable=True
+    )
+    special_event = db.relationship("SpecialEvent", back_populates="games")
 
     @orm.validates("classification")
     def validate_classification(self, key, value):

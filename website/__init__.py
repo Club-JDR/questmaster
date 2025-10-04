@@ -33,12 +33,19 @@ def create_app():
     @app.context_processor
     def inject_payload():
         from flask import session
+        from website.models import SpecialEvent
 
+        active_events = (
+            SpecialEvent.query.filter_by(active=True).order_by(SpecialEvent.name).all()
+        )
         payload = {
+            "user_id": session.get("user_id"),
             "username": session.get("username"),
             "avatar": session.get("avatar"),
             "is_gm": session.get("is_gm"),
             "is_admin": session.get("is_admin"),
+            "is_player": session.get("is_player"),
+            "active_events": active_events,
         }
         return {"payload": payload}
 
@@ -82,6 +89,9 @@ def create_app():
         index_view=admin_view.SecureAdminIndexView(),
     )
     admin.add_view(admin_view.GameAdmin(models.Game, db.session, name="Annonces"))
+    admin.add_view(
+        admin_view.SpecialEventAdmin(models.SpecialEvent, db.session, name="Événements")
+    )
     admin.add_view(
         admin_view.UserTrophyAdmin(
             models.UserTrophy, db.session, name="Association Utilisateurs/Badges"

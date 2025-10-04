@@ -49,6 +49,7 @@ def test_admin_model_view_requires_admin_user(client, path):
         "/admin/gameevent/",
         "/admin/system/",
         "/admin/usertrophy/",
+        "/admin/specialevent/",
     ],
 )
 def test_admin_model_view_accessible_to_admin(client, path):
