@@ -23,7 +23,7 @@ def test_hex_color_int_input():
     # None returns None
     assert hex_color(None) is None
     # Small numbers are padded
-    assert hex_color(0x1A2) == "#0001a2" 
+    assert hex_color(0x1A2) == "#0001a2"
 
 
 def test_text_color_with_dark_bg():
