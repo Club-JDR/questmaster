@@ -6,6 +6,7 @@ class SpecialEvent(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
+    emoji = db.Column(db.String, nullable=True)
     color = db.Column(db.Integer, nullable=True)
     active = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -15,4 +16,4 @@ class SpecialEvent(db.Model):
         hex_color = (
             f"#{self.color:06x}" if isinstance(self.color, int) else (self.color or "")
         )
-        return f"{self.name} ({hex_color})"
+        return f"{self.emoji} {self.name} ({hex_color})"

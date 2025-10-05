@@ -19,7 +19,7 @@
     {% endif %}
   ">
       <h5 class="card-title text-truncate">
-        {{ game.name }}
+        {% if game.special_event %}{{ game.special_event.emoji }}{{ game.name }}{% endif %}
       </h5>
     </div>
     <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}" class="card-img-bottom img-preview"

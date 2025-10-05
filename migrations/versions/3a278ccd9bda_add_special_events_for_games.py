@@ -22,6 +22,7 @@ def upgrade():
         "special_event",
         sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
         sa.Column("name", sa.String(), unique=True, nullable=False),
+        sa.Column("emoji", sa.String(), nullable=True),
         sa.Column("color", sa.Integer(), nullable=True),
         sa.Column(
             "active", sa.Boolean(), nullable=False, server_default=sa.text("false")

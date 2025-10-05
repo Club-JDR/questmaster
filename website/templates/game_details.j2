@@ -18,11 +18,14 @@
             <div class="top-info">
               <h1>
                 {% if game.special_event %}
+                {{ game.special_event.emoji }}
+                {% endif %}
+                {{ game.name }}
+                {% if game.special_event %}
                 <span style="background-color: {{ hex_color(game.special_event.color) }};
                   color: {{ text_color(hex_color(game.special_event.color)) }};" class="badge">{{
                   game.special_event.name }}</span>
                 {% endif %}
-                {{ game.name }}
                 {% if game.status == 'closed' %}
                 <span class="badge badge-dynamic-inv badges">Complet</span>
                 {% elif game.status == 'draft' %}

@@ -241,9 +241,9 @@ class ColorField(fields.StringField):
     widget = ColorInputWidget()
 
 
-class SpecialEventAdmin(ModelView):
+class SpecialEventAdmin(AdminView):
     can_view_details = True
-    column_list = ["name", "color_preview", "active"]
+    column_list = ["name", "color_preview", "emoji", "active"]
 
     form_overrides = {"color": ColorField}
 
@@ -253,11 +253,9 @@ class SpecialEventAdmin(ModelView):
         }
     }
 
-    # --- Proper color preview in list view ---
     def _color_preview(view, context, model, name):
         color_value = model.color
 
-        # Convert DB value (int or string) into valid hex color for CSS
         if isinstance(color_value, int):
             color_hex = f"#{color_value:06x}"
         elif isinstance(color_value, str):
@@ -288,8 +286,13 @@ class SpecialEventAdmin(ModelView):
             columns.append("color_preview")
         return columns
 
-    def is_accessible(self):
-        return is_admin_authenticated()
-
-    def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+    def on_model_change(self, form, model, is_created):
+        color_str = form.color.data
+        if isinstance(color_str, str) and color_str.startswith("#"):
+            model.color = int(color_str.lstrip("#"), 16)
+        elif isinstance(color_str, str) and (color_str.startswith("0x") or color_str.startswith("0X")):
+            model.color = int(color_str, 16)
+        elif color_str is None or color_str == "":
+            model.color = None
+        else:
+            model.color = int(color_str)
