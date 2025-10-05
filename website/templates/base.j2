@@ -51,13 +51,31 @@
               Annonces
             </a>
             <ul id="annoncesDropdown" class="dropdown-menu">
+              {% if payload.active_events %}
+              <li>
+                <h6 class="dropdown-header">Événements</h6>
+              </li>
+              {% for event in payload.active_events %}
+              {% set bg = hex_color(event.color) %}
+              <a class="dropdown-item" href="/annonces/evenement/{{ event.id }}/">
+                {{ event.emoji }} - {{ event.name }}
+              </a>
+              {% endfor %}
+              <li>
+                <hr class=" dropdown-divider">
+              </li>
+              {% endif %}
               <li>
                 <h6 class="dropdown-header">Pour les Joueur·euses</h6>
               </li>
               <li><a id="openGames" class="dropdown-item" href="/annonces/">Annonces ouvertes</a></li>
               <li><a id="myPlayerGames" class="dropdown-item {% if not payload['username'] %}disabled{% endif %}"
                   href="/mes_parties/">Mes
-                  parties</a></li>
+                  parties</a>
+              </li>
+              <li>
+                <hr class=" dropdown-divider">
+              </li>
               <li>
                 <h6 class="dropdown-header">Pour les MJs</h6>
               </li>
@@ -184,7 +202,6 @@
           <a class="text-reset" href="https://github.com/club-jdr/questmaster"><i class="bi bi-github"
               alt="github"></i></a>
         </p>
-
       </div>
     </footer>
   </main>

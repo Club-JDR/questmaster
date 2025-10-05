@@ -17,7 +17,11 @@
           <div class="info-top">
             <div class="top-info">
               <h1>
+                {% if game.special_event %}
+                {{ game.special_event.emoji }} {{ game.name }} {{ game.special_event.emoji }}
+                {% else %}
                 {{ game.name }}
+                {% endif %}
                 {% if game.status == 'closed' %}
                 <span class="badge badge-dynamic-inv badges">Complet</span>
                 {% elif game.status == 'draft' %}
@@ -27,6 +31,11 @@
                 {% endif %}
               </h1>
               <div>
+                {% if game.special_event %}
+                <span style="background-color: {{ hex_color(game.special_event.color) }};
+                  color: {{ text_color(hex_color(game.special_event.color)) }};" class="badge">{{
+                  game.special_event.name }}</span>
+                {% endif %}
                 {% if game.type == 'campaign' %}<strong class="text-primary">Campagne</strong>{% else %}<strong
                   class="text-success">Oneshot</strong>{% endif %} <strong>{{ game.system.name or 'Système inconnu'
                   }}</strong> par <strong>{{ game.gm.name }}</strong> {% if game.vtt %} sur <strong>{{ game.vtt.name
@@ -177,10 +186,10 @@
             <form method="post" action="/annonces/{{ game.slug }}/inscription/">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"
-                data-bs-title="{% if 'user_id' not in payload %}Vous devez vous connecter pour pouvoir vous inscrire.{% else %}S'inscrire à la partie.{% endif %}">
+                data-bs-title="{% if not payload.get('user_id') %}Vous devez vous connecter pour pouvoir vous inscrire.{% else %}S'inscrire à la partie.{% endif %}">
                 {% if not is_player %}
-                <button type="submit" class="btn btn-success signup-btn" id="signup-btn" {% if 'user_id' not in payload
-                  or (payload['user_id']==game.gm.id) %}disabled{% endif %}>
+                <button type="submit" class="btn btn-success signup-btn" id="signup-btn" {% if not
+                  payload.get('user_id') or (payload['user_id']==game.gm.id) %}disabled{% endif %}>
                   <i class="bi bi-check-circle"></i> S'inscrire <span id="signup-timer"></span>
                 </button>
                 {% endif %}
@@ -205,8 +214,9 @@
               </button>
             </span>
             {% endif %}
-            {% if ((payload['user_id'] == game.gm.id) or payload['is_admin']) and (request.path != '/demo/inscription/')
-            %}
+            {% if (request.path == '/demo/gerer/')
+            or (((payload.get('user_id') == game.gm.id) or payload.get('is_admin'))
+            and (request.path != '/demo/inscription/')) %}
             <form id="actionsPanel" class="actions mt-2" method="post" action="/annonces/{{game.slug}}/statut/">
               {% if game.status != 'archived' %}
               <span class="d-inline-block d-grid" data-bs-toggle="tooltip"

@@ -9,6 +9,7 @@ from website.models import (
     Game,
     GameSession,
     GameEvent,
+    SpecialEvent,
 )
 from datetime import datetime, timedelta
 import sqlalchemy.exc
@@ -139,3 +140,10 @@ def test_duplicate_unique_trophy(db_session, regular_user):
     assert "duplicate key" in str(exc_info.value) or "UNIQUE constraint" in str(
         exc_info.value
     )
+
+
+def test_special_event(db_session):
+    event = SpecialEvent(name="Halloween", emoji="🎃", color=0x198754)
+    assert str(event) == "🎃 Halloween (#198754)"
+    db_session.add(event)
+    db_session.commit()

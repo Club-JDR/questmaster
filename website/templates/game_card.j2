@@ -1,8 +1,30 @@
 <div class="col" data-game-id="{{game.slug}}">
   <div class="card game-card shadow h-100 shiny">
-    <div
-      class="card-header {% if game.status=='draft' %}bg-secondary{% elif game.status=='archived' %}bg-danger{% elif game.status=='closed' %}bg-dark{% else %}{% if game.type=='campaign' %}bg-primary{% else %}bg-success{% endif %}{% endif%} text-light">
-      <h5 class="card-title text-truncate">{{ game.name }}</h5>
+    <div class="card-header text-light" style="
+    {# {% if game.special_event %}
+      background-color: {{ hex_color(game.special_event.color) }};
+      color: {{ text_color(hex_color(game.special_event.color)) }}; #}
+    {% if game.status == 'draft' %}
+      background-color: var(--bs-secondary);
+      color: white;
+    {% elif game.status == 'archived' %}
+      background-color: var(--bs-danger);
+      color: white;
+    {% elif game.status == 'closed' %}
+      background-color: var(--bs-dark);
+      color: white;
+    {% else %}
+      background-color: {% if game.type == 'campaign' %}var(--bs-primary){% else %}var(--bs-success){% endif %};
+      color: white;
+    {% endif %}
+  ">
+      <h5 class="card-title text-truncate">
+        {% if game.special_event %}
+        {{ game.special_event.emoji }} {{ game.name }} {{ game.special_event.emoji }}
+        {% else %}
+        {{ game.name }}
+        {% endif %}
+      </h5>
     </div>
     <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}" class="card-img-bottom img-preview"
       alt="{{ game.name }}">
@@ -37,8 +59,14 @@
     </div>
     {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
     <div class="card-footer text-center">
-      {% if game.status=='draft' %}<span class="badge text-bg-secondary">brouillon</span>{% endif %} {% if
-      game.restriction == 'all' %}
+      {% if game.status=='draft' %}<span class="badge text-bg-secondary">brouillon</span>{% endif %}
+      {% if game.special_event %}
+      <span style="background-color: {{ hex_color(game.special_event.color) }};
+                   color: {{ text_color(hex_color(game.special_event.color)) }};" class="badge">
+        {{ game.special_event.name }}
+      </span>
+      {% endif %}
+      {% if game.restriction == 'all' %}
       <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
       <span class="badge text-bg-warning">16+</span> {% else %}
       <span class="badge text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge bg-secondary">{{

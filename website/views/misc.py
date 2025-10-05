@@ -18,9 +18,7 @@ def list_vtts():
     """
     List all VTTs.
     """
-    return render_template(
-        "list.j2", payload=who(), items=Vtt.query.all(), title="Virtual TableTops"
-    )
+    return render_template("list.j2", items=Vtt.query.all(), title="Virtual TableTops")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
@@ -28,9 +26,7 @@ def list_systems():
     """
     List all Systems.
     """
-    return render_template(
-        "list.j2", payload=who(), items=System.query.all(), title="Systèmes"
-    )
+    return render_template("list.j2", items=System.query.all(), title="Systèmes")
 
 
 @misc_bp.route("/badges/", methods=["GET"])
@@ -54,7 +50,6 @@ def list_user_badges():
 
     return render_template(
         "trophies.j2",
-        payload=who(),
         trophies=user.trophy_summary,
         user_id=user.id,
         user=user,

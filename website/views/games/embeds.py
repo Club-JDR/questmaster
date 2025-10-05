@@ -6,6 +6,78 @@ DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
 HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
 
+def _build_restriction_message(game):
+    """Return the formatted restriction message with tags."""
+    restriction_icons = {
+        "all": ":green_circle: Tout public",
+        "16+": ":yellow_circle: 16+",
+        "18+": ":red_circle: 18+",
+    }
+
+    base = restriction_icons.get(game.restriction, ":red_circle: 18+")
+    if game.restriction_tags:
+        base += f" {game.restriction_tags}"
+    return base
+
+
+def _build_embed_title(game):
+    """Return the title with emoji and completion status."""
+    title = game.name
+    if game.status == "closed":
+        title += " (complet)"
+
+    if game.special_event:
+        emoji = game.special_event.emoji or ""
+        if emoji:
+            title = f"{emoji} {title} {emoji}"
+
+    return title
+
+
+def _get_session_type(game):
+    """Return session type display name."""
+    if game.special_event:
+        return f"Événement spécial : {game.special_event.name}"
+    return "Campagne" if game.type == "campaign" else "OS"
+
+
+def _build_embed_fields(game, session_type, restriction_msg):
+    """Return list of embed fields, applying strikethrough if closed."""
+    fields = [
+        {"name": "MJ", "value": game.gm.name, "inline": True},
+        {"name": "Système", "value": game.system.name, "inline": True},
+        {"name": "Type de session", "value": session_type, "inline": True},
+        {"name": "Date", "value": game.date.strftime(HUMAN_TIMEFORMAT), "inline": True},
+        {"name": "Durée", "value": game.length, "inline": True},
+        {"name": "Avertissement", "value": restriction_msg},
+        {
+            "name": "Pour s'inscrire :",
+            "value": f"https://questmaster.club-jdr.fr/annonces/{game.slug}/",
+        },
+    ]
+
+    if game.status == "closed":
+        for field in fields:
+            field["value"] = f"~~{field['value']}~~"
+
+    return fields
+
+
+def _get_embed_color(game):
+    """Return integer color code for Discord embed."""
+    if game.special_event and game.special_event.color:
+        color = game.special_event.color
+        if isinstance(color, str):
+            color = color.lstrip("#")
+            try:
+                return int(color, 16)
+            except ValueError:
+                return 0x5865F2  # fallback
+        return color
+
+    return Game.COLORS.get(game.type, 0x5865F2)
+
+
 def send_discord_embed(
     game,
     type="annonce",
@@ -43,46 +115,17 @@ def send_discord_embed(
 
 
 def build_annonce_embed(game, *_):
-    session_type = "Campagne" if game.type == "campaign" else "OS"
+    """Build a Discord embed for a game announcement."""
 
-    restriction_icons = {
-        "all": ":green_circle: Tout public",
-        "16+": ":yellow_circle: 16+",
-        "18+": ":red_circle: 18+",
-    }
-    restriction = restriction_icons.get(game.restriction, ":red_circle: 18+")
-
-    restriction_msg = restriction
-    if game.restriction_tags:
-        restriction_msg += f" {game.restriction_tags}"
-
-    # Add "(complet)" in the title if the game is closed
-    title = game.name
-    if game.status == "closed":
-        title += " (complet)"
-
-    # Build normal fields
-    fields = [
-        {"name": "MJ", "value": game.gm.name, "inline": True},
-        {"name": "Système", "value": game.system.name, "inline": True},
-        {"name": "Type de session", "value": session_type, "inline": True},
-        {"name": "Date", "value": game.date.strftime(HUMAN_TIMEFORMAT), "inline": True},
-        {"name": "Durée", "value": game.length, "inline": True},
-        {"name": "Avertissement", "value": restriction_msg},
-        {
-            "name": "Pour s'inscrire :",
-            "value": f"https://questmaster.club-jdr.fr/annonces/{game.slug}/",
-        },
-    ]
-
-    # Apply strikethrough if closed
-    if game.status == "closed":
-        for field in fields:
-            field["value"] = f"~~{field['value']}~~"
+    restriction_msg = _build_restriction_message(game)
+    title = _build_embed_title(game)
+    session_type = _get_session_type(game)
+    fields = _build_embed_fields(game, session_type, restriction_msg)
+    color = _get_embed_color(game)
 
     embed = {
         "title": title,
-        "color": Game.COLORS[game.type],
+        "color": color,
         "fields": fields,
         "image": {"url": game.img},
         "footer": {},
