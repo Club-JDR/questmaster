@@ -18,13 +18,9 @@
             <div class="top-info">
               <h1>
                 {% if game.special_event %}
-                {{ game.special_event.emoji }}
-                {% endif %}
+                {{ game.special_event.emoji }} {{ game.name }} {{ game.special_event.emoji }}
+                {% else %}
                 {{ game.name }}
-                {% if game.special_event %}
-                <span style="background-color: {{ hex_color(game.special_event.color) }};
-                  color: {{ text_color(hex_color(game.special_event.color)) }};" class="badge">{{
-                  game.special_event.name }}</span>
                 {% endif %}
                 {% if game.status == 'closed' %}
                 <span class="badge badge-dynamic-inv badges">Complet</span>
@@ -35,6 +31,11 @@
                 {% endif %}
               </h1>
               <div>
+                {% if game.special_event %}
+                <span style="background-color: {{ hex_color(game.special_event.color) }};
+                  color: {{ text_color(hex_color(game.special_event.color)) }};" class="badge">{{
+                  game.special_event.name }}</span>
+                {% endif %}
                 {% if game.type == 'campaign' %}<strong class="text-primary">Campagne</strong>{% else %}<strong
                   class="text-success">Oneshot</strong>{% endif %} <strong>{{ game.system.name or 'Système inconnu'
                   }}</strong> par <strong>{{ game.gm.name }}</strong> {% if game.vtt %} sur <strong>{{ game.vtt.name
