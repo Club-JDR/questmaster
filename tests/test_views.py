@@ -395,13 +395,14 @@ def test_e2e_scenario_2(
 
     # Clone Game in draft
     data["action"] = "draft"
+    data["type"] = "specialevent-1000"
     response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
     slug = response.request.path.strip("/").split("/")[-1]
     assert slug == "la-necropole-par-notsag-2"
     assert all(
         text in response.data.decode()
-        for text in [title, "editButton", "Libre", "archiveButton"]
+        for text in [title, "editButton", "Libre", "archiveButton", "CthulhuFest"]
     )
     # Delete draft
     logged_in_admin.post(

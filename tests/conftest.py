@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 # Load env BEFORE importing app
 config = load_dotenv()
 from website import create_app, db
-from website.models import User, System, Vtt, Channel
+from website.models import User, System, Vtt, Channel, SpecialEvent
 from website.utils.discord import Discord
 from website.extensions import seed_trophies_for_tests
 from flask import template_rendered
@@ -22,6 +22,11 @@ def seed_db():
     db.session.add(Vtt(name="Foundry", icon="foundry.png"))
     db.session.add(Channel(id="1247613267552108696", type="oneshot", size=20))
     db.session.add(Channel(id="1247613296870162474", type="campaign", size=20))
+    db.session.add(
+        SpecialEvent(
+            id="1000", name="CthulhuFest", emoji="🐙", color=15360, active=True
+        )
+    )
     db.session.commit()
 
 
