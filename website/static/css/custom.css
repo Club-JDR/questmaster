@@ -433,6 +433,61 @@ figure {
   max-width: 500px !important;
 }
 
+/* Match Bootstrap outline button behavior */
+.event-outline-btn {
+  --bs-btn-color: var(--event-color);
+  --bs-btn-border-color: var(--event-color);
+  --bs-btn-hover-color: var(--event-text);
+  --bs-btn-hover-bg: var(--event-color);
+  --bs-btn-hover-border-color: var(--event-color);
+  --bs-btn-active-color: var(--event-text);
+  --bs-btn-active-bg: var(--event-color);
+  --bs-btn-active-border-color: var(--event-color);
+  --bs-btn-focus-shadow-rgb: 0, 0, 0;
+}
+
+/* Needed for custom variable propagation */
+.btn-outline-secondary.event-outline-btn {
+  color: var(--bs-btn-color);
+  border-color: var(--bs-btn-border-color);
+}
+
+.btn-outline-secondary.event-outline-btn:hover,
+.btn-check:checked+.btn-outline-secondary.event-outline-btn {
+  color: var(--bs-btn-hover-color);
+  background-color: var(--bs-btn-hover-bg);
+  border-color: var(--bs-btn-hover-border-color);
+}
+
+/* Custom outline button for special events */
+.btn-outline-secondary.event-outline-btn {
+  /* Base (outline) appearance */
+  color: var(--event-color);
+  border-color: var(--event-color);
+  background-color: transparent;
+  transition: all 0.15s ease-in-out;
+}
+
+/* Hovered or active (checked) state */
+.btn-outline-secondary.event-outline-btn:hover,
+.btn-check:checked+.btn-outline-secondary.event-outline-btn {
+  color: var(--event-text);
+  background-color: var(--event-color);
+  border-color: var(--event-color);
+}
+
+/* Focus ring (optional, Bootstrap-like) */
+.btn-outline-secondary.event-outline-btn:focus {
+  box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled state */
+.btn-outline-secondary.event-outline-btn:disabled,
+.btn-check:disabled+.btn-outline-secondary.event-outline-btn {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* === Responsive === */
 @media (min-width: 500px) {
   .img-preview {

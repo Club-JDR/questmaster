@@ -290,7 +290,9 @@ class SpecialEventAdmin(AdminView):
         color_str = form.color.data
         if isinstance(color_str, str) and color_str.startswith("#"):
             model.color = int(color_str.lstrip("#"), 16)
-        elif isinstance(color_str, str) and (color_str.startswith("0x") or color_str.startswith("0X")):
+        elif isinstance(color_str, str) and (
+            color_str.startswith("0x") or color_str.startswith("0X")
+        ):
             model.color = int(color_str, 16)
         elif color_str is None or color_str == "":
             model.color = None

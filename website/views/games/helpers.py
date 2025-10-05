@@ -360,10 +360,27 @@ def register_user_to_game(original_game, user, bot, force=False):
         raise
 
 
+def parse_game_type(type_value):
+    """Parse a type value from the form and return (game_type, special_event_id)."""
+    special_event_id = None
+    game_type = type_value
+
+    if type_value and type_value.startswith("specialevent-"):
+        try:
+            special_event_id = int(type_value.split("-", 1)[1])
+        except (ValueError, IndexError):
+            special_event_id = None
+        game_type = "oneshot"  # all special events are treated as oneshots
+
+    return game_type, special_event_id
+
+
 def build_game_from_form(data, gm_id):
+    game_type, special_event_id = parse_game_type(data["type"])
     game = Game(
         name=data["name"],
-        type=data["type"],
+        type=game_type,
+        special_event_id=special_event_id,
         length=data["length"],
         gm_id=gm_id,
         system_id=data["system"],
@@ -392,8 +409,10 @@ def build_game_from_form(data, gm_id):
 
 def update_game_from_form(game, data):
     if game.status == "draft":
+        game_type, special_event_id = parse_game_type(data["type"])
+        game.type = game_type
+        game.special_event_id = special_event_id
         game.name = data["name"]
-        game.type = data["type"]
     game.system_id = data["system"]
     game.vtt_id = data["vtt"] or None
     game.description = data["description"]

@@ -43,8 +43,6 @@ def send_discord_embed(
 
 
 def build_annonce_embed(game, *_):
-    session_type = "Campagne" if game.type == "campaign" else "OS"
-
     restriction_icons = {
         "all": ":green_circle: Tout public",
         "16+": ":yellow_circle: 16+",
@@ -56,12 +54,16 @@ def build_annonce_embed(game, *_):
     if game.restriction_tags:
         restriction_msg += f" {game.restriction_tags}"
 
-    # Add "(complet)" in the title if the game is closed
     title = game.name
     if game.status == "closed":
         title += " (complet)"
 
-    # Build normal fields
+    if game.special_event:
+        emoji = game.special_event.emoji or ""
+        if emoji:
+            title = f"{emoji} {title} {emoji}"
+
+    session_type = "Campagne" if game.type == "campaign" else "OS"
     fields = [
         {"name": "MJ", "value": game.gm.name, "inline": True},
         {"name": "Système", "value": game.system.name, "inline": True},
@@ -75,14 +77,24 @@ def build_annonce_embed(game, *_):
         },
     ]
 
-    # Apply strikethrough if closed
     if game.status == "closed":
         for field in fields:
             field["value"] = f"~~{field['value']}~~"
 
+    if game.special_event and game.special_event.color:
+        color = game.special_event.color
+        if isinstance(color, str):
+            color = color.lstrip("#")
+            try:
+                color = int(color, 16)
+            except ValueError:
+                color = 0x5865F2  # Discord blurple fallback
+    else:
+        color = Game.COLORS.get(game.type, 0x5865F2)
+
     embed = {
         "title": title,
-        "color": Game.COLORS[game.type],
+        "color": color,
         "fields": fields,
         "image": {"url": game.img},
         "footer": {},

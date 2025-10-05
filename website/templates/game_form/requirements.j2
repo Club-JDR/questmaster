@@ -9,9 +9,25 @@
             endif%} {% else %}checked{%endif%}>
           <label class="btn btn-outline-success btn-sm" for="oneshot">One Shot</label>
           <input type="radio" class="btn-check" name="type" value="campaign" id="campaign" autocomplete="off" {% if game
-            %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" %}disabled{% endif%}{%endif%}{%
-            endif %}>
+            %}{% if game.type=='campaign' %}checked{% else %}{% if game.status !="draft" and not clone %}disabled{%
+            endif%}{%endif%}{% endif %}>
           <label class="btn btn-outline-primary btn-sm" for="campaign">Campagne</label>
+          {% if payload.active_events %}
+          {% for event in payload.active_events %}
+          {% set color = hex_color(event.color) %}
+          {% set textcolor = text_color(color) %}
+          {% set checked = game and game.special_event_id == event.id %}
+          <input type="radio" class="btn-check" name="type" id="event-{{ event.id }}"
+            value="specialevent-{{ event.id }}" autocomplete="off" {% if checked %}checked{% endif %} {% if game and
+            game.status !='draft' and not clone %}disabled{% endif %}>
+          <label class="btn btn-outline-secondary btn-sm event-outline-btn" for="event-{{ event.id }}" style="
+             --event-color: {{ color }};
+             --event-text: {{ textcolor }};
+           ">
+            {{ event.emoji or '' }} {{ event.name }}
+          </label>
+          {% endfor %}
+          {% endif %}
         </div>
       </div>
     </div>
