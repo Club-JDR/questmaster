@@ -378,12 +378,12 @@ def add_game_session(slug):
             "danger",
         )
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    create_game_session(
-        game,
-        start,
-        end,
-    )
     try:
+        create_game_session(
+            game,
+            start,
+            end,
+        )
         db.session.commit()
         log_game_event(
             "create-session",
@@ -399,10 +399,14 @@ def add_game_session(slug):
             ),
             end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
         )
+        flash("Session ajoutée.", "success")
+    except ValueError as e:
+        db.session.rollback()
+        flash(str(e), "danger")
     except Exception:
         flash("Une erreur est survenue pendant la création de la session.", "danger")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
-    flash("Session ajoutée.", "success")
+
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
@@ -415,28 +419,36 @@ def edit_game_session(slug, session_id):
     payload = who()
     game = get_game_if_authorized(payload, slug)
     session = db.get_or_404(GameSession, session_id)
-    old_start = session.start.strftime(HUMAN_TIMEFORMAT)
-    old_end = session.end.strftime(HUMAN_TIMEFORMAT)
-    session.start = datetime.strptime(
-        request.values.get("date_start"), DEFAULT_TIMEFORMAT
-    )
-    session.end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
 
-    if session.start > session.end:
+    new_start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
+    new_end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
+
+    if new_start >= new_end:
         flash(
             "Impossible d'ajouter une session qui se termine avant de commencer.",
             "danger",
         )
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+    if has_session_conflict(game, new_start, new_end, exclude_session_id=session.id):
+        flash("Cette session chevauche une autre session du même jeu.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+    old_start = session.start.strftime(HUMAN_TIMEFORMAT)
+    old_end = session.end.strftime(HUMAN_TIMEFORMAT)
+
+    session.start = new_start
+    session.end = new_end
+
     try:
         db.session.commit()
         log_game_event(
             "edit-session",
             game.id,
-            f"Une session a été éditée : {old_start} to {old_end}, a changé en {session.start} à {session.end}.",
+            f"Une session a été éditée : {old_start} → {old_end}, remplacée par {session.start} → {session.end}.",
         )
         logger.info(
-            f"Session {old_start}/{old_end} of Game {game.slug} has been updated to {session.start}/{session.end}"
+            f"Session {old_start}/{old_end} of Game {game.slug} updated to {session.start}/{session.end}"
         )
         send_discord_embed(
             game,
@@ -446,9 +458,11 @@ def edit_game_session(slug, session_id):
             old_start=old_start,
             old_end=old_end,
         )
+        flash("Session modifiée.", "success")
     except Exception:
+        db.session.rollback()
         flash("Erreur lors de la modification de la session.", "danger")
-    flash("Session modifiée.", "success")
+
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
