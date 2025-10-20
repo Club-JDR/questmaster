@@ -401,11 +401,10 @@ def add_game_session(slug):
         )
         flash("Session ajoutée.", "success")
     except ValueError as e:
-        db.session.rollback()
         flash(str(e), "danger")
     except Exception:
+        db.session.rollback()
         flash("Une erreur est survenue pendant la création de la session.", "danger")
-        return redirect(url_for(SEARCH_GAMES_ROUTE))
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
