@@ -1,18 +1,19 @@
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential,
-    retry_if_exception_type,
-)  # for exponential backoff
-from website.utils.exceptions import RateLimited
-from flask_discord import Unauthorized
 from unidecode import unidecode
-import requests
-import json
+from website.utils.logger import logger
+import requests, time
 
-DISCORD_API_BASE_URL = "https://discordapp.com/api/v9"
+DISCORD_API_BASE_URL = "https://discord.com/api/v10"
 PLAYER_ROLE_PERMISSION = "563362270661696"
 GM_ROLE_PERMISSION = "2815265163693120"
+
+
+class DiscordAPIError(Exception):
+    """Raised when a Discord API request fails."""
+
+    def __init__(self, message, status, response=None):
+        super().__init__(f"[{status}] {message}")
+        self.status = status
+        self.response = response or {}
 
 
 class Discord:
@@ -29,34 +30,58 @@ class Discord:
         }
         return headers
 
-    @retry(
-        wait=wait_random_exponential(min=1, max=10),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(RateLimited),
-    )
-    def _request(self, route, method, payload=None):
-        route = DISCORD_API_BASE_URL + route
-        if payload == None:
-            response = requests.request(method, route, headers=self.headers)
-        else:
-            response = requests.request(
-                method, route, data=json.dumps(payload), headers=self.headers
-            )
+    def _request(
+        self,
+        method,
+        endpoint,
+        *,
+        json=None,
+        params=None,
+        reason=None,
+        max_retries=3,
+    ):
+        """Generic helper for all HTTP requests with retry + error handling."""
+        url = f"{DISCORD_API_BASE_URL}{endpoint}"
+        headers = dict(self.headers)
+        if reason:
+            headers["X-Audit-Log-Reason"] = reason
 
-        if response.status_code == 401:
-            raise Unauthorized()
+        for attempt in range(max_retries):
+            r = requests.request(method, url, headers=headers, json=json, params=params)
 
-        if response.status_code == 429:
-            raise RateLimited(response.json(), response.headers)
+            # Handle rate limiting (HTTP 429)
+            if r.status_code == 429:
+                data = r.json()
+                retry_after = data.get("retry_after", 1)
+                logger.warning(
+                    "Rate limited by Discord. Retrying after %.2f s...", retry_after
+                )
+                time.sleep(float(retry_after))
+                continue
 
-        if response.status_code == 204:
-            return json.dumps({})
+            # Handle non-success codes
+            if not r.ok:
+                try:
+                    err_json = r.json()
+                except Exception:
+                    err_json = {"message": r.text}
+                raise DiscordAPIError(
+                    err_json.get("message", "Unknown error"),
+                    r.status_code,
+                    response=err_json,
+                )
 
-        return response.json()
+            # Some endpoints return 204 No Content
+            if r.status_code == 204 or not r.content:
+                return {}
+
+            return r.json()
+
+        raise DiscordAPIError("Exceeded retry attempts", 429)
 
     def get_user(self, user_id):
         return self._request(
-            route=f"/guilds/{self.guild_id}/members/{user_id}", method="GET"
+            endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET"
         )
 
     def send_message(self, content, channel_id):
@@ -64,26 +89,26 @@ class Discord:
             "content": content,
         }
         return self._request(
-            route=f"/channels/{channel_id}/messages", method="POST", payload=payload
+            endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
     def delete_message(self, msg_id, channel_id):
         return self._request(
-            route=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE"
+            endpoint=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE"
         )
 
     def send_embed_message(self, embed, channel_id):
         payload = {"embeds": [embed]}
         return self._request(
-            route=f"/channels/{channel_id}/messages", method="POST", payload=payload
+            endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
     def edit_embed_message(self, msg_id, embed, channel_id):
         payload = {"embeds": [embed]}
         return self._request(
-            route=f"/channels/{channel_id}/messages/{msg_id}",
+            endpoint=f"/channels/{channel_id}/messages/{msg_id}",
             method="PATCH",
-            payload=payload,
+            json=payload,
         )
 
     def create_channel(self, channel_name, parent_id, role_id, gm_id):
@@ -98,14 +123,14 @@ class Discord:
             ],
         }
         return self._request(
-            route=f"/guilds/{self.guild_id}/channels", method="POST", payload=payload
+            endpoint=f"/guilds/{self.guild_id}/channels", method="POST", json=payload
         )
 
     def get_channel(self, channel_id):
-        return self._request(route=f"/channels/{channel_id}", method="GET")
+        return self._request(endpoint=f"/channels/{channel_id}", method="GET")
 
     def delete_channel(self, channel_id):
-        return self._request(route=f"/channels/{channel_id}", method="DELETE")
+        return self._request(endpoint=f"/channels/{channel_id}", method="DELETE")
 
     def create_role(self, role_name, permissions, color):
         payload = {
@@ -115,11 +140,11 @@ class Discord:
             "mentionable": True,
         }
         return self._request(
-            route=f"/guilds/{self.guild_id}/roles", method="POST", payload=payload
+            endpoint=f"/guilds/{self.guild_id}/roles", method="POST", json=payload
         )
 
     def get_role(self, role_id):
-        roles = self._request(route=f"/guilds/{self.guild_id}/roles", method="GET")
+        roles = self._request(endpoint=f"/guilds/{self.guild_id}/roles", method="GET")
         for role in roles:
             if role["id"] == role_id:
                 return role
@@ -127,17 +152,17 @@ class Discord:
 
     def delete_role(self, role_id):
         return self._request(
-            route=f"/guilds/{self.guild_id}/roles/{role_id}", method="DELETE"
+            endpoint=f"/guilds/{self.guild_id}/roles/{role_id}", method="DELETE"
         )
 
     def add_role_to_user(self, user_id, role_id):
         return self._request(
-            route=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
+            endpoint=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
             method="PUT",
         )
 
     def remove_role_from_user(self, user_id, role_id):
         return self._request(
-            route=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
+            endpoint=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
             method="DELETE",
         )
