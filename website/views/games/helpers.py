@@ -196,7 +196,6 @@ def get_game_if_authorized(payload, slug):
 
 
 def has_session_conflict(game, start_dt, end_dt, exclude_session_id=None):
-    print("conflic")
     for s in game.sessions:
         if exclude_session_id and s.id == exclude_session_id:
             continue
@@ -209,15 +208,14 @@ def create_game_session(game, start, end):
     """
     Create a session for a game if it doesn't overlap existing ones.
     """
-    print(f"{start} - {end}")
     if start >= end:
         print("start >= end")
         raise ValueError("Session start must be before end time.")
 
     if has_session_conflict(
         game,
-        datetime.strptime(start, DEFAULT_TIMEFORMAT),
-        datetime.strptime(end, DEFAULT_TIMEFORMAT),
+        start,
+        end,
     ):
         raise ValueError("Cette session chevauche une autre session du même jeu.")
 

@@ -370,8 +370,8 @@ def add_game_session(slug):
     """
     payload = who()
     game = get_game_if_authorized(payload, slug)
-    start = request.values.to_dict()["date_start"]
-    end = request.values.to_dict()["date_end"]
+    start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
+    end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
     if start > end:
         flash(
             "Impossible d'ajouter une session qui se termine avant de commencer",
@@ -394,10 +394,8 @@ def add_game_session(slug):
         send_discord_embed(
             game,
             type="add-session",
-            start=datetime.strptime(start, DEFAULT_TIMEFORMAT).strftime(
-                HUMAN_TIMEFORMAT
-            ),
-            end=datetime.strptime(end, DEFAULT_TIMEFORMAT).strftime(HUMAN_TIMEFORMAT),
+            start=start,
+            end=end,
         )
         flash("Session ajoutée.", "success")
     except ValueError as e:
