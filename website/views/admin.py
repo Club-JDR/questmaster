@@ -149,20 +149,6 @@ class GameAdmin(AdminView):
         "players",
         "special_event",
     ]
-    column_editable_list = [
-        "name",
-        "slug",
-        "type",
-        "gm",
-        "party_size",
-        "party_selection",
-        "date",
-        "status",
-        "channel",
-        "role",
-        "img",
-        "special_event",
-    ]
 
     can_create = False
     can_edit = True
