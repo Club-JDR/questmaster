@@ -1,20 +1,25 @@
 from website.extensions import db, cache
 from sqlalchemy import orm
-from flask import current_app
+from flask import current_app, has_request_context, request
 from website.bot import get_bot
 import re, requests
 
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
+DEFAULT_AVATAR = "/static/img/avatar.webp"
 
 
-def get_user_profile(user_id):
+def get_user_profile(user_id, force_refresh=False):
     """
     Returns parsed profile info (name and avatar_url), cached for 24h.
+
+    If force_refresh=True, ignores the cache and fetches fresh data from Discord.
     """
     cache_key = f"user_profile_{user_id}"
-    cached = cache.get(cache_key)
-    if cached:
-        return cached
+
+    if not force_refresh:
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
 
     bot = get_bot()
     try:
@@ -29,7 +34,7 @@ def get_user_profile(user_id):
         else:
             name = user.get("global_name") or user.get("username") or "Inconnu"
 
-        avatar_url = "/static/img/avatar.webp"
+        avatar_url = DEFAULT_AVATAR
         avatar_hash = user.get("avatar")
         if avatar_hash:
             potential_url = AVATAR_BASE_URL.format(user_id, avatar_hash)
@@ -43,7 +48,6 @@ def get_user_profile(user_id):
         profile = {
             "name": name,
             "avatar": avatar_url,
-            "raw": user_data,  # optional, keep raw for debugging
         }
 
         cache.set(cache_key, profile, timeout=60 * 60 * 24)
@@ -53,7 +57,7 @@ def get_user_profile(user_id):
         from flask import current_app
 
         current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
-        return {"name": "Inconnu", "avatar": "/static/img/avatar.webp", "raw": None}
+        return {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "raw": None}
 
 
 def get_user_roles(user_id):
@@ -117,11 +121,37 @@ class User(db.Model):
     @orm.reconstructor
     def init_on_load(self):
         """
-        Load name and avatar from cached profile.
+        Initialize user data. Skip expensive Discord lookups inside admin views.
         """
-        profile = get_user_profile(self.id)
-        self.name = profile["name"]
-        self.avatar = profile["avatar"]
+        # Always ensure safe defaults
+        self.avatar = getattr(self, "avatar", DEFAULT_AVATAR)
+        self.is_gm = False
+        self.is_admin = False
+        self.is_player = False
+
+        # If not in a request context (CLI, background task), do normal behavior
+        if not has_request_context():
+            profile = get_user_profile(self.id)
+            self.name = profile["name"]
+            self.avatar = profile["avatar"]
+            return
+
+        # If in admin: skip network/cache calls to speed up
+        if request.path.startswith("/admin"):
+            # Don’t call Redis or Discord
+            if not getattr(self, "name", None):
+                self.name = "Inconnu"
+            return
+
+        # Otherwise (normal frontend routes, API, etc.): do normal cached profile lookup
+        try:
+            profile = get_user_profile(self.id)
+            self.name = profile["name"]
+            self.avatar = profile["avatar"]
+        except Exception:
+            if not getattr(self, "name", None):
+                self.name = "Inconnu"
+            self.avatar = DEFAULT_AVATAR
 
     def refresh_roles(self):
         """
