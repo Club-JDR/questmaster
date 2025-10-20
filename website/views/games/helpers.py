@@ -208,13 +208,10 @@ def create_game_session(game, start, end):
     """
     Create a session for a game if it doesn't overlap existing ones.
     """
-    start_dt = datetime.strptime(start, DEFAULT_TIMEFORMAT)
-    end_dt = datetime.strptime(end, DEFAULT_TIMEFORMAT)
-
-    if start_dt >= end_dt:
+    if start >= end:
         raise ValueError("Session start must be before end time.")
 
-    if has_session_conflict(game, start_dt, end_dt):
+    if has_session_conflict(game, start, end):
         raise ValueError("Cette session chevauche une autre session du même jeu.")
 
     session = GameSession(start=start, end=end)
