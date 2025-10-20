@@ -217,7 +217,7 @@ def create_game_session(game, start, end):
     if has_session_conflict(game, start_dt, end_dt):
         raise ValueError("Cette session chevauche une autre session du même jeu.")
 
-    session = GameSession(start=start_dt, end=end_dt)
+    session = GameSession(start=start, end=end)
     db.session.add(session)
     game.sessions.append(session)
     db.session.commit()
