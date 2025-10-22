@@ -2,7 +2,7 @@ from flask import redirect, url_for, session, abort, request, Blueprint
 from urllib.parse import urlparse, urljoin
 from website.extensions import db, discord
 from website.models import User
-from config import SEARCH_GAMES_ROUTE
+from config.constants import SEARCH_GAMES_ROUTE
 import functools
 
 auth_bp = Blueprint("auth", __name__)

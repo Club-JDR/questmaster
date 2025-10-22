@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for
 from website.models import Vtt, System, User, UserTrophy
-from website.models.trophy import (
+from config.constants import (
     BADGE_CAMPAIGN_GM_ID,
     BADGE_CAMPAIGN_ID,
     BADGE_OS_GM_ID,
