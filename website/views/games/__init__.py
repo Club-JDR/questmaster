@@ -8,7 +8,7 @@ from flask import (
     g,
     flash,
 )
-from config import SEARCH_GAMES_ROUTE, GAME_DETAILS_ROUTE
+from config.constants import SEARCH_GAMES_ROUTE, GAME_DETAILS_ROUTE
 from website.extensions import db
 from website.bot import get_bot
 from website.models import Game, User, System, Vtt, GameSession, SpecialEvent

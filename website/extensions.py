@@ -15,8 +15,8 @@ discord = DiscordOAuth2Session()
 
 
 def _seed_trophies():
-    from website.models.trophy import (
-        Trophy,
+    from website.models.trophy import Trophy
+    from config.constants import (
         BADGE_OS_ID,
         BADGE_OS_GM_ID,
         BADGE_CAMPAIGN_ID,

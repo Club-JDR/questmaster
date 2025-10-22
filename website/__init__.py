@@ -17,7 +17,7 @@ def create_app():
 
     # Config
     app.secret_key = os.environ.get("FLASK_AUTH_SECRET")
-    app.config.from_object("config.Config")
+    app.config.from_object("config.settings.Settings")
 
     # Logging
     configure_logging()

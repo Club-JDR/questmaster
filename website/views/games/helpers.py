@@ -16,14 +16,14 @@ from website.models import (
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.views.games.embeds import send_discord_embed, DEFAULT_TIMEFORMAT
 from website.views.auth import who
-from website.models.trophy import (
+from config.constants import (
     BADGE_OS_ID,
     BADGE_OS_GM_ID,
     BADGE_CAMPAIGN_ID,
     BADGE_CAMPAIGN_GM_ID,
 )
 from slugify import slugify
-from config import GAME_DETAILS_ROUTE, GAMES_PER_PAGE
+from config.constants import GAME_DETAILS_ROUTE, GAMES_PER_PAGE
 import yaml
 
 

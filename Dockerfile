@@ -40,7 +40,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   LANGUAGE=fr_FR:fr \
   LC_ALL=fr_FR.UTF-8
 COPY --from=builder /install /usr/local
-COPY questmaster.py config.py ./
+COPY questmaster.py ./
+COPY config ./config
 COPY website/ ./website
 COPY migrations/ ./migrations
 RUN chown -R questmaster:questmaster /questmaster

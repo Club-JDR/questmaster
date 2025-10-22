@@ -1,11 +1,11 @@
-from website.extensions import db, cache
-from sqlalchemy import orm
+import re
+import requests
 from flask import current_app, has_request_context, request
+from sqlalchemy import orm
+from website.extensions import db, cache
+from website.models.base import SerializableMixin
 from website.bot import get_bot
-import re, requests
-
-AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
-DEFAULT_AVATAR = "/static/img/avatar.webp"
+from config.constants import AVATAR_BASE_URL, DEFAULT_AVATAR
 
 
 def get_user_profile(user_id, force_refresh=False):
@@ -45,17 +45,11 @@ def get_user_profile(user_id, force_refresh=False):
             except requests.RequestException:
                 pass
 
-        profile = {
-            "name": name,
-            "avatar": avatar_url,
-        }
-
+        profile = {"name": name, "avatar": avatar_url}
         cache.set(cache_key, profile, timeout=60 * 60 * 24)
         return profile
 
     except Exception as e:
-        from flask import current_app
-
         current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
         return {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "raw": None}
 
@@ -76,8 +70,11 @@ def get_user_roles(user_id):
     return roles
 
 
-class User(db.Model):
+class User(db.Model, SerializableMixin):
     __tablename__ = "user"
+
+    _exclude_fields = []
+    _relationship_fields = ["games_gm", "trophies"]
 
     id = db.Column(db.String(), primary_key=True)
     name = db.Column(db.String(), nullable=False, index=True)
@@ -92,11 +89,9 @@ class User(db.Model):
         self.id = id
         self.name = name
 
-    def __repr__(self):
-        return f"{self.name} <{self.id}>"
-
     @property
     def display_name(self):
+        """Display-friendly name, fetching from Discord if necessary."""
         if not self.name or self.name == "Inconnu":
             try:
                 profile = get_user_profile(self.id)
@@ -107,6 +102,7 @@ class User(db.Model):
 
     @property
     def trophy_summary(self):
+        """Return a list summarizing all trophies of the user."""
         summary = []
         for ut in self.trophies:
             summary.append(
@@ -121,29 +117,26 @@ class User(db.Model):
     @orm.reconstructor
     def init_on_load(self):
         """
-        Initialize user data. Skip expensive Discord lookups inside admin views.
+        Initialize user data after loading from the database.
+
+        Skips expensive Discord lookups when in admin context.
         """
-        # Always ensure safe defaults
         self.avatar = getattr(self, "avatar", DEFAULT_AVATAR)
         self.is_gm = False
         self.is_admin = False
         self.is_player = False
 
-        # If not in a request context (CLI, background task), do normal behavior
         if not has_request_context():
             profile = get_user_profile(self.id)
             self.name = profile["name"]
             self.avatar = profile["avatar"]
             return
 
-        # If in admin: skip network/cache calls to speed up
         if request.path.startswith("/admin"):
-            # Don’t call Redis or Discord
             if not getattr(self, "name", None):
                 self.name = "Inconnu"
             return
 
-        # Otherwise (normal frontend routes, API, etc.): do normal cached profile lookup
         try:
             profile = get_user_profile(self.id)
             self.name = profile["name"]
@@ -166,3 +159,90 @@ class User(db.Model):
             self.is_gm = False
             self.is_admin = False
             self.is_player = False
+
+    def _serialize_relationship(self, rel_value):
+        """Helper to serialize a relationship value (single object or list)."""
+        if rel_value is None:
+            return None
+        if isinstance(rel_value, list):
+            return [
+                item.to_dict() if hasattr(item, "to_dict") else str(item)
+                for item in rel_value
+            ]
+        if hasattr(rel_value, "to_dict"):
+            return rel_value.to_dict()
+        return str(rel_value)
+
+    def _add_relationships_to_dict(self, data):
+        """Add relationship data to the dictionary."""
+        for rel_name in self._relationship_fields:
+            rel_value = getattr(self, rel_name, None)
+            data[rel_name] = self._serialize_relationship(rel_value)
+
+    def to_dict(self, include_relationships=False):
+        """
+        Serialize the User instance into a Python dict.
+        Includes dynamic attributes (avatar, roles) not stored in the database.
+        """
+        data = {
+            "id": self.id,
+            "name": self.name,
+            "avatar": getattr(self, "avatar", DEFAULT_AVATAR),
+            "is_gm": getattr(self, "is_gm", False),
+            "is_admin": getattr(self, "is_admin", False),
+            "is_player": getattr(self, "is_player", False),
+        }
+
+        if include_relationships:
+            self._add_relationships_to_dict(data)
+
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """
+        Create a User object from a dictionary.
+
+        Expected keys: "id" (required), "name" (optional).
+        Additional keys (avatar/is_gm/is_admin/is_player) will be set as attributes
+        on the created instance if present.
+        """
+        if "id" not in data:
+            raise ValueError("Missing 'id' when creating User from dict.")
+        user = cls(id=str(data["id"]), name=data.get("name", "Inconnu"))
+
+        # Optional attrs that are convenient to set from API payloads
+        if "avatar" in data:
+            user.avatar = data["avatar"]
+        if "is_gm" in data:
+            user.is_gm = bool(data["is_gm"])
+        if "is_admin" in data:
+            user.is_admin = bool(data["is_admin"])
+        if "is_player" in data:
+            user.is_player = bool(data["is_player"])
+
+        return user
+
+    @classmethod
+    def from_json(cls, data):
+        """
+        Alias for from_dict() for API compatibility.
+        """
+        return cls.from_dict(data)
+
+    def update_from_dict(self, data: dict):
+        """Update the user from a dictionary of fields."""
+        for field in ["name"]:
+            if field in data:
+                setattr(self, field, data[field])
+
+    def __repr__(self):
+        return f"{self.name} <{self.id}>"
+
+    def __eq__(self, other):
+        if not isinstance(other, User):
+            return NotImplemented
+        return self.id == other.id and self.name == other.name
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
