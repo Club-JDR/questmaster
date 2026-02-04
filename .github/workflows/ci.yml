@@ -22,19 +22,19 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
-      - uses: webiny/action-conventional-commits@v1.3.0
+      - uses: webiny/action-conventional-commits@8bc41ff4e7d423d56fa4905f6ff79209a78776c7 # v1.3.0
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
 
@@ -48,12 +48,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Create .env file
-        uses: iamsauravsharma/create-dotenv@v1.2.2
+        uses: iamsauravsharma/create-dotenv@89d637291004897518689e16bce1f46dabbdafb1 # v4.0.0
         env:
           FLASK_AUTH_SECRET: ${{ secrets.FLASK_AUTH_SECRET }}
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
@@ -85,7 +85,7 @@ jobs:
         run: docker save $IMAGE_NAME -o app-image.tar
 
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: app-image
           path: app-image.tar
@@ -125,7 +125,7 @@ jobs:
           sed -i 's|<source>/github/workspace/website|<source>website|' test-results/coverage.xml
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v4
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -144,7 +144,7 @@ jobs:
 
     steps:
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -161,7 +161,7 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Download built image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: app-image
 
@@ -183,9 +183,9 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: google-github-actions/release-please-action@v4
+      - uses: google-github-actions/release-please-action@e4dc86ba9405554aeba3c6bb2d169500e7d3b4ee # v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: python
