@@ -33,9 +33,7 @@ class TestDatabaseError:
         assert err.details == {}
 
     def test_operation_merged_with_details(self):
-        err = DatabaseError(
-            "Failed.", operation="update", details={"table": "game"}
-        )
+        err = DatabaseError("Failed.", operation="update", details={"table": "game"})
         assert err.details["operation"] == "update"
         assert err.details["table"] == "game"
 

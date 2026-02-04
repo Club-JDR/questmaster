@@ -211,7 +211,9 @@ class User(db.Model, SerializableMixin):
         on the created instance if present.
         """
         if "id" not in data:
-            raise ValidationError("Missing id when creating User from dict.", field="id")
+            raise ValidationError(
+                "Missing id when creating User from dict.", field="id"
+            )
         user = cls(id=str(data["id"]), name=data.get("name", "Inconnu"))
 
         # Optional attrs that are convenient to set from API payloads

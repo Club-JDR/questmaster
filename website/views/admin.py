@@ -18,9 +18,7 @@ class SecureAdminIndexView(AdminIndexView):
     @expose("/")
     def index(self):
         if not is_admin_authenticated():
-            raise UnauthorizedError(
-                "Admin access required.", action="admin"
-            )
+            raise UnauthorizedError("Admin access required.", action="admin")
         return super().index()
 
 

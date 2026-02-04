@@ -22,4 +22,6 @@ class ValidationError(QuestMasterError):
         details = details or {}
         if field:
             details["field"] = field
-        super().__init__(message=message, code=code or "VALIDATION_ERROR", details=details)
+        super().__init__(
+            message=message, code=code or "VALIDATION_ERROR", details=details
+        )

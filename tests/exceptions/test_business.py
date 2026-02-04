@@ -63,9 +63,7 @@ class TestGameFullError:
         assert err.details == {}
 
     def test_structured_kwargs_merged_with_details(self):
-        err = GameFullError(
-            "Full.", game_id=1, details={"extra": "info"}
-        )
+        err = GameFullError("Full.", game_id=1, details={"extra": "info"})
         assert err.details["game_id"] == 1
         assert err.details["extra"] == "info"
 
@@ -148,9 +146,7 @@ class TestDuplicateRegistrationError:
             raise DuplicateRegistrationError("duplicate.")
 
     def test_to_dict(self):
-        err = DuplicateRegistrationError(
-            "Already registered.", game_id=1, user_id="u1"
-        )
+        err = DuplicateRegistrationError("Already registered.", game_id=1, user_id="u1")
         result = err.to_dict()
         assert result["code"] == "DUPLICATE_REGISTRATION"
         assert result["details"]["game_id"] == 1
@@ -228,7 +224,12 @@ class TestExceptionHierarchyCatching:
 
     def test_all_subclasses_have_game_error_http_status(self):
         """All game subclasses inherit http_status from GameError."""
-        for cls in [GameFullError, GameClosedError, DuplicateRegistrationError, SessionConflictError]:
+        for cls in [
+            GameFullError,
+            GameClosedError,
+            DuplicateRegistrationError,
+            SessionConflictError,
+        ]:
             assert cls("test.").http_status == 409
 
     def test_all_subclasses_have_specific_default_codes(self):

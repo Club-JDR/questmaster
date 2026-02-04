@@ -24,9 +24,7 @@ class TestQuestMasterError:
         assert err.details["field"] == "name"
 
     def test_with_all_params(self):
-        err = QuestMasterError(
-            "Full error", code="ERR_001", details={"key": "value"}
-        )
+        err = QuestMasterError("Full error", code="ERR_001", details={"key": "value"})
         assert err.message == "Full error"
         assert err.code == "ERR_001"
         assert err.details == {"key": "value"}
@@ -58,9 +56,7 @@ class TestQuestMasterError:
         assert result == {"error": "Something failed", "code": "FAIL"}
 
     def test_to_dict_with_details(self):
-        err = QuestMasterError(
-            "Bad input", code="ERR", details={"field": "name"}
-        )
+        err = QuestMasterError("Bad input", code="ERR", details={"field": "name"})
         result = err.to_dict()
         assert result == {
             "error": "Bad input",
@@ -84,7 +80,10 @@ class TestQuestMasterError:
 
     def test_repr_with_all(self):
         err = QuestMasterError("test", code="C", details={"k": "v"})
-        assert repr(err) == "QuestMasterError(message='test', code='C', details={'k': 'v'})"
+        assert (
+            repr(err)
+            == "QuestMasterError(message='test', code='C', details={'k': 'v'})"
+        )
 
 
 class TestNotFoundError:
@@ -109,9 +108,7 @@ class TestNotFoundError:
         assert err.http_status == 404
 
     def test_structured_kwargs(self):
-        err = NotFoundError(
-            "Game not found.", resource_type="Game", resource_id=42
-        )
+        err = NotFoundError("Game not found.", resource_type="Game", resource_id=42)
         assert err.details["resource_type"] == "Game"
         assert err.details["resource_id"] == 42
 
@@ -137,9 +134,7 @@ class TestNotFoundError:
             raise NotFoundError("not found.")
 
     def test_to_dict(self):
-        err = NotFoundError(
-            "Game not found.", resource_type="Game", resource_id=1
-        )
+        err = NotFoundError("Game not found.", resource_type="Game", resource_id=1)
         result = err.to_dict()
         assert result["error"] == "Game not found."
         assert result["code"] == "NOT_FOUND"
@@ -193,9 +188,7 @@ class TestUnauthorizedError:
             raise UnauthorizedError("denied.")
 
     def test_to_dict(self):
-        err = UnauthorizedError(
-            "Access denied.", user_id="u1", action="edit"
-        )
+        err = UnauthorizedError("Access denied.", user_id="u1", action="edit")
         result = err.to_dict()
         assert result["error"] == "Access denied."
         assert result["code"] == "UNAUTHORIZED"
