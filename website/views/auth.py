@@ -1,7 +1,8 @@
-from flask import redirect, url_for, session, abort, request, Blueprint
+from flask import redirect, url_for, session, request, Blueprint
 from urllib.parse import urlparse, urljoin
 from website.extensions import db, discord
 from website.models import User
+from website.exceptions import UnauthorizedError
 from config.constants import SEARCH_GAMES_ROUTE
 import functools
 
@@ -85,7 +86,11 @@ def callback():
             user.init_on_load()
             user.refresh_roles()
         if not user.is_player:
-            abort(403, "Vous n'êtes pas un·e joueur·euse sur le Discord Club JDR")
+            raise UnauthorizedError(
+                "User is not a player on the Discord server.",
+                user_id=str(uid),
+                action="login",
+            )
         session["user_id"] = user.id
         session["username"] = user.name
         session["avatar"] = user.avatar

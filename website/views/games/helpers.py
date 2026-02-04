@@ -1,4 +1,4 @@
-from flask import abort, flash, redirect, url_for, request, current_app
+from flask import flash, redirect, url_for, request, current_app
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import case
@@ -14,6 +14,15 @@ from website.models import (
     UserTrophy,
 )
 from website.utils.discord import PLAYER_ROLE_PERMISSION
+from website.exceptions import (
+    ValidationError,
+    UnauthorizedError,
+    SessionConflictError,
+    GameFullError,
+    GameClosedError,
+    DuplicateRegistrationError,
+    DiscordAPIError,
+)
 from website.views.games.embeds import send_discord_embed, DEFAULT_TIMEFORMAT
 from website.views.auth import who
 from config.constants import (
@@ -155,7 +164,7 @@ def get_filtered_user_games(request_args_source, user_id, role="gm"):
         game_ids = [game.id for game in user.games]
         base_query = Game.query.filter(Game.id.in_(game_ids))
     else:
-        raise ValueError("Invalid role passed to get_filtered_user_games")
+        raise ValidationError("Invalid role.", field="role")
 
     return get_filtered_games(
         request_args_source,
@@ -178,10 +187,12 @@ def get_channel_category(game):
 
 def abort_if_not_gm(payload):
     """
-    Return 403 if user is not GM
+    Raise UnauthorizedError if user is not GM.
     """
     if not payload["is_gm"]:
-        abort(403)
+        raise UnauthorizedError(
+            "GM access required.", action="gm"
+        )
 
 
 def get_game_if_authorized(payload, slug):
@@ -209,15 +220,16 @@ def create_game_session(game, start, end):
     Create a session for a game if it doesn't overlap existing ones.
     """
     if start >= end:
-        print("start >= end")
-        raise ValueError("Session start must be before end time.")
+        raise ValidationError("Session start must be before end time.")
 
     if has_session_conflict(
         game,
         start,
         end,
     ):
-        raise ValueError("Cette session chevauche une autre session du même jeu.")
+        raise SessionConflictError(
+            "Session overlaps with an existing session.", game_id=game.id
+        )
 
     session = GameSession(start=start, end=end)
     db.session.add(session)
@@ -298,7 +310,7 @@ def handle_add_player(game, data, bot):
     """Add a new player to the game by Discord ID."""
     uid = data.get("discord_id")
     if not uid:
-        abort(400, "Missing discord_id")
+        raise ValidationError("Missing discord_id.", field="discord_id")
 
     user = db.session.get(User, str(uid))
     if not user:
@@ -320,7 +332,14 @@ def handle_add_player(game, data, bot):
 
 
 def register_user_to_game(original_game, user, bot, force=False):
-    """Concurrent-safe logic to register a user to a game and update state."""
+    """Concurrent-safe logic to register a user to a game and update state.
+
+    Raises:
+        DuplicateRegistrationError: If the user is already registered.
+        GameFullError: If the game is at capacity and force is False.
+        GameClosedError: If the game is closed and force is False.
+        SQLAlchemyError: If a database error occurs.
+    """
     try:
         game = (
             db.session.query(Game)
@@ -330,16 +349,22 @@ def register_user_to_game(original_game, user, bot, force=False):
         )
         game = db.session.query(Game).filter_by(id=original_game.id).first()
         if user in game.players:
-            logger.warning(f"User {user.id} already in Game {game.id}")
-            return
+            raise DuplicateRegistrationError(
+                "User is already registered for this game.",
+                game_id=game.id,
+                user_id=user.id,
+            )
         if len(game.players) >= game.party_size and not force:
-            logger.warning(f"Game {game.id} is full. Cannot add user {user.id}")
-            flash("La partie est complète.", "danger")
-            return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
+            raise GameFullError(
+                "Game is full.",
+                game_id=game.id,
+                max_players=game.party_size,
+            )
         if game.status == "closed" and not force:
-            logger.warning(f"Game {game.id} is closed. Cannot add user {user.id}")
-            flash("La partie est fermée.", "danger")
-            return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
+            raise GameClosedError(
+                "Game is closed for registration.",
+                game_id=game.id,
+            )
         game.players.append(user)
         if len(game.players) >= game.party_size and not game.party_selection:
             game.status = "closed"
@@ -349,7 +374,7 @@ def register_user_to_game(original_game, user, bot, force=False):
                     logger.info(
                         f"Embed updated due to status change for game {game.id}"
                     )
-                except Exception as e:
+                except DiscordAPIError as e:
                     logger.warning(
                         f"Failed to update embed on status change for game {game.id}: {e}"
                     )
@@ -553,7 +578,7 @@ def adjust_category_size(bot, game):
                 logger.info(
                     f"Decreased size of category {category.id} to {category.size}"
                 )
-    except Exception as e:
+    except (DiscordAPIError, SQLAlchemyError) as e:
         logger.warning(f"Failed to adjust category size for game {game.id}: {e}")
 
 
@@ -572,7 +597,7 @@ def delete_game_message(bot, game):
         game.msg_id = None
         db.session.commit()
         logger.info(f"Discord embed message deleted for archived game {game.id}")
-    except Exception as e:
+    except DiscordAPIError as e:
         logger.warning(f"Failed to delete message for archived game {game.id}: {e}")
 
 

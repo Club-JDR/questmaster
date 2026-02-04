@@ -1,19 +1,11 @@
 from unidecode import unidecode
 from website.utils.logger import logger
+from website.exceptions import DiscordAPIError
 import requests, time
 
 DISCORD_API_BASE_URL = "https://discord.com/api/v10"
 PLAYER_ROLE_PERMISSION = "563362270661696"
 GM_ROLE_PERMISSION = "2815265163693120"
-
-
-class DiscordAPIError(Exception):
-    """Raised when a Discord API request fails."""
-
-    def __init__(self, message, status, response=None):
-        super().__init__(f"[{status}] {message}")
-        self.status = status
-        self.response = response or {}
 
 
 class Discord:
@@ -67,7 +59,7 @@ class Discord:
                     err_json = {"message": r.text}
                 raise DiscordAPIError(
                     err_json.get("message", "Unknown error"),
-                    r.status_code,
+                    status_code=r.status_code,
                     response=err_json,
                 )
 
@@ -77,7 +69,7 @@ class Discord:
 
             return r.json()
 
-        raise DiscordAPIError("Exceeded retry attempts", 429)
+        raise DiscordAPIError("Exceeded retry attempts", status_code=429)
 
     def get_user(self, user_id):
         return self._request(

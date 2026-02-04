@@ -2,6 +2,7 @@ import pytest
 from datetime import datetime
 from decimal import Decimal
 from website.models.game import Game, CLASSIFICATION_SCHEMA
+from website.exceptions import ValidationError
 
 
 @pytest.fixture
@@ -179,7 +180,7 @@ def test_validate_classification_valid_and_invalid(sample_game):
 
     # Invalid classification: value out of range
     invalid = {"action": 3, "investigation": 0, "interaction": 1, "horror": 2}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         sample_game.validate_classification("classification", invalid)
 
 
@@ -187,7 +188,7 @@ def test_validate_party_size_valid_and_invalid(sample_game):
     # Valid party size
     assert sample_game.validate_party_size("party_size", 4) == 4
     # Invalid party size (<1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         sample_game.validate_party_size("party_size", 0)
 
 

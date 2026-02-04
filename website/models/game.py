@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 import sqlalchemy.dialects.postgresql as pg
 from schema import Schema, SchemaError
+from website.exceptions import ValidationError
 
 
 CLASSIFICATION_SCHEMA = Schema(
@@ -91,12 +92,20 @@ class Game(db.Model):
                 CLASSIFICATION_SCHEMA.validate(value)
             return value
         except SchemaError:
-            raise ValueError(f"Invalid classification format {value}")
+            raise ValidationError(
+                "Invalid classification format.",
+                field="classification",
+                details={"value": value},
+            )
 
     @orm.validates("party_size")
     def validate_party_size(self, key, value):
         if int(value) < 1:
-            raise ValueError(f"Number of players must be > 1, was {value}")
+            raise ValidationError(
+                "Number of players must be at least one.",
+                field="party_size",
+                details={"value": value},
+            )
         return value
 
     def _serialize_relation(self, obj):
