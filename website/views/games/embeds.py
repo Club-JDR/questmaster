@@ -139,8 +139,13 @@ def build_annonce_details_embed(game, *_):
         "title": "Tout est prêt.",
         "color": 0x2196F3,  # blue
         "description": (
-            f"<@{game.gm_id}> voici ton salon de partie.\nLe rôle associé est <@&{game.role}>\n"
-            f"Et voici le lien vers [la page de ton annonce](https://questmaster.club-jdr.fr/annonces/{game.slug}).\n"
+            f"<@{game.gm_id}> voici le salon pour ta partie {game.name} et voici le lien [vers l'annonce](https://questmaster.club-jdr.fr/annonces/{game.slug}).\n"
+            f"Le rôle associé est <@&{game.role}>.\n\n"
+            f"Quelques petits rappels :\n"
+            f"- La partie doit être **organisée et jouée sur le serveur du Club JDR** (Cf. règlement).\n"
+            f"- Notifie tes joueur·euses **uniquement avec le rôle @PJ** mentionné plus haut, et non pas `@everyone`, `@here` ou `@Joueur·euses`.\n"
+            f"- Toutes les sessions **jouées** doivent être ajoutées dans QuestMaster au fur et à mesure.\n"
+            f"- Le bouton **Signaler** sur QuestMaster te permet de contacter les admins en cas de problème concernant la partie."
         ),
     }
     return embed, game.channel
@@ -165,8 +170,8 @@ def build_edit_session_embed(game, start, end, _, old_start, old_end, *__):
         "title": "Session modifiée",
         "color": 0xFFCF48,  # yellow
         "description": (
-            f"<@&{game.role}>\nVotre MJ a modifié la session ~~du {old_start} au {old_end}~~\n"
-            f"La session a été décalée du **{start}** au **{end}**\n"
+            f"<@&{game.role}>\nVotre MJ a modifié la session ~~du {old_start}~~\n"
+            f"La session a été décalée au **{start}**\n"
             f"Pensez à mettre à jour votre calendrier."
         ),
     }
