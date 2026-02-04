@@ -4,6 +4,7 @@ from flask import current_app, has_request_context, request
 from sqlalchemy import orm
 from website.extensions import db, cache
 from website.models.base import SerializableMixin
+from website.exceptions import ValidationError
 from website.bot import get_bot
 from config.constants import AVATAR_BASE_URL, DEFAULT_AVATAR
 
@@ -85,7 +86,9 @@ class User(db.Model, SerializableMixin):
 
     def __init__(self, id, name="Inconnu"):
         if not re.fullmatch(r"\d{17,21}", id):
-            raise ValueError(f"{id} is not a valid Discord UID.")
+            raise ValidationError(
+                "Invalid Discord UID.", field="id", details={"value": id}
+            )
         self.id = id
         self.name = name
 
@@ -208,7 +211,7 @@ class User(db.Model, SerializableMixin):
         on the created instance if present.
         """
         if "id" not in data:
-            raise ValueError("Missing 'id' when creating User from dict.")
+            raise ValidationError("Missing id when creating User from dict.", field="id")
         user = cls(id=str(data["id"]), name=data.get("name", "Inconnu"))
 
         # Optional attrs that are convenient to set from API payloads

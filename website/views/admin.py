@@ -1,15 +1,13 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import AdminIndexView, expose
-from flask import (
-    session,
-    abort,
-)
+from flask import session
 from wtforms.validators import NumberRange
 from markupsafe import Markup
 from wtforms import fields
 from wtforms.widgets import html_params
 from website.models import SpecialEvent
 from website.extensions import db
+from website.exceptions import UnauthorizedError
 
 
 def is_admin_authenticated():
@@ -20,7 +18,9 @@ class SecureAdminIndexView(AdminIndexView):
     @expose("/")
     def index(self):
         if not is_admin_authenticated():
-            abort(403)
+            raise UnauthorizedError(
+                "Admin access required.", action="admin"
+            )
         return super().index()
 
 
@@ -29,7 +29,7 @@ class AdminView(ModelView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+        raise UnauthorizedError("Admin access required.", action="admin")
 
 
 class ChannelAdmin(AdminView):
@@ -43,7 +43,7 @@ class ChannelAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+        raise UnauthorizedError("Admin access required.", action="admin")
 
 
 class VttAdmin(AdminView):
@@ -61,7 +61,7 @@ class VttAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+        raise UnauthorizedError("Admin access required.", action="admin")
 
 
 class GameEventAdmin(AdminView):
@@ -83,7 +83,7 @@ class GameEventAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+        raise UnauthorizedError("Admin access required.", action="admin")
 
 
 class SystemAdmin(AdminView):
@@ -101,7 +101,7 @@ class SystemAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        abort(403)
+        raise UnauthorizedError("Admin access required.", action="admin")
 
 
 class GameAdmin(AdminView):

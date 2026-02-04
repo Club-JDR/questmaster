@@ -101,3 +101,8 @@ GAMES_PER_PAGE = 12
 # Routes
 GAME_DETAILS_ROUTE = "annonces.get_game_details"
 SEARCH_GAMES_ROUTE = "annonces.search_games"
+
+# Error Templates
+TEMPLATE_403 = "403.html"
+TEMPLATE_404 = "404.html"
+TEMPLATE_500 = "500.html"

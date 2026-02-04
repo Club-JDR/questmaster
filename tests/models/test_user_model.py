@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from website.models.user import User
+from website.exceptions import ValidationError
 from config.constants import DEFAULT_AVATAR
 
 
@@ -14,7 +15,7 @@ def test_user_init_valid(uid):
 
 @pytest.mark.parametrize("uid", ["123", "abc", ""])
 def test_user_init_invalid(uid):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         User(id=uid)
 
 

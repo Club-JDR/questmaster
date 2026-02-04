@@ -3,7 +3,6 @@ from flask import (
     render_template,
     redirect,
     url_for,
-    abort,
     Blueprint,
     g,
     flash,
@@ -14,6 +13,15 @@ from website.bot import get_bot
 from website.models import Game, User, System, Vtt, GameSession, SpecialEvent
 from website.views.auth import who, login_required
 from website.utils.logger import logger, log_game_event
+from website.exceptions import (
+    GameFullError,
+    GameClosedError,
+    DuplicateRegistrationError,
+    SessionConflictError,
+    ValidationError,
+    QuestMasterError,
+    DiscordAPIError,
+)
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
 from .helpers import *
 from datetime import datetime
@@ -243,7 +251,7 @@ def edit_game(slug):
         try:
             send_discord_embed(game, type="annonce")
             logger.info(f"Embed updated for game {game.id}")
-        except Exception as e:
+        except DiscordAPIError as e:
             logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
     flash(msg, "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -290,7 +298,7 @@ def change_game_status(slug):
                     "L'annonce a été publiée et ouverte.",
                 )
                 flash("Annonce publiée avec succès.", "success")
-            except Exception as e:
+            except DiscordAPIError as e:
                 logger.error(f"Failed to publish game {game.id}: {e}")
                 flash("Une erreur est survenue pendant la publication.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -311,7 +319,7 @@ def change_game_status(slug):
             try:
                 send_discord_embed(game, type="annonce")
                 logger.info(f"Embed updated due to status change for game {game.id}")
-            except Exception as e:
+            except DiscordAPIError as e:
                 logger.warning(
                     f"Failed to update embed on status change for game {game.id}: {e}"
                 )
@@ -355,7 +363,7 @@ def send_alert(slug):
         )
         flash("Signalement effectué.", "success")
         log_game_event("alert", game.id, "Un signalement a été fait.")
-    except Exception as e:
+    except DiscordAPIError as e:
         flash("Une erreur est survenue lors du signalement.", "danger")
         logger.error(f"Failed to send alert: {e}", exc_info=True)
 
@@ -398,7 +406,7 @@ def add_game_session(slug):
             end=end,
         )
         flash("Session ajoutée.", "success")
-    except ValueError as e:
+    except (ValidationError, SessionConflictError) as e:
         flash(str(e), "danger")
     except Exception:
         db.session.rollback()
@@ -519,8 +527,12 @@ def register_game(slug):
             force = True
         register_user_to_game(game, user, bot, force)
         flash("Vous êtes inscrit·e.", "success")
-    except ValueError as ve:
-        flash(str(ve), "danger")
+    except DuplicateRegistrationError:
+        flash("Vous êtes déjà inscrit·e à cette partie.", "warning")
+    except GameFullError:
+        flash("La partie est complète.", "danger")
+    except GameClosedError:
+        flash("La partie est fermée.", "danger")
     except Exception:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
