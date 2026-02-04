@@ -1,6 +1,0 @@
-pytest==8.2.1
-pytest-cov==5.0.0
-black==24.4.2
-python-dotenv==1.0.1
-beautifulsoup4==4.12.3
-blinker==1.7.0
