@@ -46,7 +46,7 @@ def test_to_dict_basic_fields(sample_game):
     assert data["type"] == "oneshot"
     assert data["party_size"] == 4
     assert isinstance(data["date"], str)  # isoformat string
-    assert data["session_length"] == 3.5
+    assert data["session_length"] == pytest.approx(3.5)
     assert data["classification"] == {
         "action": 1,
         "investigation": 1,

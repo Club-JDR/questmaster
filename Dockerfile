@@ -38,20 +38,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   LANG=fr_FR.UTF-8 \
   LANGUAGE=fr_FR:fr \
   LC_ALL=fr_FR.UTF-8
-COPY --from=builder --chown=questmaster:questmaster /install /usr/local
-COPY --chown=questmaster:questmaster config ./config
-COPY --chown=questmaster:questmaster migrations/ ./migrations
-COPY --chown=questmaster:questmaster website/ ./website
-COPY --chown=questmaster:questmaster questmaster.py ./
+COPY --from=builder --chmod=555 /install /usr/local
+COPY --chmod=555 config ./config
+COPY --chmod=555 migrations/ ./migrations
+COPY --chmod=555 website/ ./website
+COPY --chmod=555 questmaster.py ./
 
 FROM base AS app-test
 COPY pyproject.toml .
 RUN pip install --no-cache-dir ".[test,lint]"
-COPY tests/ ./tests
+COPY --chmod=555 tests/ ./tests
 
 FROM base AS app
-COPY --chown=questmaster:questmaster entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=555 entrypoint.sh /entrypoint.sh
 USER questmaster
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \

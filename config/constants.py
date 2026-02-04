@@ -102,6 +102,9 @@ GAMES_PER_PAGE = 12
 GAME_DETAILS_ROUTE = "annonces.get_game_details"
 SEARCH_GAMES_ROUTE = "annonces.search_games"
 
+# Error Messages
+MSG_ADMIN_ACCESS_REQUIRED = "Admin access required."
+
 # Error Templates
 TEMPLATE_403 = "403.html"
 TEMPLATE_404 = "404.html"

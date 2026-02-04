@@ -8,6 +8,7 @@ from wtforms.widgets import html_params
 from website.models import SpecialEvent
 from website.extensions import db
 from website.exceptions import UnauthorizedError
+from config.constants import MSG_ADMIN_ACCESS_REQUIRED
 
 
 def is_admin_authenticated():
@@ -18,7 +19,7 @@ class SecureAdminIndexView(AdminIndexView):
     @expose("/")
     def index(self):
         if not is_admin_authenticated():
-            raise UnauthorizedError("Admin access required.", action="admin")
+            raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
         return super().index()
 
 
@@ -27,7 +28,7 @@ class AdminView(ModelView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        raise UnauthorizedError("Admin access required.", action="admin")
+        raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
 
 
 class ChannelAdmin(AdminView):
@@ -41,7 +42,7 @@ class ChannelAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        raise UnauthorizedError("Admin access required.", action="admin")
+        raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
 
 
 class VttAdmin(AdminView):
@@ -59,7 +60,7 @@ class VttAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        raise UnauthorizedError("Admin access required.", action="admin")
+        raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
 
 
 class GameEventAdmin(AdminView):
@@ -81,7 +82,7 @@ class GameEventAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        raise UnauthorizedError("Admin access required.", action="admin")
+        raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
 
 
 class SystemAdmin(AdminView):
@@ -99,7 +100,7 @@ class SystemAdmin(AdminView):
         return is_admin_authenticated()
 
     def inaccessible_callback(self, name, **kwargs):
-        raise UnauthorizedError("Admin access required.", action="admin")
+        raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
 
 
 class GameAdmin(AdminView):
