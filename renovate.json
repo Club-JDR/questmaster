@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "packageRules": [
+    {
+      "groupName": "Python dependencies (non-major)",
+      "matchManagers": ["pip_requirements", "pip_setup", "setup-cfg", "pep621"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "groupName": "Docker images (non-major)",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "groupName": "GitHub Actions (non-major)",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ]
+}
