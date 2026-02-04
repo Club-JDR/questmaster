@@ -14,18 +14,35 @@ This app is meant for GMs to create new Games with all the details (name, type, 
 
 ```text
 website/            # Main Flask application
-  models/           # SQLAlchemy models (Game, User, GameSession, etc.)
+  models/           # SQLAlchemy models with serialization support
+    base.py         #   SerializableMixin (to_dict, from_dict, update_from_dict)
+    game.py         #   Game (oneshot or campaign)
+    game_session.py #   GameSession (individual session dates)
+    game_event.py   #   GameEvent (audit trail of game actions)
+    user.py         #   User (Discord-authenticated users)
+    system.py       #   System (game systems, e.g. D&D 5e)
+    vtt.py          #   Vtt (virtual tabletop tools)
+    trophy.py       #   Trophy, UserTrophy (achievements)
+    channel.py      #   Channel (Discord channels)
+    special_event.py#   SpecialEvent (themed events)
   views/            # Flask blueprints (auth, games, admin, health, etc.)
   utils/            # Helpers (Discord API, logging)
   templates/        # Jinja2 templates
   static/           # CSS, JS, images
-  exceptions/       # Custom exception handlers
+  exceptions/       # Structured exception hierarchy
+    base.py         #   QuestMasterError, NotFoundError, UnauthorizedError
+    validation.py   #   ValidationError
+    database.py     #   DatabaseError
+    discord.py      #   DiscordError, DiscordAPIError
+    business.py     #   GameError, GameFullError, GameClosedError, etc.
   extensions.py     # Flask extensions (db, migrate, csrf, cache, discord)
   scheduler.py      # APScheduler background jobs
   bot.py            # Discord bot instance
 tests/              # Pytest test suite
 migrations/         # Alembic database migrations
-config.py           # App configuration
+config/             # App configuration
+  settings.py       #   Flask settings (from environment variables)
+  constants.py      #   Game enums, Discord settings, pagination, routes
 questmaster.py      # Entry point
 ```
 
