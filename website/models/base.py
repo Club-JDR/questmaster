@@ -1,66 +1,56 @@
-# src/models/base.py
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Self
 from website.extensions import db
-
-T = TypeVar("T", bound="SerializableMixin")
 
 
 class SerializableMixin:
-    """Mixin pour ajouter la sérialisation aux modèles."""
+    """Mixin to add serialization capabilities to models."""
 
-    # Champs à exclure de la sérialisation par défaut
     _exclude_fields = []
-
-    # Champs de relation à ne pas sérialiser automatiquement
     _relationship_fields = []
 
-    def to_dict(self, include_relationships: bool = False) -> Dict[str, Any]:
-        """Sérialise le modèle en dictionnaire."""
+    def _serialize_value(self, value):
+        """Convert a column value to a JSON-compatible type."""
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, Decimal):
+            return float(value)
+        return value
+
+    def _serialize_relationship(self, rel_value):
+        """Serialize a single relationship value (None, list, or object)."""
+        if rel_value is None:
+            return None
+        if isinstance(rel_value, list):
+            return [
+                item.to_dict() if hasattr(item, "to_dict") else str(item)
+                for item in rel_value
+            ]
+        return rel_value.to_dict() if hasattr(rel_value, "to_dict") else str(rel_value)
+
+    def to_dict(self, include_relationships: bool = False) -> dict[str, Any]:
+        """Serialize the model to a dictionary."""
         data = {}
-
         for column in self.__table__.columns:
-            if column.name in self._exclude_fields:
-                continue
-
-            value = getattr(self, column.name)
-
-            # Conversion des types spéciaux
-            if isinstance(value, datetime):
-                data[column.name] = value.isoformat()
-            elif isinstance(value, Decimal):
-                data[column.name] = float(value)
-            else:
-                data[column.name] = value
+            if column.name not in self._exclude_fields:
+                data[column.name] = self._serialize_value(getattr(self, column.name))
 
         if include_relationships:
             for rel_name in self._relationship_fields:
-                rel_value = getattr(self, rel_name, None)
-                if rel_value is None:
-                    data[rel_name] = None
-                elif isinstance(rel_value, list):
-                    data[rel_name] = [
-                        item.to_dict() if hasattr(item, "to_dict") else str(item)
-                        for item in rel_value
-                    ]
-                else:
-                    data[rel_name] = (
-                        rel_value.to_dict()
-                        if hasattr(rel_value, "to_dict")
-                        else str(rel_value)
-                    )
+                data[rel_name] = self._serialize_relationship(
+                    getattr(self, rel_name, None)
+                )
 
         return data
 
     @classmethod
-    def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
-        """Crée une instance depuis un dictionnaire."""
-        # À implémenter dans chaque modèle
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create an instance from a dictionary. Must be implemented by subclasses."""
         raise NotImplementedError
 
-    def update_from_dict(self, data: Dict[str, Any]) -> None:
-        """Met à jour l'instance depuis un dictionnaire."""
+    def update_from_dict(self, data: dict[str, Any]) -> None:
+        """Update the instance from a dictionary."""
         protected_fields = {"id", "created_at", "updated_at"}
 
         for key, value in data.items():
