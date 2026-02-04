@@ -190,9 +190,7 @@ def abort_if_not_gm(payload):
     Raise UnauthorizedError if user is not GM.
     """
     if not payload["is_gm"]:
-        raise UnauthorizedError(
-            "GM access required.", action="gm"
-        )
+        raise UnauthorizedError("GM access required.", action="gm")
 
 
 def get_game_if_authorized(payload, slug):

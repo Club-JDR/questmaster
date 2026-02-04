@@ -21,9 +21,7 @@ def test_403_admin_model_view_returns_json(client):
         sess["user_id"] = "some_user"
         sess["is_admin"] = False
 
-    response = client.get(
-        "/admin/game/", headers={"Accept": "application/json"}
-    )
+    response = client.get("/admin/game/", headers={"Accept": "application/json"})
     assert response.status_code == 403
     data = response.get_json()
     assert data["code"] == "UNAUTHORIZED"
@@ -34,9 +32,7 @@ def test_403_gm_required_returns_json(test_app, regular_user):
     with client.session_transaction() as sess:
         sess["user_id"] = regular_user.id
 
-    response = client.get(
-        "/mes_annonces/", headers={"Accept": "application/json"}
-    )
+    response = client.get("/mes_annonces/", headers={"Accept": "application/json"})
     assert response.status_code == 403
     data = response.get_json()
     assert data["code"] == "UNAUTHORIZED"
