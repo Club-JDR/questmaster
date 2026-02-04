@@ -12,9 +12,10 @@ RUN apk add --no-cache \
   python3-dev \
   tzdata \
   zlib-dev
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-  && pip install --no-cache-dir --prefix=/install -r requirements.txt
+COPY pyproject.toml .
+RUN mkdir -p website && touch website/__init__.py \
+  && pip install --no-cache-dir --upgrade pip \
+  && pip install --no-cache-dir --prefix=/install .
 
 
 FROM python:3.13-alpine AS base
@@ -45,8 +46,8 @@ COPY migrations/ ./migrations
 RUN chown -R questmaster:questmaster /questmaster
 
 FROM base AS app-test
-COPY tests/requirements.txt ./test-requirements.txt
-RUN pip install --no-cache-dir -r test-requirements.txt
+COPY pyproject.toml .
+RUN pip install --no-cache-dir ".[test,lint]"
 COPY tests/ ./tests
 
 FROM base AS app
