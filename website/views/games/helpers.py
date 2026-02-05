@@ -14,6 +14,7 @@ from website.models import (
 )
 from website.services.channel import ChannelService
 from website.services.user import UserService
+from website.services.game_session import GameSessionService
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.exceptions import (
     ValidationError,
@@ -210,34 +211,14 @@ def create_game_session(game, start, end):
     """
     Create a session for a game if it doesn't overlap existing ones.
     """
-    if start >= end:
-        raise ValidationError("Session start must be before end time.")
-
-    if has_session_conflict(
-        game,
-        start,
-        end,
-    ):
-        raise SessionConflictError(
-            "Session overlaps with an existing session.", game_id=game.id
-        )
-
-    session = GameSession(start=start, end=end)
-    db.session.add(session)
-    game.sessions.append(session)
-    db.session.commit()
-    logger.info(f"Session added for game {game.id} from {start} to {end}")
+    GameSessionService().create(game, start, end)
 
 
 def delete_game_session(session):
     """
     Delete a session for a game.
     """
-    db.session.delete(session)
-    db.session.commit()
-    logger.info(
-        f"Session removed for game {session.game_id} from {session.start} to {session.end}"
-    )
+    GameSessionService().delete(session)
 
 
 def set_default_search_parameters(
