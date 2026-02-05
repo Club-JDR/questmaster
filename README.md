@@ -25,6 +25,13 @@ website/            # Main Flask application
     trophy.py       #   Trophy, UserTrophy (achievements)
     channel.py      #   Channel (Discord channels)
     special_event.py#   SpecialEvent (themed events)
+  repositories/     # Data access layer (queries, no business logic)
+    base.py         #   BaseRepository[T] with generic CRUD
+    system.py       #   SystemRepository
+    vtt.py          #   VttRepository
+  services/         # Business logic layer (owns transaction boundary)
+    system.py       #   SystemService
+    vtt.py          #   VttService
   views/            # Flask blueprints (auth, games, admin, health, etc.)
   utils/            # Helpers (Discord API, logging)
   templates/        # Jinja2 templates
@@ -196,7 +203,7 @@ Dependencies are kept up to date by [Renovate](https://docs.renovatebot.com/), w
 
 The project is evolving toward a cleaner architecture:
 
-- **Repository pattern** — decouple data access from Flask views by introducing a repository layer.
+- **Repository + service layers** — decouple data access and business logic from Flask views using a repository layer (queries) and a service layer (transactions, validation). Being rolled out incrementally as vertical slices.
 - **API + frontend split** — move from a monolithic Flask app with server-rendered templates to a Flask REST API backend and a Vue.js frontend.
 
 ## Join us

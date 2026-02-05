@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for
-from website.models import Vtt, System, User, UserTrophy
+from website.models import User, UserTrophy
 from config.constants import (
     BADGE_CAMPAIGN_GM_ID,
     BADGE_CAMPAIGN_ID,
@@ -9,6 +9,8 @@ from config.constants import (
 from website.extensions import db
 from website.views.auth import who
 from website.extensions import cache
+from website.services.system import SystemService
+from website.services.vtt import VttService
 
 misc_bp = Blueprint("misc", __name__)
 
@@ -18,7 +20,7 @@ def list_vtts():
     """
     List all VTTs.
     """
-    return render_template("list.j2", items=Vtt.query.all(), title="Virtual TableTops")
+    return render_template("list.j2", items=VttService().get_all(), title="Virtual TableTops")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
@@ -26,7 +28,7 @@ def list_systems():
     """
     List all Systems.
     """
-    return render_template("list.j2", items=System.query.all(), title="Systèmes")
+    return render_template("list.j2", items=SystemService().get_all(), title="Systèmes")
 
 
 @misc_bp.route("/badges/", methods=["GET"])
