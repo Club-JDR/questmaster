@@ -3,6 +3,7 @@ from website.repositories.system import SystemRepository
 from website.repositories.vtt import VttRepository
 from website.repositories.channel import ChannelRepository
 from website.repositories.game_event import GameEventRepository
+from website.repositories.user import UserRepository
 
 __all__ = [
     "BaseRepository",
@@ -10,4 +11,5 @@ __all__ = [
     "VttRepository",
     "ChannelRepository",
     "GameEventRepository",
+    "UserRepository",
 ]

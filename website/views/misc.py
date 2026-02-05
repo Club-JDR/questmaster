@@ -11,6 +11,8 @@ from website.views.auth import who
 from website.extensions import cache
 from website.services.system import SystemService
 from website.services.vtt import VttService
+from website.services.user import UserService
+from website.exceptions import NotFoundError
 
 misc_bp = Blueprint("misc", __name__)
 
@@ -42,8 +44,9 @@ def list_user_badges():
         payload = who()
         user_id = payload["user_id"]
 
-    user = User.query.get(user_id)
-    if not user:
+    try:
+        user = UserService().get_by_id(user_id)
+    except NotFoundError:
         flash(
             'Utilisateur introuvable. Veuillez entrer un ID valide.<br>Si vous ne savez pas comment le trouver, vous pouvez consulter <a href="https://support.discord.com/hc/fr/articles/206346498-O%C3%B9-trouver-l-ID-de-mon-compte-utilisateur-serveur-message"             target="_blank" rel="noopener noreferrer">cet article.</a>',
             "danger",

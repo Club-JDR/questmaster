@@ -1,7 +1,8 @@
 from datetime import datetime
 import random
-from website.models.user import User, get_user_profile
+from website.models.user import get_user_profile
 from website.extensions import db
+from website.services.user import UserService
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import current_app
 
@@ -15,7 +16,7 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
     Refresh a random batch of user profiles in Redis (and optionally DB).
     """
     with app.app_context():
-        users = User.query.all()
+        users = UserService().get_all()
         if not users:
             return
 

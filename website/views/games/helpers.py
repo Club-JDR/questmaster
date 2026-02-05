@@ -13,6 +13,7 @@ from website.models import (
     UserTrophy,
 )
 from website.services.channel import ChannelService
+from website.services.user import UserService
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.exceptions import (
     ValidationError,
@@ -154,7 +155,7 @@ def get_filtered_games(
 
 
 def get_filtered_user_games(request_args_source, user_id, role="gm"):
-    user = db.session.get(User, user_id)
+    user = UserService().repo.get_by_id(user_id)
     if not user:
         return [], {}
 
@@ -302,13 +303,9 @@ def handle_add_player(game, data, bot):
     if not uid:
         raise ValidationError("Missing discord_id.", field="discord_id")
 
-    user = db.session.get(User, str(uid))
-    if not user:
-        user = User(id=str(uid))
-        db.session.add(user)
-        db.session.commit()
+    user, created = UserService().get_or_create(str(uid))
+    if created:
         logger.info(f"User {uid} created in database")
-        user.init_on_load()
 
     user.refresh_roles()
     if not user.is_player:
@@ -435,7 +432,7 @@ def build_game_from_form(data, gm_id):
         img=data.get("img"),
     )
     existing_slugs = {g.slug for g in Game.query.with_entities(Game.slug).all()}
-    gm_name = db.get_or_404(User, str(gm_id)).name
+    gm_name = UserService().get_by_id(str(gm_id)).name
     game.slug = generate_game_slug(data["name"], gm_name, existing_slugs)
     game.party_selection = "party_selection" in data
     game.restriction_tags = parse_restriction_tags(data)
