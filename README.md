@@ -29,9 +29,11 @@ website/            # Main Flask application
     base.py         #   BaseRepository[T] with generic CRUD
     system.py       #   SystemRepository
     vtt.py          #   VttRepository
+    channel.py      #   ChannelRepository
   services/         # Business logic layer (owns transaction boundary)
     system.py       #   SystemService
     vtt.py          #   VttService
+    channel.py      #   ChannelService
   views/            # Flask blueprints (auth, games, admin, health, etc.)
   utils/            # Helpers (Discord API, logging)
   templates/        # Jinja2 templates
