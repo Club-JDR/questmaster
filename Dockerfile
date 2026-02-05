@@ -1,4 +1,4 @@
-FROM python:3.13-alpine3.21 AS builder
+FROM python:3.14-alpine3.21 AS builder
 
 WORKDIR /app
 RUN apk add --no-cache \
@@ -18,7 +18,7 @@ RUN mkdir -p website && touch website/__init__.py \
   && pip install --no-cache-dir --prefix=/install .
 
 
-FROM python:3.13-alpine3.21 AS base
+FROM python:3.14-alpine3.21 AS base
 WORKDIR /questmaster
 RUN apk add --no-cache \
   curl \
