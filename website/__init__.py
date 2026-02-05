@@ -34,11 +34,10 @@ def create_app():
     @app.context_processor
     def inject_payload():
         from flask import session
-        from website.models import SpecialEvent
+        from website.services import SpecialEventService
 
-        active_events = (
-            SpecialEvent.query.filter_by(active=True).order_by(SpecialEvent.name).all()
-        )
+        special_event_service = SpecialEventService()
+        active_events = special_event_service.get_active()
         payload = {
             "user_id": session.get("user_id"),
             "username": session.get("username"),
