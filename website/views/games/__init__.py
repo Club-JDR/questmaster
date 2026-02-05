@@ -24,6 +24,7 @@ from website.exceptions import (
 )
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
 from .helpers import *
+from website.services.user import UserService
 from datetime import datetime
 import locale
 
@@ -520,7 +521,7 @@ def register_game(slug):
         flash("Vous ne pouvez pas vous inscrire à votre propre partie.", "warning")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
-    user = db.get_or_404(User, user_id)
+    user = UserService().get_by_id(user_id)
     try:
         force = False
         if game.party_selection:

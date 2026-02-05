@@ -1,8 +1,8 @@
 from flask import redirect, url_for, session, request, Blueprint
 from urllib.parse import urlparse, urljoin
-from website.extensions import db, discord
-from website.models import User
+from website.extensions import discord
 from website.exceptions import UnauthorizedError
+from website.services.user import UserService
 from config.constants import SEARCH_GAMES_ROUTE
 import functools
 
@@ -14,7 +14,7 @@ def who():
     Init session with user information from Discord API.
     """
     if "user_id" in session:
-        user = db.get_or_404(User, str(session["user_id"]))
+        user = UserService().get_by_id(str(session["user_id"]))
         user.refresh_roles()
         session["user_id"] = user.id
         session["username"] = user.name
@@ -76,15 +76,8 @@ def callback():
     discord.callback()
     if discord.authorized:
         uid = discord.fetch_user().id
-        try:
-            user = db.get_or_404(User, str(uid))
-            user.refresh_roles()
-        except Exception:
-            user = User(id=str(uid))
-            db.session.add(user)
-            db.session.commit()
-            user.init_on_load()
-            user.refresh_roles()
+        user, _ = UserService().get_or_create(str(uid))
+        user.refresh_roles()
         if not user.is_player:
             raise UnauthorizedError(
                 "User is not a player on the Discord server.",
