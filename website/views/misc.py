@@ -1,17 +1,16 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for
-from website.models import User, UserTrophy
 from config.constants import (
     BADGE_CAMPAIGN_GM_ID,
     BADGE_CAMPAIGN_ID,
     BADGE_OS_GM_ID,
     BADGE_OS_ID,
 )
-from website.extensions import db
 from website.views.auth import who
 from website.extensions import cache
 from website.services.system import SystemService
 from website.services.vtt import VttService
 from website.services.user import UserService
+from website.services.trophy import TrophyService
 from website.exceptions import NotFoundError
 
 misc_bp = Blueprint("misc", __name__)
@@ -63,54 +62,42 @@ def list_user_badges():
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_os")
 def get_os_leaderboard():
-    return (
-        db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
-        .join(UserTrophy)
-        .filter(UserTrophy.trophy_id == BADGE_OS_ID)
-        .group_by(User)
-        .order_by(db.func.sum(UserTrophy.quantity).desc())
-        .limit(10)
-        .all()
-    )
+    """Get leaderboard for one-shot player badge.
+
+    Returns:
+        List of (User, total_quantity) tuples.
+    """
+    return TrophyService().get_leaderboard(BADGE_OS_ID, limit=10)
 
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_campaign")
 def get_campaign_leaderboard():
-    return (
-        db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
-        .join(UserTrophy)
-        .filter(UserTrophy.trophy_id == BADGE_CAMPAIGN_ID)
-        .group_by(User)
-        .order_by(db.func.sum(UserTrophy.quantity).desc())
-        .limit(10)
-        .all()
-    )
+    """Get leaderboard for campaign player badge.
+
+    Returns:
+        List of (User, total_quantity) tuples.
+    """
+    return TrophyService().get_leaderboard(BADGE_CAMPAIGN_ID, limit=10)
 
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_os_gm")
 def get_os_gm_leaderboard():
-    return (
-        db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
-        .join(UserTrophy)
-        .filter(UserTrophy.trophy_id == BADGE_OS_GM_ID)
-        .group_by(User)
-        .order_by(db.func.sum(UserTrophy.quantity).desc())
-        .limit(10)
-        .all()
-    )
+    """Get leaderboard for one-shot GM badge.
+
+    Returns:
+        List of (User, total_quantity) tuples.
+    """
+    return TrophyService().get_leaderboard(BADGE_OS_GM_ID, limit=10)
 
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_campaign_gm")
 def get_campaign_gm_leaderboard():
-    return (
-        db.session.query(User, db.func.sum(UserTrophy.quantity).label("total"))
-        .join(UserTrophy)
-        .filter(UserTrophy.trophy_id == BADGE_CAMPAIGN_GM_ID)
-        .group_by(User)
-        .order_by(db.func.sum(UserTrophy.quantity).desc())
-        .limit(10)
-        .all()
-    )
+    """Get leaderboard for campaign GM badge.
+
+    Returns:
+        List of (User, total_quantity) tuples.
+    """
+    return TrophyService().get_leaderboard(BADGE_CAMPAIGN_GM_ID, limit=10)
 
 
 @misc_bp.route("/badges/classement/", methods=["GET"])

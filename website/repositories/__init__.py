@@ -6,6 +6,7 @@ from website.repositories.game_event import GameEventRepository
 from website.repositories.user import UserRepository
 from website.repositories.game_session import GameSessionRepository
 from website.repositories.special_event import SpecialEventRepository
+from website.repositories.trophy import TrophyRepository
 
 __all__ = [
     "BaseRepository",
@@ -16,4 +17,5 @@ __all__ = [
     "UserRepository",
     "GameSessionRepository",
     "SpecialEventRepository",
+    "TrophyRepository",
 ]
