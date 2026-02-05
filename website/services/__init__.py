@@ -5,6 +5,7 @@ from website.services.game_event import GameEventService
 from website.services.user import UserService
 from website.services.game_session import GameSessionService
 from website.services.special_event import SpecialEventService
+from website.services.trophy import TrophyService
 
 __all__ = [
     "SystemService",
@@ -14,4 +15,5 @@ __all__ = [
     "UserService",
     "GameSessionService",
     "SpecialEventService",
+    "TrophyService",
 ]

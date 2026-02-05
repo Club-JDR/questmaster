@@ -9,12 +9,11 @@ from website.models import (
     Game,
     GameSession,
     User,
-    Trophy,
-    UserTrophy,
 )
 from website.services.channel import ChannelService
 from website.services.user import UserService
 from website.services.game_session import GameSessionService
+from website.services.trophy import TrophyService
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.exceptions import (
     ValidationError,
@@ -495,31 +494,22 @@ def rollback_discord_resources(bot, game):
 
 
 def add_trophy_to_user(user_id, trophy_id, amount=1):
-    trophy = db.session.get(Trophy, trophy_id)
-    if not trophy:
-        return
+    """Award a trophy to a user.
 
-    user_trophy = UserTrophy.query.filter_by(
-        user_id=user_id, trophy_id=trophy_id
-    ).first()
+    Delegates to TrophyService for business logic and transaction management.
 
-    if trophy.unique:
-        if user_trophy is None:
-            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=1)
-            db.session.add(user_trophy)
-        else:
-            # Do nothing if already has it
-            return
-    else:
-        if user_trophy:
-            user_trophy.quantity += amount
-        else:
-            user_trophy = UserTrophy(
-                user_id=user_id, trophy_id=trophy_id, quantity=amount
-            )
-            db.session.add(user_trophy)
-    db.session.commit()
-    logger.info(f"User {user_id} got a trophy: {trophy.name}")
+    Args:
+        user_id: User ID to award trophy to.
+        trophy_id: Trophy ID to award.
+        amount: Quantity to award. Defaults to 1.
+    """
+    trophy_service = TrophyService()
+    try:
+        trophy_service.award(user_id, trophy_id, amount)
+    except Exception as e:
+        logger.error(f"Failed to award trophy {trophy_id} to user {user_id}: {e}")
+        # Silently fail to avoid disrupting game flow
+        pass
 
 
 def award_game_trophies(game):
