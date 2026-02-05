@@ -30,10 +30,12 @@ website/            # Main Flask application
     system.py       #   SystemRepository
     vtt.py          #   VttRepository
     channel.py      #   ChannelRepository
+    game_event.py   #   GameEventRepository
   services/         # Business logic layer (owns transaction boundary)
     system.py       #   SystemService
     vtt.py          #   VttService
     channel.py      #   ChannelService
+    game_event.py   #   GameEventService
   views/            # Flask blueprints (auth, games, admin, health, etc.)
   utils/            # Helpers (Discord API, logging)
   templates/        # Jinja2 templates
