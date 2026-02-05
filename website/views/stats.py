@@ -1,7 +1,7 @@
 from flask import render_template, Blueprint, jsonify, request, url_for
-from website.models import GameSession
 from website.views.auth import who
 from website.extensions import cache
+from website.services.game_session import GameSessionService
 from config.constants import GAME_DETAILS_ROUTE
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -38,9 +38,7 @@ def get_cached_stats_for_period(year, month):
         999999,
     )
 
-    sessions = GameSession.query.filter(
-        GameSession.start >= base_day, GameSession.end <= last_day
-    ).all()
+    sessions = GameSessionService().find_in_range(base_day, last_day)
 
     num_os = 0
     num_campaign = 0
@@ -142,9 +140,7 @@ def get_month_games_json():
     except ValueError:
         return jsonify([]), 400
 
-    sessions = GameSession.query.filter(
-        GameSession.start >= start, GameSession.end <= end
-    ).all()
+    sessions = GameSessionService().find_in_range(start, end)
 
     events = []
     for session in sessions:

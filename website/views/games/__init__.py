@@ -25,6 +25,7 @@ from website.exceptions import (
 from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
 from .helpers import *
 from website.services.user import UserService
+from website.services.game_session import GameSessionService
 from datetime import datetime
 import locale
 
@@ -424,7 +425,7 @@ def edit_game_session(slug, session_id):
     """
     payload = who()
     game = get_game_if_authorized(payload, slug)
-    session = db.get_or_404(GameSession, session_id)
+    session = GameSessionService().repo.get_by_id_or_404(session_id)
 
     new_start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
     new_end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
@@ -480,7 +481,7 @@ def remove_game_session(slug, session_id):
     """
     payload = who()
     game = get_game_if_authorized(payload, slug)
-    session = db.get_or_404(GameSession, session_id)
+    session = GameSessionService().repo.get_by_id_or_404(session_id)
     start = session.start
     end = session.end
     delete_game_session(session)
