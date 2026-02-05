@@ -26,6 +26,7 @@ from .embeds import send_discord_embed, DEFAULT_TIMEFORMAT, HUMAN_TIMEFORMAT
 from .helpers import *
 from website.services.user import UserService
 from website.services.game_session import GameSessionService
+from website.services.special_event import SpecialEventService
 from datetime import datetime
 import locale
 
@@ -69,8 +70,10 @@ def search_games():
 
 @game_bp.route("/annonces/evenement/<int:event_id>/", methods=["GET"])
 def search_games_by_event(event_id):
-    event = db.session.get(SpecialEvent, event_id)
-    if not event:
+    special_event_service = SpecialEventService()
+    try:
+        event = special_event_service.get_by_id(event_id)
+    except QuestMasterError:
         flash("L'événement demandé n'existe pas.", "warning")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
 

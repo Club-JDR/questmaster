@@ -5,6 +5,7 @@ from website.repositories.channel import ChannelRepository
 from website.repositories.game_event import GameEventRepository
 from website.repositories.user import UserRepository
 from website.repositories.game_session import GameSessionRepository
+from website.repositories.special_event import SpecialEventRepository
 
 __all__ = [
     "BaseRepository",
@@ -14,4 +15,5 @@ __all__ = [
     "GameEventRepository",
     "UserRepository",
     "GameSessionRepository",
+    "SpecialEventRepository",
 ]
