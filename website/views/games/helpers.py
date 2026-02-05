@@ -8,11 +8,11 @@ from website.extensions import db
 from website.models import (
     Game,
     GameSession,
-    Channel,
     User,
     Trophy,
     UserTrophy,
 )
+from website.services.channel import ChannelService
 from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.exceptions import (
     ValidationError,
@@ -174,15 +174,7 @@ def get_filtered_user_games(request_args_source, user_id, role="gm"):
 
 
 def get_channel_category(game):
-    if game.type == "oneshot":
-        category = (
-            Channel.query.filter_by(type="oneshot").order_by(Channel.size).first()
-        )
-    else:
-        category = (
-            Channel.query.filter_by(type="campaign").order_by(Channel.size).first()
-        )
-    return category
+    return ChannelService().get_category(game.type)
 
 
 def abort_if_not_gm(payload):
@@ -511,7 +503,7 @@ def setup_game_post_creation(game, bot):
     logger.info(
         f"Channel created with ID: {game.channel} under category: {category.id}"
     )
-    category.size += 1
+    ChannelService().increment_size(category)
     send_discord_embed(game, type="annonce_details")
 
 
@@ -565,19 +557,7 @@ def award_game_trophies(game):
 
 
 def adjust_category_size(bot, game):
-    try:
-        discord_channel = bot.get_channel(game.channel)
-        parent_id = discord_channel.get("parent_id")
-        if parent_id:
-            category = Channel.query.filter_by(id=parent_id).first()
-            if category:
-                category.size = max(0, category.size - 1)
-                db.session.commit()
-                logger.info(
-                    f"Decreased size of category {category.id} to {category.size}"
-                )
-    except (DiscordAPIError, SQLAlchemyError) as e:
-        logger.warning(f"Failed to adjust category size for game {game.id}: {e}")
+    ChannelService().adjust_category_size(bot, game)
 
 
 def delete_discord_resources(bot, game):
