@@ -11,7 +11,7 @@ license = "MIT"
 dependencies = [
     "Flask==2.3.3",
     "Flask-Discord==0.1.69",
-    "Flask-Migrate==4.0.5",
+    "Flask-Migrate==4.1.0",
     "Flask-SQLAlchemy==3.1.1",
     "Flask-WTF==1.2.1",
     "Flask-Caching==2.3.1",
