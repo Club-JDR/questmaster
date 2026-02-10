@@ -37,6 +37,9 @@ def test_app():
         db.create_all()
         seed_db()
         seed_trophies_for_tests()
+        # Reset Trophy sequence to avoid ID conflicts (seeded trophies use IDs 1-4)
+        db.session.execute(db.text("SELECT setval('trophy_id_seq', 100, false);"))
+        db.session.commit()
         yield app
         db.session.remove()
         db.drop_all()

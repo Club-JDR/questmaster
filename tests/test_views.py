@@ -201,7 +201,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     )
     assert response.status_code == 200
     assert response.data.decode().count("Libre") == 1
-    assert "Ce jeu est fermé aux inscriptions." in response.data.decode()
+    assert "La partie est fermée aux inscriptions." in response.data.decode()
 
     # Open Game
     response = logged_in_admin.post(
