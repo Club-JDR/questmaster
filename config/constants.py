@@ -14,6 +14,11 @@ GAME_STATUS = (
     GAME_STATUS_CLOSED,
     GAME_STATUS_ARCHIVED,
 )
+GAME_STATUS_LABELS = {
+    GAME_STATUS_OPEN: "ouverte",
+    GAME_STATUS_CLOSED: "fermée",
+    GAME_STATUS_ARCHIVED: "archivée",
+}
 
 # Game Frequencies
 GAME_FREQ_WEEKLY = "weekly"
@@ -101,6 +106,10 @@ GAMES_PER_PAGE = 12
 # Routes
 GAME_DETAILS_ROUTE = "annonces.get_game_details"
 SEARCH_GAMES_ROUTE = "annonces.search_games"
+
+# Time Formats
+DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
+HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 
 # Error Messages
 MSG_ADMIN_ACCESS_REQUIRED = "Admin access required."

@@ -1,9 +1,10 @@
-from flask import current_app
-from website.models import Game
-from website.bot import get_bot
+"""Discord embed builders for game announcements and notifications."""
 
-DEFAULT_TIMEFORMAT = "%Y-%m-%d %H:%M"
-HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
+from flask import current_app
+
+from config.constants import HUMAN_TIMEFORMAT
+from website.bot import get_bot
+from website.models import Game
 
 
 def _build_restriction_message(game):
@@ -88,6 +89,21 @@ def send_discord_embed(
     old_end=None,
     alert_message=None,
 ):
+    """Dispatch and send a Discord embed for a game event.
+
+    Args:
+        game: Game instance.
+        type: Embed type key (annonce, annonce_details, add-session, etc.).
+        start: Session start (for session embeds).
+        end: Session end (for session embeds).
+        player: Player user ID (for register/alert embeds).
+        old_start: Previous session start (for edit-session embed).
+        old_end: Previous session end (for edit-session embed).
+        alert_message: Alert text (for alert embed).
+
+    Returns:
+        Discord message ID string.
+    """
     bot = get_bot()
 
     embed_builders = {
@@ -116,7 +132,6 @@ def send_discord_embed(
 
 def build_annonce_embed(game, *_):
     """Build a Discord embed for a game announcement."""
-
     restriction_msg = _build_restriction_message(game)
     title = _build_embed_title(game)
     session_type = _get_session_type(game)
@@ -135,6 +150,7 @@ def build_annonce_embed(game, *_):
 
 
 def build_annonce_details_embed(game, *_):
+    """Build the initial channel message with GM reminders."""
     embed = {
         "title": "Tout est prêt.",
         "color": 0x2196F3,  # blue
@@ -152,6 +168,7 @@ def build_annonce_details_embed(game, *_):
 
 
 def build_add_session_embed(game, start, end, *_):
+    """Build embed notifying players of a new session."""
     embed = {
         "title": "Nouvelle session prévue",
         "color": 0x4CB944,  # green
@@ -166,6 +183,7 @@ def build_add_session_embed(game, start, end, *_):
 
 
 def build_edit_session_embed(game, start, end, _, old_start, old_end, *__):
+    """Build embed notifying players of a rescheduled session."""
     embed = {
         "title": "Session modifiée",
         "color": 0xFFCF48,  # yellow
@@ -179,6 +197,7 @@ def build_edit_session_embed(game, start, end, _, old_start, old_end, *__):
 
 
 def build_delete_session_embed(game, start, end, *_):
+    """Build embed notifying players of a cancelled session."""
     embed = {
         "title": "Session annulée",
         "color": 0xF34242,  # red
@@ -191,6 +210,7 @@ def build_delete_session_embed(game, start, end, *_):
 
 
 def build_register_embed(game, _, __, player, *___):
+    """Build embed notifying the channel of a new player registration."""
     embed = {
         "title": "Nouvelle inscription",
         "color": 0x2196F3,  # blue
@@ -200,6 +220,7 @@ def build_register_embed(game, _, __, player, *___):
 
 
 def build_alert_embed(game, _, __, player, ___, ____, alert_message):
+    """Build embed reporting an alert from a game participant."""
     embed = {
         "title": "Signalement",
         "color": 0xF34242,  # red

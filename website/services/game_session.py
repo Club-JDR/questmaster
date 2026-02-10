@@ -33,6 +33,50 @@ class GameSessionService:
         db.session.commit()
         logger.info(f"Session removed for game {game_id} from {start} to {end}")
 
+    def update(self, session, new_start, new_end) -> GameSession:
+        """Update a session's start/end times.
+
+        Args:
+            session: Existing GameSession instance.
+            new_start: New start datetime.
+            new_end: New end datetime.
+
+        Returns:
+            Updated GameSession instance.
+
+        Raises:
+            ValidationError: If new_start >= new_end.
+            SessionConflictError: If new times overlap another session.
+        """
+        if new_start >= new_end:
+            raise ValidationError("Session start must be before end time.")
+
+        game = session.game
+        if self._has_conflict(game, new_start, new_end, exclude_session_id=session.id):
+            raise SessionConflictError(
+                "Session overlaps with an existing session.", game_id=game.id
+            )
+
+        session.start = new_start
+        session.end = new_end
+        db.session.commit()
+        logger.info(f"Session {session.id} updated to {new_start} - {new_end}")
+        return session
+
+    def get_by_id_or_404(self, session_id) -> GameSession:
+        """Get session by ID or abort with 404.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            GameSession instance.
+
+        Raises:
+            NotFound: Flask 404 error.
+        """
+        return self.repo.get_by_id_or_404(session_id)
+
     def find_in_range(self, start, end) -> list[GameSession]:
         return self.repo.find_in_range(start, end)
 
