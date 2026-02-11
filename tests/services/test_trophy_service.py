@@ -18,9 +18,6 @@ class TestTrophyService:
         assert found.id == trophy.id
         assert found.name == "Test Get Trophy"
 
-        db_session.delete(trophy)
-        db_session.commit()
-
     def test_get_by_id_not_found(self, db_session):
         """Test get_by_id raises NotFoundError for nonexistent ID."""
         service = TrophyService()
@@ -45,10 +42,6 @@ class TestTrophyService:
         assert "Trophy Alpha" in names
         assert "Trophy Beta" in names
 
-        db_session.delete(trophy1)
-        db_session.delete(trophy2)
-        db_session.commit()
-
     def test_award_unique_trophy_first_time(self, db_session):
         """Test awarding a unique trophy for the first time."""
         service = TrophyService()
@@ -63,12 +56,6 @@ class TestTrophyService:
         # Award unique trophy
         result = service.award(user.id, trophy.id, amount=5)
         assert result.quantity == 1  # Should be 1 regardless of amount
-
-        # Cleanup
-        db_session.delete(result)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
 
     def test_award_unique_trophy_second_time(self, db_session):
         """Test awarding a unique trophy a second time (should be idempotent)."""
@@ -89,12 +76,6 @@ class TestTrophyService:
         result = service.award(user.id, trophy.id, amount=10)
         assert result.quantity == 1
 
-        # Cleanup
-        db_session.delete(user_trophy)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
-
     def test_award_non_unique_trophy_creates_new(self, db_session):
         """Test awarding a non-unique trophy creates new record."""
         service = TrophyService()
@@ -109,12 +90,6 @@ class TestTrophyService:
         # Award non-unique trophy
         result = service.award(user.id, trophy.id, amount=7)
         assert result.quantity == 7
-
-        # Cleanup
-        db_session.delete(result)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
 
     def test_award_non_unique_trophy_increments(self, db_session):
         """Test awarding a non-unique trophy increments quantity."""
@@ -134,12 +109,6 @@ class TestTrophyService:
         # Award more
         result = service.award(user.id, trophy.id, amount=5)
         assert result.quantity == 8
-
-        # Cleanup
-        db_session.delete(user_trophy)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
 
     def test_award_nonexistent_trophy(self, db_session):
         """Test awarding a nonexistent trophy raises NotFoundError."""
@@ -177,14 +146,6 @@ class TestTrophyService:
         assert len(leaderboard) == 2
         assert leaderboard[0][0].id == "72345678901234573"  # Highest first
         assert leaderboard[0][1] == 30
-
-        # Cleanup
-        for ut in user_trophies:
-            db_session.delete(ut)
-        for user in users:
-            db_session.delete(user)
-        db_session.delete(trophy)
-        db_session.commit()
 
     def test_get_leaderboard_nonexistent_trophy(self, db_session):
         """Test get_leaderboard raises NotFoundError for nonexistent trophy."""
@@ -224,14 +185,6 @@ class TestTrophyService:
             assert "name" in badge
             assert "icon" in badge
             assert "quantity" in badge
-
-        # Cleanup
-        db_session.delete(user_trophy1)
-        db_session.delete(user_trophy2)
-        db_session.delete(trophy1)
-        db_session.delete(trophy2)
-        db_session.delete(user)
-        db_session.commit()
 
     def test_get_user_badges_no_trophies(self, db_session):
         """Test get_user_badges returns empty list for user with no trophies."""

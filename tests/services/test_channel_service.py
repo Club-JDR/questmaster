@@ -4,6 +4,8 @@ from website.models import Channel
 from website.services.channel import ChannelService
 from website.exceptions import NotFoundError
 
+from tests.constants import TEST_ONESHOT_CHANNEL_ID
+
 
 class TestChannelService:
     def test_get_category_oneshot(self, db_session):
@@ -27,7 +29,7 @@ class TestChannelService:
 
     def test_increment_size(self, db_session):
         service = ChannelService()
-        channel = db_session.get(Channel, "1247613267552108696")
+        channel = db_session.get(Channel, TEST_ONESHOT_CHANNEL_ID)
         original_size = channel.size
         service.increment_size(channel)
         assert channel.size == original_size + 1
@@ -37,7 +39,7 @@ class TestChannelService:
 
     def test_adjust_category_size(self, db_session):
         service = ChannelService()
-        channel = db_session.get(Channel, "1247613267552108696")
+        channel = db_session.get(Channel, TEST_ONESHOT_CHANNEL_ID)
         original_size = channel.size
 
         # Set up a known size

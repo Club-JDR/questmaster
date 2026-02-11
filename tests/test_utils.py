@@ -1,5 +1,8 @@
-from dotenv import load_dotenv
 import pytest
+
+from tests.constants import TEST_ADMIN_USER_ID
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
@@ -112,7 +115,7 @@ def test_channel_workflow(discord_session, oneshot_channel):
     """
     role_name = "testrole"
     permissions = "3072"
-    gm_id = "664487064577900594"
+    gm_id = TEST_ADMIN_USER_ID
     color = 15844367
     # Role creation
     response = discord_session.create_role(role_name, permissions, color)

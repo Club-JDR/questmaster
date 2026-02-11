@@ -44,7 +44,6 @@ class TestBaseRepository:
         assert result is new_system
         assert result.id is not None
         assert repo.count() == initial_count + 1
-        db_session.rollback()
 
     def test_delete(self, db_session):
         repo = ConcreteRepository()
@@ -53,7 +52,6 @@ class TestBaseRepository:
         initial_count = repo.count()
         repo.delete(new_system)
         assert repo.count() == initial_count - 1
-        db_session.rollback()
 
     def test_count(self, db_session):
         repo = ConcreteRepository()

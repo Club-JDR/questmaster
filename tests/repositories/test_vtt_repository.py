@@ -33,7 +33,6 @@ class TestVttRepository:
         result = repo.add(new_vtt)
         assert result.id is not None
         assert result.name == "TestVttRepoAdd"
-        db_session.rollback()
 
     def test_inherits_delete(self, db_session):
         repo = VttRepository()
@@ -42,4 +41,3 @@ class TestVttRepository:
         count_before = repo.count()
         repo.delete(new_vtt)
         assert repo.count() == count_before - 1
-        db_session.rollback()

@@ -2,13 +2,15 @@ import pytest
 from website.models import User
 from website.repositories.user import UserRepository
 
+from tests.constants import TEST_ADMIN_USER_ID
+
 
 class TestUserRepository:
     def test_get_by_id(self, db_session):
         repo = UserRepository()
-        user = repo.get_by_id("664487064577900594")
+        user = repo.get_by_id(TEST_ADMIN_USER_ID)
         assert user is not None
-        assert user.id == "664487064577900594"
+        assert user.id == TEST_ADMIN_USER_ID
 
     def test_get_by_id_not_found(self, db_session):
         repo = UserRepository()
@@ -25,7 +27,6 @@ class TestUserRepository:
         user = User(id="100000000000000000", name="TestUser")
         repo.add(user)
         assert repo.get_by_id("100000000000000000") is not None
-        db_session.rollback()
 
     def test_count(self, db_session):
         repo = UserRepository()

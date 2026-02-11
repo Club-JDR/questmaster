@@ -62,8 +62,6 @@ def sample_game(db_session, admin_user, default_system):
     db_session.add(game)
     db_session.flush()
     yield game
-    # Cleanup
-    db_session.rollback()
 
 
 class TestGameService:

@@ -27,12 +27,6 @@ class TestTrophyRepository:
         assert found.trophy_id == trophy.id
         assert found.quantity == 5
 
-        # Cleanup
-        db_session.delete(user_trophy)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
-
     def test_get_user_trophy_not_found(self, db_session):
         """Test get_user_trophy returns None when not found."""
         repo = TrophyRepository()
@@ -60,12 +54,6 @@ class TestTrophyRepository:
         found = repo.get_user_trophy(user.id, trophy.id)
         assert found.quantity == 3
 
-        # Cleanup
-        db_session.delete(result)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
-
     def test_award_trophy_increments_existing(self, db_session):
         """Test award_trophy increments quantity for existing record."""
         repo = TrophyRepository()
@@ -88,12 +76,6 @@ class TestTrophyRepository:
         # Verify in database
         found = repo.get_user_trophy(user.id, trophy.id)
         assert found.quantity == 8
-
-        # Cleanup
-        db_session.delete(user_trophy)
-        db_session.delete(trophy)
-        db_session.delete(user)
-        db_session.commit()
 
     def test_get_leaderboard(self, db_session):
         """Test get_leaderboard returns users sorted by trophy quantity."""
@@ -135,14 +117,6 @@ class TestTrophyRepository:
         assert leaderboard[2][0].id == "62345678901234572"  # 5
         assert leaderboard[2][1] == 5
 
-        # Cleanup
-        for ut in user_trophies:
-            db_session.delete(ut)
-        for user in users:
-            db_session.delete(user)
-        db_session.delete(trophy)
-        db_session.commit()
-
     def test_get_leaderboard_with_limit(self, db_session):
         """Test get_leaderboard respects limit parameter."""
         repo = TrophyRepository()
@@ -171,14 +145,6 @@ class TestTrophyRepository:
         leaderboard = repo.get_leaderboard(trophy.id, limit=3)
         assert len(leaderboard) == 3
 
-        # Cleanup
-        for ut in user_trophies:
-            db_session.delete(ut)
-        for user in users:
-            db_session.delete(user)
-        db_session.delete(trophy)
-        db_session.commit()
-
     def test_get_leaderboard_empty(self, db_session):
         """Test get_leaderboard returns empty list for trophy with no awards."""
         repo = TrophyRepository()
@@ -191,10 +157,6 @@ class TestTrophyRepository:
         leaderboard = repo.get_leaderboard(trophy.id, limit=10)
         assert leaderboard == []
 
-        # Cleanup
-        db_session.delete(trophy)
-        db_session.commit()
-
     def test_inherits_get_by_id(self, db_session):
         """Test inherited get_by_id method works."""
         repo = TrophyRepository()
@@ -205,8 +167,6 @@ class TestTrophyRepository:
         assert found is not None
         assert found.id == added.id
         assert found.name == "TestTrophyGetById"
-
-        db_session.rollback()
 
     def test_inherits_get_all(self, db_session):
         """Test inherited get_all method works."""
@@ -221,5 +181,3 @@ class TestTrophyRepository:
         names = [t.name for t in all_trophies]
         assert "Trophy1" in names
         assert "Trophy2" in names
-
-        db_session.rollback()

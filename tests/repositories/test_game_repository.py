@@ -31,8 +31,6 @@ def sample_game(db_session, admin_user, default_system):
     db_session.add(game)
     db_session.flush()
     yield game
-    # Cleanup
-    db_session.rollback()
 
 
 @pytest.fixture
@@ -59,8 +57,6 @@ def published_game(db_session, admin_user, default_system):
     db_session.add(game)
     db_session.flush()
     yield game
-    # Cleanup
-    db_session.rollback()
 
 
 class TestGameRepository:
@@ -280,9 +276,6 @@ class TestGameRepository:
         found = repo.get_by_slug(slug)
         assert found is not None
         assert found.name == "New Repo Game"
-
-        # Cleanup
-        db_session.rollback()
 
     def test_count(self, db_session, sample_game, published_game):
         repo = GameRepository()

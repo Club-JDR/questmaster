@@ -33,7 +33,6 @@ class TestSystemRepository:
         result = repo.add(new_system)
         assert result.id is not None
         assert result.name == "TestRepoAdd"
-        db_session.rollback()
 
     def test_inherits_delete(self, db_session):
         repo = SystemRepository()
@@ -42,4 +41,3 @@ class TestSystemRepository:
         count_before = repo.count()
         repo.delete(new_system)
         assert repo.count() == count_before - 1
-        db_session.rollback()
