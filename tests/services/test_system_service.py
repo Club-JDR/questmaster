@@ -30,8 +30,6 @@ class TestSystemService:
         assert system.id is not None
         assert system.name == "NewTestSystem"
         assert system.icon == "new.png"
-        db_session.delete(system)
-        db_session.commit()
 
     def test_create_duplicate_name(self, db_session):
         service = SystemService()
@@ -45,8 +43,6 @@ class TestSystemService:
         updated = service.update(system.id, {"name": "Updated", "icon": "new.png"})
         assert updated.name == "Updated"
         assert updated.icon == "new.png"
-        db_session.delete(updated)
-        db_session.commit()
 
     def test_delete(self, db_session):
         service = SystemService()

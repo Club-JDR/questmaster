@@ -30,8 +30,6 @@ class TestVttService:
         assert vtt.id is not None
         assert vtt.name == "NewTestVtt"
         assert vtt.icon == "new.png"
-        db_session.delete(vtt)
-        db_session.commit()
 
     def test_create_duplicate_name(self, db_session):
         service = VttService()
@@ -45,8 +43,6 @@ class TestVttService:
         updated = service.update(vtt.id, {"name": "VttUpdated", "icon": "new.png"})
         assert updated.name == "VttUpdated"
         assert updated.icon == "new.png"
-        db_session.delete(updated)
-        db_session.commit()
 
     def test_delete(self, db_session):
         service = VttService()

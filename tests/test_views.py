@@ -1,6 +1,8 @@
 from unittest.mock import patch
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def logged_in_admin(test_app, admin_user):

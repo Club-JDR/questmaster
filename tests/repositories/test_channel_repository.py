@@ -2,6 +2,8 @@ import pytest
 from website.models import Channel
 from website.repositories.channel import ChannelRepository
 
+from tests.constants import TEST_ONESHOT_CHANNEL_ID
+
 
 class TestChannelRepository:
     def test_get_smallest_by_type_oneshot(self, db_session):
@@ -20,7 +22,6 @@ class TestChannelRepository:
         repo = ChannelRepository()
         with pytest.raises(Exception):
             repo.get_smallest_by_type("nonexistent")
-        db_session.rollback()
 
     def test_get_smallest_by_type_returns_smallest(self, db_session):
         repo = ChannelRepository()
@@ -67,6 +68,6 @@ class TestChannelRepository:
 
     def test_inherits_get_by_id(self, db_session):
         repo = ChannelRepository()
-        channel = repo.get_by_id("1247613267552108696")
+        channel = repo.get_by_id(TEST_ONESHOT_CHANNEL_ID)
         assert channel is not None
         assert channel.type == "oneshot"

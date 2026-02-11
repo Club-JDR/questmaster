@@ -5,6 +5,8 @@ from datetime import datetime, timezone, timedelta
 from website.models import Game, GameSession
 from website.repositories.game_session import GameSessionRepository
 
+from tests.constants import TEST_ADMIN_USER_ID
+
 
 @pytest.fixture
 def sample_game(db_session):
@@ -14,7 +16,7 @@ def sample_game(db_session):
         slug=f"session-repo-test-game-{unique}",
         type="oneshot",
         length="1 session",
-        gm_id="664487064577900594",
+        gm_id=TEST_ADMIN_USER_ID,
         system_id=1,
         description="A test game for session repo tests",
         restriction="all",
@@ -26,7 +28,6 @@ def sample_game(db_session):
     db_session.add(game)
     db_session.flush()
     yield game
-    db_session.rollback()
 
 
 class TestGameSessionRepository:

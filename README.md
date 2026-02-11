@@ -125,6 +125,10 @@ docker compose run app flask db upgrade
 Run the tests:
 
 ```sh
+# Unit tests only (no Discord credentials needed)
+docker compose run app-test python -m pytest tests/ -m "not integration"
+
+# All tests including E2E and live Discord API tests
 docker compose run app-test python -m pytest tests/
 ```
 
@@ -160,6 +164,10 @@ flask --app website --debug run -p 8000
 Run the tests:
 
 ```sh
+# Unit tests only (no Discord credentials needed)
+python -m pytest tests/ -m "not integration"
+
+# All tests including E2E and live Discord API tests (requires .env with Discord credentials)
 python -m pytest tests/
 ```
 

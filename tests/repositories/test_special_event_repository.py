@@ -17,7 +17,6 @@ class TestSpecialEventRepository:
         names = [e.name for e in events]
         assert names == sorted(names)
 
-        db_session.rollback()
 
     def test_get_all_active_only(self, db_session):
         """Test that get_all with active_only=True filters correctly."""
@@ -32,7 +31,6 @@ class TestSpecialEventRepository:
         assert any(e.name == "Active Event" for e in active_events)
         assert not any(e.name == "Inactive Event" for e in active_events)
 
-        db_session.rollback()
 
     def test_get_active(self, db_session):
         """Test get_active convenience method."""
@@ -46,7 +44,6 @@ class TestSpecialEventRepository:
         assert all(e.active for e in active_events)
         assert any(e.name == "Active Event" for e in active_events)
 
-        db_session.rollback()
 
     def test_get_by_name(self, db_session):
         """Test get_by_name returns correct event."""
@@ -59,7 +56,6 @@ class TestSpecialEventRepository:
         assert found.name == "Test Event"
         assert found.emoji == "🎉"
 
-        db_session.rollback()
 
     def test_get_by_name_not_found(self, db_session):
         """Test get_by_name returns None for nonexistent event."""
@@ -76,7 +72,6 @@ class TestSpecialEventRepository:
         assert found is not None
         assert found.id == added.id
 
-        db_session.rollback()
 
     def test_inherits_add(self, db_session):
         """Test inherited add method works."""
@@ -89,7 +84,6 @@ class TestSpecialEventRepository:
         assert result.name == "TestRepoAdd"
         assert result.color == 0xFF0000
 
-        db_session.rollback()
 
     def test_inherits_delete(self, db_session):
         """Test inherited delete method works."""
@@ -101,4 +95,3 @@ class TestSpecialEventRepository:
         repo.delete(new_event)
         assert repo.count() == count_before - 1
 
-        db_session.rollback()

@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from website.models import Game, GameEvent
 from website.services.game_event import GameEventService
 
+from tests.constants import TEST_ADMIN_USER_ID
+
 
 @pytest.fixture
 def sample_game(db_session):
@@ -14,7 +16,7 @@ def sample_game(db_session):
         slug=f"event-service-test-game-{unique}",
         type="oneshot",
         length="1 session",
-        gm_id="664487064577900594",
+        gm_id=TEST_ADMIN_USER_ID,
         system_id=1,
         description="A test game for event service tests",
         restriction="all",
@@ -26,11 +28,6 @@ def sample_game(db_session):
     db_session.add(game)
     db_session.flush()
     yield game
-    # Service tests commit, so rollback won't clean up.
-    # Delete explicitly instead.
-    db_session.execute(GameEvent.__table__.delete().where(GameEvent.game_id == game.id))
-    db_session.execute(Game.__table__.delete().where(Game.id == game.id))
-    db_session.commit()
 
 
 class TestGameEventService:

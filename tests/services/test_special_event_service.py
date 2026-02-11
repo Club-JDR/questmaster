@@ -19,10 +19,6 @@ class TestSpecialEventService:
         names = [e.name for e in events]
         assert names == sorted(names)
 
-        db_session.delete(event1)
-        db_session.delete(event2)
-        db_session.commit()
-
     def test_get_all_active_only(self, db_session):
         """Test get_all with active_only=True filters correctly."""
         service = SpecialEventService()
@@ -36,10 +32,6 @@ class TestSpecialEventService:
         active_names = [e.name for e in active_events]
         assert "Active Test Event" in active_names
         assert "Inactive Test Event" not in active_names
-
-        db_session.delete(event1)
-        db_session.delete(event2)
-        db_session.commit()
 
     def test_get_active(self, db_session):
         """Test get_active convenience method."""
@@ -57,10 +49,6 @@ class TestSpecialEventService:
         active_names = [e.name for e in active_events]
         assert "Active Convenience Event" in active_names
 
-        db_session.delete(event1)
-        db_session.delete(event2)
-        db_session.commit()
-
     def test_get_by_id(self, db_session):
         """Test get_by_id returns correct event."""
         service = SpecialEventService()
@@ -71,9 +59,6 @@ class TestSpecialEventService:
         found = service.get_by_id(event.id)
         assert found.id == event.id
         assert found.name == "Test Get Event"
-
-        db_session.delete(event)
-        db_session.commit()
 
     def test_get_by_id_not_found(self, db_session):
         """Test get_by_id raises NotFoundError for nonexistent ID."""
@@ -93,9 +78,6 @@ class TestSpecialEventService:
         assert event.color == 0x00FF00
         assert event.active is True
 
-        db_session.delete(event)
-        db_session.commit()
-
     def test_create_duplicate_name(self, db_session):
         """Test create raises ValidationError for duplicate name."""
         service = SpecialEventService()
@@ -103,9 +85,6 @@ class TestSpecialEventService:
         with pytest.raises(ValidationError) as exc_info:
             service.create(name="Duplicate Event", emoji="2️⃣")
         assert exc_info.value.field == "name"
-
-        db_session.delete(event1)
-        db_session.commit()
 
     def test_update(self, db_session):
         """Test update method."""
@@ -120,9 +99,6 @@ class TestSpecialEventService:
         assert updated.color == 0x0000FF
         assert updated.active is True
 
-        db_session.delete(updated)
-        db_session.commit()
-
     def test_update_duplicate_name(self, db_session):
         """Test update raises ValidationError when changing name to existing name."""
         service = SpecialEventService()
@@ -133,10 +109,6 @@ class TestSpecialEventService:
             service.update(event2.id, {"name": "Event One"})
         assert exc_info.value.field == "name"
 
-        db_session.delete(event1)
-        db_session.delete(event2)
-        db_session.commit()
-
     def test_update_same_name_allowed(self, db_session):
         """Test update allows keeping the same name."""
         service = SpecialEventService()
@@ -145,9 +117,6 @@ class TestSpecialEventService:
         updated = service.update(event.id, {"name": "Same Name Event", "active": True})
         assert updated.name == "Same Name Event"
         assert updated.active is True
-
-        db_session.delete(updated)
-        db_session.commit()
 
     def test_delete(self, db_session):
         """Test delete method."""

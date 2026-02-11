@@ -43,5 +43,10 @@ lint = [
     "black==24.10.0",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests requiring live external services (Discord API)",
+]
+
 [tool.setuptools.packages.find]
 include = ["website*"]

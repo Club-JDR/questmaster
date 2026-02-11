@@ -6,6 +6,8 @@ from website.models import Game, GameSession
 from website.exceptions import ValidationError, SessionConflictError
 from website.services.game_session import GameSessionService
 
+from tests.constants import TEST_ADMIN_USER_ID
+
 
 @pytest.fixture
 def sample_game(db_session):
@@ -15,7 +17,7 @@ def sample_game(db_session):
         slug=f"session-service-test-game-{unique}",
         type="oneshot",
         length="1 session",
-        gm_id="664487064577900594",
+        gm_id=TEST_ADMIN_USER_ID,
         system_id=1,
         description="A test game for session service tests",
         restriction="all",
@@ -27,13 +29,6 @@ def sample_game(db_session):
     db_session.add(game)
     db_session.flush()
     yield game
-    # Service tests commit, so rollback won't clean up.
-    # Delete explicitly instead.
-    db_session.execute(
-        GameSession.__table__.delete().where(GameSession.game_id == game.id)
-    )
-    db_session.execute(Game.__table__.delete().where(Game.id == game.id))
-    db_session.commit()
 
 
 class TestGameSessionService:
