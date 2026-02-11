@@ -12,6 +12,7 @@ from config.constants import (
     BADGE_OS_GM_ID,
     BADGE_CAMPAIGN_ID,
     BADGE_CAMPAIGN_GM_ID,
+    PLAYER_ROLE_PERMISSION,
 )
 from website.exceptions import (
     ValidationError,
@@ -28,7 +29,6 @@ from website.services.channel import ChannelService
 from website.services.game_session import GameSessionService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
-from website.utils.discord import PLAYER_ROLE_PERMISSION
 from website.utils.logger import logger, log_game_event
 
 
@@ -46,12 +46,16 @@ class GameService:
         channel_service=None,
         session_service=None,
         trophy_service=None,
+        discord_service=None,
     ):
+        from website.services.discord import DiscordService
+
         self.repo = repository or GameRepository()
         self.user_service = user_service or UserService()
         self.channel_service = channel_service or ChannelService()
         self.session_service = session_service or GameSessionService()
         self.trophy_service = trophy_service or TrophyService()
+        self.discord = discord_service or DiscordService()
 
     def get_by_id(self, game_id: int) -> Game:
         """Get game by ID.
@@ -153,7 +157,6 @@ class GameService:
         self,
         data: dict,
         gm_id: str,
-        bot=None,
         status: str = "draft",
         create_resources: bool = False,
     ) -> Game:
@@ -162,7 +165,6 @@ class GameService:
         Args:
             data: Game data dictionary from form.
             gm_id: GM user ID.
-            bot: Discord bot instance (optional, for resource creation).
             status: Initial status (draft, open, closed).
             create_resources: Whether to create Discord resources (role, channel).
 
@@ -173,7 +175,11 @@ class GameService:
             ValidationError: If data is invalid.
             DiscordAPIError: If Discord resource creation fails.
         """
-        from website.utils.form_parsers import get_classification, get_ambience, parse_restriction_tags
+        from website.utils.form_parsers import (
+            get_classification,
+            get_ambience,
+            parse_restriction_tags,
+        )
         from config.constants import DEFAULT_TIMEFORMAT
 
         try:
@@ -219,8 +225,8 @@ class GameService:
             logger.info(f"Game object created: {game.name} with slug {game.slug}")
 
             # Create Discord resources if requested
-            if create_resources and bot:
-                self._setup_game_resources(game, bot)
+            if create_resources:
+                self._setup_game_resources(game)
                 logger.info("Game post-creation setup completed.")
 
             db.session.commit()
@@ -240,22 +246,19 @@ class GameService:
             db.session.rollback()
             logger.error(f"Failed to create game: {e}", exc_info=True)
             # Rollback Discord resources if they were created
-            if create_resources and bot and hasattr(game, "role"):
-                self._rollback_discord_resources(bot, game)
+            if create_resources and hasattr(game, "role"):
+                self._rollback_discord_resources(game)
             raise
 
-    def _setup_game_resources(self, game: Game, bot) -> None:
+    def _setup_game_resources(self, game: Game) -> None:
         """Set up Discord resources for a game (role, channel, session, channel message).
 
         Args:
             game: Game instance.
-            bot: Discord bot instance.
 
         Raises:
             DiscordAPIError: If Discord operations fail.
         """
-        from website.utils.game_embeds import send_discord_embed
-
         # Create initial game session
         self.session_service.create(
             game,
@@ -265,8 +268,8 @@ class GameService:
         logger.info("Initial game session created.")
 
         # Create Discord role
-        game.role = bot.create_role(
-            role_name="PJ_" + game.slug,
+        game.role = self.discord.create_role(
+            name="PJ_" + game.slug,
             permissions=PLAYER_ROLE_PERMISSION,
             color=Game.COLORS[game.type],
         )["id"]
@@ -274,41 +277,41 @@ class GameService:
 
         # Create Discord channel
         category = self.channel_service.get_category(game.type)
-        game.channel = bot.create_channel(
-            channel_name=game.slug.lower(),
+        game.channel = self.discord.create_channel(
+            name=game.slug.lower(),
             parent_id=category.id,
             role_id=game.role,
             gm_id=game.gm_id,
         )["id"]
-        logger.info(f"Channel created with ID: {game.channel} under category: {category.id}")
+        logger.info(
+            f"Channel created with ID: {game.channel} under category: {category.id}"
+        )
 
         self.channel_service.increment_size(category)
 
         # Post initial message in the game channel
-        send_discord_embed(game, type="annonce_details")
+        self.discord.send_game_embed(game, embed_type="annonce_details")
         logger.info("Initial channel message posted.")
 
-    def _rollback_discord_resources(self, bot, game: Game) -> None:
+    def _rollback_discord_resources(self, game: Game) -> None:
         """Rollback Discord resources on error.
 
         Args:
-            bot: Discord bot instance.
             game: Game instance with potentially created resources.
         """
         if game.channel:
-            bot.delete_channel(game.channel)
+            self.discord.delete_channel(game.channel)
             logger.info(f"Channel {game.channel} deleted")
         if game.role:
-            bot.delete_role(game.role)
+            self.discord.delete_role(game.role)
             logger.info(f"Role {game.role} deleted")
 
-    def update(self, slug: str, data: dict, bot=None) -> Game:
+    def update(self, slug: str, data: dict) -> Game:
         """Update an existing game.
 
         Args:
             slug: Game slug.
             data: Updated game data.
-            bot: Discord bot instance (optional, for embed updates).
 
         Returns:
             Updated Game instance.
@@ -317,7 +320,11 @@ class GameService:
             NotFoundError: If game doesn't exist.
             ValidationError: If data is invalid.
         """
-        from website.utils.form_parsers import get_classification, get_ambience, parse_restriction_tags
+        from website.utils.form_parsers import (
+            get_classification,
+            get_ambience,
+            parse_restriction_tags,
+        )
         from config.constants import DEFAULT_TIMEFORMAT
 
         game = self.get_by_slug(slug)
@@ -354,14 +361,14 @@ class GameService:
             logger.info(f"Game {game.id} changes saved")
 
             # Update Discord embed if message exists
-            if game.msg_id and bot:
-                from website.utils.game_embeds import send_discord_embed
-
+            if game.msg_id:
                 try:
-                    send_discord_embed(game, type="annonce")
+                    self.discord.send_game_embed(game, embed_type="annonce")
                     logger.info(f"Embed updated for game {game.id}")
                 except DiscordAPIError as e:
-                    logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
+                    logger.warning(
+                        f"Failed to update Discord embed for game {game.id}: {e}"
+                    )
 
             return game
 
@@ -373,12 +380,11 @@ class GameService:
             logger.error(f"Failed to update game {game.id}: {e}", exc_info=True)
             raise
 
-    def publish(self, slug: str, bot, silent: bool = False) -> Game:
+    def publish(self, slug: str, silent: bool = False) -> Game:
         """Publish a draft game to Discord.
 
         Args:
             slug: Game slug.
-            bot: Discord bot instance.
             silent: If True, don't send announcement (set to closed instead of open).
 
         Returns:
@@ -389,37 +395,39 @@ class GameService:
             ValidationError: If game is already published or is full.
             DiscordAPIError: If Discord operations fail.
         """
-        from website.utils.game_embeds import send_discord_embed
-
         game = self.get_by_slug(slug)
 
         if game.msg_id:
             raise ValidationError("Game is already published.", field="status")
 
         if len(game.players) >= game.party_size:
-            raise ValidationError(
-                "Cannot publish a full game.", field="party_size"
-            )
+            raise ValidationError("Cannot publish a full game.", field="party_size")
 
         try:
             game.status = "closed" if silent else "open"
 
             # Set up resources if not already created
             if not game.role or not game.channel:
-                self._setup_game_resources(game, bot)
+                self._setup_game_resources(game)
 
             # Send Discord announcement if not silent
             if not silent:
-                game.msg_id = send_discord_embed(game, type="annonce")
+                game.msg_id = self.discord.send_game_embed(game, embed_type="annonce")
                 logger.info(f"Discord embed sent with message ID: {game.msg_id}")
 
             db.session.commit()
             log_game_event(
                 "edit",
                 game.id,
-                "L'annonce a été publiée et ouverte." if not silent else "L'annonce a été ouverte silencieusement.",
+                (
+                    "L'annonce a été publiée et ouverte."
+                    if not silent
+                    else "L'annonce a été ouverte silencieusement."
+                ),
             )
-            logger.info(f"Game {game.id} published and {'opened' if not silent else 'opened silently'}.")
+            logger.info(
+                f"Game {game.id} published and {'opened' if not silent else 'opened silently'}."
+            )
 
             return game
 
@@ -428,15 +436,14 @@ class GameService:
             logger.error(f"Failed to publish game {game.id}: {e}", exc_info=True)
             # Rollback Discord resources if they were just created
             if not game.role or not game.channel:
-                self._rollback_discord_resources(bot, game)
+                self._rollback_discord_resources(game)
             raise
 
-    def close(self, slug: str, bot=None) -> Game:
+    def close(self, slug: str) -> Game:
         """Close a game to new registrations.
 
         Args:
             slug: Game slug.
-            bot: Discord bot instance (optional, for embed updates).
 
         Returns:
             Updated Game instance.
@@ -452,11 +459,9 @@ class GameService:
         logger.info(f"Game status for {game.id} has been updated to closed")
 
         # Update Discord embed
-        if game.msg_id and bot:
-            from website.utils.game_embeds import send_discord_embed
-
+        if game.msg_id:
             try:
-                send_discord_embed(game, type="annonce")
+                self.discord.send_game_embed(game, embed_type="annonce")
                 logger.info(f"Embed updated due to status change for game {game.id}")
             except DiscordAPIError as e:
                 logger.warning(
@@ -465,12 +470,11 @@ class GameService:
 
         return game
 
-    def reopen(self, slug: str, bot=None) -> Game:
+    def reopen(self, slug: str) -> Game:
         """Reopen a closed game.
 
         Args:
             slug: Game slug.
-            bot: Discord bot instance (optional, for embed updates).
 
         Returns:
             Updated Game instance.
@@ -486,11 +490,9 @@ class GameService:
         logger.info(f"Game status for {game.id} has been updated to open")
 
         # Update Discord embed
-        if game.msg_id and bot:
-            from website.utils.game_embeds import send_discord_embed
-
+        if game.msg_id:
             try:
-                send_discord_embed(game, type="annonce")
+                self.discord.send_game_embed(game, embed_type="annonce")
                 logger.info(f"Embed updated due to status change for game {game.id}")
             except DiscordAPIError as e:
                 logger.warning(
@@ -499,12 +501,11 @@ class GameService:
 
         return game
 
-    def archive(self, slug: str, bot, award_trophies: bool = True) -> None:
+    def archive(self, slug: str, award_trophies: bool = True) -> None:
         """Archive a game and clean up Discord resources.
 
         Args:
             slug: Game slug.
-            bot: Discord bot instance.
             award_trophies: Whether to award trophies to participants.
 
         Raises:
@@ -526,8 +527,8 @@ class GameService:
             msg += " Badges non-distribués."
 
         # Clean up Discord resources
-        self._cleanup_discord_resources(game, bot)
-        self._delete_game_message(game, bot)
+        self._cleanup_discord_resources(game)
+        self._delete_game_message(game)
 
         log_game_event("delete", game.id, msg)
 
@@ -550,39 +551,39 @@ class GameService:
             except Exception as e:
                 logger.error(f"Failed to award trophies for game {game.id}: {e}")
 
-    def _cleanup_discord_resources(self, game: Game, bot) -> None:
+    def _cleanup_discord_resources(self, game: Game) -> None:
         """Clean up Discord resources for a game.
 
         Args:
             game: Game instance.
-            bot: Discord bot instance.
         """
-        self.channel_service.adjust_category_size(bot, game)
+        self.channel_service.adjust_category_size(self.discord, game)
 
         try:
-            bot.delete_channel(game.channel)
+            self.discord.delete_channel(game.channel)
             logger.info(f"Game {game.id} channel {game.channel} has been deleted")
         except DiscordAPIError as e:
             logger.warning(f"Failed to delete channel for game {game.id}: {e}")
 
         try:
-            bot.delete_role(game.role)
+            self.discord.delete_role(game.role)
             logger.info(f"Game {game.id} role {game.role} has been deleted")
         except DiscordAPIError as e:
             logger.warning(f"Failed to delete role for game {game.id}: {e}")
 
-    def _delete_game_message(self, game: Game, bot) -> None:
+    def _delete_game_message(self, game: Game) -> None:
         """Delete Discord announcement message.
 
         Args:
             game: Game instance.
-            bot: Discord bot instance.
         """
         if not game.msg_id:
             return
 
         try:
-            bot.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
+            self.discord.delete_message(
+                game.msg_id, current_app.config["POSTS_CHANNEL_ID"]
+            )
             game.msg_id = None
             db.session.commit()
             logger.info(f"Discord embed message deleted for archived game {game.id}")
@@ -603,15 +604,12 @@ class GameService:
         db.session.commit()
         logger.info(f"Game {game.id} has been deleted.")
 
-    def register_player(
-        self, slug: str, user_id: str, bot, force: bool = False
-    ) -> Game:
+    def register_player(self, slug: str, user_id: str, force: bool = False) -> Game:
         """Register a player to a game (concurrent-safe).
 
         Args:
             slug: Game slug.
             user_id: User ID to register.
-            bot: Discord bot instance.
             force: If True, bypass capacity and status checks.
 
         Returns:
@@ -623,8 +621,6 @@ class GameService:
             GameFullError: If game is at capacity and force is False.
             GameClosedError: If game is closed and force is False.
         """
-        from website.utils.game_embeds import send_discord_embed
-
         game = self.get_by_slug(slug)
         user = self.user_service.get_by_id(user_id)
 
@@ -672,7 +668,7 @@ class GameService:
                 locked_game.status = "closed"
                 if locked_game.msg_id:
                     try:
-                        send_discord_embed(locked_game, type="annonce")
+                        self.discord.send_game_embed(locked_game, embed_type="annonce")
                         logger.info(
                             f"Embed updated due to status change for game {locked_game.id}"
                         )
@@ -708,11 +704,13 @@ class GameService:
             logger.info(f"User {user.id} registered to Game {locked_game.id}")
 
             # Add Discord role
-            bot.add_role_to_user(user.id, locked_game.role)
+            self.discord.add_role_to_user(user.id, locked_game.role)
             logger.info(f"Role {locked_game.role} added to user {user.id}")
 
             # Send registration embed
-            send_discord_embed(locked_game, type="register", player=user.id)
+            self.discord.send_game_embed(
+                locked_game, embed_type="register", player=user.id
+            )
 
             return locked_game
 
@@ -724,13 +722,12 @@ class GameService:
             logger.exception("Failed to register user due to DB error.")
             raise
 
-    def unregister_player(self, slug: str, user_id: str, bot) -> Game:
+    def unregister_player(self, slug: str, user_id: str) -> Game:
         """Unregister a player from a game.
 
         Args:
             slug: Game slug.
             user_id: User ID to unregister.
-            bot: Discord bot instance.
 
         Returns:
             Updated Game instance.
@@ -767,7 +764,7 @@ class GameService:
         logger.info(f"User {user.id} removed from Game {game.id}")
 
         # Remove Discord role
-        bot.remove_role_from_user(user.id, game.role)
+        self.discord.remove_role_from_user(user.id, game.role)
         logger.info(f"Role {game.role} removed from Player {user.id}")
 
         log_game_event(

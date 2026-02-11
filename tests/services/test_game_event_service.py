@@ -28,12 +28,8 @@ def sample_game(db_session):
     yield game
     # Service tests commit, so rollback won't clean up.
     # Delete explicitly instead.
-    db_session.execute(
-        GameEvent.__table__.delete().where(GameEvent.game_id == game.id)
-    )
-    db_session.execute(
-        Game.__table__.delete().where(Game.id == game.id)
-    )
+    db_session.execute(GameEvent.__table__.delete().where(GameEvent.game_id == game.id))
+    db_session.execute(Game.__table__.delete().where(Game.id == game.id))
     db_session.commit()
 
 

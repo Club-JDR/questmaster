@@ -153,15 +153,14 @@ class TestTrophyRepository:
         db_session.commit()
 
         users = [
-            User(id=f"{72345678901234570 + i}", name=f"User {i}")
-            for i in range(5)
+            User(id=f"{72345678901234570 + i}", name=f"User {i}") for i in range(5)
         ]
         for user in users:
             db_session.add(user)
         db_session.commit()
 
         user_trophies = [
-            UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=i+1)
+            UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=i + 1)
             for i, user in enumerate(users)
         ]
         for ut in user_trophies:

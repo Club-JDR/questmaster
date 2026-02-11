@@ -18,7 +18,7 @@ def get_classification():
     classification = {}
     for key in request.form:
         if key.startswith(prefix):
-            clean_key = key[len(prefix):]
+            clean_key = key[len(prefix) :]
             try:
                 classification[clean_key] = int(request.form[key])
             except (ValueError, TypeError):

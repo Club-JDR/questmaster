@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 config = load_dotenv()
 from website import create_app, db
 from website.models import User, System, Vtt, Channel, SpecialEvent
-from website.utils.discord import Discord
+from website.client.discord import Discord
 from website.extensions import seed_trophies_for_tests
 from flask import template_rendered
 from contextlib import contextmanager

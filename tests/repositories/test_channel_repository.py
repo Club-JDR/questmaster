@@ -25,9 +25,7 @@ class TestChannelRepository:
     def test_get_smallest_by_type_returns_smallest(self, db_session):
         repo = ChannelRepository()
         # Get all oneshot channels and find the minimum size
-        all_oneshot = (
-            db_session.query(Channel).filter_by(type="oneshot").all()
-        )
+        all_oneshot = db_session.query(Channel).filter_by(type="oneshot").all()
         if len(all_oneshot) > 1:
             min_size = min(c.size for c in all_oneshot)
             result = repo.get_smallest_by_type("oneshot")
