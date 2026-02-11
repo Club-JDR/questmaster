@@ -53,7 +53,9 @@ class TrophyRepository(BaseRepository[Trophy]):
         self.session.flush()
         return user_trophy
 
-    def get_leaderboard(self, trophy_id: int, limit: int = 10) -> list[tuple[User, int]]:
+    def get_leaderboard(
+        self, trophy_id: int, limit: int = 10
+    ) -> list[tuple[User, int]]:
         """Get leaderboard for a specific trophy.
 
         Args:

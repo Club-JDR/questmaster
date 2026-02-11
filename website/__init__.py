@@ -1,7 +1,7 @@
 import os, uuid
 from flask import Flask, g
 from flask_admin import Admin
-from website.utils.discord import Discord
+from website.client.discord import Discord
 from website.utils.logger import configure_logging
 from website import models
 from website.bot import set_bot

@@ -42,7 +42,5 @@ class TestUserService:
             assert found is not None
         finally:
             # Clean up committed data
-            db_session.execute(
-                User.__table__.delete().where(User.id == user_id)
-            )
+            db_session.execute(User.__table__.delete().where(User.id == user_id))
             db_session.commit()

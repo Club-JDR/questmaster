@@ -21,7 +21,9 @@ def list_vtts():
     """
     List all VTTs.
     """
-    return render_template("list.j2", items=VttService().get_all(), title="Virtual TableTops")
+    return render_template(
+        "list.j2", items=VttService().get_all(), title="Virtual TableTops"
+    )
 
 
 @misc_bp.route("/systemes/", methods=["GET"])

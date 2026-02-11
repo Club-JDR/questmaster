@@ -1,14 +1,35 @@
-from unidecode import unidecode
-from website.utils.logger import logger
-from website.exceptions import DiscordAPIError
-import requests, time
+"""Discord API client for low-level HTTP operations.
 
-DISCORD_API_BASE_URL = "https://discord.com/api/v10"
-PLAYER_ROLE_PERMISSION = "563362270661696"
-GM_ROLE_PERMISSION = "2815265163693120"
+This module provides the low-level Discord API client with HTTP request handling,
+rate limiting, and retry logic. Business logic should use DiscordService instead.
+"""
+
+import time
+
+import requests
+from unidecode import unidecode
+
+from website.exceptions import DiscordAPIError
+from website.utils.logger import logger
+from config.constants import (
+    DISCORD_API_BASE_URL,
+    PLAYER_ROLE_PERMISSION,
+    GM_ROLE_PERMISSION,
+)
 
 
 class Discord:
+    """Low-level Discord API client.
+
+    Handles HTTP requests to the Discord API with retry logic and rate limiting.
+    For business logic, use DiscordService which wraps this client.
+
+    Attributes:
+        guild_id: The Discord guild (server) ID.
+        authorization: The bot token for authentication.
+        headers: HTTP headers for API requests.
+    """
+
     def __init__(self, guild_id, bot_token):
         self.guild_id = guild_id
         self.authorization = bot_token

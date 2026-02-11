@@ -1,13 +1,35 @@
-"""Discord embed builders for game announcements and notifications."""
+"""Discord embed builders for game announcements and notifications.
+
+This module provides functions to build Discord embed dictionaries for various
+game events. The embed builders return (embed_dict, target_channel_id) tuples.
+
+Usage:
+    from website.services import DiscordService
+
+    discord = DiscordService()
+    discord.send_game_embed(game, embed_type="annonce")
+"""
 
 from flask import current_app
 
-from config.constants import HUMAN_TIMEFORMAT
-from website.bot import get_bot
+from config.constants import (
+    EMBED_COLOR_BLUE,
+    EMBED_COLOR_DEFAULT,
+    EMBED_COLOR_GREEN,
+    EMBED_COLOR_RED,
+    EMBED_COLOR_YELLOW,
+    HUMAN_TIMEFORMAT,
+    SITE_BASE_URL,
+)
 from website.models import Game
 
 
-def _build_restriction_message(game):
+# -----------------------------------------------------------------------------
+# Internal helper functions
+# -----------------------------------------------------------------------------
+
+
+def _build_restriction_message(game) -> str:
     """Return the formatted restriction message with tags."""
     restriction_icons = {
         "all": ":green_circle: Tout public",
@@ -21,7 +43,7 @@ def _build_restriction_message(game):
     return base
 
 
-def _build_embed_title(game):
+def _build_embed_title(game) -> str:
     """Return the title with emoji and completion status."""
     title = game.name
     if game.status == "closed":
@@ -35,15 +57,17 @@ def _build_embed_title(game):
     return title
 
 
-def _get_session_type(game):
+def _get_session_type(game) -> str:
     """Return session type display name."""
     if game.special_event:
         return f"Événement spécial : {game.special_event.name}"
     return "Campagne" if game.type == "campaign" else "OS"
 
 
-def _build_embed_fields(game, session_type, restriction_msg):
+def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
     """Return list of embed fields, applying strikethrough if closed."""
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
+
     fields = [
         {"name": "MJ", "value": game.gm.name, "inline": True},
         {"name": "Système", "value": game.system.name, "inline": True},
@@ -51,10 +75,7 @@ def _build_embed_fields(game, session_type, restriction_msg):
         {"name": "Date", "value": game.date.strftime(HUMAN_TIMEFORMAT), "inline": True},
         {"name": "Durée", "value": game.length, "inline": True},
         {"name": "Avertissement", "value": restriction_msg},
-        {
-            "name": "Pour s'inscrire :",
-            "value": f"https://questmaster.club-jdr.fr/annonces/{game.slug}/",
-        },
+        {"name": "Pour s'inscrire :", "value": game_url},
     ]
 
     if game.status == "closed":
@@ -64,7 +85,7 @@ def _build_embed_fields(game, session_type, restriction_msg):
     return fields
 
 
-def _get_embed_color(game):
+def _get_embed_color(game) -> int:
     """Return integer color code for Discord embed."""
     if game.special_event and game.special_event.color:
         color = game.special_event.color
@@ -73,65 +94,37 @@ def _get_embed_color(game):
             try:
                 return int(color, 16)
             except ValueError:
-                return 0x5865F2  # fallback
+                return EMBED_COLOR_DEFAULT
         return color
 
-    return Game.COLORS.get(game.type, 0x5865F2)
+    return Game.COLORS.get(game.type, EMBED_COLOR_DEFAULT)
 
 
-def send_discord_embed(
+# -----------------------------------------------------------------------------
+# Embed builder functions
+#
+# All builders share a uniform signature so they can be called generically
+# by DiscordService.send_game_embed via a dispatch dict.
+# -----------------------------------------------------------------------------
+
+
+def build_annonce_embed(
     game,
-    type="annonce",
     start=None,
     end=None,
     player=None,
     old_start=None,
     old_end=None,
     alert_message=None,
-):
-    """Dispatch and send a Discord embed for a game event.
+) -> tuple[dict, str]:
+    """Build a Discord embed for a game announcement.
 
     Args:
         game: Game instance.
-        type: Embed type key (annonce, annonce_details, add-session, etc.).
-        start: Session start (for session embeds).
-        end: Session end (for session embeds).
-        player: Player user ID (for register/alert embeds).
-        old_start: Previous session start (for edit-session embed).
-        old_end: Previous session end (for edit-session embed).
-        alert_message: Alert text (for alert embed).
 
     Returns:
-        Discord message ID string.
+        Tuple of (embed dict, target channel ID).
     """
-    bot = get_bot()
-
-    embed_builders = {
-        "annonce": build_annonce_embed,
-        "annonce_details": build_annonce_details_embed,
-        "add-session": build_add_session_embed,
-        "edit-session": build_edit_session_embed,
-        "del-session": build_delete_session_embed,
-        "register": build_register_embed,
-        "alert": build_alert_embed,
-    }
-
-    if type not in embed_builders:
-        raise ValueError(f"Unknown embed type: {type}")
-
-    embed, target = embed_builders[type](
-        game, start, end, player, old_start, old_end, alert_message
-    )
-
-    if type == "annonce" and game.msg_id:
-        response = bot.edit_embed_message(game.msg_id, embed, target)
-    else:
-        response = bot.send_embed_message(embed, target)
-    return response["id"]
-
-
-def build_annonce_embed(game, *_):
-    """Build a Discord embed for a game announcement."""
     restriction_msg = _build_restriction_message(game)
     title = _build_embed_title(game)
     session_type = _get_session_type(game)
@@ -149,13 +142,30 @@ def build_annonce_embed(game, *_):
     return embed, current_app.config["POSTS_CHANNEL_ID"]
 
 
-def build_annonce_details_embed(game, *_):
-    """Build the initial channel message with GM reminders."""
+def build_annonce_details_embed(
+    game,
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+    alert_message=None,
+) -> tuple[dict, str]:
+    """Build the initial channel message with GM reminders.
+
+    Args:
+        game: Game instance.
+
+    Returns:
+        Tuple of (embed dict, game channel ID).
+    """
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}"
+
     embed = {
         "title": "Tout est prêt.",
-        "color": 0x2196F3,  # blue
+        "color": EMBED_COLOR_BLUE,
         "description": (
-            f"<@{game.gm_id}> voici le salon pour ta partie {game.name} et voici le lien [vers l'annonce](https://questmaster.club-jdr.fr/annonces/{game.slug}).\n"
+            f"<@{game.gm_id}> voici le salon pour ta partie {game.name} et voici le lien [vers l'annonce]({game_url}).\n"
             f"Le rôle associé est <@&{game.role}>.\n\n"
             f"Quelques petits rappels :\n"
             f"- La partie doit être **organisée et jouée sur le serveur du Club JDR** (Cf. règlement).\n"
@@ -167,26 +177,62 @@ def build_annonce_details_embed(game, *_):
     return embed, game.channel
 
 
-def build_add_session_embed(game, start, end, *_):
-    """Build embed notifying players of a new session."""
+def build_add_session_embed(
+    game,
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+    alert_message=None,
+) -> tuple[dict, str]:
+    """Build embed notifying players of a new session.
+
+    Args:
+        game: Game instance.
+        start: Session start datetime or formatted string.
+        end: Session end datetime or formatted string.
+
+    Returns:
+        Tuple of (embed dict, game channel ID).
+    """
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}"
+
     embed = {
         "title": "Nouvelle session prévue",
-        "color": 0x4CB944,  # green
+        "color": EMBED_COLOR_GREEN,
         "description": (
             f"<@&{game.role}>\nVotre MJ a ajouté une nouvelle session : du **{start}** au **{end}**\n\n"
             f"Pour ne pas l'oublier, pensez à l'ajouter à votre calendrier depuis "
-            f"[l'annonce sur QuestMaster](https://questmaster.club-jdr.fr/annonces/{game.slug}).\n"
+            f"[l'annonce sur QuestMaster]({game_url}).\n"
             f"Si vous avez un empêchement, prévenez votre MJ en avance."
         ),
     }
     return embed, game.channel
 
 
-def build_edit_session_embed(game, start, end, _, old_start, old_end, *__):
-    """Build embed notifying players of a rescheduled session."""
+def build_edit_session_embed(
+    game,
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+    alert_message=None,
+) -> tuple[dict, str]:
+    """Build embed notifying players of a rescheduled session.
+
+    Args:
+        game: Game instance.
+        start: New session start datetime or formatted string.
+        old_start: Previous session start for comparison.
+
+    Returns:
+        Tuple of (embed dict, game channel ID).
+    """
     embed = {
         "title": "Session modifiée",
-        "color": 0xFFCF48,  # yellow
+        "color": EMBED_COLOR_YELLOW,
         "description": (
             f"<@&{game.role}>\nVotre MJ a modifié la session ~~du {old_start}~~\n"
             f"La session a été décalée au **{start}**\n"
@@ -196,11 +242,28 @@ def build_edit_session_embed(game, start, end, _, old_start, old_end, *__):
     return embed, game.channel
 
 
-def build_delete_session_embed(game, start, end, *_):
-    """Build embed notifying players of a cancelled session."""
+def build_delete_session_embed(
+    game,
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+    alert_message=None,
+) -> tuple[dict, str]:
+    """Build embed notifying players of a cancelled session.
+
+    Args:
+        game: Game instance.
+        start: Cancelled session start datetime or formatted string.
+        end: Cancelled session end datetime or formatted string.
+
+    Returns:
+        Tuple of (embed dict, game channel ID).
+    """
     embed = {
         "title": "Session annulée",
-        "color": 0xF34242,  # red
+        "color": EMBED_COLOR_RED,
         "description": (
             f"<@&{game.role}>\nVotre MJ a annulé la session du **{start}** au **{end}**\n"
             f"Pensez à l'enlever de votre calendrier."
@@ -209,25 +272,60 @@ def build_delete_session_embed(game, start, end, *_):
     return embed, game.channel
 
 
-def build_register_embed(game, _, __, player, *___):
-    """Build embed notifying the channel of a new player registration."""
+def build_register_embed(
+    game,
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+    alert_message=None,
+) -> tuple[dict, str]:
+    """Build embed notifying the channel of a new player registration.
+
+    Args:
+        game: Game instance.
+        player: Discord user ID of the registered player.
+
+    Returns:
+        Tuple of (embed dict, game channel ID).
+    """
     embed = {
         "title": "Nouvelle inscription",
-        "color": 0x2196F3,  # blue
+        "color": EMBED_COLOR_BLUE,
         "description": f"<@{player}> s'est inscrit. Bienvenue :wave:",
     }
     return embed, game.channel
 
 
-def build_alert_embed(game, _, __, player, ___, ____, alert_message):
-    """Build embed reporting an alert from a game participant."""
+def build_alert_embed(
+    game,
+    start=None,
+    end=None,
+    player=None,
+    old_start=None,
+    old_end=None,
+    alert_message=None,
+) -> tuple[dict, str]:
+    """Build embed reporting an alert from a game participant.
+
+    Args:
+        game: Game instance.
+        player: Discord user ID of the reporting player.
+        alert_message: The alert message content.
+
+    Returns:
+        Tuple of (embed dict, admin channel ID).
+    """
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}"
+
     embed = {
         "title": "Signalement",
-        "color": 0xF34242,  # red
+        "color": EMBED_COLOR_RED,
         "description": (
             f"**Signalement de <@{player}> :**\n{alert_message}\n"
             f"**Salon :**\n<#{game.channel}>\n"
-            f"**Annonce :**\nhttps://questmaster.club-jdr.fr/annonces/{game.slug}\n"
+            f"**Annonce :**\n{game_url}\n"
         ),
     }
     return embed, current_app.config["ADMIN_CHANNEL_ID"]

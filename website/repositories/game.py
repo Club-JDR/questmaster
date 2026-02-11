@@ -102,12 +102,7 @@ class GameRepository(BaseRepository[Game]):
         Returns:
             Game instance with exclusive lock, or None if not found.
         """
-        return (
-            self.session.query(Game)
-            .filter_by(id=game_id)
-            .with_for_update()
-            .first()
-        )
+        return self.session.query(Game).filter_by(id=game_id).with_for_update().first()
 
     def get_with_relations(self, game_id: int) -> Optional[Game]:
         """Get game with all relationships eagerly loaded.

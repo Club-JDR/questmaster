@@ -1,5 +1,3 @@
-from sqlalchemy.exc import SQLAlchemyError
-
 from website.extensions import db
 from website.models import Channel
 from website.exceptions import NotFoundError
@@ -8,10 +6,26 @@ from website.utils.logger import logger
 
 
 class ChannelService:
+    """Service layer for Channel (Discord category) management.
+
+    Handles category size tracking for Discord channel organization.
+    """
+
     def __init__(self, repository=None):
         self.repo = repository or ChannelRepository()
 
     def get_category(self, game_type: str) -> Channel:
+        """Get the smallest category for a game type.
+
+        Args:
+            game_type: Type of game (oneshot, campaign).
+
+        Returns:
+            Channel category with smallest size.
+
+        Raises:
+            NotFoundError: If no category found for type.
+        """
         category = self.repo.get_smallest_by_type(game_type)
         if not category:
             raise NotFoundError(
@@ -21,11 +35,22 @@ class ChannelService:
         return category
 
     def increment_size(self, channel: Channel) -> None:
+        """Increment the channel count for a category.
+
+        Args:
+            channel: Channel category to increment.
+        """
         self.repo.increment_size(channel)
 
-    def adjust_category_size(self, bot, game) -> None:
+    def adjust_category_size(self, discord_service, game) -> None:
+        """Decrement category size when a game channel is deleted.
+
+        Args:
+            discord_service: DiscordService instance for API calls.
+            game: Game instance with channel to look up.
+        """
         try:
-            discord_channel = bot.get_channel(game.channel)
+            discord_channel = discord_service.get_channel(game.channel)
             parent_id = discord_channel.get("parent_id")
             if parent_id:
                 category = self.repo.get_by_id(parent_id)
@@ -35,7 +60,5 @@ class ChannelService:
                     logger.info(
                         f"Decreased size of category {category.id} to {category.size}"
                     )
-        except (SQLAlchemyError, Exception) as e:
-            logger.warning(
-                f"Failed to adjust category size for game {game.id}: {e}"
-            )
+        except Exception as e:
+            logger.warning(f"Failed to adjust category size for game {game.id}: {e}")

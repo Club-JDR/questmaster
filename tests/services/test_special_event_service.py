@@ -45,7 +45,9 @@ class TestSpecialEventService:
         """Test get_active convenience method."""
         service = SpecialEventService()
         event1 = SpecialEvent(name="Active Convenience Event", emoji="✅", active=True)
-        event2 = SpecialEvent(name="Inactive Convenience Event", emoji="❌", active=False)
+        event2 = SpecialEvent(
+            name="Inactive Convenience Event", emoji="❌", active=False
+        )
         db_session.add(event1)
         db_session.add(event2)
         db_session.commit()
@@ -110,7 +112,8 @@ class TestSpecialEventService:
         service = SpecialEventService()
         event = service.create(name="ToUpdate", emoji="📝", color=0xFF0000)
         updated = service.update(
-            event.id, {"name": "Updated", "emoji": "✏️", "color": 0x0000FF, "active": True}
+            event.id,
+            {"name": "Updated", "emoji": "✏️", "color": 0x0000FF, "active": True},
         )
         assert updated.name == "Updated"
         assert updated.emoji == "✏️"
