@@ -160,7 +160,7 @@ flask shell
 Every pull request is checked by the CI pipeline which runs:
 
 - **Conventional commit check** — all commits must follow the [conventional commits](https://www.conventionalcommits.org/) format.
-- **Linting** — import ordering with [isort](https://pycqa.github.io/isort/), formatting with [Black](https://github.com/psf/black), and static analysis with [flake8](https://flake8.pycqa.org/).
+- **Linting** — import ordering with [isort](https://pycqa.github.io/isort/), formatting with [Black](https://github.com/psf/black), static analysis with [flake8](https://flake8.pycqa.org/) and docstring lint with [pydoclint](https://github.com/jsh9/pydoclint).
 - **Tests and coverage** — pytest runs with coverage reported to [SonarCloud](https://sonarcloud.io/dashboard?id=Club-JDR_questmaster) for code quality analysis.
 
 On merge to `main`, the CI also pushes the Docker image to GHCR and [release-please](https://github.com/googleapis/release-please) creates or updates a release PR. Merging that PR creates a GitHub release and a version tag automatically.

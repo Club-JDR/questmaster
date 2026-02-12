@@ -17,3 +17,10 @@ repos:
       - id: flake8
         pass_filenames: false
         args: ["website/", "--config", ".flake8"]
+
+  - repo: https://github.com/jsh9/pydoclint
+    rev: 0.8.3
+    hooks:
+      - id: pydoclint
+        args: ["--style=google", "website/"]
+        pass_filenames: false
