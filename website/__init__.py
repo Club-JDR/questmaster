@@ -12,6 +12,7 @@ from website.bot import set_bot
 from website.client.discord import Discord
 from website.extensions import cache, csrf, db, discord, migrate, seed_trophies
 from website.scheduler import start_scheduler
+from website.utils import get_app_version
 from website.utils.logger import configure_logging
 from website.views import admin as admin_view
 from website.views import register_blueprints, register_filters
@@ -67,13 +68,6 @@ def create_app():
     def inject_guild_id():
         """Inject Discord guild ID into template context."""
         return {"DISCORD_GUILD_ID": app.config["DISCORD_GUILD_ID"]}
-
-    def get_app_version():
-        """Return the application version from environment or 'dev'."""
-        version = os.environ.get("TAG")
-        if not version:
-            version = "dev"
-        return version
 
     @app.context_processor
     def inject_version():
