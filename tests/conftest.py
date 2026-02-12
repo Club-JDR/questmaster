@@ -152,6 +152,24 @@ def campaign_channel(test_app):
 
 
 @pytest.fixture
+def logged_in_admin(test_app, admin_user):
+    """Provide a Flask test client logged in as the admin user."""
+    client = test_app.test_client()
+    with client.session_transaction() as session:
+        session["user_id"] = admin_user.id
+    return client
+
+
+@pytest.fixture
+def logged_in_user(test_app, regular_user):
+    """Provide a Flask test client logged in as a regular user."""
+    client = test_app.test_client()
+    with client.session_transaction() as session:
+        session["user_id"] = regular_user.id
+    return client
+
+
+@pytest.fixture
 def bot_user_id(test_app):
     """Return the Discord bot client ID from the environment."""
     return os.environ.get("DISCORD_CLIENT_ID")

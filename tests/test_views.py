@@ -4,22 +4,6 @@ import pytest
 pytestmark = pytest.mark.integration
 
 
-@pytest.fixture
-def logged_in_admin(test_app, admin_user):
-    client = test_app.test_client()
-    with client.session_transaction() as session:
-        session["user_id"] = admin_user.id
-    return client
-
-
-@pytest.fixture
-def logged_in_user(test_app, regular_user):
-    client = test_app.test_client()
-    with client.session_transaction() as session:
-        session["user_id"] = regular_user.id
-    return client
-
-
 def test_my_gm_games(logged_in_admin, logged_in_user):
     response = logged_in_admin.get("/mes_annonces/")
     assert response.status_code == 200

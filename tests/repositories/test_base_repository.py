@@ -2,6 +2,8 @@ import pytest
 from website.models import System
 from website.repositories.base import BaseRepository
 
+from tests.factories import SystemFactory
+
 
 class ConcreteRepository(BaseRepository[System]):
     model_class = System
@@ -47,10 +49,9 @@ class TestBaseRepository:
 
     def test_delete(self, db_session):
         repo = ConcreteRepository()
-        new_system = System(name="ToDelete", icon="del.png")
-        repo.add(new_system)
+        system = SystemFactory(db_session, name="ToDelete", icon="del.png")
         initial_count = repo.count()
-        repo.delete(new_system)
+        repo.delete(system)
         assert repo.count() == initial_count - 1
 
     def test_count(self, db_session):

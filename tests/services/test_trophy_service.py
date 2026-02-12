@@ -1,18 +1,19 @@
-import uuid
+"""Tests for TrophyService."""
+
 import pytest
-from website.models.trophy import Trophy, UserTrophy
-from website.models.user import User
+
+from website.models.trophy import UserTrophy
 from website.services.trophy import TrophyService
 from website.exceptions import NotFoundError
+
+from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
 
 
 class TestTrophyService:
     def test_get_by_id(self, db_session):
         """Test get_by_id returns correct trophy."""
         service = TrophyService()
-        trophy = Trophy(name="Test Get Trophy", unique=False, icon="🏆")
-        db_session.add(trophy)
-        db_session.commit()
+        trophy = TrophyFactory(db_session, name="Test Get Trophy", icon="icon.png")
 
         found = service.get_by_id(trophy.id)
         assert found.id == trophy.id
@@ -30,11 +31,8 @@ class TestTrophyService:
     def test_get_all(self, db_session):
         """Test get_all returns all trophies."""
         service = TrophyService()
-        trophy1 = Trophy(name="Trophy Alpha", unique=False)
-        trophy2 = Trophy(name="Trophy Beta", unique=True)
-        db_session.add(trophy1)
-        db_session.add(trophy2)
-        db_session.commit()
+        TrophyFactory(db_session, name="Trophy Alpha")
+        TrophyFactory(db_session, name="Trophy Beta", unique=True)
 
         trophies = service.get_all()
         assert len(trophies) >= 2
@@ -46,14 +44,9 @@ class TestTrophyService:
         """Test awarding a unique trophy for the first time."""
         service = TrophyService()
 
-        # Create test data
-        user = User(id="12345678901234567", name="Unique User 1")
-        trophy = Trophy(name="Unique Award Trophy 1", unique=True, icon="🌟")
-        db_session.add(user)
-        db_session.add(trophy)
-        db_session.commit()
+        user = UserFactory(db_session)
+        trophy = TrophyFactory(db_session, unique=True)
 
-        # Award unique trophy
         result = service.award(user.id, trophy.id, amount=5)
         assert result.quantity == 1  # Should be 1 regardless of amount
 
@@ -61,16 +54,9 @@ class TestTrophyService:
         """Test awarding a unique trophy a second time (should be idempotent)."""
         service = TrophyService()
 
-        # Create test data
-        user = User(id="22345678901234568", name="Unique User 2")
-        trophy = Trophy(name="Unique Award Trophy 2", unique=True, icon="🌟")
-        db_session.add(user)
-        db_session.add(trophy)
-        db_session.commit()
-
-        user_trophy = UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=1)
-        db_session.add(user_trophy)
-        db_session.commit()
+        user = UserFactory(db_session)
+        trophy = TrophyFactory(db_session, unique=True)
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
 
         # Try to award again - should remain at 1
         result = service.award(user.id, trophy.id, amount=10)
@@ -80,14 +66,9 @@ class TestTrophyService:
         """Test awarding a non-unique trophy creates new record."""
         service = TrophyService()
 
-        # Create test data
-        user = User(id="32345678901234569", name="Non-Unique User 1")
-        trophy = Trophy(name="Non-Unique Award Trophy 1", unique=False, icon="🎖️")
-        db_session.add(user)
-        db_session.add(trophy)
-        db_session.commit()
+        user = UserFactory(db_session)
+        trophy = TrophyFactory(db_session)
 
-        # Award non-unique trophy
         result = service.award(user.id, trophy.id, amount=7)
         assert result.quantity == 7
 
@@ -95,18 +76,10 @@ class TestTrophyService:
         """Test awarding a non-unique trophy increments quantity."""
         service = TrophyService()
 
-        # Create test data
-        user = User(id="42345678901234570", name="Non-Unique User 2")
-        trophy = Trophy(name="Non-Unique Award Trophy 2", unique=False, icon="🎖️")
-        db_session.add(user)
-        db_session.add(trophy)
-        db_session.commit()
+        user = UserFactory(db_session)
+        trophy = TrophyFactory(db_session)
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=3)
 
-        user_trophy = UserTrophy(user_id=user.id, trophy_id=trophy.id, quantity=3)
-        db_session.add(user_trophy)
-        db_session.commit()
-
-        # Award more
         result = service.award(user.id, trophy.id, amount=5)
         assert result.quantity == 8
 
@@ -120,31 +93,21 @@ class TestTrophyService:
         """Test get_leaderboard returns sorted list."""
         service = TrophyService()
 
-        # Create test data
-        trophy = Trophy(name=f"Service Leaderboard Trophy {uuid.uuid4()}", unique=False)
-        db_session.add(trophy)
-        db_session.commit()
+        trophy = TrophyFactory(db_session)
 
-        users = [
-            User(id="62345678901234572", name="Service Leader 1"),
-            User(id="72345678901234573", name="Service Leader 2"),
-        ]
-        for user in users:
-            db_session.add(user)
-        db_session.commit()
+        user1 = UserFactory(db_session, name="Service Leader 1")
+        user2 = UserFactory(db_session, name="Service Leader 2")
 
-        user_trophies = [
-            UserTrophy(user_id="62345678901234572", trophy_id=trophy.id, quantity=15),
-            UserTrophy(user_id="72345678901234573", trophy_id=trophy.id, quantity=30),
-        ]
-        for ut in user_trophies:
-            db_session.add(ut)
-        db_session.commit()
+        UserTrophyFactory(
+            db_session, user_id=user1.id, trophy_id=trophy.id, quantity=15
+        )
+        UserTrophyFactory(
+            db_session, user_id=user2.id, trophy_id=trophy.id, quantity=30
+        )
 
-        # Get leaderboard
         leaderboard = service.get_leaderboard(trophy.id, limit=10)
         assert len(leaderboard) == 2
-        assert leaderboard[0][0].id == "72345678901234573"  # Highest first
+        assert leaderboard[0][0].id == user2.id  # Highest first
         assert leaderboard[0][1] == 30
 
     def test_get_leaderboard_nonexistent_trophy(self, db_session):
@@ -157,26 +120,22 @@ class TestTrophyService:
         """Test get_user_badges returns user's trophy summary."""
         service = TrophyService()
 
-        # Create test data
-        user = User(id="82345678901234574", name="Badge User")
-        trophy1 = Trophy(name="Badge Trophy 1", unique=False, icon="🥇")
-        trophy2 = Trophy(name="Badge Trophy 2", unique=True, icon="🥈")
-        db_session.add(user)
-        db_session.add(trophy1)
-        db_session.add(trophy2)
-        db_session.commit()
+        user = UserFactory(db_session, name="Badge User")
+        trophy1 = TrophyFactory(db_session, name="Badge Trophy 1", icon="icon1.png")
+        trophy2 = TrophyFactory(
+            db_session, name="Badge Trophy 2", unique=True, icon="icon2.png"
+        )
 
-        user_trophy1 = UserTrophy(user_id=user.id, trophy_id=trophy1.id, quantity=10)
-        user_trophy2 = UserTrophy(user_id=user.id, trophy_id=trophy2.id, quantity=1)
-        db_session.add(user_trophy1)
-        db_session.add(user_trophy2)
-        db_session.commit()
+        UserTrophyFactory(
+            db_session, user_id=user.id, trophy_id=trophy1.id, quantity=10
+        )
+        UserTrophyFactory(
+            db_session, user_id=user.id, trophy_id=trophy2.id, quantity=1
+        )
 
-        # Get badges
         badges = service.get_user_badges(user.id)
         assert len(badges) == 2
 
-        # Check structure
         badge_names = [b["name"] for b in badges]
         assert "Badge Trophy 1" in badge_names
         assert "Badge Trophy 2" in badge_names

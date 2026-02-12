@@ -1,16 +1,15 @@
 from website.models import SpecialEvent
 from website.repositories.special_event import SpecialEventRepository
 
+from tests.factories import SpecialEventFactory
+
 
 class TestSpecialEventRepository:
     def test_get_all_ordered(self, db_session):
         """Test that get_all returns events ordered by name."""
         repo = SpecialEventRepository()
-        # Create test events
-        event1 = SpecialEvent(name="Zebra Event", emoji="🦓", active=True)
-        event2 = SpecialEvent(name="Alpha Event", emoji="🅰️", active=False)
-        repo.add(event1)
-        repo.add(event2)
+        SpecialEventFactory(db_session, name="Zebra Event", emoji="🦓", active=True)
+        SpecialEventFactory(db_session, name="Alpha Event", emoji="🅰️", active=False)
 
         events = repo.get_all()
         assert len(events) >= 2
@@ -20,10 +19,8 @@ class TestSpecialEventRepository:
     def test_get_all_active_only(self, db_session):
         """Test that get_all with active_only=True filters correctly."""
         repo = SpecialEventRepository()
-        event1 = SpecialEvent(name="Active Event", emoji="✅", active=True)
-        event2 = SpecialEvent(name="Inactive Event", emoji="❌", active=False)
-        repo.add(event1)
-        repo.add(event2)
+        SpecialEventFactory(db_session, name="Active Event", emoji="✅", active=True)
+        SpecialEventFactory(db_session, name="Inactive Event", emoji="❌", active=False)
 
         active_events = repo.get_all(active_only=True)
         assert all(e.active for e in active_events)
@@ -33,10 +30,8 @@ class TestSpecialEventRepository:
     def test_get_active(self, db_session):
         """Test get_active convenience method."""
         repo = SpecialEventRepository()
-        event1 = SpecialEvent(name="Active Event", emoji="✅", active=True)
-        event2 = SpecialEvent(name="Inactive Event", emoji="❌", active=False)
-        repo.add(event1)
-        repo.add(event2)
+        SpecialEventFactory(db_session, name="Active Event", emoji="✅", active=True)
+        SpecialEventFactory(db_session, name="Inactive Event", emoji="❌", active=False)
 
         active_events = repo.get_active()
         assert all(e.active for e in active_events)
@@ -45,8 +40,7 @@ class TestSpecialEventRepository:
     def test_get_by_name(self, db_session):
         """Test get_by_name returns correct event."""
         repo = SpecialEventRepository()
-        event = SpecialEvent(name="Test Event", emoji="🎉", active=True)
-        repo.add(event)
+        SpecialEventFactory(db_session, name="Test Event", emoji="🎉", active=True)
 
         found = repo.get_by_name("Test Event")
         assert found is not None
@@ -61,12 +55,13 @@ class TestSpecialEventRepository:
     def test_inherits_get_by_id(self, db_session):
         """Test inherited get_by_id method works."""
         repo = SpecialEventRepository()
-        event = SpecialEvent(name="TestRepoGetById", emoji="🔍", active=True)
-        added = repo.add(event)
+        event = SpecialEventFactory(
+            db_session, name="TestRepoGetById", emoji="🔍", active=True
+        )
 
-        found = repo.get_by_id(added.id)
+        found = repo.get_by_id(event.id)
         assert found is not None
-        assert found.id == added.id
+        assert found.id == event.id
 
     def test_inherits_add(self, db_session):
         """Test inherited add method works."""
@@ -82,9 +77,10 @@ class TestSpecialEventRepository:
     def test_inherits_delete(self, db_session):
         """Test inherited delete method works."""
         repo = SpecialEventRepository()
-        new_event = SpecialEvent(name="TestRepoDelete", emoji="🗑️", active=False)
-        repo.add(new_event)
+        event = SpecialEventFactory(
+            db_session, name="TestRepoDelete", emoji="🗑️", active=False
+        )
         count_before = repo.count()
 
-        repo.delete(new_event)
+        repo.delete(event)
         assert repo.count() == count_before - 1

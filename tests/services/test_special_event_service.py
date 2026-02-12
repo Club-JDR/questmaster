@@ -3,16 +3,15 @@ from website.models import SpecialEvent
 from website.services.special_event import SpecialEventService
 from website.exceptions import NotFoundError, ValidationError
 
+from tests.factories import SpecialEventFactory
+
 
 class TestSpecialEventService:
     def test_get_all(self, db_session):
         """Test get_all returns all events ordered by name."""
         service = SpecialEventService()
-        event1 = SpecialEvent(name="Zebra Event", emoji="🦓", active=True)
-        event2 = SpecialEvent(name="Alpha Event", emoji="🅰️", active=False)
-        db_session.add(event1)
-        db_session.add(event2)
-        db_session.commit()
+        SpecialEventFactory(db_session, name="Zebra Event", emoji="🦓", active=True)
+        SpecialEventFactory(db_session, name="Alpha Event", emoji="🅰️", active=False)
 
         events = service.get_all()
         assert len(events) >= 2
@@ -22,11 +21,10 @@ class TestSpecialEventService:
     def test_get_all_active_only(self, db_session):
         """Test get_all with active_only=True filters correctly."""
         service = SpecialEventService()
-        event1 = SpecialEvent(name="Active Test Event", emoji="✅", active=True)
-        event2 = SpecialEvent(name="Inactive Test Event", emoji="❌", active=False)
-        db_session.add(event1)
-        db_session.add(event2)
-        db_session.commit()
+        SpecialEventFactory(db_session, name="Active Test Event", emoji="✅", active=True)
+        SpecialEventFactory(
+            db_session, name="Inactive Test Event", emoji="❌", active=False
+        )
 
         active_events = service.get_all(active_only=True)
         active_names = [e.name for e in active_events]
@@ -36,13 +34,12 @@ class TestSpecialEventService:
     def test_get_active(self, db_session):
         """Test get_active convenience method."""
         service = SpecialEventService()
-        event1 = SpecialEvent(name="Active Convenience Event", emoji="✅", active=True)
-        event2 = SpecialEvent(
-            name="Inactive Convenience Event", emoji="❌", active=False
+        SpecialEventFactory(
+            db_session, name="Active Convenience Event", emoji="✅", active=True
         )
-        db_session.add(event1)
-        db_session.add(event2)
-        db_session.commit()
+        SpecialEventFactory(
+            db_session, name="Inactive Convenience Event", emoji="❌", active=False
+        )
 
         active_events = service.get_active()
         assert all(e.active for e in active_events)
@@ -52,9 +49,9 @@ class TestSpecialEventService:
     def test_get_by_id(self, db_session):
         """Test get_by_id returns correct event."""
         service = SpecialEventService()
-        event = SpecialEvent(name="Test Get Event", emoji="🔍", active=True)
-        db_session.add(event)
-        db_session.commit()
+        event = SpecialEventFactory(
+            db_session, name="Test Get Event", emoji="🔍", active=True
+        )
 
         found = service.get_by_id(event.id)
         assert found.id == event.id
