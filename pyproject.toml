@@ -43,6 +43,7 @@ lint = [
     "black==26.1.0",
     "isort==5.13.2",
     "flake8==7.1.1",
+    "pydoclint==0.8.3",
 ]
 
 [tool.pytest.ini_options]
@@ -57,6 +58,16 @@ line-length = 99
 profile = "black"
 line_length = 99
 known_first_party = ["website", "config", "tests"]
+
+[tool.pydoclint]
+style = "google"
+exclude = [
+    "tests",
+    "migrations",
+    "__init__.py",
+]
+require-return-section = true
+require-raises-section = true
 
 [tool.setuptools.packages.find]
 include = ["website*"]

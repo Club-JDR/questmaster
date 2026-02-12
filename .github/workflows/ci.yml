@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: '3.13'
 
-      - run: pip install black==26.1.0 isort==5.13.2 flake8==7.1.1
+      - run: pip install black==26.1.0 isort==5.13.2 flake8==7.1.1 pydoclint==0.8.3
 
       - name: Check import ordering with isort
         run: isort --check website/ config/ tests/
@@ -48,6 +48,9 @@ jobs:
 
       - name: Lint with flake8
         run: flake8 website/
+
+      - name: Lint with docstrings with pydoclint
+        run: pydoclint website/ --verbose
 
   tests:
     name: Run Tests
