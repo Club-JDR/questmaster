@@ -1,3 +1,5 @@
+"""Service layer for business logic and transaction management."""
+
 from website.services.channel import ChannelService
 from website.services.discord import DiscordService
 from website.services.game import GameService

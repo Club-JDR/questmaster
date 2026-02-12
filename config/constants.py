@@ -1,3 +1,5 @@
+"""Application-wide constants and enumerations."""
+
 # Game Types
 GAME_TYPE_ONESHOT = "oneshot"
 GAME_TYPE_CAMPAIGN = "campaign"

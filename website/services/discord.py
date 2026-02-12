@@ -21,12 +21,6 @@ class DiscordService:
     """
 
     def __init__(self, bot: Optional[Discord] = None):
-        """Initialize DiscordService.
-
-        Args:
-            bot: Optional Discord client instance. If not provided, will use
-                the global bot instance from get_bot().
-        """
         self._bot = bot
 
     @property

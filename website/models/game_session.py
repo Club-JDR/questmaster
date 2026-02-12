@@ -1,8 +1,19 @@
+"""GameSession model for scheduled play sessions."""
+
 from website.extensions import db
 from website.models.base import SerializableMixin
 
 
 class GameSession(db.Model, SerializableMixin):
+    """A scheduled play session belonging to a Game.
+
+    Attributes:
+        id: Primary key.
+        game_id: Foreign key to the parent game.
+        start: Session start datetime.
+        end: Session end datetime.
+    """
+
     __tablename__ = "game_session"
 
     _exclude_fields = []

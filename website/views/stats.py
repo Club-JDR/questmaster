@@ -1,3 +1,5 @@
+"""Statistics and calendar views."""
+
 import calendar
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -15,15 +17,26 @@ stats_bp = Blueprint("stats", __name__)
 
 
 def default_game_entry():
+    """Return a default game entry dict for stats aggregation."""
     return {"count": 0, "gm": ""}
 
 
 def default_system_dict():
+    """Return a defaultdict of game entries keyed by slug."""
     return defaultdict(default_game_entry)
 
 
 @cache.memoize(timeout=3600)
 def get_cached_stats_for_period(year, month):
+    """Compute and cache game statistics for a given month.
+
+    Args:
+        year: Year to compute stats for, or None for current month.
+        month: Month to compute stats for, or None for current month.
+
+    Returns:
+        Dict with base_day, last_day, session counts, game dicts, and GM names.
+    """
     if year and month:
         base_day = datetime(year, month, 1)
     else:
@@ -85,6 +98,7 @@ def get_cached_stats_for_period(year, month):
 
 @stats_bp.route("/stats/", methods=["GET"])
 def get_stats():
+    """Render monthly statistics page."""
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
 
@@ -115,18 +129,21 @@ def get_stats():
 
 @stats_bp.route("/calendrier/")
 def get_calendar():
+    """Render the interactive calendar page."""
     payload = who()
     return render_template("calendar.j2", payload=payload)
 
 
 @stats_bp.route("/calendrier/widget/")
 def get_calendar_widget():
+    """Render the embeddable calendar widget."""
     return render_template("calendar_widget.j2")
 
 
 @stats_bp.route("/api/calendar/")
 @cache.cached(query_string=True)
 def get_month_games_json():
+    """Return game sessions as JSON for the calendar frontend."""
     # Get the start and end from query parameters
     start_str = request.args.get("start")
     end_str = request.args.get("end")

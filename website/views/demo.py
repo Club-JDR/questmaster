@@ -1,3 +1,5 @@
+"""Demo views with fake game data for preview purposes."""
+
 from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template
@@ -89,19 +91,23 @@ fake_games = [
 
 @demo_bp.route("/demo/")
 def demo_general():
+    """Render the demo game list page."""
     return render_template("games.j2", title="Annonces", games=fake_games)
 
 
 @demo_bp.route("/demo/inscription/")
 def demo_register():
+    """Render the demo registration page."""
     return render_template("game_details.j2", game=fake_games[0], is_player=False)
 
 
 @demo_bp.route("/demo/poster/")
 def demo_post():
+    """Render the demo game creation form."""
     return render_template("game_form.j2")
 
 
 @demo_bp.route("/demo/gerer/")
 def demo_manage():
+    """Render the demo game management page."""
     return render_template("game_details.j2", game=fake_games[0], is_player=False)

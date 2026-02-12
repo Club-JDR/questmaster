@@ -1,3 +1,5 @@
+"""Trophy service for achievement and badge business logic."""
+
 import logging
 
 from website.exceptions import NotFoundError

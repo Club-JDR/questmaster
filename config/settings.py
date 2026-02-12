@@ -1,3 +1,5 @@
+"""Flask application settings loaded from environment variables."""
+
 import os
 from datetime import timedelta
 
@@ -5,6 +7,11 @@ GAMES_PER_PAGE = 12
 
 
 class Settings:
+    """Flask configuration class.
+
+    All values are read from environment variables at import time.
+    """
+
     DISCORD_CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID")
     DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET")
     DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")

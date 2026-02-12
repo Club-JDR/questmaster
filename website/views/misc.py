@@ -1,3 +1,5 @@
+"""Miscellaneous views for VTTs, systems, badges, and leaderboards."""
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from config.constants import BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID, BADGE_OS_GM_ID, BADGE_OS_ID
@@ -14,25 +16,19 @@ misc_bp = Blueprint("misc", __name__)
 
 @misc_bp.route("/vtts/", methods=["GET"])
 def list_vtts():
-    """
-    List all VTTs.
-    """
+    """List all VTTs."""
     return render_template("list.j2", items=VttService().get_all(), title="Virtual TableTops")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
 def list_systems():
-    """
-    List all Systems.
-    """
+    """List all game systems."""
     return render_template("list.j2", items=SystemService().get_all(), title="Systèmes")
 
 
 @misc_bp.route("/badges/", methods=["GET"])
 def list_user_badges():
-    """
-    List all badges for the current user or for a specific user by their ID.
-    """
+    """List all badges for the current user or for a specific user by ID."""
     user_id = request.args.get("user_id")
 
     if not user_id:
@@ -103,9 +99,7 @@ def get_campaign_gm_leaderboard():
 
 @misc_bp.route("/badges/classement/", methods=["GET"])
 def trophies_leaderboard():
-    """
-    View the leaderboard for the permanent trophies.
-    """
+    """Render the trophy leaderboard page."""
     return render_template(
         "trophies_leaderboard.j2",
         os_leaderboard=get_os_leaderboard(),

@@ -1,3 +1,5 @@
+"""Health check endpoint for monitoring."""
+
 import os
 from datetime import datetime
 
@@ -11,8 +13,13 @@ health_bp = Blueprint("health", __name__)
 
 
 def dhms_from_seconds(seconds) -> str:
-    """
-    Convert a datetime from seconds to d:h:m:s format.
+    """Convert seconds to a human-readable d:h:m:s string.
+
+    Args:
+        seconds: Number of seconds to convert.
+
+    Returns:
+        Formatted string like '1 days, 2 hours, 30 minutes, 15 seconds'.
     """
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
@@ -22,9 +29,7 @@ def dhms_from_seconds(seconds) -> str:
 
 @health_bp.route("/health/", methods=["GET"])
 def health():
-    """
-    Health endpoint
-    """
+    """Return application health status as JSON."""
     start_time = psutil.Process(os.getpid()).create_time()
     delta = datetime.now() - datetime.fromtimestamp(start_time)
     uptime = dhms_from_seconds(delta.seconds)

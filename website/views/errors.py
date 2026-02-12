@@ -1,3 +1,5 @@
+"""Error handlers for HTTP and domain-specific exceptions."""
+
 from flask import Blueprint, jsonify, render_template, request
 
 from config.constants import TEMPLATE_403, TEMPLATE_404, TEMPLATE_500
@@ -48,14 +50,17 @@ def handle_game_error(e):
 
 @error_bp.app_errorhandler(403)
 def forbidden(e):
+    """Handle HTTP 403 Forbidden errors."""
     return render_template(TEMPLATE_403), 403
 
 
 @error_bp.app_errorhandler(404)
 def not_found(e):
+    """Handle HTTP 404 Not Found errors."""
     return render_template(TEMPLATE_404), 404
 
 
 @error_bp.app_errorhandler(500)
 def server_error(e):
+    """Handle HTTP 500 Internal Server errors."""
     return render_template(TEMPLATE_500, error=e), 500

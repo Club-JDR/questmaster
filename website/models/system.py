@@ -1,3 +1,5 @@
+"""System model for tabletop RPG game systems."""
+
 from website.extensions import cache, db
 from website.models.base import SerializableMixin
 

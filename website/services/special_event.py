@@ -1,3 +1,5 @@
+"""SpecialEvent service for themed event business logic."""
+
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import SpecialEvent

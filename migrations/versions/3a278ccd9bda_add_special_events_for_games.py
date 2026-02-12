@@ -9,7 +9,6 @@ Create Date: 2025-10-04 10:10:37.933192
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision = "3a278ccd9bda"
 down_revision = "d93dbbe1bddb"
@@ -24,9 +23,7 @@ def upgrade():
         sa.Column("name", sa.String(), unique=True, nullable=False),
         sa.Column("emoji", sa.String(), nullable=True),
         sa.Column("color", sa.Integer(), nullable=True),
-        sa.Column(
-            "active", sa.Boolean(), nullable=False, server_default=sa.text("false")
-        ),
+        sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.text("false")),
     )
     with op.batch_alter_table("game", schema=None) as batch_op:
         batch_op.add_column(sa.Column("special_event_id", sa.Integer(), nullable=True))

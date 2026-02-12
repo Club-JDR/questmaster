@@ -1,9 +1,17 @@
+"""Jinja2 template filters for date formatting and color utilities."""
+
 import locale
 
 
 def format_datetime(value, format="%a %d/%m - %Hh%M"):
-    """
-    Jinja filter to format date like this: Sam 10/09 - 20h30
+    """Format a datetime for display in French locale.
+
+    Args:
+        value: Datetime object to format.
+        format: strftime format string. Defaults to '%a %d/%m - %Hh%M'.
+
+    Returns:
+        Formatted date string (e.g. 'Sam 10/09 - 20h30').
     """
     locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
     return value.strftime(format)

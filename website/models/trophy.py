@@ -1,8 +1,19 @@
+"""Trophy and UserTrophy models for the achievement system."""
+
 from website.extensions import db
 from website.models.base import SerializableMixin
 
 
 class Trophy(db.Model, SerializableMixin):
+    """Trophy definition (badge template).
+
+    Attributes:
+        id: Primary key.
+        name: Unique trophy name.
+        unique: If True, a user can only earn this trophy once.
+        icon: Path or URL to the trophy icon.
+    """
+
     __tablename__ = "trophy"
 
     _exclude_fields = []
@@ -31,6 +42,14 @@ class Trophy(db.Model, SerializableMixin):
 
 
 class UserTrophy(db.Model, SerializableMixin):
+    """Association between a User and a Trophy.
+
+    Attributes:
+        user_id: Foreign key to User.
+        trophy_id: Foreign key to Trophy.
+        quantity: Number of times this trophy was awarded.
+    """
+
     __tablename__ = "user_trophy"
 
     _exclude_fields = []

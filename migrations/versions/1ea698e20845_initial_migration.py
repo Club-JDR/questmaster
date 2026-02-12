@@ -1,7 +1,7 @@
 """Initial migration
 
 Revision ID: 1ea698e20845
-Revises: 
+Revises:
 Create Date: 2025-06-12 12:19:04.832521
 
 """
@@ -92,9 +92,7 @@ def upgrade():
         sa.Column("session_length", sa.DECIMAL(precision=2, scale=1), nullable=False),
         sa.Column(
             "frequency",
-            sa.Enum(
-                "weekly", "bi-weekly", "monthly", "other", name="game_frequency_enum"
-            ),
+            sa.Enum("weekly", "bi-weekly", "monthly", "other", name="game_frequency_enum"),
             nullable=True,
         ),
         sa.Column(
@@ -102,9 +100,7 @@ def upgrade():
             sa.Enum("with_gm", "self", "pregen", "choice", name="game_char_enum"),
             nullable=True,
         ),
-        sa.Column(
-            "classification", postgresql.JSONB(astext_type=sa.Text()), nullable=True
-        ),
+        sa.Column("classification", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column(
             "ambience",
             postgresql.ARRAY(

@@ -1,3 +1,5 @@
+"""GameEvent model for the game audit trail."""
+
 from datetime import datetime, timezone
 
 from sqlalchemy import Enum
@@ -8,6 +10,16 @@ from website.models.base import SerializableMixin
 
 
 class GameEvent(db.Model, SerializableMixin):
+    """Audit log entry recording an action on a game.
+
+    Attributes:
+        id: Primary key.
+        timestamp: When the event occurred (UTC).
+        action: Event action type (create, edit, delete, etc.).
+        game_id: Foreign key to the related game.
+        description: Optional human-readable description.
+    """
+
     __tablename__ = "game_event"
 
     _exclude_fields = []
