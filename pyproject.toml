@@ -15,7 +15,7 @@ dependencies = [
     "Flask-SQLAlchemy==3.1.1",
     "Flask-WTF==1.2.2",
     "Flask-Caching==2.3.1",
-    "Flask-Admin==1.6.1",
+    "Flask-Admin==2.0.2",
     "redis==5.3.1",
     "gunicorn==25.0.3",
     "psutil==5.9.8",
