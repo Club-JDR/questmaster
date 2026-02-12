@@ -1,13 +1,15 @@
-from flask import render_template, Blueprint, jsonify, request, url_for
-from website.views.auth import who
+import calendar
+from collections import Counter, defaultdict
+from datetime import datetime
+
+from dateutil.parser import parse as parse_date
+from dateutil.relativedelta import relativedelta
+from flask import Blueprint, jsonify, render_template, request, url_for
+
+from config.constants import GAME_DETAILS_ROUTE
 from website.extensions import cache
 from website.services.game_session import GameSessionService
-from config.constants import GAME_DETAILS_ROUTE
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from collections import defaultdict, Counter
-from dateutil.parser import parse as parse_date
-import calendar
+from website.views.auth import who
 
 stats_bp = Blueprint("stats", __name__)
 
@@ -101,9 +103,7 @@ def get_stats():
         num_campaign=stats["num_campaign"],
         os=stats["os_games"],
         campaign=stats["campaign_games"],
-        mjs=sorted(
-            Counter(stats["gm_names"]).items(), key=lambda x: x[1], reverse=True
-        ),
+        mjs=sorted(Counter(stats["gm_names"]).items(), key=lambda x: x[1], reverse=True),
         year=base_day.year,
         month=base_day.month,
         prev_year=prev_month_date.year,
@@ -159,9 +159,7 @@ def get_month_games_json():
                 "end": end.isoformat(),
                 "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
                 "className": (
-                    "event-oneshot"
-                    if session.game.type == "oneshot"
-                    else "event-campaign"
+                    "event-oneshot" if session.game.type == "oneshot" else "event-campaign"
                 ),
                 "url": url_for(GAME_DETAILS_ROUTE, slug=session.game.slug),
             }

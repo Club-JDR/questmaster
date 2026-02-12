@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
 
+from tests.constants import TEST_ADMIN_USER_ID
 from website import db
 from website.models import (
     Channel,
@@ -25,12 +26,10 @@ from website.models import (
     SpecialEvent,
     System,
     Trophy,
-    UserTrophy,
     User,
+    UserTrophy,
     Vtt,
 )
-
-from tests.constants import TEST_ADMIN_USER_ID
 
 
 def _unique_id():

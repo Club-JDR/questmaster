@@ -1,6 +1,7 @@
 import pytest
-from website.models.channel import Channel
+
 from config.constants import GAME_TYPES
+from website.models.channel import Channel
 
 
 @pytest.fixture

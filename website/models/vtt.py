@@ -1,4 +1,4 @@
-from website.extensions import db, cache
+from website.extensions import cache, db
 from website.models.base import SerializableMixin
 
 

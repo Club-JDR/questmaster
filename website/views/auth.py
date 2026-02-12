@@ -1,10 +1,12 @@
-from flask import redirect, url_for, session, request, Blueprint
-from urllib.parse import urlparse, urljoin
-from website.extensions import discord
-from website.exceptions import UnauthorizedError
-from website.services.user import UserService
-from config.constants import SEARCH_GAMES_ROUTE
 import functools
+from urllib.parse import urljoin, urlparse
+
+from flask import Blueprint, redirect, request, session, url_for
+
+from config.constants import SEARCH_GAMES_ROUTE
+from website.exceptions import UnauthorizedError
+from website.extensions import discord
+from website.services.user import UserService
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -45,9 +47,7 @@ def login():
     Login using Discord OAuth2.
     """
     session.permanent = True
-    next_url = (
-        session.get("next_url") or request.referrer or url_for(SEARCH_GAMES_ROUTE)
-    )
+    next_url = session.get("next_url") or request.referrer or url_for(SEARCH_GAMES_ROUTE)
     session["next_url"] = next_url
     return discord.create_session(scope=["identify"])
 

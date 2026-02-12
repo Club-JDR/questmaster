@@ -7,12 +7,7 @@ request forms (classification, ambience, restriction tags).
 import pytest
 from werkzeug.datastructures import MultiDict
 
-from website.utils.form_parsers import (
-    get_ambience,
-    get_classification,
-    parse_restriction_tags,
-)
-
+from website.utils.form_parsers import get_ambience, get_classification, parse_restriction_tags
 
 # ---------------------------------------------------------------------------
 # get_classification

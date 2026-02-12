@@ -1,9 +1,11 @@
-from flask import jsonify, Blueprint
-from website.extensions import db
+import os
 from datetime import datetime
-from sqlalchemy.sql import text
-import psutil, os
 
+import psutil
+from flask import Blueprint, jsonify
+from sqlalchemy.sql import text
+
+from website.extensions import db
 
 health_bp = Blueprint("health", __name__)
 

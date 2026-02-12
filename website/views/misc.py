@@ -1,17 +1,13 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for
-from config.constants import (
-    BADGE_CAMPAIGN_GM_ID,
-    BADGE_CAMPAIGN_ID,
-    BADGE_OS_GM_ID,
-    BADGE_OS_ID,
-)
-from website.views.auth import who
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+
+from config.constants import BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID, BADGE_OS_GM_ID, BADGE_OS_ID
+from website.exceptions import NotFoundError
 from website.extensions import cache
 from website.services.system import SystemService
-from website.services.vtt import VttService
-from website.services.user import UserService
 from website.services.trophy import TrophyService
-from website.exceptions import NotFoundError
+from website.services.user import UserService
+from website.services.vtt import VttService
+from website.views.auth import who
 
 misc_bp = Blueprint("misc", __name__)
 
@@ -21,9 +17,7 @@ def list_vtts():
     """
     List all VTTs.
     """
-    return render_template(
-        "list.j2", items=VttService().get_all(), title="Virtual TableTops"
-    )
+    return render_template("list.j2", items=VttService().get_all(), title="Virtual TableTops")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
@@ -49,7 +43,12 @@ def list_user_badges():
         user = UserService().get_by_id(user_id)
     except NotFoundError:
         flash(
-            'Utilisateur introuvable. Veuillez entrer un ID valide.<br>Si vous ne savez pas comment le trouver, vous pouvez consulter <a href="https://support.discord.com/hc/fr/articles/206346498-O%C3%B9-trouver-l-ID-de-mon-compte-utilisateur-serveur-message"             target="_blank" rel="noopener noreferrer">cet article.</a>',
+            "Utilisateur introuvable. Veuillez entrer un ID valide.<br>"
+            "Si vous ne savez pas comment le trouver, vous pouvez consulter "
+            '<a href="https://support.discord.com/hc/fr/articles/'
+            "206346498-O%C3%B9-trouver-l-ID-de-mon-compte-utilisateur-"
+            'serveur-message" target="_blank" rel="noopener noreferrer">'
+            "cet article.</a>",
             "danger",
         )
         return redirect(url_for("misc.list_user_badges"))

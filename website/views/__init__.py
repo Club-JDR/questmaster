@@ -1,11 +1,11 @@
-from .games import game_bp
 from .auth import auth_bp
+from .demo import demo_bp
+from .errors import error_bp
+from .filters import format_datetime, hex_color, text_color
+from .games import game_bp
 from .health import health_bp
 from .misc import misc_bp
-from .errors import error_bp
 from .stats import stats_bp
-from .demo import demo_bp
-from .filters import format_datetime, hex_color, text_color
 
 
 def register_blueprints(app):

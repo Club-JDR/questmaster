@@ -1,21 +1,20 @@
-from website.extensions import db
-from website.models.game_session import GameSession
-from config.constants import (
-    GAME_TYPES,
-    GAME_STATUS,
-    GAME_FREQUENCIES,
-    GAME_XP,
-    GAME_CHAR,
-    RESTRICTIONS,
-    AMBIENCES,
-)
+import sqlalchemy.dialects.postgresql as pg
+from schema import Schema, SchemaError
 from sqlalchemy import Enum, orm
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
-import sqlalchemy.dialects.postgresql as pg
-from schema import Schema, SchemaError
-from website.exceptions import ValidationError
 
+from config.constants import (
+    AMBIENCES,
+    GAME_CHAR,
+    GAME_FREQUENCIES,
+    GAME_STATUS,
+    GAME_TYPES,
+    GAME_XP,
+    RESTRICTIONS,
+)
+from website.exceptions import ValidationError
+from website.extensions import db
 
 CLASSIFICATION_SCHEMA = Schema(
     {
@@ -62,9 +61,7 @@ class Game(db.Model):
     xp = db.Column("experience", Enum(*GAME_XP, name="game_xp_enum"), default="all")
     date = db.Column(db.DateTime, nullable=False)
     session_length = db.Column(db.DECIMAL(2, 1), nullable=False)
-    frequency = db.Column(
-        "frequency", Enum(*GAME_FREQUENCIES, name="game_frequency_enum")
-    )
+    frequency = db.Column("frequency", Enum(*GAME_FREQUENCIES, name="game_frequency_enum"))
     characters = db.Column("characters", Enum(*GAME_CHAR, name="game_char_enum"))
     classification = db.Column(MutableDict.as_mutable(JSONB))
     ambience = db.Column(pg.ARRAY(Enum(*AMBIENCES, name="game_ambience_enum")))
@@ -80,9 +77,7 @@ class Game(db.Model):
         nullable=False,
         server_default="draft",
     )
-    special_event_id = db.Column(
-        db.Integer, db.ForeignKey("special_event.id"), nullable=True
-    )
+    special_event_id = db.Column(db.Integer, db.ForeignKey("special_event.id"), nullable=True)
     special_event = db.relationship("SpecialEvent", back_populates="games")
 
     @orm.validates("classification")
@@ -125,17 +120,16 @@ class Game(db.Model):
         data["vtt"] = self._serialize_relation(getattr(self, "vtt", None))
         data["players"] = self._serialize_relation_list(getattr(self, "players", []))
         data["sessions"] = self._serialize_relation_list(getattr(self, "sessions", []))
-        data["special_event"] = self._serialize_relation(
-            getattr(self, "special_event", None)
-        )
+        data["special_event"] = self._serialize_relation(getattr(self, "special_event", None))
 
     def to_dict(self, include_relationships=False):
         """
         Serialize the Game instance into a Python dict.
 
         Args:
-            include_relationships: If True, includes nested objects (gm, system, vtt, players, sessions).
-                                   If False, only includes IDs.
+            include_relationships: If True, includes nested objects
+                (gm, system, vtt, players, sessions). If False, only
+                includes IDs.
         """
         data = {
             "id": self.id,
@@ -153,9 +147,7 @@ class Game(db.Model):
             "party_selection": self.party_selection,
             "xp": self.xp,
             "date": self.date.isoformat() if self.date else None,
-            "session_length": (
-                float(self.session_length) if self.session_length else None
-            ),
+            "session_length": (float(self.session_length) if self.session_length else None),
             "frequency": self.frequency,
             "characters": self.characters,
             "classification": self.classification,
@@ -206,9 +198,7 @@ class Game(db.Model):
 
         # Convert session_length to Decimal if needed
         session_length_value = data.get("session_length")
-        if session_length_value is not None and not isinstance(
-            session_length_value, Decimal
-        ):
+        if session_length_value is not None and not isinstance(session_length_value, Decimal):
             session_length_value = Decimal(str(session_length_value))
 
         return cls(
@@ -285,7 +275,10 @@ class Game(db.Model):
         return self
 
     def __repr__(self):
-        return f"<Game id={self.id} slug='{self.slug}' name='{self.name}' type='{self.type}' status='{self.status}'>"
+        return (
+            f"<Game id={self.id} slug='{self.slug}' name='{self.name}' "
+            f"type='{self.type}' status='{self.status}'>"
+        )
 
     def __eq__(self, other):
         if not isinstance(other, Game):

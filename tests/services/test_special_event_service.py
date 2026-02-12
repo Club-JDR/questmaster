@@ -1,9 +1,9 @@
 import pytest
-from website.models import SpecialEvent
-from website.services.special_event import SpecialEventService
-from website.exceptions import NotFoundError, ValidationError
 
 from tests.factories import SpecialEventFactory
+from website.exceptions import NotFoundError, ValidationError
+from website.models import SpecialEvent
+from website.services.special_event import SpecialEventService
 
 
 class TestSpecialEventService:
@@ -21,12 +21,8 @@ class TestSpecialEventService:
     def test_get_all_active_only(self, db_session):
         """Test get_all with active_only=True filters correctly."""
         service = SpecialEventService()
-        SpecialEventFactory(
-            db_session, name="Active Test Event", emoji="✅", active=True
-        )
-        SpecialEventFactory(
-            db_session, name="Inactive Test Event", emoji="❌", active=False
-        )
+        SpecialEventFactory(db_session, name="Active Test Event", emoji="✅", active=True)
+        SpecialEventFactory(db_session, name="Inactive Test Event", emoji="❌", active=False)
 
         active_events = service.get_all(active_only=True)
         active_names = [e.name for e in active_events]
@@ -36,9 +32,7 @@ class TestSpecialEventService:
     def test_get_active(self, db_session):
         """Test get_active convenience method."""
         service = SpecialEventService()
-        SpecialEventFactory(
-            db_session, name="Active Convenience Event", emoji="✅", active=True
-        )
+        SpecialEventFactory(db_session, name="Active Convenience Event", emoji="✅", active=True)
         SpecialEventFactory(
             db_session, name="Inactive Convenience Event", emoji="❌", active=False
         )
@@ -51,9 +45,7 @@ class TestSpecialEventService:
     def test_get_by_id(self, db_session):
         """Test get_by_id returns correct event."""
         service = SpecialEventService()
-        event = SpecialEventFactory(
-            db_session, name="Test Get Event", emoji="🔍", active=True
-        )
+        event = SpecialEventFactory(db_session, name="Test Get Event", emoji="🔍", active=True)
 
         found = service.get_by_id(event.id)
         assert found.id == event.id
@@ -68,9 +60,7 @@ class TestSpecialEventService:
     def test_create(self, db_session):
         """Test create method."""
         service = SpecialEventService()
-        event = service.create(
-            name="NewTestEvent", emoji="🎉", color=0x00FF00, active=True
-        )
+        event = service.create(name="NewTestEvent", emoji="🎉", color=0x00FF00, active=True)
         assert event.id is not None
         assert event.name == "NewTestEvent"
         assert event.emoji == "🎉"

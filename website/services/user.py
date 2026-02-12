@@ -1,6 +1,6 @@
+from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import User
-from website.exceptions import NotFoundError
 from website.repositories.user import UserRepository
 
 

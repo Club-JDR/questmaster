@@ -1,8 +1,8 @@
 import pytest
-from website.models import System
-from website.repositories.base import BaseRepository
 
 from tests.factories import SystemFactory
+from website.models import System
+from website.repositories.base import BaseRepository
 
 
 class ConcreteRepository(BaseRepository[System]):

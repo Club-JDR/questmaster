@@ -1,11 +1,10 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_caching import Cache
-from flask_wtf.csrf import CSRFProtect
-from flask_discord import DiscordOAuth2Session
-from flask.cli import with_appcontext
 import click
-
+from flask.cli import with_appcontext
+from flask_caching import Cache
+from flask_discord import DiscordOAuth2Session
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -15,13 +14,13 @@ discord = DiscordOAuth2Session()
 
 
 def _seed_trophies():
-    from website.models.trophy import Trophy
     from config.constants import (
-        BADGE_OS_ID,
-        BADGE_OS_GM_ID,
-        BADGE_CAMPAIGN_ID,
         BADGE_CAMPAIGN_GM_ID,
+        BADGE_CAMPAIGN_ID,
+        BADGE_OS_GM_ID,
+        BADGE_OS_ID,
     )
+    from website.models.trophy import Trophy
 
     trophies_to_ensure = [
         {

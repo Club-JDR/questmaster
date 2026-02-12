@@ -1,4 +1,5 @@
 import pytest
+
 from website.models.special_event import SpecialEvent
 
 

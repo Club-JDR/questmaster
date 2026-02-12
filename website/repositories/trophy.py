@@ -24,9 +24,7 @@ class TrophyRepository(BaseRepository[Trophy]):
             UserTrophy instance if user has this trophy, None otherwise.
         """
         return (
-            self.session.query(UserTrophy)
-            .filter_by(user_id=user_id, trophy_id=trophy_id)
-            .first()
+            self.session.query(UserTrophy).filter_by(user_id=user_id, trophy_id=trophy_id).first()
         )
 
     def award_trophy(self, user_id: str, trophy_id: int, amount: int = 1) -> UserTrophy:
@@ -45,17 +43,13 @@ class TrophyRepository(BaseRepository[Trophy]):
         if user_trophy:
             user_trophy.quantity += amount
         else:
-            user_trophy = UserTrophy(
-                user_id=user_id, trophy_id=trophy_id, quantity=amount
-            )
+            user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=amount)
             self.session.add(user_trophy)
 
         self.session.flush()
         return user_trophy
 
-    def get_leaderboard(
-        self, trophy_id: int, limit: int = 10
-    ) -> list[tuple[User, int]]:
+    def get_leaderboard(self, trophy_id: int, limit: int = 10) -> list[tuple[User, int]]:
         """Get leaderboard for a specific trophy.
 
         Args:

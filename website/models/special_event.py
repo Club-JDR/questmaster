@@ -31,7 +31,5 @@ class SpecialEvent(db.Model, SerializableMixin):
         return self
 
     def __str__(self):
-        hex_color = (
-            f"#{self.color:06x}" if isinstance(self.color, int) else (self.color or "")
-        )
+        hex_color = f"#{self.color:06x}" if isinstance(self.color, int) else (self.color or "")
         return f"{self.emoji} {self.name} ({hex_color})"

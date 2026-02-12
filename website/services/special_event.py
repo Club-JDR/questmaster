@@ -1,6 +1,6 @@
+from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import SpecialEvent
-from website.exceptions import NotFoundError, ValidationError
 from website.repositories.special_event import SpecialEventRepository
 
 
@@ -101,9 +101,7 @@ class SpecialEventService:
         if "name" in data and data["name"] != event.name:
             existing = self.repo.get_by_name(data["name"])
             if existing:
-                raise ValidationError(
-                    "Special event name already exists.", field="name"
-                )
+                raise ValidationError("Special event name already exists.", field="name")
 
         event.update_from_dict(data)
         db.session.commit()

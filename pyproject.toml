@@ -41,12 +41,22 @@ test = [
 ]
 lint = [
     "black==24.10.0",
+    "isort==5.13.2",
+    "flake8==7.1.1",
 ]
 
 [tool.pytest.ini_options]
 markers = [
     "integration: tests requiring live external services (Discord API)",
 ]
+
+[tool.black]
+line-length = 99
+
+[tool.isort]
+profile = "black"
+line_length = 99
+known_first_party = ["website", "config", "tests"]
 
 [tool.setuptools.packages.find]
 include = ["website*"]

@@ -1,7 +1,8 @@
+from sqlalchemy.dialects.postgresql import ENUM
+
+from config.constants import GAME_TYPES
 from website.extensions import db
 from website.models.base import SerializableMixin
-from sqlalchemy.dialects.postgresql import ENUM
-from config.constants import GAME_TYPES
 
 
 class Channel(db.Model, SerializableMixin):
@@ -11,9 +12,7 @@ class Channel(db.Model, SerializableMixin):
     _relationship_fields = []
 
     id = db.Column(db.String(), primary_key=True)
-    type = db.Column(
-        ENUM(*GAME_TYPES, name="game_type_enum", create_type=False), nullable=False
-    )
+    type = db.Column(ENUM(*GAME_TYPES, name="game_type_enum", create_type=False), nullable=False)
     size = db.Column(db.Integer(), nullable=False, default=0)
 
     @classmethod
@@ -36,9 +35,7 @@ class Channel(db.Model, SerializableMixin):
     def __eq__(self, other):
         if not isinstance(other, Channel):
             return NotImplemented
-        return (
-            self.id == other.id and self.type == other.type and self.size == other.size
-        )
+        return self.id == other.id and self.type == other.type and self.size == other.size
 
     def __ne__(self, other):
         return not self.__eq__(other)

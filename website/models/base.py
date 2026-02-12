@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Self
-from website.extensions import db
 
 
 class SerializableMixin:
@@ -24,8 +23,7 @@ class SerializableMixin:
             return None
         if isinstance(rel_value, list):
             return [
-                item.to_dict() if hasattr(item, "to_dict") else str(item)
-                for item in rel_value
+                item.to_dict() if hasattr(item, "to_dict") else str(item) for item in rel_value
             ]
         return rel_value.to_dict() if hasattr(rel_value, "to_dict") else str(rel_value)
 
@@ -38,9 +36,7 @@ class SerializableMixin:
 
         if include_relationships:
             for rel_name in self._relationship_fields:
-                data[rel_name] = self._serialize_relationship(
-                    getattr(self, rel_name, None)
-                )
+                data[rel_name] = self._serialize_relationship(getattr(self, rel_name, None))
 
         return data
 

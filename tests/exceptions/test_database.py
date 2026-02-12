@@ -1,6 +1,7 @@
 import pytest
-from website.exceptions.database import DatabaseError
+
 from website.exceptions.base import QuestMasterError
+from website.exceptions.database import DatabaseError
 
 
 class TestDatabaseError:

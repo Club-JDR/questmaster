@@ -1,6 +1,7 @@
 import pytest
-from website.exceptions.validation import ValidationError
+
 from website.exceptions.base import QuestMasterError
+from website.exceptions.validation import ValidationError
 
 
 class TestValidationError:
@@ -65,9 +66,7 @@ class TestValidationError:
         assert result["details"]["field"] == "email"
 
     def test_to_dict_with_value_in_details(self):
-        err = ValidationError(
-            "Invalid Discord UID.", field="id", details={"value": "abc"}
-        )
+        err = ValidationError("Invalid Discord UID.", field="id", details={"value": "abc"})
         result = err.to_dict()
         assert result["details"]["field"] == "id"
         assert result["details"]["value"] == "abc"

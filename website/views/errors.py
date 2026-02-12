@@ -1,13 +1,7 @@
-from flask import render_template, Blueprint, jsonify, request
-from website.views.auth import who
-from website.exceptions import (
-    NotFoundError,
-    UnauthorizedError,
-    ValidationError,
-    GameError,
-    QuestMasterError,
-)
+from flask import Blueprint, jsonify, render_template, request
+
 from config.constants import TEMPLATE_403, TEMPLATE_404, TEMPLATE_500
+from website.exceptions import GameError, NotFoundError, UnauthorizedError, ValidationError
 
 error_bp = Blueprint("errors", __name__)
 

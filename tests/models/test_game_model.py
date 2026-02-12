@@ -1,8 +1,10 @@
-import pytest
 from datetime import datetime
 from decimal import Decimal
-from website.models.game import Game, CLASSIFICATION_SCHEMA
+
+import pytest
+
 from website.exceptions import ValidationError
+from website.models.game import CLASSIFICATION_SCHEMA, Game
 
 
 @pytest.fixture

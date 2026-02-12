@@ -1,21 +1,21 @@
 """Tests for GameService."""
 
-import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+import pytest
+
+from tests.factories import GameFactory
 from website.exceptions import (
+    DiscordAPIError,
+    DuplicateRegistrationError,
+    GameClosedError,
+    GameFullError,
     NotFoundError,
     ValidationError,
-    GameFullError,
-    GameClosedError,
-    DuplicateRegistrationError,
-    DiscordAPIError,
 )
 from website.models import Game
 from website.services.game import GameService
-
-from tests.factories import GameFactory
 
 
 class TestGameService:
@@ -103,9 +103,7 @@ class TestGameService:
             "characters": "self",
         }
 
-        game = game_service.create(
-            data, admin_user.id, status="draft", create_resources=False
-        )
+        game = game_service.create(data, admin_user.id, status="draft", create_resources=False)
 
         assert game is not None
         assert game.slug.startswith("new-draft-game-par")
@@ -146,9 +144,7 @@ class TestGameService:
             "characters": "self",
         }
 
-        game = game_service.create(
-            data, admin_user.id, status="open", create_resources=True
-        )
+        game = game_service.create(data, admin_user.id, status="open", create_resources=True)
 
         assert game.role == "mock_role_id"
         assert game.channel == "mock_channel_id"
@@ -210,9 +206,7 @@ class TestGameService:
 
         assert game.status == "closed"
         assert game.msg_id is None
-        mock_discord.send_game_embed.assert_called_once_with(
-            game, embed_type="annonce_details"
-        )
+        mock_discord.send_game_embed.assert_called_once_with(game, embed_type="annonce_details")
 
     def test_publish_already_published(self, db_session, sample_game, game_service):
         sample_game.msg_id = "existing_msg"
@@ -263,18 +257,12 @@ class TestGameService:
         sample_game.role = "role_123"
         db_session.commit()
 
-        game = game_service.register_player(
-            sample_game.slug, regular_user.id, force=False
-        )
+        game = game_service.register_player(sample_game.slug, regular_user.id, force=False)
 
         assert regular_user in game.players
-        mock_discord.add_role_to_user.assert_called_once_with(
-            regular_user.id, "role_123"
-        )
+        mock_discord.add_role_to_user.assert_called_once_with(regular_user.id, "role_123")
 
-    def test_register_player_duplicate(
-        self, db_session, sample_game, regular_user, game_service
-    ):
+    def test_register_player_duplicate(self, db_session, sample_game, regular_user, game_service):
         sample_game.status = "open"
         sample_game.players.append(regular_user)
         db_session.commit()
@@ -317,9 +305,7 @@ class TestGameService:
         sample_game.role = "role_123"
         db_session.commit()
 
-        game = game_service.register_player(
-            sample_game.slug, regular_user.id, force=True
-        )
+        game = game_service.register_player(sample_game.slug, regular_user.id, force=True)
 
         # Force should bypass both capacity and status checks
         assert regular_user in game.players
@@ -335,9 +321,7 @@ class TestGameService:
         sample_game.msg_id = "msg_123"
         db_session.commit()
 
-        game = game_service.register_player(
-            sample_game.slug, regular_user.id, force=False
-        )
+        game = game_service.register_player(sample_game.slug, regular_user.id, force=False)
 
         # Game should auto-close when reaching capacity
         assert game.status == "closed"
@@ -354,9 +338,7 @@ class TestGameService:
         game = game_service.unregister_player(sample_game.slug, regular_user.id)
 
         assert regular_user not in game.players
-        mock_discord.remove_role_from_user.assert_called_once_with(
-            regular_user.id, "role_123"
-        )
+        mock_discord.remove_role_from_user.assert_called_once_with(regular_user.id, "role_123")
 
     def test_unregister_player_not_registered(
         self, db_session, sample_game, regular_user, game_service
@@ -430,9 +412,7 @@ class TestGameServicePrivateHelpers:
         self, db_session, sample_game, mock_discord
     ):
         """When role deletion fails, no exception propagates."""
-        mock_discord.delete_role.side_effect = DiscordAPIError(
-            "Role not found", status_code=404
-        )
+        mock_discord.delete_role.side_effect = DiscordAPIError("Role not found", status_code=404)
         mock_channel_service = Mock()
 
         service = GameService(
@@ -464,9 +444,7 @@ class TestGameServicePrivateHelpers:
 
         mock_trophy_service.award.assert_called_once()
 
-    def test_delete_game_message_logs_on_failure(
-        self, db_session, sample_game, mock_discord
-    ):
+    def test_delete_game_message_logs_on_failure(self, db_session, sample_game, mock_discord):
         """Discord message deletion failure is logged but doesn't propagate."""
         mock_discord.delete_message.side_effect = DiscordAPIError(
             "Message not found", status_code=404
@@ -484,9 +462,7 @@ class TestGameServicePrivateHelpers:
         # msg_id should NOT be cleared since deletion failed
         assert sample_game.msg_id == "msg_to_delete"
 
-    def test_delete_game_message_skips_when_no_msg_id(
-        self, db_session, sample_game, mock_discord
-    ):
+    def test_delete_game_message_skips_when_no_msg_id(self, db_session, sample_game, mock_discord):
         """When game has no msg_id, deletion is skipped entirely."""
         service = GameService(discord_service=mock_discord)
 
@@ -496,9 +472,7 @@ class TestGameServicePrivateHelpers:
 
         mock_discord.delete_message.assert_not_called()
 
-    def test_rollback_discord_resources_cleans_up(
-        self, db_session, sample_game, mock_discord
-    ):
+    def test_rollback_discord_resources_cleans_up(self, db_session, sample_game, mock_discord):
         """Rollback deletes both channel and role when both exist."""
         service = GameService(discord_service=mock_discord)
 

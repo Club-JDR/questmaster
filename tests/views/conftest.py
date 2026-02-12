@@ -8,8 +8,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from website.models import User
-
 from tests.constants import (
     TEST_ADMIN_USER_ID,
     TEST_ADMIN_USER_NAME,
@@ -19,6 +17,7 @@ from tests.constants import (
     TEST_REGULAR_USER_NAME,
 )
 from tests.factories import GameFactory
+from website.models import User
 
 
 @pytest.fixture
@@ -58,9 +57,7 @@ def mock_discord_lookups(test_app):
 
     with (
         patch("website.models.user.get_user_roles", side_effect=fake_get_user_roles),
-        patch(
-            "website.models.user.get_user_profile", side_effect=fake_get_user_profile
-        ),
+        patch("website.models.user.get_user_profile", side_effect=fake_get_user_profile),
     ):
         yield role_map
 

@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime, timezone
+
+import pytest
+
 from website.models.game_event import GameEvent
 
 

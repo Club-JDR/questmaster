@@ -1,6 +1,6 @@
+from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import Channel
-from website.exceptions import NotFoundError
 from website.repositories.channel import ChannelRepository
 from website.utils.logger import logger
 
@@ -57,8 +57,6 @@ class ChannelService:
                 if category:
                     self.repo.decrement_size(category)
                     db.session.commit()
-                    logger.info(
-                        f"Decreased size of category {category.id} to {category.size}"
-                    )
+                    logger.info(f"Decreased size of category {category.id} to {category.size}")
         except Exception as e:
             logger.warning(f"Failed to adjust category size for game {game.id}: {e}")

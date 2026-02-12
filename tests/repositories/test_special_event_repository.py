@@ -1,7 +1,6 @@
+from tests.factories import SpecialEventFactory
 from website.models import SpecialEvent
 from website.repositories.special_event import SpecialEventRepository
-
-from tests.factories import SpecialEventFactory
 
 
 class TestSpecialEventRepository:
@@ -55,9 +54,7 @@ class TestSpecialEventRepository:
     def test_inherits_get_by_id(self, db_session):
         """Test inherited get_by_id method works."""
         repo = SpecialEventRepository()
-        event = SpecialEventFactory(
-            db_session, name="TestRepoGetById", emoji="🔍", active=True
-        )
+        event = SpecialEventFactory(db_session, name="TestRepoGetById", emoji="🔍", active=True)
 
         found = repo.get_by_id(event.id)
         assert found is not None
@@ -66,9 +63,7 @@ class TestSpecialEventRepository:
     def test_inherits_add(self, db_session):
         """Test inherited add method works."""
         repo = SpecialEventRepository()
-        new_event = SpecialEvent(
-            name="TestRepoAdd", emoji="➕", color=0xFF0000, active=True
-        )
+        new_event = SpecialEvent(name="TestRepoAdd", emoji="➕", color=0xFF0000, active=True)
         result = repo.add(new_event)
         assert result.id is not None
         assert result.name == "TestRepoAdd"
@@ -77,9 +72,7 @@ class TestSpecialEventRepository:
     def test_inherits_delete(self, db_session):
         """Test inherited delete method works."""
         repo = SpecialEventRepository()
-        event = SpecialEventFactory(
-            db_session, name="TestRepoDelete", emoji="🗑️", active=False
-        )
+        event = SpecialEventFactory(db_session, name="TestRepoDelete", emoji="🗑️", active=False)
         count_before = repo.count()
 
         repo.delete(event)

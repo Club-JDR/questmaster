@@ -6,7 +6,7 @@ Extracted from views to enable reuse across views and future API endpoints.
 from datetime import datetime, timezone
 
 from sqlalchemy import case
-from sqlalchemy.sql import func, or_, and_
+from sqlalchemy.sql import and_, func, or_
 
 from config.constants import GAMES_PER_PAGE
 from website.exceptions import ValidationError
@@ -77,9 +77,7 @@ def build_status_filters(statuses, user_payload):
         elif user_payload.get("is_admin"):
             filters.append(Game.status == "draft")
         else:
-            filters.append(
-                and_(Game.status == "draft", Game.gm_id == user_payload.get("user_id"))
-            )
+            filters.append(and_(Game.status == "draft", Game.gm_id == user_payload.get("user_id")))
     return or_(*filters)
 
 

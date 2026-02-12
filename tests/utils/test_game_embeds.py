@@ -348,9 +348,7 @@ class TestBuildAnnonceDetailsEmbed:
 class TestBuildAddSessionEmbed:
     def test_returns_game_channel(self):
         game = _make_game(channel="ch_add")
-        _, channel_id = build_add_session_embed(
-            game, start="lun 01/01", end="lun 01/01"
-        )
+        _, channel_id = build_add_session_embed(game, start="lun 01/01", end="lun 01/01")
         assert channel_id == "ch_add"
 
     def test_embed_color_is_green(self):
@@ -388,9 +386,7 @@ class TestBuildEditSessionEmbed:
 
     def test_description_contains_old_and_new(self):
         game = _make_game()
-        embed, _ = build_edit_session_embed(
-            game, start="mar 05/03", old_start="lun 04/03"
-        )
+        embed, _ = build_edit_session_embed(game, start="mar 05/03", old_start="lun 04/03")
         assert "mar 05/03" in embed["description"]
         assert "lun 04/03" in embed["description"]
 
@@ -471,9 +467,7 @@ class TestBuildAlertEmbed:
     def test_description_contains_player_and_message(self, embed_app):
         with embed_app.app_context():
             game = _make_game()
-            embed, _ = build_alert_embed(
-                game, player="player_99", alert_message="Bad behavior"
-            )
+            embed, _ = build_alert_embed(game, player="player_99", alert_message="Bad behavior")
             assert "<@player_99>" in embed["description"]
             assert "Bad behavior" in embed["description"]
 

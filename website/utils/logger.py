@@ -1,4 +1,5 @@
 import logging
+
 from flask import g
 
 
@@ -10,9 +11,7 @@ class RequestLoggerAdapter(logging.LoggerAdapter):
 
 def configure_logging(level=logging.INFO):
     handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()

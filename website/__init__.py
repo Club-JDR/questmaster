@@ -1,15 +1,18 @@
-import os, uuid
+import os
+import uuid
+
 from flask import Flask, g
 from flask_admin import Admin
-from website.client.discord import Discord
-from website.utils.logger import configure_logging
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from website import models
 from website.bot import set_bot
-from website.views import admin as admin_view
-from website.extensions import db, migrate, csrf, cache, discord, seed_trophies
-from website.views import register_blueprints, register_filters
+from website.client.discord import Discord
+from website.extensions import cache, csrf, db, discord, migrate, seed_trophies
 from website.scheduler import start_scheduler
-from werkzeug.middleware.proxy_fix import ProxyFix
+from website.utils.logger import configure_logging
+from website.views import admin as admin_view
+from website.views import register_blueprints, register_filters
 
 
 def create_app():
@@ -34,6 +37,7 @@ def create_app():
     @app.context_processor
     def inject_payload():
         from flask import session
+
         from website.services import SpecialEventService
 
         special_event_service = SpecialEventService()
@@ -72,9 +76,7 @@ def create_app():
     app.cli.add_command(seed_trophies)
 
     # Create bot instance and store it
-    bot_instance = Discord(
-        app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"]
-    )
+    bot_instance = Discord(app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"])
     set_bot(bot_instance)
 
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"  # Dev only
@@ -100,12 +102,8 @@ def create_app():
     admin.add_view(admin_view.AdminView(models.Trophy, db.session, name="Badges"))
     admin.add_view(admin_view.VttAdmin(models.Vtt, db.session, name="VTTs"))
     admin.add_view(admin_view.SystemAdmin(models.System, db.session, name="Systèmes"))
-    admin.add_view(
-        admin_view.ChannelAdmin(models.Channel, db.session, name="Catégories (salons)")
-    )
-    admin.add_view(
-        admin_view.GameEventAdmin(models.GameEvent, db.session, name="Journaux")
-    )
+    admin.add_view(admin_view.ChannelAdmin(models.Channel, db.session, name="Catégories (salons)"))
+    admin.add_view(admin_view.GameEventAdmin(models.GameEvent, db.session, name="Journaux"))
 
     register_blueprints(app)
     register_filters(app)

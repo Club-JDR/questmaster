@@ -1,14 +1,15 @@
-from flask_admin.contrib.sqla import ModelView
-from flask_admin import AdminIndexView, expose
 from flask import session
-from wtforms.validators import NumberRange
+from flask_admin import AdminIndexView, expose
+from flask_admin.contrib.sqla import ModelView
 from markupsafe import Markup
 from wtforms import fields
+from wtforms.validators import NumberRange
 from wtforms.widgets import html_params
-from website.models import SpecialEvent
-from website.extensions import db
-from website.exceptions import UnauthorizedError
+
 from config.constants import MSG_ADMIN_ACCESS_REQUIRED
+from website.exceptions import UnauthorizedError
+from website.extensions import db
+from website.models import SpecialEvent
 
 
 def is_admin_authenticated():
@@ -157,9 +158,7 @@ class GameAdmin(AdminView):
 
     form_args = {
         "special_event": {
-            "query_factory": lambda: db.session.query(SpecialEvent).order_by(
-                SpecialEvent.name
-            ),
+            "query_factory": lambda: db.session.query(SpecialEvent).order_by(SpecialEvent.name),
             "label": "Special Event",
         }
     }
@@ -233,9 +232,7 @@ class SpecialEventAdmin(AdminView):
     form_overrides = {"color": ColorField}
 
     form_widget_args = {
-        "color": {
-            "style": "width: 80px; height: 40px; padding: 0; border: none; cursor: pointer;"
-        }
+        "color": {"style": "width: 80px; height: 40px; padding: 0; border: none; cursor: pointer;"}
     }
 
     def _color_preview(view, context, model, name):

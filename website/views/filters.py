@@ -1,5 +1,3 @@
-from flask import current_app
-from markupsafe import Markup
 import locale
 
 

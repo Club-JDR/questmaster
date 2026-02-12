@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
+
+from sqlalchemy import Enum
+
+from config.constants import EVENT_ACTIONS
 from website.extensions import db
 from website.models.base import SerializableMixin
-from config.constants import EVENT_ACTIONS
-from sqlalchemy import Enum
 
 
 class GameEvent(db.Model, SerializableMixin):
@@ -18,9 +20,7 @@ class GameEvent(db.Model, SerializableMixin):
         nullable=False,
     )
     action = db.Column(Enum(*EVENT_ACTIONS, name="action_type_enum"), nullable=False)
-    game_id = db.Column(
-        db.Integer, db.ForeignKey("game.id", ondelete="CASCADE"), nullable=False
-    )
+    game_id = db.Column(db.Integer, db.ForeignKey("game.id", ondelete="CASCADE"), nullable=False)
     description = db.Column(db.Text)
     game = db.relationship("Game", backref="events", cascade="all,delete")
 

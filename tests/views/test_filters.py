@@ -1,5 +1,7 @@
-import datetime, locale
-from website.views.filters import format_datetime, text_color, hex_color
+import datetime
+import locale
+
+from website.views.filters import format_datetime, hex_color, text_color
 
 
 def test_format_datetime():

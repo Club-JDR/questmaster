@@ -309,13 +309,13 @@ class DiscordService:
             DiscordAPIError: If the API request fails.
         """
         from website.utils.game_embeds import (
-            build_annonce_embed,
-            build_annonce_details_embed,
             build_add_session_embed,
-            build_edit_session_embed,
-            build_delete_session_embed,
-            build_register_embed,
             build_alert_embed,
+            build_annonce_details_embed,
+            build_annonce_embed,
+            build_delete_session_embed,
+            build_edit_session_embed,
+            build_register_embed,
         )
 
         embed_builders = {

@@ -6,7 +6,6 @@ The calendar view requires a logged-in user.
 
 import pytest
 
-
 pytestmark = pytest.mark.integration
 
 
