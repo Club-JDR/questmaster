@@ -1,16 +1,9 @@
 """Game announcement views."""
 
-from datetime import datetime
 import locale
+from datetime import datetime
 
-from flask import (
-    Blueprint,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from config.constants import (
     DEFAULT_TIMEFORMAT,
@@ -38,7 +31,6 @@ from website.services.user import UserService
 from website.utils.game_filters import get_filtered_games, get_filtered_user_games
 from website.utils.logger import log_game_event, logger
 from website.views.auth import login_required, who
-
 
 game_bp = Blueprint("annonces", __name__)
 
@@ -148,9 +140,7 @@ def get_game_details(slug):
     """Display game detail page."""
     payload = who()
     game = game_service.get_by_slug_or_404(slug)
-    is_player = "user_id" in payload and any(
-        p.id == payload["user_id"] for p in game.players
-    )
+    is_player = "user_id" in payload and any(p.id == payload["user_id"] for p in game.players)
     return render_template("game_details.j2", game=game, is_player=is_player)
 
 
@@ -349,7 +339,8 @@ def edit_game_session(slug, session_id):
         log_game_event(
             "edit-session",
             game.id,
-            f"Une session a été éditée : {old_start} → {old_end}, remplacée par {new_start} → {new_end}.",
+            f"Une session a été éditée : {old_start} → {old_end}, "
+            f"remplacée par {new_start} → {new_end}.",
         )
         logger.info(
             f"Session {old_start}/{old_end} of Game {game.slug} updated to {new_start}/{new_end}"

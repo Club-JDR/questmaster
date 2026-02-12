@@ -3,10 +3,9 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import case, func, or_, and_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import joinedload, subqueryload
 
-from website.extensions import db
 from website.models import Game, User
 from website.repositories.base import BaseRepository
 
@@ -73,12 +72,7 @@ class GameRepository(BaseRepository[Game]):
         Returns:
             List of games where user is registered as player.
         """
-        return (
-            self.session.query(Game)
-            .join(Game.players)
-            .filter(User.id == player_id)
-            .all()
-        )
+        return self.session.query(Game).join(Game.players).filter(User.id == player_id).all()
 
     def find_by_special_event(self, event_id: int) -> list[Game]:
         """Find all games for a special event.

@@ -1,6 +1,6 @@
-from website.extensions import db, cache
-from website.models import System
 from website.exceptions import NotFoundError, ValidationError
+from website.extensions import cache, db
+from website.models import System
 from website.repositories.system import SystemRepository
 
 

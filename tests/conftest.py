@@ -13,11 +13,6 @@ import os
 
 import pytest
 
-from website import create_app, db
-from website.client.discord import Discord
-from website.extensions import seed_trophies_for_tests
-from website.models import Channel, SpecialEvent, System, User, Vtt
-
 from tests.constants import (
     TEST_ADMIN_USER_ID,
     TEST_ADMIN_USER_NAME,
@@ -30,6 +25,10 @@ from tests.constants import (
     TEST_SPECIAL_EVENT_ID,
     TEST_SPECIAL_EVENT_NAME,
 )
+from website import create_app, db
+from website.client.discord import Discord
+from website.extensions import seed_trophies_for_tests
+from website.models import Channel, SpecialEvent, System, User, Vtt
 
 
 def seed_db():

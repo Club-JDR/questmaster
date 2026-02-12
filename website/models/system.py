@@ -1,4 +1,4 @@
-from website.extensions import db, cache
+from website.extensions import cache, db
 from website.models.base import SerializableMixin
 
 
@@ -50,9 +50,7 @@ class System(db.Model, SerializableMixin):
     def __eq__(self, other):
         if not isinstance(other, System):
             return NotImplemented
-        return (
-            self.id == other.id and self.name == other.name and self.icon == other.icon
-        )
+        return self.id == other.id and self.name == other.name and self.icon == other.icon
 
     def __ne__(self, other):
         result = self.__eq__(other)

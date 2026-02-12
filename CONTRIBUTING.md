@@ -22,8 +22,16 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 ## Code style
 
 - Format with [Black](https://github.com/psf/black): `black .`
-- Sort imports with [isort](https://pycqa.github.io/isort/) (Black-compatible profile)
+- Sort imports with [isort](https://pycqa.github.io/isort/): `isort .`
+- Lint with [flake8](https://flake8.pycqa.org/): `flake8 website/`
 - Add type hints for all public functions (gradual adoption)
+
+A [pre-commit](https://pre-commit.com/) configuration is provided. Install the hooks to run these checks automatically before each commit:
+
+```sh
+pip install pre-commit
+pre-commit install
+```
 
 ## Architecture
 

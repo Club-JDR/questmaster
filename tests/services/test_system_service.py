@@ -1,7 +1,8 @@
 import pytest
+
+from website.exceptions import NotFoundError, ValidationError
 from website.models import System
 from website.services.system import SystemService
-from website.exceptions import NotFoundError, ValidationError
 
 
 class TestSystemService:

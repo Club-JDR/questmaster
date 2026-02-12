@@ -12,7 +12,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -163,9 +162,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Ouvrir" in response.data.decode()
 
     # User cannot register a closed game
-    response = logged_in_user.post(
-        f"/annonces/{slug}/inscription/", follow_redirects=True
-    )
+    response = logged_in_user.post(f"/annonces/{slug}/inscription/", follow_redirects=True)
     assert response.status_code == 200
     assert response.data.decode().count("Libre") == 1
     assert "La partie est fermée aux inscriptions." in response.data.decode()
@@ -180,19 +177,12 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Close" in response.data.decode()
 
     # GM cannot register to its own game
-    response = logged_in_admin.post(
-        f"/annonces/{slug}/inscription/", follow_redirects=True
-    )
+    response = logged_in_admin.post(f"/annonces/{slug}/inscription/", follow_redirects=True)
     assert response.status_code == 200
-    assert (
-        "Vous ne pouvez pas vous inscrire à votre propre partie."
-        in response.data.decode()
-    )
+    assert "Vous ne pouvez pas vous inscrire à votre propre partie." in response.data.decode()
 
     # User can register, Game is full -> closed
-    response = logged_in_user.post(
-        f"/annonces/{slug}/inscription/", follow_redirects=True
-    )
+    response = logged_in_user.post(f"/annonces/{slug}/inscription/", follow_redirects=True)
     assert response.status_code == 200
     assert response.data.decode().count("Libre") == 0
     assert "Vous êtes inscrit·e." in response.data.decode()
@@ -200,9 +190,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
 
     # User can signal something on the game
     data = {"alertMessage": "Le MJ ne vient plus."}
-    response = logged_in_user.post(
-        f"/annonces/{slug}/alert/", follow_redirects=True, data=data
-    )
+    response = logged_in_user.post(f"/annonces/{slug}/alert/", follow_redirects=True, data=data)
     assert response.status_code == 200
     assert "Signalement effectué." in response.data.decode()
 
@@ -228,9 +216,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Badge Campagne (1)" in response.data.decode()
 
     # Get trophies someone else's trophies
-    response = logged_in_user.get(
-        f"/badges/?user_id={admin_user.id}", follow_redirects=True
-    )
+    response = logged_in_user.get(f"/badges/?user_id={admin_user.id}", follow_redirects=True)
     assert response.status_code == 200
     assert "Badge Campagne GM (1)" in response.data.decode()
 
@@ -301,9 +287,7 @@ def test_e2e_scenario_2(
 
     # Edit draft Game
     data["complement"] = "Scénario mortel pour les PJs."
-    response = logged_in_admin.post(
-        f"/annonces/{slug}/editer/", data=data, follow_redirects=True
-    )
+    response = logged_in_admin.post(f"/annonces/{slug}/editer/", data=data, follow_redirects=True)
     assert response.status_code == 200
     assert "Annonce modifiée." in response.data.decode()
     assert "Scénario mortel pour les PJs." in response.data.decode()
@@ -326,9 +310,7 @@ def test_e2e_scenario_2(
 
     # Open Game without posting
     data["action"] = "open-silent"
-    response = logged_in_admin.post(
-        f"/annonces/{slug}/editer/", data=data, follow_redirects=True
-    )
+    response = logged_in_admin.post(f"/annonces/{slug}/editer/", data=data, follow_redirects=True)
     assert response.status_code == 200
     assert "Annonce modifiée et ouverte." in response.data.decode()
     assert "Scénario mortel pour les PJs." in response.data.decode()

@@ -1,11 +1,11 @@
-from datetime import datetime
 import random
-from website.models.user import get_user_profile
-from website.extensions import db
-from website.services.user import UserService
-from apscheduler.schedulers.background import BackgroundScheduler
-from flask import current_app
+from datetime import datetime
 
+from apscheduler.schedulers.background import BackgroundScheduler
+
+from website.extensions import db
+from website.models.user import get_user_profile
+from website.services.user import UserService
 
 BATCH_SIZE = 50
 FREQUENCY = 5
@@ -27,14 +27,10 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
                 user.name = profile["name"]
                 user.avatar = profile["avatar"]
             except Exception as e:
-                app.logger.warning(
-                    f"[{datetime.now()}] Failed to refresh {user.id}: {e}"
-                )
+                app.logger.warning(f"[{datetime.now()}] Failed to refresh {user.id}: {e}")
 
         db.session.commit()
-        app.logger.info(
-            f"[Scheduler] Refreshed {len(to_refresh)} users at {datetime.now()}"
-        )
+        app.logger.info(f"[Scheduler] Refreshed {len(to_refresh)} users at {datetime.now()}")
 
 
 def start_scheduler(app):

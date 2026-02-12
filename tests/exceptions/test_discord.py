@@ -1,6 +1,7 @@
 import pytest
-from website.exceptions.discord import DiscordError, DiscordAPIError
+
 from website.exceptions.base import QuestMasterError
+from website.exceptions.discord import DiscordAPIError, DiscordError
 
 
 class TestDiscordError:

@@ -1,7 +1,6 @@
+from tests.factories import VttFactory
 from website.models import Vtt
 from website.repositories.vtt import VttRepository
-
-from tests.factories import VttFactory
 
 
 class TestVttRepository:

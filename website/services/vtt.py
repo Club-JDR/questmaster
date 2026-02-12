@@ -1,6 +1,6 @@
-from website.extensions import db, cache
-from website.models import Vtt
 from website.exceptions import NotFoundError, ValidationError
+from website.extensions import cache, db
+from website.models import Vtt
 from website.repositories.vtt import VttRepository
 
 

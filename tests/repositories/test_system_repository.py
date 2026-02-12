@@ -1,7 +1,6 @@
+from tests.factories import SystemFactory
 from website.models import System
 from website.repositories.system import SystemRepository
-
-from tests.factories import SystemFactory
 
 
 class TestSystemRepository:

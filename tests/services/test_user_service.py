@@ -1,11 +1,11 @@
 import random
 
 import pytest
-from website.models import User
-from website.exceptions import NotFoundError
-from website.services.user import UserService
 
 from tests.constants import TEST_ADMIN_USER_ID
+from website.exceptions import NotFoundError
+from website.models import User
+from website.services.user import UserService
 
 
 class TestUserService:

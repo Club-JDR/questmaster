@@ -1,12 +1,13 @@
 import pytest
+
+from website.exceptions.base import QuestMasterError
 from website.exceptions.business import (
+    DuplicateRegistrationError,
+    GameClosedError,
     GameError,
     GameFullError,
-    GameClosedError,
-    DuplicateRegistrationError,
     SessionConflictError,
 )
-from website.exceptions.base import QuestMasterError
 
 
 class TestGameError:
@@ -131,9 +132,7 @@ class TestDuplicateRegistrationError:
         assert err.code == "DUPLICATE_REGISTRATION"
 
     def test_structured_kwargs(self):
-        err = DuplicateRegistrationError(
-            "User is already registered.", game_id=1, user_id="u123"
-        )
+        err = DuplicateRegistrationError("User is already registered.", game_id=1, user_id="u123")
         assert err.details["game_id"] == 1
         assert err.details["user_id"] == "u123"
 
@@ -166,9 +165,7 @@ class TestSessionConflictError:
         assert err.code == "SESSION_CONFLICT"
 
     def test_structured_kwargs(self):
-        err = SessionConflictError(
-            "Session overlaps with an existing session.", game_id=10
-        )
+        err = SessionConflictError("Session overlaps with an existing session.", game_id=10)
         assert err.details["game_id"] == 10
 
     def test_can_be_raised_and_caught_as_game_error(self):

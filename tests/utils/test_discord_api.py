@@ -64,9 +64,7 @@ def test_edit_message(discord_session, test_channel_id, sent_discord_message):
         "image": {"url": "https://club-jdr.fr/wp-content/uploads/2021/12/dnd.png"},
         "footer": {},
     }
-    response = discord_session.edit_embed_message(
-        sent_discord_message, embed, test_channel_id
-    )
+    response = discord_session.edit_embed_message(sent_discord_message, embed, test_channel_id)
     assert response["channel_id"] == test_channel_id
     assert response["embeds"][0]["title"] == title
     assert response["embeds"][0]["color"] == color
@@ -125,17 +123,11 @@ def test_channel_workflow(discord_session, oneshot_channel):
     assert color == response["color"]
     channel_name = "testchannel"
     # Channel creation
-    response = discord_session.create_channel(
-        channel_name, oneshot_channel.id, role_id, gm_id
-    )
+    response = discord_session.create_channel(channel_name, oneshot_channel.id, role_id, gm_id)
     channel_id = response["id"]
     assert len(response["permission_overwrites"]) == 3
-    assert any(
-        role_id in permission["id"] for permission in response["permission_overwrites"]
-    )
-    assert any(
-        gm_id in permission["id"] for permission in response["permission_overwrites"]
-    )
+    assert any(role_id in permission["id"] for permission in response["permission_overwrites"])
+    assert any(gm_id in permission["id"] for permission in response["permission_overwrites"])
     assert response["name"] == channel_name
     assert response["parent_id"] == oneshot_channel.id
     # Channel details

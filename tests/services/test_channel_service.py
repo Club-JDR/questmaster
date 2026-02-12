@@ -1,10 +1,11 @@
-import pytest
 from unittest.mock import MagicMock
-from website.models import Channel
-from website.services.channel import ChannelService
-from website.exceptions import NotFoundError
+
+import pytest
 
 from tests.constants import TEST_ONESHOT_CHANNEL_ID
+from website.exceptions import NotFoundError
+from website.models import Channel
+from website.services.channel import ChannelService
 
 
 class TestChannelService:

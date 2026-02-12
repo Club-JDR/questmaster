@@ -1,6 +1,5 @@
 from website.extensions import db
 from website.models.base import SerializableMixin
-from .user import User
 
 
 class Trophy(db.Model, SerializableMixin):

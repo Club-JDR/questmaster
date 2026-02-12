@@ -8,28 +8,28 @@ from slugify import slugify
 from sqlalchemy.exc import SQLAlchemyError
 
 from config.constants import (
-    BADGE_OS_ID,
-    BADGE_OS_GM_ID,
-    BADGE_CAMPAIGN_ID,
     BADGE_CAMPAIGN_GM_ID,
+    BADGE_CAMPAIGN_ID,
+    BADGE_OS_GM_ID,
+    BADGE_OS_ID,
     PLAYER_ROLE_PERMISSION,
 )
 from website.exceptions import (
-    ValidationError,
-    NotFoundError,
-    GameFullError,
-    GameClosedError,
-    DuplicateRegistrationError,
     DiscordAPIError,
+    DuplicateRegistrationError,
+    GameClosedError,
+    GameFullError,
+    NotFoundError,
+    ValidationError,
 )
 from website.extensions import db
-from website.models import Game, User
+from website.models import Game
 from website.repositories.game import GameRepository
 from website.services.channel import ChannelService
 from website.services.game_session import GameSessionService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
-from website.utils.logger import logger, log_game_event
+from website.utils.logger import log_game_event, logger
 
 
 class GameService:
@@ -175,12 +175,12 @@ class GameService:
             ValidationError: If data is invalid.
             DiscordAPIError: If Discord resource creation fails.
         """
+        from config.constants import DEFAULT_TIMEFORMAT
         from website.utils.form_parsers import (
-            get_classification,
             get_ambience,
+            get_classification,
             parse_restriction_tags,
         )
-        from config.constants import DEFAULT_TIMEFORMAT
 
         try:
             # Parse special fields
@@ -283,9 +283,7 @@ class GameService:
             role_id=game.role,
             gm_id=game.gm_id,
         )["id"]
-        logger.info(
-            f"Channel created with ID: {game.channel} under category: {category.id}"
-        )
+        logger.info(f"Channel created with ID: {game.channel} under category: {category.id}")
 
         self.channel_service.increment_size(category)
 
@@ -320,12 +318,12 @@ class GameService:
             NotFoundError: If game doesn't exist.
             ValidationError: If data is invalid.
         """
+        from config.constants import DEFAULT_TIMEFORMAT
         from website.utils.form_parsers import (
-            get_classification,
             get_ambience,
+            get_classification,
             parse_restriction_tags,
         )
-        from config.constants import DEFAULT_TIMEFORMAT
 
         game = self.get_by_slug(slug)
 
@@ -366,9 +364,7 @@ class GameService:
                     self.discord.send_game_embed(game, embed_type="annonce")
                     logger.info(f"Embed updated for game {game.id}")
                 except DiscordAPIError as e:
-                    logger.warning(
-                        f"Failed to update Discord embed for game {game.id}: {e}"
-                    )
+                    logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
 
             return game
 
@@ -464,9 +460,7 @@ class GameService:
                 self.discord.send_game_embed(game, embed_type="annonce")
                 logger.info(f"Embed updated due to status change for game {game.id}")
             except DiscordAPIError as e:
-                logger.warning(
-                    f"Failed to update embed on status change for game {game.id}: {e}"
-                )
+                logger.warning(f"Failed to update embed on status change for game {game.id}: {e}")
 
         return game
 
@@ -495,9 +489,7 @@ class GameService:
                 self.discord.send_game_embed(game, embed_type="annonce")
                 logger.info(f"Embed updated due to status change for game {game.id}")
             except DiscordAPIError as e:
-                logger.warning(
-                    f"Failed to update embed on status change for game {game.id}: {e}"
-                )
+                logger.warning(f"Failed to update embed on status change for game {game.id}: {e}")
 
         return game
 
@@ -581,9 +573,7 @@ class GameService:
             return
 
         try:
-            self.discord.delete_message(
-                game.msg_id, current_app.config["POSTS_CHANNEL_ID"]
-            )
+            self.discord.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
             game.msg_id = None
             db.session.commit()
             logger.info(f"Discord embed message deleted for archived game {game.id}")
@@ -674,16 +664,16 @@ class GameService:
                         )
                     except DiscordAPIError as e:
                         logger.warning(
-                            f"Failed to update embed on status change for game {locked_game.id}: {e}"
+                            "Failed to update embed on status change "
+                            f"for game {locked_game.id}: {e}"
                         )
                 log_game_event(
                     "edit",
                     locked_game.id,
-                    f"Annonce fermée automatiquement après avoir atteint le nombre max de joueur·euses ({locked_game.party_size}).",
+                    "Annonce fermée automatiquement après avoir atteint le nombre "
+                    f"max de joueur·euses ({locked_game.party_size}).",
                 )
-                logger.info(
-                    f"Game status for {locked_game.id} has been updated to closed"
-                )
+                logger.info(f"Game status for {locked_game.id} has been updated to closed")
 
             db.session.commit()
 
@@ -708,9 +698,7 @@ class GameService:
             logger.info(f"Role {locked_game.role} added to user {user.id}")
 
             # Send registration embed
-            self.discord.send_game_embed(
-                locked_game, embed_type="register", player=user.id
-            )
+            self.discord.send_game_embed(locked_game, embed_type="register", player=user.id)
 
             return locked_game
 

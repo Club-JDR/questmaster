@@ -1,4 +1,5 @@
 import pytest
+
 from website.models.trophy import Trophy, UserTrophy
 
 

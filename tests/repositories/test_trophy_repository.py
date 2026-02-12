@@ -1,9 +1,8 @@
 """Tests for TrophyRepository."""
 
+from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
 from website.models.trophy import UserTrophy
 from website.repositories.trophy import TrophyRepository
-
-from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
 
 
 class TestTrophyRepository:
@@ -66,12 +65,8 @@ class TestTrophyRepository:
         user2 = UserFactory(db_session, name="Leader 2")
         user3 = UserFactory(db_session, name="Leader 3")
 
-        UserTrophyFactory(
-            db_session, user_id=user1.id, trophy_id=trophy.id, quantity=10
-        )
-        UserTrophyFactory(
-            db_session, user_id=user2.id, trophy_id=trophy.id, quantity=25
-        )
+        UserTrophyFactory(db_session, user_id=user1.id, trophy_id=trophy.id, quantity=10)
+        UserTrophyFactory(db_session, user_id=user2.id, trophy_id=trophy.id, quantity=25)
         UserTrophyFactory(db_session, user_id=user3.id, trophy_id=trophy.id, quantity=5)
 
         leaderboard = repo.get_leaderboard(trophy.id, limit=10)
@@ -93,9 +88,7 @@ class TestTrophyRepository:
 
         users = [UserFactory(db_session, name=f"User {i}") for i in range(5)]
         for i, user in enumerate(users):
-            UserTrophyFactory(
-                db_session, user_id=user.id, trophy_id=trophy.id, quantity=i + 1
-            )
+            UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=i + 1)
 
         leaderboard = repo.get_leaderboard(trophy.id, limit=3)
         assert len(leaderboard) == 3

@@ -9,7 +9,6 @@ import pytest
 from tests.constants import TEST_ADMIN_USER_ID, TEST_GM_USER_ID
 from tests.factories import GameFactory, GameSessionFactory
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -140,9 +139,7 @@ class TestGameCreation:
 class TestGameDetails:
     """GET /annonces/<slug>/ — view game detail page."""
 
-    def test_anonymous_can_view(
-        self, client, mock_discord_lookups, db_session, open_game
-    ):
+    def test_anonymous_can_view(self, client, mock_discord_lookups, db_session, open_game):
         response = client.get(f"/annonces/{open_game.slug}/")
         body = response.data.decode()
         assert response.status_code == 200
@@ -347,17 +344,13 @@ class TestGameStatus:
 class TestGameEdit:
     """GET/POST /annonces/<slug>/editer/ — edit game."""
 
-    def test_get_edit_form(
-        self, logged_in_admin, mock_discord_lookups, db_session, draft_game
-    ):
+    def test_get_edit_form(self, logged_in_admin, mock_discord_lookups, db_session, draft_game):
         response = logged_in_admin.get(f"/annonces/{draft_game.slug}/editer/")
         body = response.data.decode()
         assert response.status_code == 200
         assert "Vous êtes en train de modifier une annonce." in body
 
-    def test_get_clone_form(
-        self, logged_in_admin, mock_discord_lookups, db_session, open_game
-    ):
+    def test_get_clone_form(self, logged_in_admin, mock_discord_lookups, db_session, open_game):
         response = logged_in_admin.get(f"/annonces/{open_game.slug}/cloner/")
         body = response.data.decode()
         assert response.status_code == 200
@@ -611,9 +604,7 @@ class TestGameSessions:
         )
         body = response.data.decode()
         assert response.status_code == 200
-        assert (
-            "Impossible d'ajouter une session qui se termine avant de commencer" in body
-        )
+        assert "Impossible d'ajouter une session qui se termine avant de commencer" in body
 
     def test_edit_session(
         self,
@@ -651,9 +642,7 @@ class TestGameSessions:
         )
         body = response.data.decode()
         assert response.status_code == 200
-        assert (
-            "Impossible d'ajouter une session qui se termine avant de commencer" in body
-        )
+        assert "Impossible d'ajouter une session qui se termine avant de commencer" in body
 
     def test_remove_session(
         self,
@@ -727,9 +716,7 @@ class TestGameAlert:
 class TestGameFormAccess:
     """GET /annonce/ — access the game creation form."""
 
-    def test_admin_can_access_form(
-        self, logged_in_admin, mock_discord_lookups, db_session
-    ):
+    def test_admin_can_access_form(self, logged_in_admin, mock_discord_lookups, db_session):
         response = logged_in_admin.get("/annonce/")
         body = response.data.decode()
         assert response.status_code == 200
@@ -775,9 +762,7 @@ class TestGameSearch:
         assert response.status_code == 200
         assert open_game.name in body
 
-    def test_search_by_vtt(
-        self, client, mock_discord_lookups, db_session, open_game, default_vtt
-    ):
+    def test_search_by_vtt(self, client, mock_discord_lookups, db_session, open_game, default_vtt):
         """open_game uses default_vtt, so filtering by its ID returns it."""
         response = client.get(f"/annonces/?vtt={default_vtt.id}")
         body = response.data.decode()
@@ -802,9 +787,7 @@ class TestGameSearch:
         assert response.status_code == 200
         assert open_game.name not in body
 
-    def test_search_name_no_match(
-        self, client, mock_discord_lookups, db_session, open_game
-    ):
+    def test_search_name_no_match(self, client, mock_discord_lookups, db_session, open_game):
         """A name filter that matches nothing should not show the open_game."""
         response = client.get("/annonces/?name=NonExistentGame12345")
         body = response.data.decode()
@@ -836,9 +819,7 @@ class TestGameSearch:
 class TestMyGames:
     """GET /mes_annonces/ and /mes_parties/ — personal game lists."""
 
-    def test_admin_can_view_gm_games(
-        self, logged_in_admin, mock_discord_lookups, db_session
-    ):
+    def test_admin_can_view_gm_games(self, logged_in_admin, mock_discord_lookups, db_session):
         response = logged_in_admin.get("/mes_annonces/")
         body = response.data.decode()
         assert response.status_code == 200
@@ -856,9 +837,7 @@ class TestMyGames:
         response = logged_in_user.get("/mes_annonces/")
         assert response.status_code == 403
 
-    def test_user_can_view_my_games(
-        self, logged_in_user, mock_discord_lookups, db_session
-    ):
+    def test_user_can_view_my_games(self, logged_in_user, mock_discord_lookups, db_session):
         response = logged_in_user.get("/mes_parties/")
         body = response.data.decode()
         assert response.status_code == 200

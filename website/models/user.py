@@ -1,12 +1,14 @@
 import re
+
 import requests
 from flask import current_app, has_request_context, request
 from sqlalchemy import orm
-from website.extensions import db, cache
-from website.models.base import SerializableMixin
-from website.exceptions import ValidationError
-from website.bot import get_bot
+
 from config.constants import AVATAR_BASE_URL, DEFAULT_AVATAR
+from website.bot import get_bot
+from website.exceptions import ValidationError
+from website.extensions import cache, db
+from website.models.base import SerializableMixin
 
 
 def get_user_profile(user_id, force_refresh=False):
@@ -80,15 +82,11 @@ class User(db.Model, SerializableMixin):
     id = db.Column(db.String(), primary_key=True)
     name = db.Column(db.String(), nullable=False, index=True)
     games_gm = db.relationship("Game", back_populates="gm")
-    trophies = db.relationship(
-        "UserTrophy", back_populates="user", cascade="all, delete-orphan"
-    )
+    trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
     def __init__(self, id, name="Inconnu"):
         if not re.fullmatch(r"\d{17,21}", id):
-            raise ValidationError(
-                "Invalid Discord UID.", field="id", details={"value": id}
-            )
+            raise ValidationError("Invalid Discord UID.", field="id", details={"value": id})
         self.id = id
         self.name = name
 
@@ -169,8 +167,7 @@ class User(db.Model, SerializableMixin):
             return None
         if isinstance(rel_value, list):
             return [
-                item.to_dict() if hasattr(item, "to_dict") else str(item)
-                for item in rel_value
+                item.to_dict() if hasattr(item, "to_dict") else str(item) for item in rel_value
             ]
         if hasattr(rel_value, "to_dict"):
             return rel_value.to_dict()
@@ -211,9 +208,7 @@ class User(db.Model, SerializableMixin):
         on the created instance if present.
         """
         if "id" not in data:
-            raise ValidationError(
-                "Missing id when creating User from dict.", field="id"
-            )
+            raise ValidationError("Missing id when creating User from dict.", field="id")
         user = cls(id=str(data["id"]), name=data.get("name", "Inconnu"))
 
         # Optional attrs that are convenient to set from API payloads

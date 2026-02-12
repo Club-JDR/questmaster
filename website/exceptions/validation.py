@@ -15,13 +15,9 @@ class ValidationError(QuestMasterError):
 
     http_status = 400
 
-    def __init__(
-        self, message: str, field: str = None, code: str = None, details: dict = None
-    ):
+    def __init__(self, message: str, field: str = None, code: str = None, details: dict = None):
         self.field = field
         details = details or {}
         if field:
             details["field"] = field
-        super().__init__(
-            message=message, code=code or "VALIDATION_ERROR", details=details
-        )
+        super().__init__(message=message, code=code or "VALIDATION_ERROR", details=details)

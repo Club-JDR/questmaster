@@ -9,13 +9,9 @@ import time
 import requests
 from unidecode import unidecode
 
+from config.constants import DISCORD_API_BASE_URL, GM_ROLE_PERMISSION, PLAYER_ROLE_PERMISSION
 from website.exceptions import DiscordAPIError
 from website.utils.logger import logger
-from config.constants import (
-    DISCORD_API_BASE_URL,
-    PLAYER_ROLE_PERMISSION,
-    GM_ROLE_PERMISSION,
-)
 
 
 class Discord:
@@ -66,9 +62,7 @@ class Discord:
             if r.status_code == 429:
                 data = r.json()
                 retry_after = data.get("retry_after", 1)
-                logger.warning(
-                    "Rate limited by Discord. Retrying after %.2f s...", retry_after
-                )
+                logger.warning("Rate limited by Discord. Retrying after %.2f s...", retry_after)
                 time.sleep(float(retry_after))
                 continue
 
@@ -93,9 +87,7 @@ class Discord:
         raise DiscordAPIError("Exceeded retry attempts", status_code=429)
 
     def get_user(self, user_id):
-        return self._request(
-            endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET"
-        )
+        return self._request(endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET")
 
     def send_message(self, content, channel_id):
         payload = {
@@ -106,9 +98,7 @@ class Discord:
         )
 
     def delete_message(self, msg_id, channel_id):
-        return self._request(
-            endpoint=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE"
-        )
+        return self._request(endpoint=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE")
 
     def send_embed_message(self, embed, channel_id):
         payload = {"embeds": [embed]}
@@ -164,9 +154,7 @@ class Discord:
         return {"message": "Unknown Role"}
 
     def delete_role(self, role_id):
-        return self._request(
-            endpoint=f"/guilds/{self.guild_id}/roles/{role_id}", method="DELETE"
-        )
+        return self._request(endpoint=f"/guilds/{self.guild_id}/roles/{role_id}", method="DELETE")
 
     def add_role_to_user(self, user_id, role_id):
         return self._request(

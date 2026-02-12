@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template
 from datetime import datetime, timedelta
 
+from flask import Blueprint, render_template
 
 demo_bp = Blueprint("demo", __name__)
 

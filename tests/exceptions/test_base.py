@@ -1,5 +1,6 @@
 import pytest
-from website.exceptions.base import QuestMasterError, NotFoundError, UnauthorizedError
+
+from website.exceptions.base import NotFoundError, QuestMasterError, UnauthorizedError
 
 
 class TestQuestMasterError:
@@ -80,10 +81,7 @@ class TestQuestMasterError:
 
     def test_repr_with_all(self):
         err = QuestMasterError("test", code="C", details={"k": "v"})
-        assert (
-            repr(err)
-            == "QuestMasterError(message='test', code='C', details={'k': 'v'})"
-        )
+        assert repr(err) == "QuestMasterError(message='test', code='C', details={'k': 'v'})"
 
 
 class TestNotFoundError:
@@ -169,9 +167,7 @@ class TestUnauthorizedError:
         assert err.http_status == 403
 
     def test_structured_kwargs(self):
-        err = UnauthorizedError(
-            "Access denied.", user_id="user123", action="delete_game"
-        )
+        err = UnauthorizedError("Access denied.", user_id="user123", action="delete_game")
         assert err.details["user_id"] == "user123"
         assert err.details["action"] == "delete_game"
 

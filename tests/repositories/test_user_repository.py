@@ -1,9 +1,9 @@
 import pytest
-from website.models import User
-from website.repositories.user import UserRepository
 
 from tests.constants import TEST_ADMIN_USER_ID
 from tests.factories import UserFactory
+from website.models import User
+from website.repositories.user import UserRepository
 
 
 class TestUserRepository:

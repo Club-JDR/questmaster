@@ -38,10 +38,16 @@ jobs:
         with:
           python-version: '3.13'
 
-      - run: pip install black==24.10.0
+      - run: pip install black==24.10.0 isort==5.13.2 flake8==7.1.1
 
-      - name: Lint with Black
-        run: black --check .
+      - name: Check import ordering with isort
+        run: isort --check website/ config/ tests/
+
+      - name: Check formatting with Black
+        run: black --check website/ config/ tests/
+
+      - name: Lint with flake8
+        run: flake8 website/
 
   tests:
     name: Run Tests

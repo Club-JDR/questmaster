@@ -1,9 +1,9 @@
 import logging
 
+from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models.trophy import Trophy, UserTrophy
 from website.models.user import User
-from website.exceptions import NotFoundError
 from website.repositories.trophy import TrophyRepository
 
 logger = logging.getLogger(__name__)
@@ -75,9 +75,7 @@ class TrophyService:
                 user_trophy = self.repo.award_trophy(user_id, trophy_id, amount=1)
                 logger.info(f"User {user_id} got a trophy: {trophy.name}")
             else:
-                logger.debug(
-                    f"User {user_id} already has unique trophy {trophy.name}, skipping"
-                )
+                logger.debug(f"User {user_id} already has unique trophy {trophy.name}, skipping")
         else:
             # Non-unique trophies: increment quantity
             user_trophy = self.repo.award_trophy(user_id, trophy_id, amount)
@@ -86,9 +84,7 @@ class TrophyService:
         db.session.commit()
         return user_trophy
 
-    def get_leaderboard(
-        self, trophy_id: int, limit: int = 10
-    ) -> list[tuple[User, int]]:
+    def get_leaderboard(self, trophy_id: int, limit: int = 10) -> list[tuple[User, int]]:
         """Get leaderboard for a specific trophy.
 
         Args:
@@ -115,10 +111,7 @@ class TrophyService:
             List of dicts with keys: name, icon, quantity.
         """
         user_trophies = (
-            self.repo.session.query(UserTrophy)
-            .filter_by(user_id=user_id)
-            .join(Trophy)
-            .all()
+            self.repo.session.query(UserTrophy).filter_by(user_id=user_id).join(Trophy).all()
         )
 
         return [

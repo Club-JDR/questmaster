@@ -1,8 +1,8 @@
 import pytest
-from website.models import Channel
-from website.repositories.channel import ChannelRepository
 
 from tests.constants import TEST_ONESHOT_CHANNEL_ID
+from website.models import Channel
+from website.repositories.channel import ChannelRepository
 
 
 class TestChannelRepository:

@@ -1,7 +1,8 @@
 """Tests for GameSessionRepository."""
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
@@ -15,9 +16,7 @@ class TestGameSessionRepository:
         session = GameSession(start=start, end=end, game_id=sample_game.id)
         repo.add(session)
 
-        results = repo.find_in_range(
-            datetime(2025, 8, 1, 0, 0), datetime(2025, 8, 1, 23, 59)
-        )
+        results = repo.find_in_range(datetime(2025, 8, 1, 0, 0), datetime(2025, 8, 1, 23, 59))
         assert any(s.id == session.id for s in results)
 
     def test_find_in_range_excludes_outside(self, db_session, sample_game):
@@ -28,9 +27,7 @@ class TestGameSessionRepository:
         repo.add(session)
 
         # Search in a different month
-        results = repo.find_in_range(
-            datetime(2025, 9, 1, 0, 0), datetime(2025, 9, 30, 23, 59)
-        )
+        results = repo.find_in_range(datetime(2025, 9, 1, 0, 0), datetime(2025, 9, 30, 23, 59))
         assert not any(s.id == session.id for s in results)
 
     def test_add(self, db_session, sample_game):

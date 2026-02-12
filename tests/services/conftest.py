@@ -1,12 +1,12 @@
 """Shared fixtures for service tests."""
 
-import pytest
 from unittest.mock import Mock
 
-from website.services.discord import DiscordService
-from website.services.game import GameService
+import pytest
 
 from tests.factories import GameFactory
+from website.services.discord import DiscordService
+from website.services.game import GameService
 
 
 @pytest.fixture

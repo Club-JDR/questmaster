@@ -1,7 +1,6 @@
 """Form-parsing utilities for extracting structured data from Flask request forms."""
 
 import yaml
-
 from flask import request
 
 from website.utils.logger import logger

@@ -1,9 +1,11 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from flask import Flask
-from website.models.user import User
-from website.exceptions import ValidationError
+
 from config.constants import DEFAULT_AVATAR
+from website.exceptions import ValidationError
+from website.models.user import User
 
 
 @pytest.mark.parametrize("uid", ["12345678901234567", "9876543210987654321"])

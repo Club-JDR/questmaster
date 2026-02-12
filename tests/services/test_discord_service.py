@@ -1,7 +1,8 @@
 """Tests for DiscordService."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from website.services.discord import DiscordService
 
@@ -149,9 +150,7 @@ class TestDiscordService:
 
         result = discord_service.edit_embed("msg123", embed, "channel456")
 
-        mock_bot.edit_embed_message.assert_called_once_with(
-            "msg123", embed, "channel456"
-        )
+        mock_bot.edit_embed_message.assert_called_once_with("msg123", embed, "channel456")
         assert result["id"] == "msg123"
 
     # -------------------------------------------------------------------------

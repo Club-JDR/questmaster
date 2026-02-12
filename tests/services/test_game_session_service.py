@@ -1,10 +1,11 @@
 """Tests for GameSessionService."""
 
-import pytest
 from datetime import datetime
 
+import pytest
+
+from website.exceptions import SessionConflictError, ValidationError
 from website.models import GameSession
-from website.exceptions import ValidationError, SessionConflictError
 from website.services.game_session import GameSessionService
 
 
@@ -47,9 +48,7 @@ class TestGameSessionService:
         start = datetime(2025, 9, 3, 20, 0)
         end = datetime(2025, 9, 3, 23, 0)
         service.create(sample_game, start, end)
-        results = service.find_in_range(
-            datetime(2025, 9, 1, 0, 0), datetime(2025, 9, 30, 23, 59)
-        )
+        results = service.find_in_range(datetime(2025, 9, 1, 0, 0), datetime(2025, 9, 30, 23, 59))
         assert len(results) >= 1
 
     def test_update_valid_times(self, db_session, sample_game):
@@ -73,15 +72,11 @@ class TestGameSessionService:
         )
 
         with pytest.raises(ValidationError):
-            service.update(
-                session, datetime(2025, 10, 2, 23, 0), datetime(2025, 10, 2, 20, 0)
-            )
+            service.update(session, datetime(2025, 10, 2, 23, 0), datetime(2025, 10, 2, 20, 0))
 
     def test_update_conflict_with_other_session(self, db_session, sample_game):
         service = GameSessionService()
-        service.create(
-            sample_game, datetime(2025, 10, 3, 20, 0), datetime(2025, 10, 3, 23, 0)
-        )
+        service.create(sample_game, datetime(2025, 10, 3, 20, 0), datetime(2025, 10, 3, 23, 0))
         session_b = service.create(
             sample_game, datetime(2025, 10, 4, 20, 0), datetime(2025, 10, 4, 23, 0)
         )

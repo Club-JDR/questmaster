@@ -10,13 +10,15 @@ import pytest
 from werkzeug.datastructures import MultiDict
 
 from config.constants import (
+    GAME_STATUS_ARCHIVED,
+    GAME_STATUS_CLOSED,
     GAME_STATUS_DRAFT,
     GAME_STATUS_OPEN,
-    GAME_STATUS_CLOSED,
-    GAME_STATUS_ARCHIVED,
-    GAME_TYPE_ONESHOT,
     GAME_TYPE_CAMPAIGN,
+    GAME_TYPE_ONESHOT,
 )
+from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
+from tests.factories import GameFactory
 from website.exceptions import ValidationError
 from website.utils.game_filters import (
     build_base_filters,
@@ -26,10 +28,6 @@ from website.utils.game_filters import (
     normalize_search_defaults,
     parse_multi_checkbox_filter,
 )
-
-from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
-from tests.factories import GameFactory
-
 
 # ---------------------------------------------------------------------------
 # parse_multi_checkbox_filter
@@ -51,9 +49,7 @@ class TestParseMultiCheckboxFilter:
 
     def test_partial_selection(self):
         source = MultiDict({"closed": "on"})
-        filters, args = parse_multi_checkbox_filter(
-            source, ["open", "closed", "archived"]
-        )
+        filters, args = parse_multi_checkbox_filter(source, ["open", "closed", "archived"])
         assert filters == ["closed"]
         assert args == {"closed": "on"}
 
@@ -162,9 +158,7 @@ class TestNormalizeSearchDefaults:
         assert restriction == ["all"]
 
     def test_partial_empty(self):
-        status, game_type, restriction = normalize_search_defaults(
-            ["open", "closed"], [], ["all"]
-        )
+        status, game_type, restriction = normalize_search_defaults(["open", "closed"], [], ["all"])
         assert status == ["open", "closed"]
         assert game_type == ["oneshot", "campaign"]
         assert restriction == ["all"]
@@ -200,9 +194,7 @@ class TestGetFilteredGames:
         assert hasattr(games, "items")
         assert isinstance(request_args, dict)
 
-    def test_filters_by_status(
-        self, db_session, admin_user, default_system, default_vtt
-    ):
+    def test_filters_by_status(self, db_session, admin_user, default_system, default_vtt):
         GameFactory(
             db_session,
             gm_id=admin_user.id,
@@ -217,9 +209,7 @@ class TestGetFilteredGames:
         statuses = [g.status for g in games.items]
         assert all(s == GAME_STATUS_CLOSED for s in statuses)
 
-    def test_filters_by_game_type(
-        self, db_session, admin_user, default_system, default_vtt
-    ):
+    def test_filters_by_game_type(self, db_session, admin_user, default_system, default_vtt):
         GameFactory(
             db_session,
             gm_id=admin_user.id,
@@ -250,9 +240,7 @@ class TestGetFilteredGames:
         assert any(g.name == "UniqueNameXYZ789" for g in games.items)
         assert request_args["name"] == "UniqueNameXYZ789"
 
-    def test_draft_visible_to_own_gm(
-        self, db_session, admin_user, default_system, default_vtt
-    ):
+    def test_draft_visible_to_own_gm(self, db_session, admin_user, default_system, default_vtt):
         GameFactory(
             db_session,
             gm_id=admin_user.id,
@@ -274,9 +262,7 @@ class TestGetFilteredGames:
         games, _ = get_filtered_games(source, user_payload)
         assert games.page == 1
 
-    def test_default_status_override(
-        self, db_session, admin_user, default_system, default_vtt
-    ):
+    def test_default_status_override(self, db_session, admin_user, default_system, default_vtt):
         GameFactory(
             db_session,
             gm_id=admin_user.id,
@@ -311,9 +297,7 @@ class TestGetFilteredUserGames:
         )
         source = MultiDict({"open": "on"})
         user_payload = {"user_id": TEST_ADMIN_USER_ID, "is_admin": True}
-        games, _ = get_filtered_user_games(
-            source, TEST_ADMIN_USER_ID, user_payload, role="gm"
-        )
+        games, _ = get_filtered_user_games(source, TEST_ADMIN_USER_ID, user_payload, role="gm")
         assert hasattr(games, "items")
         gm_ids = [g.gm_id for g in games.items]
         assert all(gm_id == TEST_ADMIN_USER_ID for gm_id in gm_ids)
@@ -344,9 +328,7 @@ class TestGetFilteredUserGames:
         source = MultiDict({})
         user_payload = {"user_id": TEST_ADMIN_USER_ID, "is_admin": True}
         with pytest.raises(ValidationError) as exc_info:
-            get_filtered_user_games(
-                source, TEST_ADMIN_USER_ID, user_payload, role="invalid"
-            )
+            get_filtered_user_games(source, TEST_ADMIN_USER_ID, user_payload, role="invalid")
         assert exc_info.value.field == "role"
 
     def test_nonexistent_user_returns_empty(self, db_session):

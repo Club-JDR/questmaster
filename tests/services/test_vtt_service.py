@@ -1,7 +1,8 @@
 import pytest
+
+from website.exceptions import NotFoundError, ValidationError
 from website.models import Vtt
 from website.services.vtt import VttService
-from website.exceptions import NotFoundError, ValidationError
 
 
 class TestVttService:

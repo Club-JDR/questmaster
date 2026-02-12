@@ -2,11 +2,10 @@
 
 import pytest
 
-from website.models import Game
-from website.repositories.game import GameRepository
-
 from tests.constants import TEST_SPECIAL_EVENT_ID
 from tests.factories import GameFactory
+from website.models import Game
+from website.repositories.game import GameRepository
 
 
 class TestGameRepository:

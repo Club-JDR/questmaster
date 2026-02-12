@@ -2,11 +2,10 @@
 
 import pytest
 
+from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
+from website.exceptions import NotFoundError
 from website.models.trophy import UserTrophy
 from website.services.trophy import TrophyService
-from website.exceptions import NotFoundError
-
-from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
 
 
 class TestTrophyService:
@@ -98,12 +97,8 @@ class TestTrophyService:
         user1 = UserFactory(db_session, name="Service Leader 1")
         user2 = UserFactory(db_session, name="Service Leader 2")
 
-        UserTrophyFactory(
-            db_session, user_id=user1.id, trophy_id=trophy.id, quantity=15
-        )
-        UserTrophyFactory(
-            db_session, user_id=user2.id, trophy_id=trophy.id, quantity=30
-        )
+        UserTrophyFactory(db_session, user_id=user1.id, trophy_id=trophy.id, quantity=15)
+        UserTrophyFactory(db_session, user_id=user2.id, trophy_id=trophy.id, quantity=30)
 
         leaderboard = service.get_leaderboard(trophy.id, limit=10)
         assert len(leaderboard) == 2
@@ -122,13 +117,9 @@ class TestTrophyService:
 
         user = UserFactory(db_session, name="Badge User")
         trophy1 = TrophyFactory(db_session, name="Badge Trophy 1", icon="icon1.png")
-        trophy2 = TrophyFactory(
-            db_session, name="Badge Trophy 2", unique=True, icon="icon2.png"
-        )
+        trophy2 = TrophyFactory(db_session, name="Badge Trophy 2", unique=True, icon="icon2.png")
 
-        UserTrophyFactory(
-            db_session, user_id=user.id, trophy_id=trophy1.id, quantity=10
-        )
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy1.id, quantity=10)
         UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy2.id, quantity=1)
 
         badges = service.get_user_badges(user.id)
