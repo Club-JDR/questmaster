@@ -42,7 +42,7 @@ test = [
 lint = [
     "black==26.1.0",
     "isort==5.13.2",
-    "flake8==7.1.1",
+    "flake8==7.3.0",
     "pydoclint==0.8.3",
 ]
 
