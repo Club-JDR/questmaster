@@ -60,7 +60,7 @@ services:
       timeout: 5s
       retries: 10
   redis: 
-     image: redis:7.4-alpine
+     image: redis:8.6-alpine
      restart: always
      healthcheck:
        test: ["CMD", "redis-cli", "ping"]
