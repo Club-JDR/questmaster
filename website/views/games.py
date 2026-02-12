@@ -390,9 +390,9 @@ def remove_game_session(slug, session_id):
             start=start.strftime(HUMAN_TIMEFORMAT),
             end=end.strftime(HUMAN_TIMEFORMAT),
         )
+        flash("Session supprimée.", "success")
     except Exception:
         flash("Erreur lors de la suppression de la session.", "danger")
-    flash("Session supprimée.", "success")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
