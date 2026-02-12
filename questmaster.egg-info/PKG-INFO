@@ -13,7 +13,7 @@ Requires-Dist: Flask-WTF==1.2.2
 Requires-Dist: Flask-Caching==2.3.1
 Requires-Dist: Flask-Admin==1.6.1
 Requires-Dist: redis==5.0.8
-Requires-Dist: gunicorn==23.0.0
+Requires-Dist: gunicorn==25.0.3
 Requires-Dist: psutil==5.9.8
 Requires-Dist: psycopg2-binary==2.9.11
 Requires-Dist: Werkzeug==3.1.5
@@ -32,7 +32,7 @@ Requires-Dist: python-dotenv==1.2.1; extra == "test"
 Requires-Dist: beautifulsoup4==4.14.3; extra == "test"
 Requires-Dist: blinker==1.9.0; extra == "test"
 Provides-Extra: lint
-Requires-Dist: black==24.10.0; extra == "lint"
+Requires-Dist: black==26.1.0; extra == "lint"
 Requires-Dist: isort==5.13.2; extra == "lint"
 Requires-Dist: flake8==7.1.1; extra == "lint"
 Dynamic: license-file
