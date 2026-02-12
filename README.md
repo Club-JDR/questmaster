@@ -13,52 +13,25 @@ This app is meant for GMs to create new Games with all the details (name, type, 
 ## Project structure
 
 ```text
-website/            # Main Flask application
-  models/           # SQLAlchemy models with serialization support
-    base.py         #   SerializableMixin (to_dict, from_dict, update_from_dict)
-    game.py         #   Game (oneshot or campaign)
-    game_session.py #   GameSession (individual session dates)
-    game_event.py   #   GameEvent (audit trail of game actions)
-    user.py         #   User (Discord-authenticated users)
-    system.py       #   System (game systems, e.g. D&D 5e)
-    vtt.py          #   Vtt (virtual tabletop tools)
-    trophy.py       #   Trophy, UserTrophy (achievements)
-    channel.py      #   Channel (Discord channels)
-    special_event.py#   SpecialEvent (themed events)
-  repositories/     # Data access layer (queries, no business logic)
-    base.py         #   BaseRepository[T] with generic CRUD
-    system.py       #   SystemRepository
-    vtt.py          #   VttRepository
-    channel.py      #   ChannelRepository
-    game_event.py   #   GameEventRepository
-    user.py         #   UserRepository
-    game_session.py #   GameSessionRepository
-  services/         # Business logic layer (owns transaction boundary)
-    system.py       #   SystemService
-    vtt.py          #   VttService
-    channel.py      #   ChannelService
-    game_event.py   #   GameEventService
-    user.py         #   UserService
-    game_session.py #   GameSessionService
-  views/            # Flask blueprints (auth, games, admin, health, etc.)
-  utils/            # Helpers (Discord API, logging)
-  templates/        # Jinja2 templates
-  static/           # CSS, JS, images
-  exceptions/       # Structured exception hierarchy
-    base.py         #   QuestMasterError, NotFoundError, UnauthorizedError
-    validation.py   #   ValidationError
-    database.py     #   DatabaseError
-    discord.py      #   DiscordError, DiscordAPIError
-    business.py     #   GameError, GameFullError, GameClosedError, etc.
-  extensions.py     # Flask extensions (db, migrate, csrf, cache, discord)
-  scheduler.py      # APScheduler background jobs
-  bot.py            # Discord bot instance
-tests/              # Pytest test suite
-migrations/         # Alembic database migrations
-config/             # App configuration
-  settings.py       #   Flask settings (from environment variables)
-  constants.py      #   Game enums, Discord settings, pagination, routes
-questmaster.py      # Entry point
+website/              # Main Flask application
+  models/             #   SQLAlchemy models with serialization support
+  repositories/       #   Data access layer (queries, generic CRUD)
+  services/           #   Business logic layer (transactions, validation)
+  views/              #   Flask blueprints (thin controllers)
+  client/             #   External service clients (Discord API)
+  utils/              #   Helpers (filters, embeds, form parsers, logging)
+  exceptions/         #   Structured exception hierarchy
+  templates/          #   Jinja2 templates
+  static/             #   CSS, JS, images
+  extensions.py       #   Flask extensions (db, migrate, csrf, cache, discord)
+  scheduler.py        #   APScheduler background jobs
+  bot.py              #   Discord bot instance
+tests/                # Pytest test suite (mirrors website/ structure)
+migrations/           # Alembic database migrations
+config/               # App configuration
+  settings.py         #   Flask settings (from environment variables)
+  constants.py        #   Enums, Discord settings, pagination, routes
+questmaster.py        # Entry point
 ```
 
 ## Getting started
@@ -196,37 +169,20 @@ Dependencies are kept up to date by [Renovate](https://docs.renovatebot.com/), w
 
 ## Contributing
 
-1. Fork the repo and create a branch from `main`.
-2. Use [conventional commits](https://www.conventionalcommits.org/) for all commit messages. Examples:
-   - `feat: add trophy leaderboard`
-   - `fix: prevent duplicate session registrations`
-   - `docs: update local setup instructions`
-3. Format your code with [Black](https://github.com/psf/black) before pushing:
-
-   ```sh
-   black .
-   ```
-
-4. Make sure tests pass:
-
-   ```sh
-   python -m pytest tests/
-   ```
-
-5. Open a pull request against `main`.
-
-## Roadmap
-
-The project is evolving toward a cleaner architecture:
-
-- **Repository + service layers** — decouple data access and business logic from Flask views using a repository layer (queries) and a service layer (transactions, validation). Being rolled out incrementally as vertical slices.
-- **API + frontend split** — move from a monolithic Flask app with server-rendered templates to a Flask REST API backend and a Vue.js frontend.
-
-## Join us
-
 Contributions are welcome! You can help by:
 
 - Opening a [bug report](https://github.com/Club-JDR/questmaster/issues/new?template=bug_report.md) or a [feature request](https://github.com/Club-JDR/questmaster/issues/new?template=feature_request.md).
 - Picking up an open issue and submitting a pull request.
 
-If you're just looking to play tabletop RPGs with us, head over to [club-jdr.fr](https://club-jdr.fr).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on code style, architecture, and submitting changes.
+
+If you're just looking to play tabletop RPGs with us, that's also fine, just head over to [club-jdr.fr](https://club-jdr.fr).
+
+## Roadmap
+
+This roadmap isn't a Product roadmap. It doesn't include feature requests or bugfix, only tech stack improvements.
+
+- **Documentation** — add Google-Style docstrings and generate documentation from it, then host documentation on github pages.
+- **Logging** — improve logging for better observability and debugging.
+- **Performances**  — improve queries, cache and index for better performances.
+- **API + frontend split** — move from a monolithic Flask app with server-rendered templates to a Flask REST API backend and a Vue.js frontend.
