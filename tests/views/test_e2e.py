@@ -1,38 +1,19 @@
+"""End-to-end view scenarios with real Discord integration.
+
+These tests exercise full game lifecycles (create → edit → register →
+archive) through the Flask test client **without** mocking the Discord
+service layer.  They are marked as integration tests and require valid
+Discord credentials to run.
+
+For focused, mocked tests of individual endpoints see test_game_views.py.
+"""
+
 from unittest.mock import patch
+
 import pytest
 
+
 pytestmark = pytest.mark.integration
-
-
-def test_my_gm_games(logged_in_admin, logged_in_user):
-    response = logged_in_admin.get("/mes_annonces/")
-    assert response.status_code == 200
-    assert b"Mes annonces" in response.data
-    response = logged_in_user.get("/mes_annonces/")
-    assert response.status_code == 403
-
-
-def test_my_games(logged_in_user):
-    response = logged_in_user.get("/mes_parties/")
-    assert response.status_code == 200
-    assert b"Mes parties en cours" in response.data
-
-
-def test_game_form(logged_in_admin, logged_in_user):
-    response = logged_in_user.get("/annonce/")
-    assert response.status_code == 403
-    response = logged_in_admin.get("/annonce/")
-    assert response.status_code == 200
-    assert b"Nouvelle annonce" in response.data
-    assert b"Enregistrer" in response.data
-    assert b"Publier" in response.data
-
-
-def test_search(test_app, default_system, default_vtt):
-    filters = f"?name=&system={default_system}6&vtt={default_vtt}&campaign=on&open=on&closed=on&archived=on&draft=on&all=on&16%2B=on&18%2B=on"
-    client = test_app.test_client()
-    response = client.get(f"/annonces/{filters}")
-    assert response.status_code == 200
 
 
 @patch("flask_wtf.csrf.validate_csrf", return_value=True)
@@ -278,7 +259,7 @@ def test_e2e_scenario_2(
         "system": default_system.id,
         "vtt": default_vtt.id,
         "description": """Quelles horreurs antiques renferme la tombe récemment découverte au cœur de la Vallée des Rois, en Égypte ?
-        Debout au sommet des marches qui s’enfoncent dans les ténèbres, le moment est mal choisi pour vous laisser troubler par les superstitions locales et les malheureux incidents survenus à l’ouverture du tombeau de Toutankhamon…""",
+        Debout au sommet des marches qui s'enfoncent dans les ténèbres, le moment est mal choisi pour vous laisser troubler par les superstitions locales et les malheureux incidents survenus à l'ouverture du tombeau de Toutankhamon…""",
         "restriction": "16+",
         "restriction_tags": "[]",
         "party_size": "4",
@@ -394,36 +375,3 @@ def test_e2e_scenario_2(
     logged_in_admin.post(
         f"/annonces/{slug}/statut/", data={"status": "deleted"}, follow_redirects=True
     )
-
-
-def test_calendar(logged_in_user):
-    response = logged_in_user.get("/calendrier/")
-    assert response.status_code == 200
-    assert "Le Calendrier du Club" in response.data.decode()
-
-
-def test_demo(client):
-    response = client.get("/demo/")
-    assert response.status_code == 200
-    assert "La Tombe de l'Annihilation" in response.data.decode()
-    assert "Le Pensionnaire" in response.data.decode()
-
-
-def test_demo_inscription(client):
-    response = client.get("/demo/inscription/")
-    assert response.status_code == 200
-    assert "La Tombe de l'Annihilation" in response.data.decode()
-    assert "S'inscrire" in response.data.decode()
-
-
-def test_demo_post(client):
-    response = client.get("/demo/poster/")
-    assert response.status_code == 200
-    assert "Nouvelle annonce" in response.data.decode()
-
-
-def test_demo_gerer(client):
-    response = client.get("/demo/gerer/")
-    assert response.status_code == 200
-    assert "La Tombe de l'Annihilation" in response.data.decode()
-    assert "editButton" in response.data.decode()

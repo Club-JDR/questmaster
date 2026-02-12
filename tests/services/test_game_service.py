@@ -407,7 +407,9 @@ class TestGameServicePrivateHelpers:
         self, db_session, sample_game, mock_discord
     ):
         """When channel deletion fails, role deletion still proceeds."""
-        mock_discord.delete_channel.side_effect = DiscordAPIError("Channel not found", status_code=404)
+        mock_discord.delete_channel.side_effect = DiscordAPIError(
+            "Channel not found", status_code=404
+        )
         mock_channel_service = Mock()
 
         service = GameService(
@@ -428,7 +430,9 @@ class TestGameServicePrivateHelpers:
         self, db_session, sample_game, mock_discord
     ):
         """When role deletion fails, no exception propagates."""
-        mock_discord.delete_role.side_effect = DiscordAPIError("Role not found", status_code=404)
+        mock_discord.delete_role.side_effect = DiscordAPIError(
+            "Role not found", status_code=404
+        )
         mock_channel_service = Mock()
 
         service = GameService(
@@ -445,9 +449,7 @@ class TestGameServicePrivateHelpers:
         mock_discord.delete_channel.assert_called_once_with("channel_123")
         mock_discord.delete_role.assert_called_once_with("role_456")
 
-    def test_award_game_trophies_skips_on_error(
-        self, db_session, sample_game
-    ):
+    def test_award_game_trophies_skips_on_error(self, db_session, sample_game):
         """Trophy award failure is logged but doesn't propagate."""
         mock_trophy_service = Mock()
         mock_trophy_service.award.side_effect = Exception("Trophy DB error")
@@ -466,7 +468,9 @@ class TestGameServicePrivateHelpers:
         self, db_session, sample_game, mock_discord
     ):
         """Discord message deletion failure is logged but doesn't propagate."""
-        mock_discord.delete_message.side_effect = DiscordAPIError("Message not found", status_code=404)
+        mock_discord.delete_message.side_effect = DiscordAPIError(
+            "Message not found", status_code=404
+        )
 
         service = GameService(discord_service=mock_discord)
 

@@ -9,7 +9,6 @@ from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
-from flask import Flask
 
 from config.constants import (
     EMBED_COLOR_BLUE,
@@ -71,15 +70,6 @@ def _make_special_event(**overrides):
     }
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
-
-
-@pytest.fixture
-def embed_app():
-    """Minimal Flask app with config needed by embed builders."""
-    app = Flask(__name__)
-    app.config["POSTS_CHANNEL_ID"] = "test_posts_ch"
-    app.config["ADMIN_CHANNEL_ID"] = "test_admin_ch"
-    return app
 
 
 # ---------------------------------------------------------------------------

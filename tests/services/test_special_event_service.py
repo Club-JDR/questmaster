@@ -21,7 +21,9 @@ class TestSpecialEventService:
     def test_get_all_active_only(self, db_session):
         """Test get_all with active_only=True filters correctly."""
         service = SpecialEventService()
-        SpecialEventFactory(db_session, name="Active Test Event", emoji="✅", active=True)
+        SpecialEventFactory(
+            db_session, name="Active Test Event", emoji="✅", active=True
+        )
         SpecialEventFactory(
             db_session, name="Inactive Test Event", emoji="❌", active=False
         )

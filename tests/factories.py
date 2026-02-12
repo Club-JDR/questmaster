@@ -67,6 +67,13 @@ def GameFactory(session, **overrides):
         "date": datetime(2025, 6, 15, 20, 0, tzinfo=timezone.utc),
         "session_length": Decimal("3.0"),
         "characters": "self",
+        "classification": {
+            "action": 2,
+            "investigation": 2,
+            "interaction": 1,
+            "horror": 1,
+        },
+        "ambience": ["serious"],
         "status": "draft",
     }
     defaults.update(overrides)

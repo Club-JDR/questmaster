@@ -75,11 +75,13 @@ def test_str_with_none_color():
 
 
 def test_update_from_dict_ignores_protected_fields(sample_special_event):
-    sample_special_event.update_from_dict({
-        "id": 999,
-        "games": ["should_be_ignored"],
-        "name": "Updated Halloween",
-    })
+    sample_special_event.update_from_dict(
+        {
+            "id": 999,
+            "games": ["should_be_ignored"],
+            "name": "Updated Halloween",
+        }
+    )
     # Protected field "id" unchanged
     assert sample_special_event.id == 1
     # Regular field updated normally

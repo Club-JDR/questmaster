@@ -12,7 +12,6 @@ config = load_dotenv()
 import os
 
 import pytest
-from sqlalchemy.orm import scoped_session, sessionmaker
 
 from website import create_app, db
 from website.client.discord import Discord
@@ -23,6 +22,8 @@ from tests.constants import (
     TEST_ADMIN_USER_ID,
     TEST_ADMIN_USER_NAME,
     TEST_CAMPAIGN_CHANNEL_ID,
+    TEST_GM_USER_ID,
+    TEST_GM_USER_NAME,
     TEST_ONESHOT_CHANNEL_ID,
     TEST_REGULAR_USER_ID,
     TEST_REGULAR_USER_NAME,
@@ -36,6 +37,7 @@ def seed_db():
     db.session.add_all(
         [
             User(id=TEST_ADMIN_USER_ID, name=TEST_ADMIN_USER_NAME),
+            User(id=TEST_GM_USER_ID, name=TEST_GM_USER_NAME),
             User(id=TEST_REGULAR_USER_ID, name=TEST_REGULAR_USER_NAME),
         ]
     )
@@ -79,28 +81,31 @@ def db_session(test_app):
     calling ``db.session.commit()`` writes to a savepoint rather than the
     real transaction.  The outer transaction is rolled back in teardown,
     leaving the database unchanged between tests.
+
+    Reconfigures the *existing* ``db.session`` scoped_session rather than
+    replacing it, so that module-level service singletons whose repositories
+    captured a reference to ``db.session`` at import time transparently use
+    the same transactional connection.
     """
     with test_app.app_context():
         connection = db.engine.connect()
         transaction = connection.begin()
-        # Build a new session factory that preserves Flask-SQLAlchemy's
-        # Session class and kwargs (db, query_cls, etc.) while binding
-        # to our connection with savepoint-based commit interception.
-        original_factory = db.session.session_factory
-        new_kw = dict(original_factory.kw)
-        new_kw["bind"] = connection
-        new_kw["join_transaction_mode"] = "create_savepoint"
-        factory = sessionmaker(class_=original_factory.class_, **new_kw)
-        session = scoped_session(factory)
-        original_session = db.session
-        db.session = session
 
-        yield session
+        # Save original factory kwargs and reconfigure in-place so that
+        # every reference to db.session (including those stored in repos)
+        # uses the same connection with savepoint-based commit interception.
+        original_kw = dict(db.session.session_factory.kw)
+        db.session.remove()
+        db.session.session_factory.kw.update(
+            {"bind": connection, "join_transaction_mode": "create_savepoint"}
+        )
 
-        session.remove()
+        yield db.session
+
+        db.session.remove()
+        db.session.session_factory.kw = original_kw
         transaction.rollback()
         connection.close()
-        db.session = original_session
 
 
 @pytest.fixture(scope="module")
@@ -125,6 +130,12 @@ def regular_user(test_app):
 def admin_user(test_app):
     """Return the pre-seeded admin user."""
     return db.session.get(User, TEST_ADMIN_USER_ID)
+
+
+@pytest.fixture
+def gm_user(test_app):
+    """Return the pre-seeded GM user (GM + player, not admin)."""
+    return db.session.get(User, TEST_GM_USER_ID)
 
 
 @pytest.fixture
@@ -157,6 +168,15 @@ def logged_in_admin(test_app, admin_user):
     client = test_app.test_client()
     with client.session_transaction() as session:
         session["user_id"] = admin_user.id
+    return client
+
+
+@pytest.fixture
+def logged_in_gm(test_app, gm_user):
+    """Provide a Flask test client logged in as a GM (non-admin) user."""
+    client = test_app.test_client()
+    with client.session_transaction() as session:
+        session["user_id"] = gm_user.id
     return client
 
 

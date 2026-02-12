@@ -13,9 +13,7 @@ class TestTrophyRepository:
 
         user = UserFactory(db_session)
         trophy = TrophyFactory(db_session)
-        UserTrophyFactory(
-            db_session, user_id=user.id, trophy_id=trophy.id, quantity=5
-        )
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=5)
 
         found = repo.get_user_trophy(user.id, trophy.id)
         assert found is not None
@@ -50,9 +48,7 @@ class TestTrophyRepository:
 
         user = UserFactory(db_session)
         trophy = TrophyFactory(db_session)
-        UserTrophyFactory(
-            db_session, user_id=user.id, trophy_id=trophy.id, quantity=5
-        )
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=5)
 
         result = repo.award_trophy(user.id, trophy.id, amount=3)
         assert result.quantity == 8
@@ -76,9 +72,7 @@ class TestTrophyRepository:
         UserTrophyFactory(
             db_session, user_id=user2.id, trophy_id=trophy.id, quantity=25
         )
-        UserTrophyFactory(
-            db_session, user_id=user3.id, trophy_id=trophy.id, quantity=5
-        )
+        UserTrophyFactory(db_session, user_id=user3.id, trophy_id=trophy.id, quantity=5)
 
         leaderboard = repo.get_leaderboard(trophy.id, limit=10)
         assert len(leaderboard) == 3
