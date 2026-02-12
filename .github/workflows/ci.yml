@@ -50,7 +50,7 @@ jobs:
         run: flake8 website/
 
       - name: Lint with docstrings with pydoclint
-        run: pydoclint website/ --verbose
+        run: pydoclint website/
 
   tests:
     name: Run Tests
