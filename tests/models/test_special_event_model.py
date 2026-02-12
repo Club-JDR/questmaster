@@ -72,3 +72,15 @@ def test_str_with_none_color():
     assert "✨" in str_repr
     assert "Test Event" in str_repr
     assert "()" in str_repr  # empty parens for no color
+
+
+def test_update_from_dict_ignores_protected_fields(sample_special_event):
+    sample_special_event.update_from_dict({
+        "id": 999,
+        "games": ["should_be_ignored"],
+        "name": "Updated Halloween",
+    })
+    # Protected field "id" unchanged
+    assert sample_special_event.id == 1
+    # Regular field updated normally
+    assert sample_special_event.name == "Updated Halloween"

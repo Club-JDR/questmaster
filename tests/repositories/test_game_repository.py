@@ -5,6 +5,7 @@ import pytest
 from website.models import Game
 from website.repositories.game import GameRepository
 
+from tests.constants import TEST_SPECIAL_EVENT_ID
 from tests.factories import GameFactory
 
 
@@ -69,7 +70,17 @@ class TestGameRepository:
         assert any(g.id == sample_game.id for g in games)
 
     def test_find_by_special_event(self, db_session, admin_user, default_system):
-        pytest.skip("Special event seeding not yet implemented in test fixtures")
+        event_game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=TEST_SPECIAL_EVENT_ID,
+        )
+
+        repo = GameRepository()
+        games = repo.find_by_special_event(TEST_SPECIAL_EVENT_ID)
+        assert len(games) >= 1
+        assert any(g.id == event_game.id for g in games)
 
     def test_get_for_update(self, db_session, sample_game):
         repo = GameRepository()

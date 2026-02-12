@@ -53,3 +53,15 @@ def test_equality_and_inequality():
 
 def test_equality_with_non_system_returns_notimplemented(sample_system):
     assert sample_system.__eq__("not a system") is NotImplemented
+
+
+def test_update_from_dict_ignores_protected_fields(sample_system):
+    sample_system.update_from_dict({
+        "id": 999,
+        "games_system": ["should_be_ignored"],
+        "name": "Pathfinder 2e",
+    })
+    # Protected field "id" unchanged
+    assert sample_system.id == 1
+    # Regular field updated normally
+    assert sample_system.name == "Pathfinder 2e"

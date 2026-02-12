@@ -38,7 +38,6 @@ test = [
     "python-dotenv==1.2.1",
     "beautifulsoup4==4.14.3",
     "blinker==1.9.0",
-    "factory-boy>=3.3.0",
 ]
 lint = [
     "black==24.10.0",

@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from website.exceptions import (
     NotFoundError,
@@ -10,8 +10,10 @@ from website.exceptions import (
     GameFullError,
     GameClosedError,
     DuplicateRegistrationError,
+    DiscordAPIError,
 )
 from website.models import Game
+from website.services.game import GameService
 
 from tests.factories import GameFactory
 
@@ -396,3 +398,110 @@ class TestGameService:
 
         assert total >= 1
         assert len(games) >= 1
+
+
+class TestGameServicePrivateHelpers:
+    """Tests for GameService private helper error paths."""
+
+    def test_cleanup_discord_resources_channel_failure_still_deletes_role(
+        self, db_session, sample_game, mock_discord
+    ):
+        """When channel deletion fails, role deletion still proceeds."""
+        mock_discord.delete_channel.side_effect = DiscordAPIError("Channel not found", status_code=404)
+        mock_channel_service = Mock()
+
+        service = GameService(
+            discord_service=mock_discord,
+            channel_service=mock_channel_service,
+        )
+
+        sample_game.channel = "channel_123"
+        sample_game.role = "role_456"
+
+        # Should not raise — errors are caught and logged
+        service._cleanup_discord_resources(sample_game)
+
+        mock_discord.delete_channel.assert_called_once_with("channel_123")
+        mock_discord.delete_role.assert_called_once_with("role_456")
+
+    def test_cleanup_discord_resources_role_failure_does_not_propagate(
+        self, db_session, sample_game, mock_discord
+    ):
+        """When role deletion fails, no exception propagates."""
+        mock_discord.delete_role.side_effect = DiscordAPIError("Role not found", status_code=404)
+        mock_channel_service = Mock()
+
+        service = GameService(
+            discord_service=mock_discord,
+            channel_service=mock_channel_service,
+        )
+
+        sample_game.channel = "channel_123"
+        sample_game.role = "role_456"
+
+        # Should not raise
+        service._cleanup_discord_resources(sample_game)
+
+        mock_discord.delete_channel.assert_called_once_with("channel_123")
+        mock_discord.delete_role.assert_called_once_with("role_456")
+
+    def test_award_game_trophies_skips_on_error(
+        self, db_session, sample_game
+    ):
+        """Trophy award failure is logged but doesn't propagate."""
+        mock_trophy_service = Mock()
+        mock_trophy_service.award.side_effect = Exception("Trophy DB error")
+
+        service = GameService(trophy_service=mock_trophy_service)
+
+        sample_game.type = "oneshot"
+        db_session.commit()
+
+        # Should not raise — error is caught inside _award_game_trophies
+        service._award_game_trophies(sample_game)
+
+        mock_trophy_service.award.assert_called_once()
+
+    def test_delete_game_message_logs_on_failure(
+        self, db_session, sample_game, mock_discord
+    ):
+        """Discord message deletion failure is logged but doesn't propagate."""
+        mock_discord.delete_message.side_effect = DiscordAPIError("Message not found", status_code=404)
+
+        service = GameService(discord_service=mock_discord)
+
+        sample_game.msg_id = "msg_to_delete"
+        db_session.commit()
+
+        # Should not raise
+        service._delete_game_message(sample_game)
+
+        mock_discord.delete_message.assert_called_once()
+        # msg_id should NOT be cleared since deletion failed
+        assert sample_game.msg_id == "msg_to_delete"
+
+    def test_delete_game_message_skips_when_no_msg_id(
+        self, db_session, sample_game, mock_discord
+    ):
+        """When game has no msg_id, deletion is skipped entirely."""
+        service = GameService(discord_service=mock_discord)
+
+        sample_game.msg_id = None
+
+        service._delete_game_message(sample_game)
+
+        mock_discord.delete_message.assert_not_called()
+
+    def test_rollback_discord_resources_cleans_up(
+        self, db_session, sample_game, mock_discord
+    ):
+        """Rollback deletes both channel and role when both exist."""
+        service = GameService(discord_service=mock_discord)
+
+        sample_game.channel = "channel_123"
+        sample_game.role = "role_456"
+
+        service._rollback_discord_resources(sample_game)
+
+        mock_discord.delete_channel.assert_called_once_with("channel_123")
+        mock_discord.delete_role.assert_called_once_with("role_456")

@@ -77,3 +77,9 @@ def test_channel_handles_zero_and_negative_size():
     ch2 = Channel(id="negative", type="oneshot", size=-5)
     assert ch1.size == 0
     assert ch2.size == -5
+
+
+def test_update_from_dict_ignores_protected_fields(sample_channel):
+    sample_channel.update_from_dict({"id": "should-not-change", "size": 99})
+    assert sample_channel.id == "main"
+    assert sample_channel.size == 99

@@ -84,3 +84,17 @@ def test_game_event_eq_and_ne():
     )
     assert e1 == e2
     assert e1 != e3
+
+
+def test_game_event_update_from_dict_ignores_protected_fields(sample_game_event):
+    sample_game_event.update_from_dict({
+        "id": 999,
+        "game": "should_be_ignored",
+        "action": "edit",
+    })
+    # Protected field "id" unchanged
+    assert sample_game_event.id == 1
+    # Relationship field "game" unchanged (still None for detached instance)
+    assert sample_game_event.game_id == 42
+    # Regular field updated normally
+    assert sample_game_event.action == "edit"

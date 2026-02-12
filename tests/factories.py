@@ -1,6 +1,6 @@
 """Test data factories for QuestMaster models.
 
-Provides factory_boy factories that reduce boilerplate across test files.
+Provides factories that reduce boilerplate across test files.
 Each factory generates valid model instances with sensible defaults;
 tests only need to override the fields relevant to the scenario under test.
 
