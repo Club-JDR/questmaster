@@ -16,14 +16,14 @@ dependencies = [
     "Flask-WTF==1.2.2",
     "Flask-Caching==2.3.1",
     "Flask-Admin==1.6.1",
-    "redis==5.0.8",
-    "gunicorn==23.0.0",
+    "redis==5.3.1",
+    "gunicorn==25.0.3",
     "psutil==5.9.8",
     "psycopg2-binary==2.9.11",
     "Werkzeug==3.1.5",
     "pyyaml==6.0.3",
     "schema==0.7.8",
-    "tenacity==8.2.3",
+    "tenacity==8.5.0",
     "wtforms==3.1.2",
     "python-dateutil==2.9.0.post0",
     "unidecode==1.4.0",
@@ -40,7 +40,7 @@ test = [
     "blinker==1.9.0",
 ]
 lint = [
-    "black==24.10.0",
+    "black==26.1.0",
     "isort==5.13.2",
     "flake8==7.1.1",
 ]
