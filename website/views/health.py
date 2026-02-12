@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify
 from sqlalchemy.sql import text
 
 from website.extensions import db
+from website.utils import get_app_version
 
 health_bp = Blueprint("health", __name__)
 
@@ -43,7 +44,7 @@ def health():
         jsonify(
             {
                 "title": "QuestMaster",
-                "version": 1,
+                "version": get_app_version(),
                 "status": "OK",
                 "database": db_status,
                 "uptime": uptime,
