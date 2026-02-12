@@ -1,6 +1,8 @@
 from website.models import System
 from website.repositories.system import SystemRepository
 
+from tests.factories import SystemFactory
+
 
 class TestSystemRepository:
     def test_get_all_ordered(self, db_session):
@@ -36,8 +38,7 @@ class TestSystemRepository:
 
     def test_inherits_delete(self, db_session):
         repo = SystemRepository()
-        new_system = System(name="TestRepoDelete", icon="test.png")
-        repo.add(new_system)
+        system = SystemFactory(db_session, name="TestRepoDelete")
         count_before = repo.count()
-        repo.delete(new_system)
+        repo.delete(system)
         assert repo.count() == count_before - 1

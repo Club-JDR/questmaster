@@ -1,33 +1,10 @@
-import uuid
+"""Tests for GameSessionRepository."""
 
 import pytest
-from datetime import datetime, timezone, timedelta
-from website.models import Game, GameSession
+from datetime import datetime
+
+from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
-
-from tests.constants import TEST_ADMIN_USER_ID
-
-
-@pytest.fixture
-def sample_game(db_session):
-    unique = uuid.uuid4().hex[:8]
-    game = Game(
-        name=f"SessionRepoTestGame-{unique}",
-        slug=f"session-repo-test-game-{unique}",
-        type="oneshot",
-        length="1 session",
-        gm_id=TEST_ADMIN_USER_ID,
-        system_id=1,
-        description="A test game for session repo tests",
-        restriction="all",
-        party_size=4,
-        date=datetime(2025, 8, 1, 20, 0, tzinfo=timezone.utc),
-        session_length=3.0,
-        status="draft",
-    )
-    db_session.add(game)
-    db_session.flush()
-    yield game
 
 
 class TestGameSessionRepository:

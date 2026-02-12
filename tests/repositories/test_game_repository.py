@@ -1,62 +1,11 @@
 """Tests for GameRepository."""
 
 import pytest
-from datetime import datetime, timezone
-from uuid import uuid4
 
-from website.models import Game, User
+from website.models import Game
 from website.repositories.game import GameRepository
 
-
-@pytest.fixture
-def sample_game(db_session, admin_user, default_system):
-    """Create a sample game for testing."""
-    unique_id = str(uuid4())[:8]
-    game = Game(
-        slug=f"test-game-par-notsag-{unique_id}",
-        name="Test Game",
-        type="oneshot",
-        length="3-5h",
-        gm_id=admin_user.id,
-        system_id=default_system.id,
-        description="Test description",
-        restriction="all",
-        party_size=4,
-        xp="all",
-        date=datetime.now(timezone.utc),
-        session_length=4.0,
-        characters="self",
-        status="draft",
-    )
-    db_session.add(game)
-    db_session.flush()
-    yield game
-
-
-@pytest.fixture
-def published_game(db_session, admin_user, default_system):
-    """Create a published game for testing."""
-    unique_id = str(uuid4())[:8]
-    game = Game(
-        slug=f"published-game-par-notsag-{unique_id}",
-        name="Published Game",
-        type="campaign",
-        length="Long",
-        gm_id=admin_user.id,
-        system_id=default_system.id,
-        description="Published game description",
-        restriction="all",
-        party_size=5,
-        xp="seasoned",
-        date=datetime.now(timezone.utc),
-        session_length=3.5,
-        characters="pregen",
-        status="open",
-        msg_id="123456789",
-    )
-    db_session.add(game)
-    db_session.flush()
-    yield game
+from tests.factories import GameFactory
 
 
 class TestGameRepository:
@@ -77,7 +26,7 @@ class TestGameRepository:
         game = repo.get_by_slug(sample_game.slug)
         assert game is not None
         assert game.slug == sample_game.slug
-        assert game.name == "Test Game"
+        assert game.name == sample_game.name
 
     def test_get_by_slug_not_found(self, db_session):
         repo = GameRepository()
@@ -111,7 +60,6 @@ class TestGameRepository:
         assert all(g.gm_id == admin_user.id for g in games)
 
     def test_find_by_player(self, db_session, sample_game, regular_user):
-        # Add player to game
         sample_game.players.append(regular_user)
         db_session.flush()
 
@@ -121,8 +69,6 @@ class TestGameRepository:
         assert any(g.id == sample_game.id for g in games)
 
     def test_find_by_special_event(self, db_session, admin_user, default_system):
-        # Skip this test if special_event doesn't exist in test DB
-        # This would require seeding special events in conftest
         pytest.skip("Special event seeding not yet implemented in test fixtures")
 
     def test_get_for_update(self, db_session, sample_game):
@@ -130,13 +76,11 @@ class TestGameRepository:
         game = repo.get_for_update(sample_game.id)
         assert game is not None
         assert game.id == sample_game.id
-        # The lock is applied, but we can't easily test it in isolation
 
     def test_get_with_relations(self, db_session, sample_game):
         repo = GameRepository()
         game = repo.get_with_relations(sample_game.id)
         assert game is not None
-        # Check that relationships are loaded (should not trigger additional queries)
         assert game.gm is not None
         assert game.system is not None
         assert isinstance(game.players, list)
@@ -147,7 +91,6 @@ class TestGameRepository:
         repo.delete_by_id(game_id)
         db_session.commit()
 
-        # Verify deletion
         assert repo.get_by_id(game_id) is None
 
     def test_search_basic(self, db_session, sample_game, published_game):
@@ -162,7 +105,6 @@ class TestGameRepository:
 
     def test_search_by_status(self, db_session, sample_game, published_game):
         repo = GameRepository()
-        # Search for draft games (requires user payload)
         user_payload = {"user_id": sample_game.gm_id, "is_admin": True}
         games, _ = repo.search(
             filters={"status": ["draft"]},
@@ -209,30 +151,16 @@ class TestGameRepository:
         assert all(g.gm_id == admin_user.id for g in games)
 
     def test_search_pagination(self, db_session, admin_user, default_system):
-        # Create multiple games
-        unique_id = str(uuid4())[:8]
         for i in range(5):
-            game = Game(
-                slug=f"paginated-game-{i}-{unique_id}",
-                name=f"Paginated Game {i}",
-                type="oneshot",
-                length="3h",
+            GameFactory(
+                db_session,
                 gm_id=admin_user.id,
                 system_id=default_system.id,
-                description=f"Test game {i}",
-                restriction="all",
-                party_size=4,
-                xp="all",
-                date=datetime.now(timezone.utc),
-                session_length=3.0,
-                characters="self",
+                name=f"Paginated Game {i}",
                 status="open",
             )
-            db_session.add(game)
-        db_session.flush()
 
         repo = GameRepository()
-        # Get first page
         games_p1, total = repo.search(
             filters={"status": ["open"]},
             page=1,
@@ -241,7 +169,6 @@ class TestGameRepository:
         assert len(games_p1) <= 3
         assert total >= 5
 
-        # Get second page
         games_p2, total = repo.search(
             filters={"status": ["open"]},
             page=2,
@@ -251,29 +178,14 @@ class TestGameRepository:
 
     def test_add_and_commit(self, db_session, admin_user, default_system):
         repo = GameRepository()
-        unique_id = str(uuid4())[:8]
-        slug = f"new-repo-game-{unique_id}"
-        game = Game(
-            slug=slug,
-            name="New Repo Game",
-            type="oneshot",
-            length="2h",
+        game = GameFactory(
+            db_session,
             gm_id=admin_user.id,
             system_id=default_system.id,
-            description="Created via repo",
-            restriction="all",
-            party_size=3,
-            xp="beginners",
-            date=datetime.now(timezone.utc),
-            session_length=2.0,
-            characters="self",
-            status="draft",
+            name="New Repo Game",
         )
-        repo.add(game)
-        db_session.flush()
 
-        # Verify it was added
-        found = repo.get_by_slug(slug)
+        found = repo.get_by_slug(game.slug)
         assert found is not None
         assert found.name == "New Repo Game"
 

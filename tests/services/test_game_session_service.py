@@ -1,34 +1,11 @@
-import uuid
+"""Tests for GameSessionService."""
 
 import pytest
-from datetime import datetime, timezone
-from website.models import Game, GameSession
+from datetime import datetime
+
+from website.models import GameSession
 from website.exceptions import ValidationError, SessionConflictError
 from website.services.game_session import GameSessionService
-
-from tests.constants import TEST_ADMIN_USER_ID
-
-
-@pytest.fixture
-def sample_game(db_session):
-    unique = uuid.uuid4().hex[:8]
-    game = Game(
-        name=f"SessionServiceTestGame-{unique}",
-        slug=f"session-service-test-game-{unique}",
-        type="oneshot",
-        length="1 session",
-        gm_id=TEST_ADMIN_USER_ID,
-        system_id=1,
-        description="A test game for session service tests",
-        restriction="all",
-        party_size=4,
-        date=datetime(2025, 9, 1, 20, 0, tzinfo=timezone.utc),
-        session_length=3.0,
-        status="draft",
-    )
-    db_session.add(game)
-    db_session.flush()
-    yield game
 
 
 class TestGameSessionService:

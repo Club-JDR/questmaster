@@ -1,6 +1,8 @@
 from website.models import Vtt
 from website.repositories.vtt import VttRepository
 
+from tests.factories import VttFactory
+
 
 class TestVttRepository:
     def test_get_all_ordered(self, db_session):
@@ -36,8 +38,7 @@ class TestVttRepository:
 
     def test_inherits_delete(self, db_session):
         repo = VttRepository()
-        new_vtt = Vtt(name="TestVttRepoDelete", icon="test.png")
-        repo.add(new_vtt)
+        vtt = VttFactory(db_session, name="TestVttRepoDelete")
         count_before = repo.count()
-        repo.delete(new_vtt)
+        repo.delete(vtt)
         assert repo.count() == count_before - 1

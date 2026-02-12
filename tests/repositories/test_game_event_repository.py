@@ -1,30 +1,9 @@
+"""Tests for GameEventRepository."""
+
 import pytest
-from datetime import datetime, timezone
-from website.models import Game, GameEvent
+
+from website.models import GameEvent
 from website.repositories.game_event import GameEventRepository
-
-from tests.constants import TEST_ADMIN_USER_ID
-
-
-@pytest.fixture
-def sample_game(db_session):
-    game = Game(
-        name="EventTestGame",
-        slug="event-test-game",
-        type="oneshot",
-        length="1 session",
-        gm_id=TEST_ADMIN_USER_ID,
-        system_id=1,
-        description="A test game for event tests",
-        restriction="all",
-        party_size=4,
-        date=datetime(2025, 7, 10, 20, 30, tzinfo=timezone.utc),
-        session_length=3.5,
-        status="draft",
-    )
-    db_session.add(game)
-    db_session.flush()
-    yield game
 
 
 class TestGameEventRepository:

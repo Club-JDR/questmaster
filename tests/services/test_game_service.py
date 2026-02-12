@@ -2,8 +2,7 @@
 
 import pytest
 from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch
-from uuid import uuid4
+from unittest.mock import patch
 
 from website.exceptions import (
     NotFoundError,
@@ -12,56 +11,9 @@ from website.exceptions import (
     GameClosedError,
     DuplicateRegistrationError,
 )
-from website.models import Game, User
-from website.services.discord import DiscordService
-from website.services.game import GameService
+from website.models import Game
 
-
-@pytest.fixture
-def mock_discord():
-    """Mock DiscordService with all methods stubbed."""
-    discord = Mock(spec=DiscordService)
-    discord.create_role = Mock(return_value={"id": "mock_role_id"})
-    discord.create_channel = Mock(return_value={"id": "mock_channel_id"})
-    discord.delete_role = Mock()
-    discord.delete_channel = Mock()
-    discord.add_role_to_user = Mock()
-    discord.remove_role_from_user = Mock()
-    discord.delete_message = Mock()
-    discord.send_game_embed = Mock(return_value="mock_msg_id")
-    discord.get_channel = Mock(return_value={"parent_id": "mock_category_id"})
-    return discord
-
-
-@pytest.fixture
-def game_service(mock_discord):
-    """Create GameService with injected mock discord."""
-    return GameService(discord_service=mock_discord)
-
-
-@pytest.fixture
-def sample_game(db_session, admin_user, default_system):
-    """Create a sample game for testing."""
-    unique_id = str(uuid4())[:8]
-    game = Game(
-        slug=f"sample_game.slug-{unique_id}",
-        name="Test Service Game",
-        type="oneshot",
-        length="3h",
-        gm_id=admin_user.id,
-        system_id=default_system.id,
-        description="Test description",
-        restriction="all",
-        party_size=4,
-        xp="all",
-        date=datetime.now(),
-        session_length=3.0,
-        characters="self",
-        status="draft",
-    )
-    db_session.add(game)
-    db_session.flush()
-    yield game
+from tests.factories import GameFactory
 
 
 class TestGameService:
@@ -88,32 +40,18 @@ class TestGameService:
         assert slug == "my-game-par-testgm"
 
     def test_generate_slug_with_collision(
-        self, db_session, sample_game, admin_user, default_system, game_service
+        self, db_session, admin_user, default_system, game_service
     ):
-        # Create a game with a specific slug
-        unique_id = str(uuid4())[:8]
-        base_slug = f"collision-test-par-testgm-{unique_id}"
-        game1 = Game(
+        base_slug = "collision-test-par-testgm"
+        GameFactory(
+            db_session,
             slug=base_slug,
             name="Collision Test",
-            type="oneshot",
-            length="3h",
             gm_id=admin_user.id,
             system_id=default_system.id,
-            description="Test",
-            restriction="all",
-            party_size=4,
-            xp="all",
-            date=datetime.now(),
-            session_length=3.0,
-            characters="self",
-            status="draft",
         )
-        db_session.add(game1)
-        db_session.flush()
 
         slug = game_service.generate_slug("Collision Test", "TestGM")
-        # Should get a unique slug that doesn't collide
         assert slug != base_slug
 
     def test_parse_game_type_oneshot(self, db_session, game_service):
@@ -270,7 +208,6 @@ class TestGameService:
 
         assert game.status == "closed"
         assert game.msg_id is None
-        # annonce_details is sent as part of resource setup; public annonce embed is NOT sent
         mock_discord.send_game_embed.assert_called_once_with(
             game, embed_type="annonce_details"
         )
@@ -444,9 +381,8 @@ class TestGameService:
         game_data = game_service.clone(sample_game.slug)
 
         assert game_data is not None
-        assert game_data["name"] == "Test Service Game"
+        assert game_data["name"] == sample_game.name
         assert game_data["party_size"] == 4
-        # Should not include sensitive fields
         assert "id" in game_data
         assert "slug" in game_data
 

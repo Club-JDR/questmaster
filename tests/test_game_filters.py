@@ -4,10 +4,7 @@ Tests filter-building functions in isolation (pure logic and SQLAlchemy
 filter construction) and integration tests for the paginated query helpers.
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
-from types import SimpleNamespace
-from unittest.mock import patch, MagicMock
 
 import pytest
 from werkzeug.datastructures import MultiDict
@@ -19,10 +16,8 @@ from config.constants import (
     GAME_STATUS_ARCHIVED,
     GAME_TYPE_ONESHOT,
     GAME_TYPE_CAMPAIGN,
-    GAMES_PER_PAGE,
 )
 from website.exceptions import ValidationError
-from website.models import Game, System, Vtt, User
 from website.utils.game_filters import (
     build_base_filters,
     build_status_filters,
@@ -33,6 +28,7 @@ from website.utils.game_filters import (
 )
 
 from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
+from tests.factories import GameFactory
 
 
 # ---------------------------------------------------------------------------
@@ -187,39 +183,17 @@ class TestNormalizeSearchDefaults:
 # ---------------------------------------------------------------------------
 
 
-def _create_game(db_session, admin_user, default_system, default_vtt, **overrides):
-    """Helper to create a game in the database."""
-    from uuid import uuid4
-
-    uid = uuid4().hex[:8]
-    defaults = {
-        "name": f"Filter Test Game {uid}",
-        "slug": f"filter-test-{uid}",
-        "type": GAME_TYPE_ONESHOT,
-        "status": GAME_STATUS_OPEN,
-        "system_id": default_system.id,
-        "vtt_id": default_vtt.id,
-        "gm_id": admin_user.id,
-        "party_size": 4,
-        "length": "4h",
-        "description": "A test game for filters",
-        "restriction": "all",
-        "date": datetime(2026, 6, 15, 14, 0),
-        "session_length": Decimal("3.0"),
-        "img": "https://example.com/img.png",
-    }
-    defaults.update(overrides)
-    game = Game(**defaults)
-    db_session.add(game)
-    db_session.flush()
-    return game
-
-
 class TestGetFilteredGames:
     def test_returns_pagination_and_args(
         self, db_session, admin_user, default_system, default_vtt
     ):
-        _create_game(db_session, admin_user, default_system, default_vtt)
+        GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            status=GAME_STATUS_OPEN,
+        )
         source = MultiDict({})
         user_payload = {"user_id": TEST_ADMIN_USER_ID, "is_admin": True}
         games, request_args = get_filtered_games(source, user_payload)
@@ -229,11 +203,11 @@ class TestGetFilteredGames:
     def test_filters_by_status(
         self, db_session, admin_user, default_system, default_vtt
     ):
-        _create_game(
+        GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             status=GAME_STATUS_CLOSED,
             name="Closed Filter Game",
         )
@@ -246,11 +220,11 @@ class TestGetFilteredGames:
     def test_filters_by_game_type(
         self, db_session, admin_user, default_system, default_vtt
     ):
-        _create_game(
+        GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             type=GAME_TYPE_CAMPAIGN,
             status=GAME_STATUS_OPEN,
             name="Campaign Filter Game",
@@ -262,11 +236,11 @@ class TestGetFilteredGames:
         assert all(t == GAME_TYPE_CAMPAIGN for t in types)
 
     def test_filters_by_name(self, db_session, admin_user, default_system, default_vtt):
-        _create_game(
+        GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             name="UniqueNameXYZ789",
             status=GAME_STATUS_OPEN,
         )
@@ -279,11 +253,11 @@ class TestGetFilteredGames:
     def test_draft_visible_to_own_gm(
         self, db_session, admin_user, default_system, default_vtt
     ):
-        _create_game(
+        GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             status=GAME_STATUS_DRAFT,
             name="My Draft Game",
         )
@@ -303,11 +277,11 @@ class TestGetFilteredGames:
     def test_default_status_override(
         self, db_session, admin_user, default_system, default_vtt
     ):
-        _create_game(
+        GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             status=GAME_STATUS_ARCHIVED,
             name="Archived Default Game",
         )
@@ -327,11 +301,11 @@ class TestGetFilteredUserGames:
     def test_gm_role_returns_games_as_gm(
         self, db_session, admin_user, default_system, default_vtt
     ):
-        _create_game(
+        GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             name="GM User Game",
             status=GAME_STATUS_OPEN,
         )
@@ -347,11 +321,11 @@ class TestGetFilteredUserGames:
     def test_player_role_returns_games_as_player(
         self, db_session, admin_user, regular_user, default_system, default_vtt
     ):
-        game = _create_game(
+        game = GameFactory(
             db_session,
-            admin_user,
-            default_system,
-            default_vtt,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
             name="Player User Game",
             status=GAME_STATUS_OPEN,
         )
