@@ -7,6 +7,8 @@ defined once and easy to change.
 # Seeded users (created in conftest.py seed_db)
 TEST_ADMIN_USER_ID = "664487064577900594"
 TEST_ADMIN_USER_NAME = "Notsag"
+TEST_GM_USER_ID = "437154787902095362"
+TEST_GM_USER_NAME = "Jadow"
 TEST_REGULAR_USER_ID = "698965618279317624"
 TEST_REGULAR_USER_NAME = "Grew"
 

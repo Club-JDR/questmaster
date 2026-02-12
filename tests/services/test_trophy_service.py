@@ -129,9 +129,7 @@ class TestTrophyService:
         UserTrophyFactory(
             db_session, user_id=user.id, trophy_id=trophy1.id, quantity=10
         )
-        UserTrophyFactory(
-            db_session, user_id=user.id, trophy_id=trophy2.id, quantity=1
-        )
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy2.id, quantity=1)
 
         badges = service.get_user_badges(user.id)
         assert len(badges) == 2

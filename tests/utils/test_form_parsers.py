@@ -5,7 +5,6 @@ request forms (classification, ambience, restriction tags).
 """
 
 import pytest
-from flask import Flask
 from werkzeug.datastructures import MultiDict
 
 from website.utils.form_parsers import (
@@ -13,12 +12,6 @@ from website.utils.form_parsers import (
     get_classification,
     parse_restriction_tags,
 )
-
-
-@pytest.fixture
-def parser_app():
-    """Minimal Flask app for request-context-dependent parsers."""
-    return Flask(__name__)
 
 
 # ---------------------------------------------------------------------------

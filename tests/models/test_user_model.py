@@ -88,12 +88,14 @@ def test_update_from_dict():
 
 def test_update_from_dict_ignores_protected_fields():
     user = User(id="12345678901234567", name="Alice")
-    user.update_from_dict({
-        "id": "99999999999999999",
-        "name": "Bob",
-        "games_gm": ["should_be_ignored"],
-        "trophies": ["should_be_ignored"],
-    })
+    user.update_from_dict(
+        {
+            "id": "99999999999999999",
+            "name": "Bob",
+            "games_gm": ["should_be_ignored"],
+            "trophies": ["should_be_ignored"],
+        }
+    )
     # Only "name" should be updated (User.update_from_dict only allows "name")
     assert user.name == "Bob"
     # id unchanged

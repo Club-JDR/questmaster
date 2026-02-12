@@ -105,11 +105,13 @@ def test_user_trophy_update_ignores_unknown_fields(sample_user_trophy):
 
 
 def test_user_trophy_update_from_dict_ignores_protected_fields(sample_user_trophy):
-    sample_user_trophy.update_from_dict({
-        "user": "should_be_ignored",
-        "trophy": "should_be_ignored",
-        "quantity": 20,
-    })
+    sample_user_trophy.update_from_dict(
+        {
+            "user": "should_be_ignored",
+            "trophy": "should_be_ignored",
+            "quantity": 20,
+        }
+    )
     # Relationship fields "user" and "trophy" ignored
     assert sample_user_trophy.user_id == "12345678901234567"
     assert sample_user_trophy.trophy_id == 1
