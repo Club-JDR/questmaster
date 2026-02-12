@@ -87,9 +87,26 @@ class Discord:
         raise DiscordAPIError("Exceeded retry attempts", status_code=429)
 
     def get_user(self, user_id):
+        """Fetch a guild member's data from Discord.
+
+        Args:
+            user_id: Discord user ID.
+
+        Returns:
+            Dict with member data including user, nick, and roles.
+        """
         return self._request(endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET")
 
     def send_message(self, content, channel_id):
+        """Send a text message to a Discord channel.
+
+        Args:
+            content: Message content string.
+            channel_id: Target channel ID.
+
+        Returns:
+            Dict with the created message data.
+        """
         payload = {
             "content": content,
         }
@@ -98,15 +115,40 @@ class Discord:
         )
 
     def delete_message(self, msg_id, channel_id):
+        """Delete a message from a Discord channel.
+
+        Args:
+            msg_id: Message ID to delete.
+            channel_id: Channel containing the message.
+        """
         return self._request(endpoint=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE")
 
     def send_embed_message(self, embed, channel_id):
+        """Send an embed message to a Discord channel.
+
+        Args:
+            embed: Embed dict following Discord embed structure.
+            channel_id: Target channel ID.
+
+        Returns:
+            Dict with the created message data.
+        """
         payload = {"embeds": [embed]}
         return self._request(
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
     def edit_embed_message(self, msg_id, embed, channel_id):
+        """Edit an existing embed message.
+
+        Args:
+            msg_id: Message ID to edit.
+            embed: Updated embed dict.
+            channel_id: Channel containing the message.
+
+        Returns:
+            Dict with the updated message data.
+        """
         payload = {"embeds": [embed]}
         return self._request(
             endpoint=f"/channels/{channel_id}/messages/{msg_id}",
@@ -115,6 +157,17 @@ class Discord:
         )
 
     def create_channel(self, channel_name, parent_id, role_id, gm_id):
+        """Create a text channel in the guild with role-based permissions.
+
+        Args:
+            channel_name: Display name for the channel.
+            parent_id: Parent category ID.
+            role_id: Role ID for player permissions.
+            gm_id: GM user ID for elevated permissions.
+
+        Returns:
+            Dict with the created channel data.
+        """
         payload = {
             "name": "-".join(unidecode(channel_name).split()),
             "type": 0,
@@ -130,12 +183,35 @@ class Discord:
         )
 
     def get_channel(self, channel_id):
+        """Fetch channel data from Discord.
+
+        Args:
+            channel_id: Discord channel ID.
+
+        Returns:
+            Dict with channel data.
+        """
         return self._request(endpoint=f"/channels/{channel_id}", method="GET")
 
     def delete_channel(self, channel_id):
+        """Delete a Discord channel.
+
+        Args:
+            channel_id: Channel ID to delete.
+        """
         return self._request(endpoint=f"/channels/{channel_id}", method="DELETE")
 
     def create_role(self, role_name, permissions, color):
+        """Create a new guild role.
+
+        Args:
+            role_name: Display name for the role.
+            permissions: Permission bitfield string.
+            color: Role color as integer.
+
+        Returns:
+            Dict with the created role data.
+        """
         payload = {
             "name": "_".join(unidecode(role_name).split()),
             "permissions": permissions,
@@ -147,6 +223,14 @@ class Discord:
         )
 
     def get_role(self, role_id):
+        """Fetch a guild role by ID.
+
+        Args:
+            role_id: Role ID to look up.
+
+        Returns:
+            Dict with role data, or a fallback dict if not found.
+        """
         roles = self._request(endpoint=f"/guilds/{self.guild_id}/roles", method="GET")
         for role in roles:
             if role["id"] == role_id:
@@ -154,15 +238,32 @@ class Discord:
         return {"message": "Unknown Role"}
 
     def delete_role(self, role_id):
+        """Delete a guild role.
+
+        Args:
+            role_id: Role ID to delete.
+        """
         return self._request(endpoint=f"/guilds/{self.guild_id}/roles/{role_id}", method="DELETE")
 
     def add_role_to_user(self, user_id, role_id):
+        """Assign a role to a guild member.
+
+        Args:
+            user_id: Discord user ID.
+            role_id: Role ID to assign.
+        """
         return self._request(
             endpoint=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
             method="PUT",
         )
 
     def remove_role_from_user(self, user_id, role_id):
+        """Remove a role from a guild member.
+
+        Args:
+            user_id: Discord user ID.
+            role_id: Role ID to remove.
+        """
         return self._request(
             endpoint=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
             method="DELETE",

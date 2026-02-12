@@ -1,8 +1,20 @@
+"""SpecialEvent model for themed game events."""
+
 from website.extensions import db
 from website.models.base import SerializableMixin
 
 
 class SpecialEvent(db.Model, SerializableMixin):
+    """A themed event that groups related games (e.g. Halloween, conventions).
+
+    Attributes:
+        id: Primary key.
+        name: Unique event name.
+        emoji: Optional emoji displayed alongside the event.
+        color: Optional color as integer for Discord embeds.
+        active: Whether the event is currently running.
+    """
+
     __tablename__ = "special_event"
 
     _exclude_fields = []

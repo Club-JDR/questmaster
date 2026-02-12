@@ -1,3 +1,5 @@
+"""Game model representing a tabletop RPG announcement."""
+
 import sqlalchemy.dialects.postgresql as pg
 from schema import Schema, SchemaError
 from sqlalchemy import Enum, orm
@@ -82,6 +84,7 @@ class Game(db.Model):
 
     @orm.validates("classification")
     def validate_classification(self, key, value):
+        """Validate the classification JSON against the expected schema."""
         try:
             if value:
                 CLASSIFICATION_SCHEMA.validate(value)
@@ -95,6 +98,7 @@ class Game(db.Model):
 
     @orm.validates("party_size")
     def validate_party_size(self, key, value):
+        """Ensure party size is at least one."""
         if int(value) < 1:
             raise ValidationError(
                 "Number of players must be at least one.",

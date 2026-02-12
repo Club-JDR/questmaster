@@ -1,3 +1,5 @@
+"""User model and Discord profile helpers."""
+
 import re
 
 import requests
@@ -12,10 +14,14 @@ from website.models.base import SerializableMixin
 
 
 def get_user_profile(user_id, force_refresh=False):
-    """
-    Returns parsed profile info (name and avatar_url), cached for 24h.
+    """Return parsed profile info (name and avatar URL), cached for 24h.
 
-    If force_refresh=True, ignores the cache and fetches fresh data from Discord.
+    Args:
+        user_id: Discord user ID.
+        force_refresh: If True, bypass cache and fetch from Discord.
+
+    Returns:
+        Dict with 'name' and 'avatar' keys.
     """
     cache_key = f"user_profile_{user_id}"
 
@@ -58,8 +64,13 @@ def get_user_profile(user_id, force_refresh=False):
 
 
 def get_user_roles(user_id):
-    """
-    Returns roles, cached for 5 minutes.
+    """Return Discord roles for a user, cached for 5 minutes.
+
+    Args:
+        user_id: Discord user ID.
+
+    Returns:
+        List of role ID strings.
     """
     cache_key = f"user_roles_{user_id}"
     cached = cache.get(cache_key)
@@ -74,6 +85,15 @@ def get_user_roles(user_id):
 
 
 class User(db.Model, SerializableMixin):
+    """Discord-authenticated user.
+
+    Attributes:
+        id: Discord user ID (17-21 digit string).
+        name: Display name, refreshed from Discord.
+        games_gm: Games where this user is the GM.
+        trophies: User trophy associations.
+    """
+
     __tablename__ = "user"
 
     _exclude_fields = []
@@ -117,8 +137,7 @@ class User(db.Model, SerializableMixin):
 
     @orm.reconstructor
     def init_on_load(self):
-        """
-        Initialize user data after loading from the database.
+        """Initialize user data after loading from the database.
 
         Skips expensive Discord lookups when in admin context.
         """
@@ -148,9 +167,7 @@ class User(db.Model, SerializableMixin):
             self.avatar = DEFAULT_AVATAR
 
     def refresh_roles(self):
-        """
-        Refresh role info from Discord (cached for 5 minutes).
-        """
+        """Refresh role info from Discord (cached for 5 minutes)."""
         try:
             roles = get_user_roles(self.id)
             self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in roles
@@ -180,8 +197,8 @@ class User(db.Model, SerializableMixin):
             data[rel_name] = self._serialize_relationship(rel_value)
 
     def to_dict(self, include_relationships=False):
-        """
-        Serialize the User instance into a Python dict.
+        """Serialize the User instance into a Python dict.
+
         Includes dynamic attributes (avatar, roles) not stored in the database.
         """
         data = {
@@ -200,10 +217,9 @@ class User(db.Model, SerializableMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        """
-        Create a User object from a dictionary.
+        """Create a User object from a dictionary.
 
-        Expected keys: "id" (required), "name" (optional).
+        Expected keys: 'id' (required), 'name' (optional).
         Additional keys (avatar/is_gm/is_admin/is_player) will be set as attributes
         on the created instance if present.
         """
@@ -225,9 +241,7 @@ class User(db.Model, SerializableMixin):
 
     @classmethod
     def from_json(cls, data):
-        """
-        Alias for from_dict() for API compatibility.
-        """
+        """Alias for from_dict() for API compatibility."""
         return cls.from_dict(data)
 
     def update_from_dict(self, data: dict):

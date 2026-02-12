@@ -1,3 +1,5 @@
+"""Background job scheduler for periodic tasks."""
+
 import random
 from datetime import datetime
 
@@ -12,8 +14,11 @@ FREQUENCY = 5
 
 
 def refresh_user_profiles(app, batch_size=BATCH_SIZE):
-    """
-    Refresh a random batch of user profiles in Redis (and optionally DB).
+    """Refresh a random batch of user profiles from Discord.
+
+    Args:
+        app: Flask application instance for context.
+        batch_size: Number of users to refresh per run.
     """
     with app.app_context():
         users = UserService().get_all()
@@ -34,6 +39,11 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
 
 
 def start_scheduler(app):
+    """Initialize and start the APScheduler background scheduler.
+
+    Args:
+        app: Flask application instance.
+    """
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         func=lambda: refresh_user_profiles(app),

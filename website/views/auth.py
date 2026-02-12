@@ -1,3 +1,5 @@
+"""Authentication views and helpers for Discord OAuth2."""
+
 import functools
 from urllib.parse import urljoin, urlparse
 
@@ -12,9 +14,7 @@ auth_bp = Blueprint("auth", __name__)
 
 
 def who():
-    """
-    Init session with user information from Discord API.
-    """
+    """Initialize session with user information from Discord API."""
     if "user_id" in session:
         user = UserService().get_by_id(str(session["user_id"]))
         user.refresh_roles()
@@ -28,9 +28,7 @@ def who():
 
 
 def login_required(view):
-    """
-    View decorator that redirects to 403 if not logged-in.
-    """
+    """View decorator that redirects to login if not authenticated."""
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
@@ -43,9 +41,7 @@ def login_required(view):
 
 @auth_bp.route("/login/")
 def login():
-    """
-    Login using Discord OAuth2.
-    """
+    """Initiate Discord OAuth2 login flow."""
     session.permanent = True
     next_url = session.get("next_url") or request.referrer or url_for(SEARCH_GAMES_ROUTE)
     session["next_url"] = next_url
@@ -54,15 +50,21 @@ def login():
 
 @auth_bp.route("/logout/")
 def logout():
-    """
-    Logout by removing username from session.
-    """
+    """Clear session and revoke Discord OAuth2 token."""
     session.clear()
     discord.revoke()
     return redirect(url_for(SEARCH_GAMES_ROUTE))
 
 
 def is_safe_url(target):
+    """Check that the redirect target URL belongs to the same host.
+
+    Args:
+        target: URL string to validate.
+
+    Returns:
+        True if the URL is safe to redirect to.
+    """
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
@@ -70,9 +72,7 @@ def is_safe_url(target):
 
 @auth_bp.route("/callback/")
 def callback():
-    """
-    Login callback redirect to homepage.
-    """
+    """Handle Discord OAuth2 callback and create user session."""
     discord.callback()
     if discord.authorized:
         uid = discord.fetch_user().id

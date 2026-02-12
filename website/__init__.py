@@ -1,3 +1,5 @@
+"""QuestMaster application factory and configuration."""
+
 import os
 import uuid
 
@@ -16,6 +18,11 @@ from website.views import register_blueprints, register_filters
 
 
 def create_app():
+    """Create and configure the Flask application.
+
+    Returns:
+        Configured Flask application instance.
+    """
     app = Flask(__name__)
 
     # Config
@@ -27,15 +34,18 @@ def create_app():
 
     @app.before_request
     def assign_trace_id():
+        """Assign a unique trace ID to each request."""
         g.trace_id = str(uuid.uuid4())
 
     @app.after_request
     def add_trace_id_to_response(response):
+        """Add the trace ID to the response headers."""
         response.headers["X-Trace-ID"] = g.trace_id
         return response
 
     @app.context_processor
     def inject_payload():
+        """Inject user session payload into template context."""
         from flask import session
 
         from website.services import SpecialEventService
@@ -55,9 +65,11 @@ def create_app():
 
     @app.context_processor
     def inject_guild_id():
+        """Inject Discord guild ID into template context."""
         return {"DISCORD_GUILD_ID": app.config["DISCORD_GUILD_ID"]}
 
     def get_app_version():
+        """Return the application version from environment or 'dev'."""
         version = os.environ.get("TAG")
         if not version:
             version = "dev"
@@ -65,6 +77,7 @@ def create_app():
 
     @app.context_processor
     def inject_version():
+        """Inject application version into template context."""
         return {"app_version": get_app_version()}
 
     # Extensions

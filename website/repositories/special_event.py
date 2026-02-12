@@ -1,3 +1,5 @@
+"""SpecialEvent repository for themed event data access."""
+
 from website.models import SpecialEvent
 from website.repositories.base import BaseRepository
 

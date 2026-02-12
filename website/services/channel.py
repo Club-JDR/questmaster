@@ -1,3 +1,5 @@
+"""Channel service for Discord category management."""
+
 from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import Channel

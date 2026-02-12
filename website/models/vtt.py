@@ -1,8 +1,18 @@
+"""Vtt model for virtual tabletop platforms."""
+
 from website.extensions import cache, db
 from website.models.base import SerializableMixin
 
 
 class Vtt(db.Model, SerializableMixin):
+    """A virtual tabletop platform (e.g. Foundry VTT, Roll20).
+
+    Attributes:
+        id: Primary key.
+        name: Unique VTT name.
+        icon: Path or URL to the VTT icon.
+    """
+
     __tablename__ = "vtt"
 
     _exclude_fields = []

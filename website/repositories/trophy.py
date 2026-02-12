@@ -1,3 +1,5 @@
+"""Trophy repository for badge and achievement data access."""
+
 from sqlalchemy import func
 
 from website.models.trophy import Trophy, UserTrophy

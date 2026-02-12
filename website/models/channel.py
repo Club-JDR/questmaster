@@ -1,3 +1,5 @@
+"""Channel model for Discord category tracking."""
+
 from sqlalchemy.dialects.postgresql import ENUM
 
 from config.constants import GAME_TYPES
@@ -6,6 +8,14 @@ from website.models.base import SerializableMixin
 
 
 class Channel(db.Model, SerializableMixin):
+    """Discord channel category used for game organization.
+
+    Attributes:
+        id: Discord channel ID.
+        type: Game type this category serves (oneshot or campaign).
+        size: Current number of channels in this category.
+    """
+
     __tablename__ = "channel"
 
     _exclude_fields = []

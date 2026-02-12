@@ -1,3 +1,5 @@
+"""SQLAlchemy model definitions for QuestMaster."""
+
 from .channel import Channel
 from .game import Game
 from .game_event import GameEvent

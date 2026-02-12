@@ -1,3 +1,5 @@
+"""GameSession service for play session management."""
+
 from website.exceptions import SessionConflictError, ValidationError
 from website.extensions import db
 from website.models import GameSession
@@ -6,10 +8,29 @@ from website.utils.logger import logger
 
 
 class GameSessionService:
+    """Service layer for GameSession operations.
+
+    Handles session creation, deletion, updates, and conflict detection.
+    """
+
     def __init__(self, repository=None):
         self.repo = repository or GameSessionRepository()
 
     def create(self, game, start, end) -> GameSession:
+        """Create a new game session.
+
+        Args:
+            game: Game instance to add the session to.
+            start: Session start datetime.
+            end: Session end datetime.
+
+        Returns:
+            Created GameSession instance.
+
+        Raises:
+            ValidationError: If start >= end.
+            SessionConflictError: If the session overlaps with an existing one.
+        """
         if start >= end:
             raise ValidationError("Session start must be before end time.")
 
@@ -26,6 +47,11 @@ class GameSessionService:
         return session
 
     def delete(self, session) -> None:
+        """Delete a game session.
+
+        Args:
+            session: GameSession instance to delete.
+        """
         game_id = session.game_id
         start = session.start
         end = session.end
@@ -78,6 +104,15 @@ class GameSessionService:
         return self.repo.get_by_id_or_404(session_id)
 
     def find_in_range(self, start, end) -> list[GameSession]:
+        """Find all sessions within a date range.
+
+        Args:
+            start: Range start datetime.
+            end: Range end datetime.
+
+        Returns:
+            List of GameSession instances within the range.
+        """
         return self.repo.find_in_range(start, end)
 
     @staticmethod

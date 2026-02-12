@@ -1,3 +1,5 @@
+"""Repository layer for data access operations."""
+
 from website.repositories.base import BaseRepository
 from website.repositories.channel import ChannelRepository
 from website.repositories.game import GameRepository

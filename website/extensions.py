@@ -1,3 +1,5 @@
+"""Flask extension instances and CLI commands."""
+
 import click
 from flask.cli import with_appcontext
 from flask_caching import Cache
@@ -14,6 +16,7 @@ discord = DiscordOAuth2Session()
 
 
 def _seed_trophies():
+    """Seed default trophy records into the database."""
     from config.constants import (
         BADGE_CAMPAIGN_GM_ID,
         BADGE_CAMPAIGN_ID,

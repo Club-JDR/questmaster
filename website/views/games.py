@@ -53,6 +53,7 @@ session_service = GameSessionService()
 @game_bp.route("/", methods=["GET"])
 @game_bp.route("/annonces/", methods=["GET"])
 def search_games():
+    """Search and list game announcements with filtering and pagination."""
     games, request_args = get_filtered_games(request.args, who())
 
     next_url = (
@@ -79,6 +80,7 @@ def search_games():
 
 @game_bp.route("/annonces/evenement/<int:event_id>/", methods=["GET"])
 def search_games_by_event(event_id):
+    """Search games filtered by a specific special event."""
     special_event_service = SpecialEventService()
     try:
         event = special_event_service.get_by_id(event_id)
@@ -131,6 +133,7 @@ def search_games_by_event(event_id):
 
 @game_bp.route("/annonces/cards/")
 def game_cards():
+    """Return game cards HTML fragment for HTMX partial updates."""
     games, _ = get_filtered_games(request.args, who())
     return render_template("game_cards_container.j2", games=games.items)
 
