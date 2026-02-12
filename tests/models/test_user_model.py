@@ -86,6 +86,20 @@ def test_update_from_dict():
     assert user.name == "Bob"
 
 
+def test_update_from_dict_ignores_protected_fields():
+    user = User(id="12345678901234567", name="Alice")
+    user.update_from_dict({
+        "id": "99999999999999999",
+        "name": "Bob",
+        "games_gm": ["should_be_ignored"],
+        "trophies": ["should_be_ignored"],
+    })
+    # Only "name" should be updated (User.update_from_dict only allows "name")
+    assert user.name == "Bob"
+    # id unchanged
+    assert user.id == "12345678901234567"
+
+
 def test_repr_eq_ne():
     u1 = User(id="12345678901234567", name="Alice")
     u2 = User(id="12345678901234567", name="Alice")

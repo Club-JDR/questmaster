@@ -45,6 +45,14 @@ def test_trophy_update_from_dict(sample_trophy):
     assert sample_trophy.unique is True
 
 
+def test_trophy_update_from_dict_ignores_protected_fields(sample_trophy):
+    sample_trophy.update_from_dict({"id": 999, "name": "Hacked Trophy"})
+    # Protected field "id" unchanged
+    assert sample_trophy.id == 1
+    # Regular field updated normally
+    assert sample_trophy.name == "Hacked Trophy"
+
+
 def test_trophy_str_representation(sample_trophy):
     assert str(sample_trophy) == "First Game"
 
@@ -94,3 +102,16 @@ def test_user_trophy_update_ignores_unknown_fields(sample_user_trophy):
     sample_user_trophy.update_from_dict(update_data)
     assert not hasattr(sample_user_trophy, "unknown")
     assert sample_user_trophy.quantity == 7
+
+
+def test_user_trophy_update_from_dict_ignores_protected_fields(sample_user_trophy):
+    sample_user_trophy.update_from_dict({
+        "user": "should_be_ignored",
+        "trophy": "should_be_ignored",
+        "quantity": 20,
+    })
+    # Relationship fields "user" and "trophy" ignored
+    assert sample_user_trophy.user_id == "12345678901234567"
+    assert sample_user_trophy.trophy_id == 1
+    # Regular field updated normally
+    assert sample_user_trophy.quantity == 20

@@ -50,3 +50,10 @@ def test_update_from_dict_ignores_unknown_fields(sample_game_session):
     sample_game_session.update_from_dict(update_data)
     assert not hasattr(sample_game_session, "unknown_field")
     assert sample_game_session.game_id == 100
+
+
+def test_update_from_dict_ignores_protected_fields(sample_game_session):
+    new_end = datetime(2025, 1, 15, 22, 30)
+    sample_game_session.update_from_dict({"id": 999, "end": new_end})
+    assert sample_game_session.id == 1
+    assert sample_game_session.end == new_end
