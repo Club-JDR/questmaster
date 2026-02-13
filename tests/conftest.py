@@ -15,45 +15,15 @@ import pytest
 
 from tests.constants import (
     TEST_ADMIN_USER_ID,
-    TEST_ADMIN_USER_NAME,
     TEST_CAMPAIGN_CHANNEL_ID,
     TEST_GM_USER_ID,
-    TEST_GM_USER_NAME,
     TEST_ONESHOT_CHANNEL_ID,
     TEST_REGULAR_USER_ID,
-    TEST_REGULAR_USER_NAME,
-    TEST_SPECIAL_EVENT_ID,
-    TEST_SPECIAL_EVENT_NAME,
 )
 from website import create_app, db
 from website.client.discord import Discord
-from website.extensions import seed_trophies_for_tests
-from website.models import Channel, SpecialEvent, System, User, Vtt
-
-
-def seed_db():
-    """Seed the database with reference data for tests."""
-    db.session.add_all(
-        [
-            User(id=TEST_ADMIN_USER_ID, name=TEST_ADMIN_USER_NAME),
-            User(id=TEST_GM_USER_ID, name=TEST_GM_USER_NAME),
-            User(id=TEST_REGULAR_USER_ID, name=TEST_REGULAR_USER_NAME),
-        ]
-    )
-    db.session.add(System(name="Appel de Cthulhu v7", icon="cthulhu.png"))
-    db.session.add(Vtt(name="Foundry", icon="foundry.png"))
-    db.session.add(Channel(id=TEST_ONESHOT_CHANNEL_ID, type="oneshot", size=20))
-    db.session.add(Channel(id=TEST_CAMPAIGN_CHANNEL_ID, type="campaign", size=20))
-    db.session.add(
-        SpecialEvent(
-            id=TEST_SPECIAL_EVENT_ID,
-            name=TEST_SPECIAL_EVENT_NAME,
-            emoji="\U0001f419",
-            color=15360,
-            active=True,
-        )
-    )
-    db.session.commit()
+from website.extensions import _setup_test_database
+from website.models import Channel, System, User, Vtt
 
 
 @pytest.fixture(scope="module")
@@ -61,12 +31,7 @@ def test_app():
     """Create and configure the Flask test application."""
     app = create_app()
     with app.app_context():
-        db.create_all()
-        seed_db()
-        seed_trophies_for_tests()
-        # Reset Trophy sequence to avoid ID conflicts (seeded trophies use IDs 1-4)
-        db.session.execute(db.text("SELECT setval('trophy_id_seq', 100, false);"))
-        db.session.commit()
+        _setup_test_database()
         yield app
         db.session.remove()
         db.drop_all()
