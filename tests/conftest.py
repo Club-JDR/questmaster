@@ -194,7 +194,7 @@ def bot_user_id(test_app):
     return os.environ.get("DISCORD_CLIENT_ID")
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def test_channel_id(test_app):
     """Return the Discord test channel ID from the environment."""
     return os.environ.get("UNITTEST_CHANNEL_ID")

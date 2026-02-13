@@ -153,6 +153,15 @@ class TestDiscordService:
         mock_bot.edit_embed_message.assert_called_once_with("msg123", embed, "channel456")
         assert result["id"] == "msg123"
 
+    def test_pin_message(self, discord_service, mock_bot):
+        """Test pinning a message."""
+        mock_bot.pin_message.return_value = {}
+
+        result = discord_service.pin_message("msg123", "channel456")
+
+        mock_bot.pin_message.assert_called_once_with("msg123", "channel456")
+        assert result == {}
+
     # -------------------------------------------------------------------------
     # Lazy loading bot
     # -------------------------------------------------------------------------
