@@ -144,6 +144,14 @@ python -m pytest tests/ -m "not integration"
 python -m pytest tests/
 ```
 
+### Setup test database
+
+The test database is automatically setup (and destroyed afterwards) when running the tests. However, you can seed the database for manual test by running:
+
+```sh
+flask setup-test-db
+```
+
 ### Flask shell
 
 Connect to an interactive shell to inspect models and query the database:
@@ -153,6 +161,22 @@ Connect to an interactive shell to inspect models and query the database:
 docker compose run app flask shell
 # if running locally
 flask shell
+```
+
+Inside the shell, you can do various operations like:
+
+```python
+# list all users
+from website import db
+from website.models import User
+db.session.query(User).all()
+
+# Add user
+db.session.add(User())
+db.session.commit()
+
+# cleanup test database:
+db.drop_all()
 ```
 
 ## CI and tooling
