@@ -34,162 +34,16 @@ config/               # App configuration
 questmaster.py        # Entry point
 ```
 
-## Getting started
+## Documentation
 
-### Prerequisites
+Full documentation is available at [club-jdr.github.io/questmaster](https://club-jdr.github.io/questmaster/), including a [getting started guide](https://club-jdr.github.io/questmaster/getting-started/) for setting up a local development environment.
 
-#### Discord bot and test server
-
-The app authenticates users via Discord OAuth2 and interacts with a Discord server to manage roles and channels. You need:
-
-1. **A Discord application** — create one at the [Discord Developer Portal](https://discord.com/developers/applications):
-   - Under **OAuth2**, note the **Client ID** and **Client Secret**.
-   - Add `http://localhost:8000/callback` as a redirect URI.
-   - Under **Bot**, create a bot and copy its **Token**.
-   - The bot needs the **Manage Roles** and **Manage Channels** permissions.
-
-2. **A test Discord server** with:
-   - Three roles: one for admins, one for GMs, and one for players.
-   - Three text channels: one for game posts, one for admin notifications, and one for unit test output.
-   - Invite your bot to this server with the permissions above.
-
-You can get the IDs of the server, roles, and channels by enabling **Developer Mode** in Discord settings (App Settings > Advanced), then right-clicking on the relevant item and selecting **Copy ID**.
-
-#### Environment
-
-Create a `.env` file at the root of the project with the values from the previous step:
-
-```ini
-FLASK_AUTH_SECRET=""
-DISCORD_CLIENT_ID=""
-DISCORD_CLIENT_SECRET=""
-DISCORD_BOT_TOKEN=""
-DISCORD_REDIRECT_URI="http://localhost:8000/callback"
-DISCORD_GUILD_NAME="Club JDR TEST"
-POSTGRES_USER="clubjdr"
-POSTGRES_PASSWORD=""
-POSTGRES_DB="clubjdr"
-POSTGRES_HOST="db" # localhost if using flask outside Docker
-REDIS_HOST="redis" # localhost if using flask outside Docker
-DISCORD_GUILD_ID=""
-DISCORD_GM_ROLE_ID=""
-DISCORD_ADMIN_ROLE_ID=""
-DISCORD_PLAYER_ROLE_ID=""
-POSTS_CHANNEL_ID=""
-ADMIN_CHANNEL_ID=""
-UNITTEST_CHANNEL_ID=""
-FLASK_APP="website"
-```
-
-### Using Docker Compose (recommended)
-
-Build and start the complete stack:
+To preview the docs locally:
 
 ```sh
-docker compose up -d --build
+pip install -e ".[docs]"
+mkdocs serve
 ```
-
-On the first start, run the migrations to initialize the database:
-
-```sh
-docker compose run app flask db upgrade
-```
-
-Run the tests:
-
-```sh
-# Unit tests only (no Discord credentials needed)
-docker compose run app-test python -m pytest tests/ -m "not integration"
-
-# All tests including E2E and live Discord API tests
-docker compose run app-test python -m pytest tests/
-```
-
-### Local development
-
-Edit the `.env` to change `POSTGRES_HOST` and `REDIS_HOST` to `localhost`.
-
-Install the dependencies:
-
-```sh
-pip install -e ".[test,lint]"
-```
-
-Start the database and redis:
-
-```sh
-docker compose up -d db redis
-```
-
-Run the migrations and start the app:
-
-```sh
-flask db upgrade
-flask run -p 8000
-```
-
-To run in debug mode (auto-reload on code changes):
-
-```sh
-flask --app website --debug run -p 8000
-```
-
-Run the tests:
-
-```sh
-# Unit tests only (no Discord credentials needed)
-python -m pytest tests/ -m "not integration"
-
-# All tests including E2E and live Discord API tests (requires .env with Discord credentials)
-python -m pytest tests/
-```
-
-### Setup test database
-
-The test database is automatically setup (and destroyed afterwards) when running the tests. However, you can seed the database for manual test by running:
-
-```sh
-flask setup-test-db
-```
-
-### Flask shell
-
-Connect to an interactive shell to inspect models and query the database:
-
-```sh
-# if using Docker Compose
-docker compose run app flask shell
-# if running locally
-flask shell
-```
-
-Inside the shell, you can do various operations like:
-
-```python
-# list all users
-from website import db
-from website.models import User
-db.session.query(User).all()
-
-# Add user
-db.session.add(User())
-db.session.commit()
-
-# cleanup test database:
-db.drop_all()
-```
-
-## CI and tooling
-
-Every pull request is checked by the CI pipeline which runs:
-
-- **Conventional commit check** — all commits must follow the [conventional commits](https://www.conventionalcommits.org/) format.
-- **Linting** — import ordering with [isort](https://pycqa.github.io/isort/), formatting with [Black](https://github.com/psf/black), static analysis with [flake8](https://flake8.pycqa.org/) and docstring lint with [pydoclint](https://github.com/jsh9/pydoclint).
-- **Tests and coverage** — pytest runs with coverage reported to [SonarCloud](https://sonarcloud.io/dashboard?id=Club-JDR_questmaster) for code quality analysis.
-
-On merge to `main`, the CI also pushes the Docker image to GHCR and [release-please](https://github.com/googleapis/release-please) creates or updates a release PR. Merging that PR creates a GitHub release and a version tag automatically.
-
-Dependencies are kept up to date by [Renovate](https://docs.renovatebot.com/), which opens PRs for new versions of Python packages, Docker base images, and GitHub Actions.
 
 ## Contributing
 
@@ -206,7 +60,7 @@ If you're just looking to play tabletop RPGs with us, that's also fine, just hea
 
 This roadmap isn't a Product roadmap. It doesn't include feature requests or bugfix, only tech stack improvements.
 
-- **Documentation** — add Google-Style docstrings and generate documentation from it, then host documentation on github pages.
 - **Logging** — improve logging for better observability and debugging.
-- **Performances**  — improve queries, cache and index for better performances.
+- **Performances** — improve queries, cache and index for better performances.
 - **API + frontend split** — move from a monolithic Flask app with server-rendered templates to a Flask REST API backend and a Vue.js frontend.
+- **UI/UX** — Move from bootstrap to DaisyUI.

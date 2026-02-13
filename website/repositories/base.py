@@ -19,7 +19,7 @@ class BaseRepository(Generic[T]):
     def __init__(self, session=None):
         self.session = session or db.session
 
-    def get_by_id(self, id) -> T | None:
+    def get_by_id(self, id: int) -> T | None:
         """Retrieve an entity by its primary key.
 
         Args:
@@ -30,7 +30,7 @@ class BaseRepository(Generic[T]):
         """
         return self.session.get(self.model_class, id)
 
-    def get_by_id_or_404(self, id) -> T:
+    def get_by_id_or_404(self, id: int) -> T:
         """Retrieve an entity by ID or abort with 404.
 
         Args:

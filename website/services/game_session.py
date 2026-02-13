@@ -1,10 +1,18 @@
 """GameSession service for play session management."""
 
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING
+
 from website.exceptions import SessionConflictError, ValidationError
 from website.extensions import db
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
 from website.utils.logger import logger
+
+if TYPE_CHECKING:
+    from website.models import Game
 
 
 class GameSessionService:
@@ -16,7 +24,7 @@ class GameSessionService:
     def __init__(self, repository=None):
         self.repo = repository or GameSessionRepository()
 
-    def create(self, game, start, end) -> GameSession:
+    def create(self, game: Game, start: datetime, end: datetime) -> GameSession:
         """Create a new game session.
 
         Args:
@@ -46,7 +54,7 @@ class GameSessionService:
         logger.info(f"Session added for game {game.id} from {start} to {end}")
         return session
 
-    def delete(self, session) -> None:
+    def delete(self, session: GameSession) -> None:
         """Delete a game session.
 
         Args:
@@ -59,7 +67,7 @@ class GameSessionService:
         db.session.commit()
         logger.info(f"Session removed for game {game_id} from {start} to {end}")
 
-    def update(self, session, new_start, new_end) -> GameSession:
+    def update(self, session: GameSession, new_start: datetime, new_end: datetime) -> GameSession:
         """Update a session's start/end times.
 
         Args:
@@ -89,7 +97,7 @@ class GameSessionService:
         logger.info(f"Session {session.id} updated to {new_start} - {new_end}")
         return session
 
-    def get_by_id_or_404(self, session_id) -> GameSession:
+    def get_by_id_or_404(self, session_id: int) -> GameSession:
         """Get session by ID or abort with 404.
 
         Args:
@@ -103,7 +111,7 @@ class GameSessionService:
         """
         return self.repo.get_by_id_or_404(session_id)
 
-    def find_in_range(self, start, end) -> list[GameSession]:
+    def find_in_range(self, start: datetime, end: datetime) -> list[GameSession]:
         """Find all sessions within a date range.
 
         Args:

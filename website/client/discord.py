@@ -86,7 +86,7 @@ class Discord:
 
         raise DiscordAPIError("Exceeded retry attempts", status_code=429)
 
-    def get_user(self, user_id):
+    def get_user(self, user_id: str) -> dict:
         """Fetch a guild member's data from Discord.
 
         Args:
@@ -97,7 +97,7 @@ class Discord:
         """
         return self._request(endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET")
 
-    def send_message(self, content, channel_id):
+    def send_message(self, content: str, channel_id: str) -> dict:
         """Send a text message to a Discord channel.
 
         Args:
@@ -114,7 +114,7 @@ class Discord:
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
-    def delete_message(self, msg_id, channel_id):
+    def delete_message(self, msg_id: str, channel_id: str) -> dict:
         """Delete a message from a Discord channel.
 
         Args:
@@ -123,7 +123,7 @@ class Discord:
         """
         return self._request(endpoint=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE")
 
-    def send_embed_message(self, embed, channel_id):
+    def send_embed_message(self, embed: dict, channel_id: str) -> dict:
         """Send an embed message to a Discord channel.
 
         Args:
@@ -138,7 +138,7 @@ class Discord:
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
-    def edit_embed_message(self, msg_id, embed, channel_id):
+    def edit_embed_message(self, msg_id: str, embed: dict, channel_id: str) -> dict:
         """Edit an existing embed message.
 
         Args:
@@ -156,7 +156,7 @@ class Discord:
             json=payload,
         )
 
-    def pin_message(self, msg_id, channel_id):
+    def pin_message(self, msg_id: str, channel_id: str) -> dict:
         """Pin an existing message.
 
         Args:
@@ -168,7 +168,7 @@ class Discord:
             method="PUT",
         )
 
-    def create_channel(self, channel_name, parent_id, role_id, gm_id):
+    def create_channel(self, channel_name: str, parent_id: str, role_id: str, gm_id: str) -> dict:
         """Create a text channel in the guild with role-based permissions.
 
         Args:
@@ -194,7 +194,7 @@ class Discord:
             endpoint=f"/guilds/{self.guild_id}/channels", method="POST", json=payload
         )
 
-    def get_channel(self, channel_id):
+    def get_channel(self, channel_id: str) -> dict:
         """Fetch channel data from Discord.
 
         Args:
@@ -205,7 +205,7 @@ class Discord:
         """
         return self._request(endpoint=f"/channels/{channel_id}", method="GET")
 
-    def delete_channel(self, channel_id):
+    def delete_channel(self, channel_id: str) -> dict:
         """Delete a Discord channel.
 
         Args:
@@ -213,7 +213,7 @@ class Discord:
         """
         return self._request(endpoint=f"/channels/{channel_id}", method="DELETE")
 
-    def create_role(self, role_name, permissions, color):
+    def create_role(self, role_name: str, permissions: str, color: int) -> dict:
         """Create a new guild role.
 
         Args:
@@ -234,7 +234,7 @@ class Discord:
             endpoint=f"/guilds/{self.guild_id}/roles", method="POST", json=payload
         )
 
-    def get_role(self, role_id):
+    def get_role(self, role_id: str) -> dict:
         """Fetch a guild role by ID.
 
         Args:
@@ -249,7 +249,7 @@ class Discord:
                 return role
         return {"message": "Unknown Role"}
 
-    def delete_role(self, role_id):
+    def delete_role(self, role_id: str) -> dict:
         """Delete a guild role.
 
         Args:
@@ -257,7 +257,7 @@ class Discord:
         """
         return self._request(endpoint=f"/guilds/{self.guild_id}/roles/{role_id}", method="DELETE")
 
-    def add_role_to_user(self, user_id, role_id):
+    def add_role_to_user(self, user_id: str, role_id: str) -> dict:
         """Assign a role to a guild member.
 
         Args:
@@ -269,7 +269,7 @@ class Discord:
             method="PUT",
         )
 
-    def remove_role_from_user(self, user_id, role_id):
+    def remove_role_from_user(self, user_id: str, role_id: str) -> dict:
         """Remove a role from a guild member.
 
         Args:
