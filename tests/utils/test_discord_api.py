@@ -5,7 +5,7 @@ from tests.constants import TEST_ADMIN_USER_ID
 pytestmark = pytest.mark.integration
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sent_discord_message(discord_session, test_channel_id):
     title = "Annonce de test"
     color = 39423
@@ -23,7 +23,7 @@ def sent_discord_message(discord_session, test_channel_id):
         "footer": {},
     }
     message = discord_session.send_embed_message(embed, test_channel_id)
-    return message["id"]
+    yield message["id"]
 
 
 def test_get_user(discord_session, bot_user_id):
@@ -32,7 +32,7 @@ def test_get_user(discord_session, bot_user_id):
     assert response["user"]["username"] == "QuestMaster"
 
 
-def test_send_message(discord_session, test_channel_id, sent_discord_message):
+def test_send_message(discord_session, test_channel_id):
     """
     Test sending a messages to the defined test channel
     """
@@ -40,8 +40,8 @@ def test_send_message(discord_session, test_channel_id, sent_discord_message):
     response = discord_session.send_message(content, test_channel_id)
     assert response["content"] == content
     assert response["channel_id"] == test_channel_id
-    assert isinstance(sent_discord_message, str)
-    assert len(sent_discord_message) > 0
+    # Cleanup
+    discord_session.delete_message(response["id"], test_channel_id)
 
 
 def test_edit_message(discord_session, test_channel_id, sent_discord_message):
@@ -70,7 +70,18 @@ def test_edit_message(discord_session, test_channel_id, sent_discord_message):
     assert response["embeds"][0]["color"] == color
 
 
+def test_pin_message(discord_session, test_channel_id, sent_discord_message):
+    """
+    Test pin previous embed message
+    """
+    response = discord_session.pin_message(sent_discord_message, test_channel_id)
+    assert response == {}
+
+
 def test_delete_message(discord_session, test_channel_id, sent_discord_message):
+    """
+    Test deleting previous embed message
+    """
     response = discord_session.delete_message(sent_discord_message, test_channel_id)
     assert response == {}
 

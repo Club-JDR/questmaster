@@ -264,6 +264,21 @@ class DiscordService:
         """
         return self.bot.edit_embed_message(message_id, embed, channel_id)
 
+    def pin_message(self, message_id: str, channel_id: str) -> dict:
+        """Pin a message to a channel.
+
+        Args:
+            message_id: Message ID to edit.
+            channel_id: Target channel ID.
+
+        Returns:
+            API response (usually empty on success).
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.pin_message(message_id, channel_id)
+
     # -------------------------------------------------------------------------
     # Game embed operations (high-level)
     # -------------------------------------------------------------------------

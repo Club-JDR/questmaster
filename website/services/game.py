@@ -287,9 +287,10 @@ class GameService:
 
         self.channel_service.increment_size(category)
 
-        # Post initial message in the game channel
-        self.discord.send_game_embed(game, embed_type="annonce_details")
-        logger.info("Initial channel message posted.")
+        # Post and pin initial message in the game channel
+        msg_id = self.discord.send_game_embed(game, embed_type="annonce_details")
+        self.discord.pin_message(msg_id, game.channel)
+        logger.info("Initial channel message posted and pinned.")
 
     def _rollback_discord_resources(self, game: Game) -> None:
         """Rollback Discord resources on error.

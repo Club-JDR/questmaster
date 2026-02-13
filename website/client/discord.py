@@ -156,6 +156,18 @@ class Discord:
             json=payload,
         )
 
+    def pin_message(self, msg_id, channel_id):
+        """Pin an existing message.
+
+        Args:
+            msg_id: Message ID to pin.
+            channel_id: Channel containing the message.
+        """
+        return self._request(
+            endpoint=f"/channels/{channel_id}/messages/pins/{msg_id}",
+            method="PUT",
+        )
+
     def create_channel(self, channel_name, parent_id, role_id, gm_id):
         """Create a text channel in the guild with role-based permissions.
 
