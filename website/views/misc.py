@@ -9,7 +9,7 @@ from website.services.system import SystemService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
 from website.services.vtt import VttService
-from website.views.auth import who
+from website.views.auth import login_required, who
 
 misc_bp = Blueprint("misc", __name__)
 
@@ -27,6 +27,7 @@ def list_systems():
 
 
 @misc_bp.route("/badges/", methods=["GET"])
+@login_required
 def list_user_badges():
     """List all badges for the current user or for a specific user by ID."""
     user_id = request.args.get("user_id")
