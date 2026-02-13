@@ -93,7 +93,8 @@
               Informations
             </a>
             <ul id="informationsDropdown" class="dropdown-menu">
-              <a id="trophiesLink" class="dropdown-item" href="/badges/">Badges</a>
+              <a id="trophiesLink" class="dropdown-item  {% if not payload[ 'username'] %}disabled{% endif %}"
+                href="/badges/">Badges</a>
               <a id="trophiesLeaderboardLink" class="dropdown-item" href="/badges/classement/">Badges (classement)</a>
               <a id="calendarLink" class="dropdown-item" href="/calendrier/">Calendrier</a>
               <a id="statsLink" class="dropdown-item" href="/stats/">Statistiques</a>
