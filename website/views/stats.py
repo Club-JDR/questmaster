@@ -171,7 +171,7 @@ def get_month_games_json():
         events.append(
             {
                 "id": session.id,
-                "title": f"{session.game.name} par {session.game.gm.name}",
+                "title": f"{session.game.name}",
                 "start": start.isoformat(),
                 "end": end.isoformat(),
                 "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
