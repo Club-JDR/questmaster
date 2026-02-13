@@ -4,10 +4,16 @@ This service wraps Discord API calls with dependency injection for testability.
 It replaces the global singleton pattern previously used in website/bot.py.
 """
 
-from typing import Optional
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
 from config.constants import PLAYER_ROLE_PERMISSION
 from website.client.discord import Discord
+
+if TYPE_CHECKING:
+    from website.models import Game
 
 
 class DiscordService:
@@ -285,14 +291,14 @@ class DiscordService:
 
     def send_game_embed(
         self,
-        game,
+        game: Game,
         embed_type: str = "annonce",
-        start=None,
-        end=None,
-        player=None,
-        old_start=None,
-        old_end=None,
-        alert_message=None,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
+        player: Optional[str] = None,
+        old_start: Optional[datetime] = None,
+        old_end: Optional[datetime] = None,
+        alert_message: Optional[str] = None,
     ) -> str:
         """Send or update a Discord embed for a game event.
 

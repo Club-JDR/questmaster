@@ -126,7 +126,7 @@ class Game(db.Model):
         data["sessions"] = self._serialize_relation_list(getattr(self, "sessions", []))
         data["special_event"] = self._serialize_relation(getattr(self, "special_event", None))
 
-    def to_dict(self, include_relationships=False):
+    def to_dict(self, include_relationships: bool = False):
         """
         Serialize the Game instance into a Python dict.
 

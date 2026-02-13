@@ -11,7 +11,6 @@ from sqlalchemy.sql import and_, func, or_
 from config.constants import GAMES_PER_PAGE
 from website.exceptions import ValidationError
 from website.models import Game
-from website.services.user import UserService
 
 
 def parse_multi_checkbox_filter(source, keys):
@@ -203,6 +202,8 @@ def get_filtered_user_games(request_args_source, user_id, user_payload, role="gm
     Raises:
         ValidationError: If role is invalid.
     """
+    from website.services.user import UserService
+
     user = UserService().repo.get_by_id(user_id)
     if not user:
         return [], {}

@@ -9,3 +9,16 @@ from .system import System
 from .trophy import Trophy, UserTrophy
 from .user import User
 from .vtt import Vtt
+
+__all__ = [
+    "Channel",
+    "Game",
+    "GameEvent",
+    "GameSession",
+    "SpecialEvent",
+    "System",
+    "Trophy",
+    "UserTrophy",
+    "User",
+    "Vtt",
+]

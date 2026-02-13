@@ -1,5 +1,7 @@
 """GameSession repository for session data access."""
 
+from datetime import datetime
+
 from website.models import GameSession
 from website.repositories.base import BaseRepository
 
@@ -9,7 +11,7 @@ class GameSessionRepository(BaseRepository[GameSession]):
 
     model_class = GameSession
 
-    def find_in_range(self, start, end) -> list[GameSession]:
+    def find_in_range(self, start: datetime, end: datetime) -> list[GameSession]:
         """Find all sessions within a date range.
 
         Args:

@@ -1,0 +1,64 @@
+site_name: QuestMaster
+site_url: https://club-jdr.github.io/questmaster/
+repo_url: https://github.com/Club-JDR/questmaster
+repo_name: Club-JDR/questmaster
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light-blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: ligh-blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - toc.follow
+    - content.code.copy
+
+plugins:
+  - search
+  - include-markdown
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            members_order: source
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture:
+      - Models: architecture/models.md
+      - Repositories: architecture/repositories.md
+      - Services: architecture/services.md
+      - Client: architecture/client.md
+      - Exceptions: architecture/exceptions.md
+      - Utils: architecture/utils.md
+      - CLI: architecture/cli.md
+  - Contributing: contributing.md

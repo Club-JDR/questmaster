@@ -1,10 +1,18 @@
 """Channel service for Discord category management."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import Channel
 from website.repositories.channel import ChannelRepository
 from website.utils.logger import logger
+
+if TYPE_CHECKING:
+    from website.models import Game
+    from website.services.discord import DiscordService
 
 
 class ChannelService:
@@ -44,7 +52,7 @@ class ChannelService:
         """
         self.repo.increment_size(channel)
 
-    def adjust_category_size(self, discord_service, game) -> None:
+    def adjust_category_size(self, discord_service: DiscordService, game: Game) -> None:
         """Decrement category size when a game channel is deleted.
 
         Args:

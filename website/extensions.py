@@ -9,19 +9,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import inspect
 
-from tests.constants import (
-    TEST_ADMIN_USER_ID,
-    TEST_ADMIN_USER_NAME,
-    TEST_CAMPAIGN_CHANNEL_ID,
-    TEST_GM_USER_ID,
-    TEST_GM_USER_NAME,
-    TEST_ONESHOT_CHANNEL_ID,
-    TEST_REGULAR_USER_ID,
-    TEST_REGULAR_USER_NAME,
-    TEST_SPECIAL_EVENT_ID,
-    TEST_SPECIAL_EVENT_NAME,
-)
-
 db = SQLAlchemy()
 migrate = Migrate()
 cache = Cache()
@@ -36,6 +23,18 @@ def _is_db_initialized():
 
 def _seed_test_data():
     """Seed the database with reference data for tests."""
+    from tests.constants import (
+        TEST_ADMIN_USER_ID,
+        TEST_ADMIN_USER_NAME,
+        TEST_CAMPAIGN_CHANNEL_ID,
+        TEST_GM_USER_ID,
+        TEST_GM_USER_NAME,
+        TEST_ONESHOT_CHANNEL_ID,
+        TEST_REGULAR_USER_ID,
+        TEST_REGULAR_USER_NAME,
+        TEST_SPECIAL_EVENT_ID,
+        TEST_SPECIAL_EVENT_NAME,
+    )
     from website.models import Channel, SpecialEvent, System, User, Vtt
 
     db.session.add_all(
