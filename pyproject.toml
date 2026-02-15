@@ -18,7 +18,7 @@ dependencies = [
     "Flask-Admin==2.0.2",
     "redis==5.3.1",
     "gunicorn==25.1.0",
-    "psutil==5.9.8",
+    "psutil==7.2.2",
     "psycopg2-binary==2.9.11",
     "Werkzeug==3.1.5",
     "pyyaml==6.0.3",
