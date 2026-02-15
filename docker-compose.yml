@@ -40,7 +40,7 @@ services:
       - db
       - redis
   db:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     restart: always
     ports:
       - "5432:5432"
