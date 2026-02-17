@@ -1,14 +1,20 @@
 """User model and Discord profile helpers."""
 
 import re
+from datetime import datetime
 
 import requests
 from flask import current_app, has_request_context, request
 from sqlalchemy import orm
 
-from config.constants import AVATAR_BASE_URL, DEFAULT_AVATAR
+from config.constants import (
+    AVATAR_BASE_URL,
+    CACHE_USER_PROFILE_404_TIMEOUT,
+    CACHE_USER_PROFILE_TIMEOUT,
+    DEFAULT_AVATAR,
+)
 from website.bot import get_bot
-from website.exceptions import ValidationError
+from website.exceptions import DiscordAPIError, ValidationError
 from website.extensions import cache, db
 from website.models.base import SerializableMixin
 
@@ -55,8 +61,16 @@ def get_user_profile(user_id, force_refresh=False):
                 pass
 
         profile = {"name": name, "avatar": avatar_url}
-        cache.set(cache_key, profile, timeout=60 * 60 * 24)
+        cache.set(cache_key, profile, timeout=CACHE_USER_PROFILE_TIMEOUT)
         return profile
+
+    except DiscordAPIError as e:
+        current_app.logger.warning(f"[get_user_profile] Discord API error for user {user_id}: {e}")
+        fallback = {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "raw": None}
+        if e.status_code == 404:
+            fallback["not_found"] = True
+            cache.set(cache_key, fallback, timeout=CACHE_USER_PROFILE_404_TIMEOUT)
+        return fallback
 
     except Exception as e:
         current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
@@ -101,6 +115,7 @@ class User(db.Model, SerializableMixin):
 
     id = db.Column(db.String(), primary_key=True)
     name = db.Column(db.String(), nullable=False, index=True)
+    not_player_as_of = db.Column(db.DateTime, nullable=True)
     games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
@@ -204,6 +219,9 @@ class User(db.Model, SerializableMixin):
         data = {
             "id": self.id,
             "name": self.name,
+            "not_player_as_of": (
+                self.not_player_as_of.isoformat() if self.not_player_as_of else None
+            ),
             "avatar": getattr(self, "avatar", DEFAULT_AVATAR),
             "is_gm": getattr(self, "is_gm", False),
             "is_admin": getattr(self, "is_admin", False),
@@ -236,6 +254,12 @@ class User(db.Model, SerializableMixin):
             user.is_admin = bool(data["is_admin"])
         if "is_player" in data:
             user.is_player = bool(data["is_player"])
+        if "not_player_as_of" in data:
+            value = data["not_player_as_of"]
+            if isinstance(value, str):
+                user.not_player_as_of = datetime.fromisoformat(value)
+            else:
+                user.not_player_as_of = value
 
         return user
 
@@ -246,7 +270,7 @@ class User(db.Model, SerializableMixin):
 
     def update_from_dict(self, data: dict):
         """Update the user from a dictionary of fields."""
-        for field in ["name"]:
+        for field in ["name", "not_player_as_of"]:
             if field in data:
                 setattr(self, field, data[field])
 

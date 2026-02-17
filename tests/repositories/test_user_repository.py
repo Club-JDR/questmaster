@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID
@@ -31,3 +33,31 @@ class TestUserRepository:
     def test_count(self, db_session):
         repo = UserRepository()
         assert repo.count() >= 2
+
+    def test_get_active_users_excludes_inactive(self, db_session):
+        repo = UserRepository()
+        inactive_user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        active_users = repo.get_active_users()
+        active_ids = [u.id for u in active_users]
+        assert inactive_user.id not in active_ids
+
+    def test_get_active_users_includes_active(self, db_session):
+        repo = UserRepository()
+        active_user = UserFactory(db_session)
+        active_users = repo.get_active_users()
+        active_ids = [u.id for u in active_users]
+        assert active_user.id in active_ids
+
+    def test_get_inactive_users(self, db_session):
+        repo = UserRepository()
+        inactive_user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        inactive_users = repo.get_inactive_users()
+        inactive_ids = [u.id for u in inactive_users]
+        assert inactive_user.id in inactive_ids
+
+    def test_get_inactive_users_excludes_active(self, db_session):
+        repo = UserRepository()
+        active_user = UserFactory(db_session)
+        inactive_users = repo.get_inactive_users()
+        inactive_ids = [u.id for u in inactive_users]
+        assert active_user.id not in inactive_ids

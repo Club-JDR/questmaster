@@ -88,16 +88,20 @@ def UserFactory(session, **overrides):
     Args:
         session: The SQLAlchemy session.
         **overrides: Any User column values to override.
+            Supports ``not_player_as_of`` which is set after construction.
 
     Returns:
         A flushed User instance.
     """
+    not_player_as_of = overrides.pop("not_player_as_of", None)
     defaults = {
         "id": _unique_discord_id(),
         "name": f"TestUser-{_unique_id()}",
     }
     defaults.update(overrides)
     user = User(**defaults)
+    if not_player_as_of is not None:
+        user.not_player_as_of = not_player_as_of
     session.add(user)
     session.flush()
     return user

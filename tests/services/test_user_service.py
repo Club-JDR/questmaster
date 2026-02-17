@@ -1,8 +1,10 @@
 import random
+from datetime import datetime
 
 import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID
+from tests.factories import UserFactory
 from website.exceptions import NotFoundError
 from website.models import User
 from website.services.user import UserService
@@ -41,3 +43,29 @@ class TestUserService:
         # Verify it persists
         found = db_session.get(User, user_id)
         assert found is not None
+
+    def test_get_active_users_excludes_inactive(self, db_session):
+        inactive_user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        service = UserService()
+        active_users = service.get_active_users()
+        active_ids = [u.id for u in active_users]
+        assert inactive_user.id not in active_ids
+
+    def test_get_inactive_users(self, db_session):
+        inactive_user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        service = UserService()
+        inactive_users = service.get_inactive_users()
+        inactive_ids = [u.id for u in inactive_users]
+        assert inactive_user.id in inactive_ids
+
+    def test_mark_inactive(self, db_session):
+        user = UserFactory(db_session)
+        service = UserService()
+        result = service.mark_inactive(user.id)
+        assert result.not_player_as_of is not None
+
+    def test_clear_inactive(self, db_session):
+        user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        service = UserService()
+        result = service.clear_inactive(user.id)
+        assert result.not_player_as_of is None

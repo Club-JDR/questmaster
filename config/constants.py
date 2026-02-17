@@ -131,6 +131,10 @@ HUMAN_TIMEFORMAT = "%a %d/%m - %Hh%M"
 # Error Messages
 MSG_ADMIN_ACCESS_REQUIRED = "Admin access required."
 
+# Cache Timeouts (seconds)
+CACHE_USER_PROFILE_TIMEOUT = 60 * 60 * 24  # 24 hours
+CACHE_USER_PROFILE_404_TIMEOUT = 60 * 60 * 24 * 7  # 7 days
+
 # Error Templates
 TEMPLATE_403 = "403.html"
 TEMPLATE_404 = "404.html"

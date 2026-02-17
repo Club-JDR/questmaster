@@ -96,6 +96,7 @@ def create_app():
         name="QuestMaster Admin",
         index_view=admin_view.SecureAdminIndexView(),
     )
+    admin.add_view(admin_view.UserAdmin(models.User, db.session, name="Utilisateurs"))
     admin.add_view(admin_view.GameAdmin(models.Game, db.session, name="Annonces"))
     admin.add_view(
         admin_view.SpecialEventAdmin(models.SpecialEvent, db.session, name="Événements")

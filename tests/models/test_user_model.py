@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -131,3 +132,105 @@ def test_refresh_roles(mock_get_roles):
         assert user.is_gm is True
         assert user.is_admin is True
         assert user.is_player is False
+
+
+def test_not_player_as_of_default_none():
+    user = User(id="12345678901234567", name="Alice")
+    assert user.not_player_as_of is None
+
+
+def test_to_dict_includes_not_player_as_of_none():
+    user = User(id="12345678901234567", name="Alice")
+    d = user.to_dict()
+    assert "not_player_as_of" in d
+    assert d["not_player_as_of"] is None
+
+
+def test_to_dict_includes_not_player_as_of_set():
+    user = User(id="12345678901234567", name="Alice")
+    dt = datetime(2025, 6, 15, 12, 0, 0)
+    user.not_player_as_of = dt
+    d = user.to_dict()
+    assert d["not_player_as_of"] == dt.isoformat()
+
+
+def test_update_from_dict_sets_not_player_as_of():
+    user = User(id="12345678901234567", name="Alice")
+    dt = datetime(2025, 6, 15, 12, 0, 0)
+    user.update_from_dict({"not_player_as_of": dt})
+    assert user.not_player_as_of == dt
+
+
+def test_update_from_dict_clears_not_player_as_of():
+    user = User(id="12345678901234567", name="Alice")
+    user.not_player_as_of = datetime(2025, 6, 15, 12, 0, 0)
+    user.update_from_dict({"not_player_as_of": None})
+    assert user.not_player_as_of is None
+
+
+def test_from_dict_with_not_player_as_of_string():
+    data = {
+        "id": "12345678901234567",
+        "name": "Alice",
+        "not_player_as_of": "2025-06-15T12:00:00",
+    }
+    user = User.from_dict(data)
+    assert user.not_player_as_of == datetime(2025, 6, 15, 12, 0, 0)
+
+
+def test_from_dict_with_not_player_as_of_datetime():
+    dt = datetime(2025, 6, 15, 12, 0, 0)
+    data = {
+        "id": "12345678901234567",
+        "name": "Alice",
+        "not_player_as_of": dt,
+    }
+    user = User.from_dict(data)
+    assert user.not_player_as_of == dt
+
+
+def test_from_dict_without_not_player_as_of():
+    data = {"id": "12345678901234567", "name": "Alice"}
+    user = User.from_dict(data)
+    assert user.not_player_as_of is None
+
+
+@patch("website.models.user.get_bot")
+def test_get_user_profile_caches_on_404(mock_get_bot, test_app):
+    from website.exceptions import DiscordAPIError
+    from website.extensions import cache
+    from website.models.user import get_user_profile
+
+    mock_bot = MagicMock()
+    mock_bot.get_user.side_effect = DiscordAPIError("Unknown Member", status_code=404)
+    mock_get_bot.return_value = mock_bot
+
+    with test_app.app_context():
+        cache.clear()
+        result = get_user_profile("99999999999999999", force_refresh=True)
+        assert result["name"] == "Inconnu"
+        assert result.get("not_found") is True
+
+        cached = cache.get("user_profile_99999999999999999")
+        assert cached is not None
+        assert cached.get("not_found") is True
+
+
+@patch("website.models.user.get_bot")
+def test_get_user_profile_does_not_cache_non_404_errors(mock_get_bot, test_app):
+    from website.exceptions import DiscordAPIError
+    from website.extensions import cache
+    from website.models.user import get_user_profile
+
+    mock_bot = MagicMock()
+    mock_bot.get_user.side_effect = DiscordAPIError("Server Error", status_code=500)
+    mock_get_bot.return_value = mock_bot
+
+    with test_app.app_context():
+        cache.clear()
+        result = get_user_profile("99999999999999998", force_refresh=True)
+        assert result["name"] == "Inconnu"
+        assert result.get("not_found") is None
+
+        cached = cache.get("user_profile_99999999999999998")
+        assert cached is None

@@ -1,5 +1,7 @@
 """User service for user-related business logic."""
 
+from datetime import datetime, timezone
+
 from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import User
@@ -62,3 +64,53 @@ class UserService:
             List of all User instances.
         """
         return self.repo.get_all()
+
+    def get_active_users(self) -> list[User]:
+        """Get all users not marked as inactive.
+
+        Returns:
+            List of active User instances.
+        """
+        return self.repo.get_active_users()
+
+    def get_inactive_users(self) -> list[User]:
+        """Get all users marked as inactive.
+
+        Returns:
+            List of inactive User instances.
+        """
+        return self.repo.get_inactive_users()
+
+    def mark_inactive(self, user_id: str) -> User:
+        """Mark a user as inactive (left the Discord server).
+
+        Args:
+            user_id: Discord user ID.
+
+        Returns:
+            Updated User instance.
+
+        Raises:
+            NotFoundError: If user does not exist.
+        """
+        user = self.get_by_id(user_id)
+        user.not_player_as_of = datetime.now(timezone.utc)
+        db.session.commit()
+        return user
+
+    def clear_inactive(self, user_id: str) -> User:
+        """Clear the inactive flag for a user (they have rejoined).
+
+        Args:
+            user_id: Discord user ID.
+
+        Returns:
+            Updated User instance.
+
+        Raises:
+            NotFoundError: If user does not exist.
+        """
+        user = self.get_by_id(user_id)
+        user.not_player_as_of = None
+        db.session.commit()
+        return user

@@ -104,6 +104,25 @@ class SystemAdmin(AdminView):
         raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
 
 
+class UserAdmin(AdminView):
+    """Admin view for managing User records."""
+
+    column_list = ["id", "name", "not_player_as_of"]
+    column_searchable_list = ["id", "name"]
+    column_filters = ["id", "name", "not_player_as_of"]
+    column_editable_list = ["not_player_as_of"]
+    column_labels = {
+        "id": "Discord ID",
+        "name": "Nom",
+        "not_player_as_of": "Inactif depuis",
+    }
+    form_columns = ["name", "not_player_as_of"]
+    can_create = False
+    can_edit = True
+    can_delete = False
+    page_size = 50
+
+
 class GameAdmin(AdminView):
     column_list = [
         "id",
