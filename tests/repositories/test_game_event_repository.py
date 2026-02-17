@@ -7,13 +7,14 @@ from website.repositories.game_event import GameEventRepository
 
 
 class TestGameEventRepository:
-    def test_log_creates_event(self, db_session, sample_game):
+    def test_log_creates_event(self, db_session, sample_game, admin_user):
         repo = GameEventRepository()
-        event = repo.log("create", sample_game.id, "Game created.")
+        event = repo.log("create", sample_game.id, "Game created.", user_id=admin_user.id)
         assert event.id is not None
         assert event.action == "create"
         assert event.game_id == sample_game.id
         assert event.description == "Game created."
+        assert event.user_id == admin_user.id
 
     def test_log_without_description(self, db_session, sample_game):
         repo = GameEventRepository()
@@ -21,6 +22,7 @@ class TestGameEventRepository:
         assert event.id is not None
         assert event.action == "edit"
         assert event.description is None
+        assert event.user_id is None
 
     def test_log_sets_timestamp(self, db_session, sample_game):
         repo = GameEventRepository()

@@ -65,12 +65,13 @@ class VttAdmin(AdminView):
 
 
 class GameEventAdmin(AdminView):
-    column_list = ["timestamp", "action", "game.slug", "description"]
+    column_list = ["timestamp", "action", "user.name", "game.slug", "description"]
     column_searchable_list = ["action", "game.slug", "description"]
     column_filters = ["action", "game.slug", "description"]
     column_labels = {
         "timestamp": "Timestamp (UTC)",
         "action": "Action",
+        "user.name": "Utilisateur",
         "game.slug": "Annonce",
         "description": "Détails",
     }

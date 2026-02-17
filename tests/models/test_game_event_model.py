@@ -14,6 +14,7 @@ def sample_game_event():
         action="create",
         game_id=42,
         description="Test game event",
+        user_id="user123",
     )
 
 
@@ -24,6 +25,7 @@ def test_game_event_to_dict(sample_game_event):
     assert data["action"] == "create"
     assert data["game_id"] == 42
     assert data["description"] == "Test game event"
+    assert data["user_id"] == "user123"
 
 
 def test_game_event_from_dict():
@@ -34,6 +36,7 @@ def test_game_event_from_dict():
         "action": "edit-session",
         "game_id": 99,
         "description": "Edited session",
+        "user_id": "user456",
     }
     event = GameEvent.from_dict(data)
     assert event.id == 2
@@ -41,6 +44,7 @@ def test_game_event_from_dict():
     assert event.action == "edit-session"
     assert event.game_id == 99
     assert event.description == "Edited session"
+    assert event.user_id == "user456"
 
 
 def test_game_event_update_from_dict(sample_game_event):
@@ -69,6 +73,7 @@ def test_game_event_eq_and_ne():
         action="create",
         game_id=42,
         description="Test game event",
+        user_id="user123",
     )
     e2 = GameEvent(
         id=1,
@@ -76,6 +81,7 @@ def test_game_event_eq_and_ne():
         action="create",
         game_id=42,
         description="Test game event",
+        user_id="user123",
     )
     e3 = GameEvent(
         id=2,
@@ -83,6 +89,7 @@ def test_game_event_eq_and_ne():
         action="edit",
         game_id=42,
         description="Different event",
+        user_id="user456",
     )
     assert e1 == e2
     assert e1 != e3

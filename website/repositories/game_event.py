@@ -9,20 +9,19 @@ class GameEventRepository(BaseRepository[GameEvent]):
 
     model_class = GameEvent
 
-    def log(self, action: str, game_id: int, description: str = None) -> GameEvent:
+    def log(
+        self, action: str, game_id: int, description: str | None = None, user_id: str | None = None
+    ) -> GameEvent:
         """Create and persist a new game event.
 
         Args:
             action: Event action type.
             game_id: ID of the related game.
             description: Optional event description.
+            user_id: Optional ID of the user that performed the action.
 
         Returns:
             Created GameEvent instance.
         """
-        event = GameEvent(
-            action=action,
-            game_id=game_id,
-            description=description,
-        )
+        event = GameEvent(action=action, game_id=game_id, description=description, user_id=user_id)
         return self.add(event)
