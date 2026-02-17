@@ -1,6 +1,6 @@
 """System model for tabletop RPG game systems."""
 
-from website.extensions import cache, db
+from website.extensions import db
 from website.models.base import SerializableMixin
 
 
@@ -21,11 +21,8 @@ class System(db.Model, SerializableMixin):
     games_system = db.relationship("Game", backref="system")
 
     @staticmethod
-    @cache.memoize()
     def get_systems():
-        """
-        Return a list of all Systems, cached for performance.
-        """
+        """Return a list of all Systems, ordered by name."""
         return System.query.order_by("name").all()
 
     @classmethod

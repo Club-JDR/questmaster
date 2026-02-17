@@ -15,6 +15,7 @@ class VttService:
     def __init__(self, repository=None):
         self.repo = repository or VttRepository()
 
+    @cache.memoize()
     def get_all(self) -> list[Vtt]:
         """Get all VTTs ordered by name.
 
@@ -62,7 +63,7 @@ class VttService:
         vtt = Vtt(name=name, icon=icon)
         self.repo.add(vtt)
         db.session.commit()
-        cache.delete_memoized(Vtt.get_vtts)
+        cache.delete_memoized(self.get_all)
         return vtt
 
     def update(self, id: int, data: dict) -> Vtt:
@@ -78,7 +79,7 @@ class VttService:
         vtt = self.repo.get_by_id_or_404(id)
         vtt.update_from_dict(data)
         db.session.commit()
-        cache.delete_memoized(Vtt.get_vtts)
+        cache.delete_memoized(self.get_all)
         return vtt
 
     def delete(self, id: int) -> None:
@@ -90,4 +91,4 @@ class VttService:
         vtt = self.repo.get_by_id_or_404(id)
         self.repo.delete(vtt)
         db.session.commit()
-        cache.delete_memoized(Vtt.get_vtts)
+        cache.delete_memoized(self.get_all)

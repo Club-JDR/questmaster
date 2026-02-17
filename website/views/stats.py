@@ -1,8 +1,6 @@
 """Statistics and calendar views."""
 
-import calendar
-from collections import Counter, defaultdict
-from datetime import datetime
+from collections import Counter
 
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
@@ -15,85 +13,8 @@ from website.views.auth import who
 
 stats_bp = Blueprint("stats", __name__)
 
-
-def default_game_entry():
-    """Return a default game entry dict for stats aggregation."""
-    return {"count": 0, "gm": ""}
-
-
-def default_system_dict():
-    """Return a defaultdict of game entries keyed by slug."""
-    return defaultdict(default_game_entry)
-
-
-@cache.memoize(timeout=3600)
-def get_cached_stats_for_period(year, month):
-    """Compute and cache game statistics for a given month.
-
-    Args:
-        year: Year to compute stats for, or None for current month.
-        month: Month to compute stats for, or None for current month.
-
-    Returns:
-        Dict with base_day, last_day, session counts, game dicts, and GM names.
-    """
-    if year and month:
-        base_day = datetime(year, month, 1)
-    else:
-        today = datetime.today()
-        base_day = today.replace(day=1)
-
-    last_day = datetime(
-        base_day.year,
-        base_day.month,
-        calendar.monthrange(base_day.year, base_day.month)[1],
-        23,
-        59,
-        59,
-        999999,
-    )
-
-    sessions = GameSessionService().find_in_range(base_day, last_day)
-
-    num_os = 0
-    num_campaign = 0
-    os_games = defaultdict(default_system_dict)
-    campaign_games = defaultdict(default_system_dict)
-
-    gm_names = []
-
-    for session in sessions:
-        game = session.game
-        system = game.system.name
-        slug = game.slug
-        game_name = game.name
-        gm_name = game.gm.name
-        entry = {"name": game_name, "gm": gm_name, "count": 1}
-
-        if game.type == "oneshot":
-            num_os += 1
-            if slug in os_games[system]:
-                os_games[system][slug]["count"] += 1
-            else:
-                os_games[system][slug] = entry
-        else:
-            num_campaign += 1
-            if slug in campaign_games[system]:
-                campaign_games[system][slug]["count"] += 1
-            else:
-                campaign_games[system][slug] = entry
-
-        gm_names.append(gm_name)
-
-    return {
-        "base_day": base_day,
-        "last_day": last_day,
-        "num_os": num_os,
-        "num_campaign": num_campaign,
-        "os_games": os_games,
-        "campaign_games": campaign_games,
-        "gm_names": gm_names,
-    }
+# Service instances
+session_service = GameSessionService()
 
 
 @stats_bp.route("/stats/", methods=["GET"])
@@ -102,7 +23,7 @@ def get_stats():
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
 
-    stats = get_cached_stats_for_period(year, month)
+    stats = session_service.get_stats_for_period(year, month)
 
     base_day = stats["base_day"]
     last_day = stats["last_day"]
@@ -144,7 +65,6 @@ def get_calendar_widget():
 @cache.cached(query_string=True)
 def get_month_games_json():
     """Return game sessions as JSON for the calendar frontend."""
-    # Get the start and end from query parameters
     start_str = request.args.get("start")
     end_str = request.args.get("end")
 
@@ -157,7 +77,7 @@ def get_month_games_json():
     except ValueError:
         return jsonify([]), 400
 
-    sessions = GameSessionService().find_in_range(start, end)
+    sessions = session_service.find_in_range(start, end)
 
     events = []
     for session in sessions:

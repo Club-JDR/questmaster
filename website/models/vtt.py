@@ -1,6 +1,6 @@
 """Vtt model for virtual tabletop platforms."""
 
-from website.extensions import cache, db
+from website.extensions import db
 from website.models.base import SerializableMixin
 
 
@@ -25,11 +25,8 @@ class Vtt(db.Model, SerializableMixin):
     games_vtt = db.relationship("Game", backref="vtt")
 
     @staticmethod
-    @cache.memoize()
     def get_vtts():
-        """
-        Return a list of all Vtts, cached for performance.
-        """
+        """Return a list of all Vtts, ordered by name."""
         return Vtt.query.order_by("name").all()
 
     @classmethod

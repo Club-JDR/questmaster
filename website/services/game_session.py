@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import calendar
+from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from website.exceptions import SessionConflictError, ValidationError
-from website.extensions import db
+from website.extensions import cache, db
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
 from website.utils.logger import logger
@@ -122,6 +124,81 @@ class GameSessionService:
             List of GameSession instances within the range.
         """
         return self.repo.find_in_range(start, end)
+
+    @cache.memoize(timeout=3600)
+    def get_stats_for_period(self, year: int | None, month: int | None) -> dict:
+        """Compute game statistics for a given month.
+
+        Aggregates session data into per-system, per-game counts for
+        oneshots and campaigns, along with GM participation.
+
+        Args:
+            year: Year to compute stats for, or None for current month.
+            month: Month to compute stats for, or None for current month.
+
+        Returns:
+            Dict with keys: base_day, last_day, num_os, num_campaign,
+            os_games, campaign_games, gm_names.
+        """
+        if year and month:
+            base_day = datetime(year, month, 1)
+        else:
+            today = datetime.today()
+            base_day = today.replace(day=1)
+
+        last_day = datetime(
+            base_day.year,
+            base_day.month,
+            calendar.monthrange(base_day.year, base_day.month)[1],
+            23,
+            59,
+            59,
+            999999,
+        )
+
+        sessions = self.find_in_range(base_day, last_day)
+
+        num_os = 0
+        num_campaign = 0
+        os_games: dict = defaultdict(lambda: defaultdict(self._default_game_entry))
+        campaign_games: dict = defaultdict(lambda: defaultdict(self._default_game_entry))
+        gm_names: list[str] = []
+
+        for session in sessions:
+            game = session.game
+            system = game.system.name
+            slug = game.slug
+            entry = {"name": game.name, "gm": game.gm.name, "count": 1}
+
+            if game.type == "oneshot":
+                num_os += 1
+                if slug in os_games[system]:
+                    os_games[system][slug]["count"] += 1
+                else:
+                    os_games[system][slug] = entry
+            else:
+                num_campaign += 1
+                if slug in campaign_games[system]:
+                    campaign_games[system][slug]["count"] += 1
+                else:
+                    campaign_games[system][slug] = entry
+
+            gm_names.append(game.gm.name)
+
+        return {
+            "base_day": base_day,
+            "last_day": last_day,
+            "num_os": num_os,
+            "num_campaign": num_campaign,
+            "os_games": os_games,
+            "campaign_games": campaign_games,
+            "gm_names": gm_names,
+        }
+
+    @staticmethod
+    def _default_game_entry():
+        """Return a default game entry dict for stats aggregation."""
+        return {"count": 0, "gm": ""}
 
     @staticmethod
     def _has_conflict(game, start_dt, end_dt, exclude_session_id=None):

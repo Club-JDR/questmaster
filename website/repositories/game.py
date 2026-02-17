@@ -85,6 +85,20 @@ class GameRepository(BaseRepository[Game]):
         """
         return self.session.query(Game).filter_by(special_event_id=event_id).all()
 
+    def query_by_special_event(self, event_id: int):
+        """Return a query object for games linked to a special event.
+
+        Unlike ``find_by_special_event`` (which returns a list), this returns
+        an unevaluated query suitable for further filtering and pagination.
+
+        Args:
+            event_id: Special event ID.
+
+        Returns:
+            SQLAlchemy query filtered by special_event_id.
+        """
+        return self.session.query(Game).filter(Game.special_event_id == event_id)
+
     def get_for_update(self, game_id: int) -> Optional[Game]:
         """Get game with pessimistic lock for updates.
 
