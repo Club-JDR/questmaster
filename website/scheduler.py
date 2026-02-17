@@ -40,6 +40,8 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
                 else:
                     user.name = profile["name"]
                     user.avatar = profile["avatar"]
+                    if profile.get("username"):
+                        user.username = profile["username"]
             except Exception as e:
                 app.logger.warning(f"[{datetime.now()}] Failed to refresh {user.id}: {e}")
 
@@ -72,6 +74,8 @@ def check_inactive_users(app, batch_size=INACTIVE_CHECK_BATCH_SIZE):
                     user.not_player_as_of = None
                     user.name = profile["name"]
                     user.avatar = profile["avatar"]
+                    if profile.get("username"):
+                        user.username = profile["username"]
                     reactivated += 1
                     app.logger.info(
                         f"[Scheduler] User {user.id} has rejoined, clearing inactive flag"

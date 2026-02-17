@@ -38,12 +38,15 @@ class UserService:
             )
         return user
 
-    def get_or_create(self, user_id: str, name: str = "Inconnu") -> tuple[User, bool]:
+    def get_or_create(
+        self, user_id: str, name: str = "Inconnu", username: str | None = None
+    ) -> tuple[User, bool]:
         """Get an existing user or create a new one.
 
         Args:
             user_id: Discord user ID.
             name: Display name for new users. Defaults to 'Inconnu'.
+            username: Stable Discord username (optional).
 
         Returns:
             Tuple of (User, created) where created is True if the user was new.
@@ -51,7 +54,7 @@ class UserService:
         user = self.repo.get_by_id(user_id)
         if user:
             return user, False
-        user = User(id=user_id, name=name)
+        user = User(id=user_id, name=name, username=username)
         self.repo.add(user)
         db.session.commit()
         user.init_on_load()

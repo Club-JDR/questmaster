@@ -94,9 +94,11 @@ def UserFactory(session, **overrides):
         A flushed User instance.
     """
     not_player_as_of = overrides.pop("not_player_as_of", None)
+    uid = _unique_id()
     defaults = {
         "id": _unique_discord_id(),
-        "name": f"TestUser-{_unique_id()}",
+        "name": f"TestUser-{uid}",
+        "username": f"testuser-{uid}",
     }
     defaults.update(overrides)
     user = User(**defaults)

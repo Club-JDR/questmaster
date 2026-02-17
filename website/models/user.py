@@ -60,13 +60,13 @@ def get_user_profile(user_id, force_refresh=False):
             except requests.RequestException:
                 pass
 
-        profile = {"name": name, "avatar": avatar_url}
+        profile = {"name": name, "avatar": avatar_url, "username": user.get("username")}
         cache.set(cache_key, profile, timeout=CACHE_USER_PROFILE_TIMEOUT)
         return profile
 
     except DiscordAPIError as e:
         current_app.logger.warning(f"[get_user_profile] Discord API error for user {user_id}: {e}")
-        fallback = {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "raw": None}
+        fallback = {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "username": None, "raw": None}
         if e.status_code == 404:
             fallback["not_found"] = True
             cache.set(cache_key, fallback, timeout=CACHE_USER_PROFILE_404_TIMEOUT)
@@ -74,7 +74,7 @@ def get_user_profile(user_id, force_refresh=False):
 
     except Exception as e:
         current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
-        return {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "raw": None}
+        return {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "username": None, "raw": None}
 
 
 def get_user_roles(user_id):
@@ -103,7 +103,8 @@ class User(db.Model, SerializableMixin):
 
     Attributes:
         id: Discord user ID (17-21 digit string).
-        name: Display name, refreshed from Discord.
+        name: Display name (nick or global_name), refreshed from Discord.
+        username: Stable Discord username, used for slug generation.
         games_gm: Games where this user is the GM.
         trophies: User trophy associations.
     """
@@ -115,15 +116,26 @@ class User(db.Model, SerializableMixin):
 
     id = db.Column(db.String(), primary_key=True)
     name = db.Column(db.String(), nullable=False, index=True)
+    username = db.Column(db.String(), nullable=True)
     not_player_as_of = db.Column(db.DateTime, nullable=True)
     games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
-    def __init__(self, id, name="Inconnu"):
+    def __init__(self, id, name="Inconnu", username=None):
         if not re.fullmatch(r"\d{17,21}", id):
             raise ValidationError("Invalid Discord UID.", field="id", details={"value": id})
         self.id = id
         self.name = name
+        self.username = username
+
+    @property
+    def slug_name(self) -> str:
+        """Return the stable name for slug generation.
+
+        Uses the Discord username (stable, lowercase) when available,
+        falling back to the display name.
+        """
+        return self.username or self.name
 
     @property
     def display_name(self):
@@ -165,6 +177,8 @@ class User(db.Model, SerializableMixin):
             profile = get_user_profile(self.id)
             self.name = profile["name"]
             self.avatar = profile["avatar"]
+            if profile.get("username") and not self.username:
+                self.username = profile["username"]
             return
 
         if request.path.startswith("/admin"):
@@ -176,6 +190,8 @@ class User(db.Model, SerializableMixin):
             profile = get_user_profile(self.id)
             self.name = profile["name"]
             self.avatar = profile["avatar"]
+            if profile.get("username") and not self.username:
+                self.username = profile["username"]
         except Exception:
             if not getattr(self, "name", None):
                 self.name = "Inconnu"
@@ -219,6 +235,7 @@ class User(db.Model, SerializableMixin):
         data = {
             "id": self.id,
             "name": self.name,
+            "username": self.username,
             "not_player_as_of": (
                 self.not_player_as_of.isoformat() if self.not_player_as_of else None
             ),
@@ -243,7 +260,11 @@ class User(db.Model, SerializableMixin):
         """
         if "id" not in data:
             raise ValidationError("Missing id when creating User from dict.", field="id")
-        user = cls(id=str(data["id"]), name=data.get("name", "Inconnu"))
+        user = cls(
+            id=str(data["id"]),
+            name=data.get("name", "Inconnu"),
+            username=data.get("username"),
+        )
 
         # Optional attrs that are convenient to set from API payloads
         if "avatar" in data:
@@ -270,7 +291,7 @@ class User(db.Model, SerializableMixin):
 
     def update_from_dict(self, data: dict):
         """Update the user from a dictionary of fields."""
-        for field in ["name", "not_player_as_of"]:
+        for field in ["name", "username", "not_player_as_of"]:
             if field in data:
                 setattr(self, field, data[field])
 

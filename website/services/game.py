@@ -118,7 +118,7 @@ class GameService:
 
         Args:
             name: Game name.
-            gm_name: GM display name.
+            gm_name: GM stable username (preferred) or display name (fallback).
 
         Returns:
             Unique URL-safe slug.
@@ -216,7 +216,7 @@ class GameService:
             )
 
             # Generate unique slug
-            game.slug = self.generate_slug(data["name"], gm.name)
+            game.slug = self.generate_slug(data["name"], gm.slug_name)
 
             # Add to session
             self.repo.add(game)

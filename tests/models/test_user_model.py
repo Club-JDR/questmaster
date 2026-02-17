@@ -22,13 +22,33 @@ def test_user_init_invalid(uid):
         User(id=uid)
 
 
+def test_user_init_with_username():
+    user = User(id="12345678901234567", name="Alice", username="alice123")
+    assert user.username == "alice123"
+
+
+def test_user_init_without_username():
+    user = User(id="12345678901234567", name="Alice")
+    assert user.username is None
+
+
+def test_slug_name_returns_username_when_set():
+    user = User(id="12345678901234567", name="Alice Display", username="alice123")
+    assert user.slug_name == "alice123"
+
+
+def test_slug_name_falls_back_to_name():
+    user = User(id="12345678901234567", name="Alice Display")
+    assert user.slug_name == "Alice Display"
+
+
 def test_display_name_defaults(monkeypatch):
     user = User(id="12345678901234567", name="Inconnu")
 
     # Patch get_user_profile to return a fake profile
     monkeypatch.setattr(
         "website.models.user.get_user_profile",
-        lambda uid: {"name": "Bob", "avatar": "/avatar.png"},
+        lambda uid: {"name": "Bob", "avatar": "/avatar.png", "username": "bob"},
     )
     name = user.display_name
     assert name.startswith("Bob")
@@ -56,14 +76,22 @@ def test_to_dict():
     d = user.to_dict()
     assert d["id"] == "12345678901234567"
     assert d["name"] == "Alice"
+    assert d["username"] is None
     assert d["avatar"] == DEFAULT_AVATAR
     assert d["is_gm"] is False
+
+
+def test_to_dict_includes_username():
+    user = User(id="12345678901234567", name="Alice", username="alice123")
+    d = user.to_dict()
+    assert d["username"] == "alice123"
 
 
 def test_from_dict_and_from_json():
     data = {
         "id": "12345678901234567",
         "name": "Eve",
+        "username": "eve",
         "avatar": "/img/eve.png",
         "is_gm": True,
         "is_admin": True,
@@ -73,6 +101,7 @@ def test_from_dict_and_from_json():
     assert isinstance(user, User)
     assert user.id == "12345678901234567"
     assert user.name == "Eve"
+    assert user.username == "eve"
     assert user.avatar == "/img/eve.png"
     assert user.is_gm is True
     assert user.is_admin is True
@@ -83,10 +112,22 @@ def test_from_dict_and_from_json():
     assert user2.name == "Eve"
 
 
+def test_from_dict_without_username():
+    data = {"id": "12345678901234567", "name": "Alice"}
+    user = User.from_dict(data)
+    assert user.username is None
+
+
 def test_update_from_dict():
     user = User(id="12345678901234567", name="Alice")
     user.update_from_dict({"name": "Bob"})
     assert user.name == "Bob"
+
+
+def test_update_from_dict_sets_username():
+    user = User(id="12345678901234567", name="Alice")
+    user.update_from_dict({"username": "alice123"})
+    assert user.username == "alice123"
 
 
 def test_update_from_dict_ignores_protected_fields():
@@ -196,6 +237,26 @@ def test_from_dict_without_not_player_as_of():
 
 
 @patch("website.models.user.get_bot")
+def test_get_user_profile_returns_username(mock_get_bot, test_app):
+    from website.extensions import cache
+    from website.models.user import get_user_profile
+
+    mock_bot = MagicMock()
+    mock_bot.get_user.return_value = {
+        "user": {"username": "alice123", "global_name": "Alice", "avatar": None},
+        "nick": None,
+        "roles": [],
+    }
+    mock_get_bot.return_value = mock_bot
+
+    with test_app.app_context():
+        cache.clear()
+        result = get_user_profile("99999999999999997", force_refresh=True)
+        assert result["username"] == "alice123"
+        assert result["name"] == "Alice"
+
+
+@patch("website.models.user.get_bot")
 def test_get_user_profile_caches_on_404(mock_get_bot, test_app):
     from website.exceptions import DiscordAPIError
     from website.extensions import cache
@@ -209,6 +270,7 @@ def test_get_user_profile_caches_on_404(mock_get_bot, test_app):
         cache.clear()
         result = get_user_profile("99999999999999999", force_refresh=True)
         assert result["name"] == "Inconnu"
+        assert result["username"] is None
         assert result.get("not_found") is True
 
         cached = cache.get("user_profile_99999999999999999")
