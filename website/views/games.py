@@ -3,7 +3,7 @@
 import locale
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from config.constants import (
     DEFAULT_TIMEFORMAT,
@@ -22,12 +22,13 @@ from website.exceptions import (
     UnauthorizedError,
     ValidationError,
 )
-from website.models import Game, System, Vtt
 from website.services import DiscordService
 from website.services.game import GameService
 from website.services.game_session import GameSessionService
 from website.services.special_event import SpecialEventService
+from website.services.system import SystemService
 from website.services.user import UserService
+from website.services.vtt import VttService
 from website.utils.game_filters import get_filtered_games, get_filtered_user_games
 from website.utils.logger import log_game_event, logger
 from website.views.auth import login_required, who
@@ -43,6 +44,10 @@ locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
 # Service instances
 game_service = GameService()
 session_service = GameSessionService()
+discord_service = DiscordService()
+special_event_service = SpecialEventService()
+system_service = SystemService()
+vtt_service = VttService()
 
 
 # ---------------------------------------------------------------------------
@@ -73,22 +78,21 @@ def search_games():
         title="Annonces",
         next_url=next_url,
         prev_url=prev_url,
-        systems=System.get_systems(),
-        vtts=Vtt.get_vtts(),
+        systems=system_service.get_all(),
+        vtts=vtt_service.get_all(),
     )
 
 
 @game_bp.route("/annonces/evenement/<int:event_id>/", methods=["GET"])
 def search_games_by_event(event_id):
     """Search games filtered by a specific special event."""
-    special_event_service = SpecialEventService()
     try:
         event = special_event_service.get_by_id(event_id)
     except QuestMasterError:
         flash("L'événement demandé n'existe pas.", "warning")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
 
-    base_query = Game.query.filter(Game.special_event_id == event_id)
+    base_query = game_service.repo.query_by_special_event(event_id)
 
     games, request_args = get_filtered_games(
         request.args,
@@ -125,8 +129,8 @@ def search_games_by_event(event_id):
         title=f"Annonces – {event.name}",
         next_url=next_url,
         prev_url=prev_url,
-        systems=System.get_systems(),
-        vtts=Vtt.get_vtts(),
+        systems=system_service.get_all(),
+        vtts=vtt_service.get_all(),
         special_event=event,
     )
 
@@ -143,7 +147,7 @@ def get_game_details(slug):
     """Display game detail page."""
     payload = who()
     game = game_service.get_by_slug_or_404(slug)
-    is_player = "user_id" in payload and any(p.id == payload["user_id"] for p in game.players)
+    is_player = "user_id" in payload and game_service.is_player(game, payload["user_id"])
     return render_template("game_details.j2", game=game, is_player=is_player)
 
 
@@ -155,8 +159,8 @@ def get_game_form():
     _abort_if_not_gm(payload)
     return render_template(
         "game_form.j2",
-        systems=System.get_systems(),
-        vtts=Vtt.get_vtts(),
+        systems=system_service.get_all(),
+        vtts=vtt_service.get_all(),
     )
 
 
@@ -185,7 +189,7 @@ def create_game():
             msg = f"Annonce {game.name} postée."
         else:
             msg = f"Annonce {game.name} enregistrée."
-    except Exception as e:
+    except QuestMasterError as e:
         logger.error(f"Failed to save game: {e}", exc_info=True)
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
@@ -221,7 +225,7 @@ def edit_game(slug):
         logger.error(f"Discord error while editing game {slug}: {e}", exc_info=True)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    except Exception as e:
+    except QuestMasterError as e:
         logger.error(f"Failed to edit game {slug}: {e}", exc_info=True)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -236,6 +240,8 @@ def change_game_status(slug):
     """Change game status and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
+    if isinstance(game, Response):
+        return game
     status = request.values.get("status")
     award_trophies = "award_trophies" in request.form
 
@@ -255,23 +261,13 @@ def change_game_status(slug):
 def send_alert(slug):
     """Send an alert message to the Discord channel and register a game event."""
     payload = who()
-    game = game_service.get_by_slug_or_404(slug)
-    discord = DiscordService()
-
-    if (
-        game.gm_id != payload["user_id"]
-        and not payload["is_admin"]
-        and not any(player.id == payload["user_id"] for player in game.players)
-    ):
-        flash(
-            "Vous n'êtes pas autorisé·e à envoyer une alerte pour cette partie.",
-            "danger",
-        )
-        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+    game = _get_game_if_participant(payload, slug)
+    if isinstance(game, Response):
+        return game
 
     alert_message = request.form.get("alertMessage")
     try:
-        discord.send_game_embed(
+        discord_service.send_game_embed(
             game,
             embed_type="alert",
             alert_message=alert_message,
@@ -292,16 +288,8 @@ def add_game_session(slug):
     """Add session to a game and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    discord = DiscordService()
     start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
     end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
-
-    if start >= end:
-        flash(
-            "Impossible d'ajouter une session qui se termine avant de commencer.",
-            "danger",
-        )
-        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     try:
         session_service.create(game, start, end)
@@ -312,11 +300,17 @@ def add_game_session(slug):
             user_id=payload["user_id"],
         )
         logger.info(f"Session {start}/{end} created for Game {game.id}")
-        discord.send_game_embed(game, embed_type="add-session", start=start, end=end)
+        discord_service.send_game_embed(game, embed_type="add-session", start=start, end=end)
         flash("Session ajoutée.", "success")
-    except (ValidationError, SessionConflictError) as e:
+    except ValidationError:
+        flash(
+            "Impossible d'ajouter une session qui se termine avant de commencer.",
+            "danger",
+        )
+    except SessionConflictError as e:
         flash(str(e), "danger")
-    except Exception:
+    except QuestMasterError:
+        logger.exception("Failed to create game session")
         flash("Une erreur est survenue pendant la création de la session.", "danger")
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -328,18 +322,10 @@ def edit_game_session(slug, session_id):
     """Edit game session and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    discord = DiscordService()
     session = session_service.get_by_id_or_404(session_id)
 
     new_start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
     new_end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
-
-    if new_start >= new_end:
-        flash(
-            "Impossible d'ajouter une session qui se termine avant de commencer.",
-            "danger",
-        )
-        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     old_start = session.start.strftime(HUMAN_TIMEFORMAT)
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
@@ -356,7 +342,7 @@ def edit_game_session(slug, session_id):
         logger.info(
             f"Session {old_start}/{old_end} of Game {game.slug} updated to {new_start}/{new_end}"
         )
-        discord.send_game_embed(
+        discord_service.send_game_embed(
             game,
             embed_type="edit-session",
             start=session.start.strftime(HUMAN_TIMEFORMAT),
@@ -365,9 +351,15 @@ def edit_game_session(slug, session_id):
             old_end=old_end,
         )
         flash("Session modifiée.", "success")
-    except (ValidationError, SessionConflictError) as e:
+    except ValidationError:
+        flash(
+            "Impossible d'ajouter une session qui se termine avant de commencer.",
+            "danger",
+        )
+    except SessionConflictError as e:
         flash(str(e), "danger")
-    except Exception:
+    except QuestMasterError:
+        logger.exception("Failed to edit game session")
         flash("Erreur lors de la modification de la session.", "danger")
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -379,7 +371,6 @@ def remove_game_session(slug, session_id):
     """Remove session from a game and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    discord = DiscordService()
     session = session_service.get_by_id_or_404(session_id)
     start = session.start
     end = session.end
@@ -393,14 +384,15 @@ def remove_game_session(slug, session_id):
             user_id=payload["user_id"],
         )
         logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
-        discord.send_game_embed(
+        discord_service.send_game_embed(
             game,
             embed_type="del-session",
             start=start.strftime(HUMAN_TIMEFORMAT),
             end=end.strftime(HUMAN_TIMEFORMAT),
         )
         flash("Session supprimée.", "success")
-    except Exception:
+    except QuestMasterError:
+        logger.exception("Failed to delete game session")
         flash("Erreur lors de la suppression de la session.", "danger")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -426,7 +418,7 @@ def register_game(slug):
         flash("La partie est complète.", "danger")
     except GameClosedError:
         flash("La partie est fermée aux inscriptions.", "warning")
-    except Exception:
+    except QuestMasterError:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
 
@@ -459,7 +451,7 @@ def manage_game_registration(slug):
         else:
             flash("Action demandée non gérée.", "danger")
             return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    except Exception as e:
+    except QuestMasterError as e:
         logger.exception("Error during game registration management")
         flash(f"Erreur pendant l'inscription: {e}.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -482,8 +474,8 @@ def get_game_edit_form(slug):
     return render_template(
         "game_form.j2",
         game=game,
-        systems=System.get_systems(),
-        vtts=Vtt.get_vtts(),
+        systems=system_service.get_all(),
+        vtts=vtt_service.get_all(),
         clone=True if "cloner" in request.path else False,
     )
 
@@ -512,8 +504,8 @@ def my_gm_games():
             if games.has_prev
             else None
         ),
-        systems=System.get_systems(),
-        vtts=Vtt.get_vtts(),
+        systems=system_service.get_all(),
+        vtts=vtt_service.get_all(),
     )
 
 
@@ -539,8 +531,8 @@ def my_games():
             if games.has_prev
             else None
         ),
-        systems=System.get_systems(),
-        vtts=Vtt.get_vtts(),
+        systems=system_service.get_all(),
+        vtts=vtt_service.get_all(),
     )
 
 
@@ -554,9 +546,9 @@ def _handle_delete(slug):
     try:
         game_service.delete(slug)
         flash("Annonce supprimée avec succès.", "success")
-    except Exception as e:
+    except QuestMasterError:
+        logger.exception("Failed to delete game")
         flash("Une erreur est survenue pendant la suppression.", "danger")
-        logger.error(e)
     return redirect("/")
 
 
@@ -587,7 +579,8 @@ def _handle_status_transition(slug, game, status, award_trophies, user_id=None):
         else:
             game_service.archive(slug, award_trophies=award_trophies, user_id=user_id)
         flash(f"Annonce {game.name} {GAME_STATUS_LABELS[status]}.", "success")
-    except Exception:
+    except QuestMasterError:
+        logger.exception("Failed to change game status")
         flash("Une erreur est survenue pendant la modification de statut.", "danger")
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
@@ -641,5 +634,25 @@ def _get_game_if_authorized(payload, slug):
     game = game_service.get_by_slug_or_404(slug)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
         flash("Seul·e le·a MJ de l'annonce peut faire cette opération.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+    return game
+
+
+def _get_game_if_participant(payload, slug):
+    """Return game if user is GM, admin, or a registered player, else redirect.
+
+    Unlike ``_get_game_if_authorized`` (GM/admin only), this also grants
+    access to players registered for the game.
+    """
+    game = game_service.get_by_slug_or_404(slug)
+    if (
+        game.gm_id != payload["user_id"]
+        and not payload["is_admin"]
+        and not game_service.is_player(game, payload["user_id"])
+    ):
+        flash(
+            "Vous n'êtes pas autorisé·e à effectuer cette action pour cette partie.",
+            "danger",
+        )
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     return game

@@ -73,8 +73,8 @@ def mock_csrf():
 def mock_discord_service():
     """Mock all DiscordService interactions in game views.
 
-    Patches both the game_service singleton's discord attribute and the
-    DiscordService class used for inline instantiation in view functions.
+    Patches the game_service singleton's discord attribute and the
+    module-level discord_service singleton used by view functions.
     """
     mock = MagicMock()
     mock.create_role.return_value = {"id": "mock_role_id"}
@@ -83,7 +83,7 @@ def mock_discord_service():
 
     with (
         patch("website.views.games.game_service.discord", mock),
-        patch("website.views.games.DiscordService", return_value=mock),
+        patch("website.views.games.discord_service", mock),
     ):
         yield mock
 

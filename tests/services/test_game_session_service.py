@@ -102,3 +102,32 @@ class TestGameSessionService:
 
         assert updated.start == new_start
         assert updated.end == new_end
+
+    def test_get_stats_for_period(self, db_session, sample_game):
+        service = GameSessionService()
+        service.create(sample_game, datetime(2025, 11, 10, 20, 0), datetime(2025, 11, 10, 23, 0))
+
+        stats = service.get_stats_for_period(2025, 11)
+
+        assert stats["base_day"] == datetime(2025, 11, 1)
+        assert stats["num_os"] == 1
+        assert stats["num_campaign"] == 0
+        assert len(stats["gm_names"]) == 1
+
+    def test_get_stats_for_period_empty(self, db_session, sample_game):
+        service = GameSessionService()
+
+        stats = service.get_stats_for_period(2020, 1)
+
+        assert stats["num_os"] == 0
+        assert stats["num_campaign"] == 0
+        assert stats["gm_names"] == []
+
+    def test_get_stats_for_period_none_uses_current_month(self, db_session, sample_game):
+        service = GameSessionService()
+
+        stats = service.get_stats_for_period(None, None)
+
+        assert stats["base_day"].day == 1
+        assert stats["num_os"] == 0
+        assert stats["num_campaign"] == 0

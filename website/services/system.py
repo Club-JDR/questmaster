@@ -15,6 +15,7 @@ class SystemService:
     def __init__(self, repository=None):
         self.repo = repository or SystemRepository()
 
+    @cache.memoize()
     def get_all(self) -> list[System]:
         """Get all systems ordered by name.
 
@@ -62,7 +63,7 @@ class SystemService:
         system = System(name=name, icon=icon)
         self.repo.add(system)
         db.session.commit()
-        cache.delete_memoized(System.get_systems)
+        cache.delete_memoized(self.get_all)
         return system
 
     def update(self, id: int, data: dict) -> System:
@@ -78,7 +79,7 @@ class SystemService:
         system = self.repo.get_by_id_or_404(id)
         system.update_from_dict(data)
         db.session.commit()
-        cache.delete_memoized(System.get_systems)
+        cache.delete_memoized(self.get_all)
         return system
 
     def delete(self, id: int) -> None:
@@ -90,4 +91,4 @@ class SystemService:
         system = self.repo.get_by_id_or_404(id)
         self.repo.delete(system)
         db.session.commit()
-        cache.delete_memoized(System.get_systems)
+        cache.delete_memoized(self.get_all)

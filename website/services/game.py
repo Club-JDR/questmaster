@@ -797,6 +797,18 @@ class GameService:
         game = self.get_by_slug(slug)
         return game.to_dict(include_relationships=False)
 
+    def is_player(self, game: Game, user_id: str) -> bool:
+        """Check if a user is registered as a player in a game.
+
+        Args:
+            game: Game instance.
+            user_id: User ID to check.
+
+        Returns:
+            True if the user is a registered player.
+        """
+        return any(p.id == user_id for p in game.players)
+
     def search(
         self,
         filters: dict,

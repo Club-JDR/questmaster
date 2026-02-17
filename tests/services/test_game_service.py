@@ -472,6 +472,21 @@ class TestGameServicePrivateHelpers:
 
         mock_discord.delete_message.assert_not_called()
 
+    def test_is_player_true(self, db_session, sample_game, game_service, regular_user):
+        """is_player returns True when user is in the players list."""
+        sample_game.players.append(regular_user)
+        db_session.commit()
+
+        assert game_service.is_player(sample_game, regular_user.id) is True
+
+    def test_is_player_false(self, db_session, sample_game, game_service, regular_user):
+        """is_player returns False when user is not in the players list."""
+        assert game_service.is_player(sample_game, regular_user.id) is False
+
+    def test_is_player_empty_players(self, db_session, sample_game, game_service):
+        """is_player returns False when game has no players."""
+        assert game_service.is_player(sample_game, "nonexistent_id") is False
+
     def test_rollback_discord_resources_cleans_up(self, db_session, sample_game, mock_discord):
         """Rollback deletes both channel and role when both exist."""
         service = GameService(discord_service=mock_discord)

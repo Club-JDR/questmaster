@@ -81,6 +81,26 @@ class TestGameRepository:
         assert len(games) >= 1
         assert any(g.id == event_game.id for g in games)
 
+    def test_query_by_special_event(self, db_session, admin_user, default_system):
+        event_game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=TEST_SPECIAL_EVENT_ID,
+        )
+
+        repo = GameRepository()
+        query = repo.query_by_special_event(TEST_SPECIAL_EVENT_ID)
+        # Returns a query object, not a list
+        games = query.all()
+        assert len(games) >= 1
+        assert any(g.id == event_game.id for g in games)
+
+    def test_query_by_special_event_empty(self, db_session):
+        repo = GameRepository()
+        query = repo.query_by_special_event(999999)
+        assert query.all() == []
+
     def test_get_for_update(self, db_session, sample_game):
         repo = GameRepository()
         game = repo.get_for_update(sample_game.id)

@@ -13,17 +13,23 @@ from website.views.auth import login_required, who
 
 misc_bp = Blueprint("misc", __name__)
 
+# Service instances
+system_service = SystemService()
+vtt_service = VttService()
+user_service = UserService()
+trophy_service = TrophyService()
+
 
 @misc_bp.route("/vtts/", methods=["GET"])
 def list_vtts():
     """List all VTTs."""
-    return render_template("list.j2", items=VttService().get_all(), title="Virtual TableTops")
+    return render_template("list.j2", items=vtt_service.get_all(), title="Virtual TableTops")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
 def list_systems():
     """List all game systems."""
-    return render_template("list.j2", items=SystemService().get_all(), title="Systèmes")
+    return render_template("list.j2", items=system_service.get_all(), title="Systèmes")
 
 
 @misc_bp.route("/badges/", methods=["GET"])
@@ -37,7 +43,7 @@ def list_user_badges():
         user_id = payload["user_id"]
 
     try:
-        user = UserService().get_by_id(user_id)
+        user = user_service.get_by_id(user_id)
     except NotFoundError:
         flash(
             "Utilisateur introuvable. Veuillez entrer un ID valide.<br>"
@@ -65,7 +71,7 @@ def get_os_leaderboard():
     Returns:
         List of (User, total_quantity) tuples.
     """
-    return TrophyService().get_leaderboard(BADGE_OS_ID, limit=10)
+    return trophy_service.get_leaderboard(BADGE_OS_ID, limit=10)
 
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_campaign")
@@ -75,7 +81,7 @@ def get_campaign_leaderboard():
     Returns:
         List of (User, total_quantity) tuples.
     """
-    return TrophyService().get_leaderboard(BADGE_CAMPAIGN_ID, limit=10)
+    return trophy_service.get_leaderboard(BADGE_CAMPAIGN_ID, limit=10)
 
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_os_gm")
@@ -85,7 +91,7 @@ def get_os_gm_leaderboard():
     Returns:
         List of (User, total_quantity) tuples.
     """
-    return TrophyService().get_leaderboard(BADGE_OS_GM_ID, limit=10)
+    return trophy_service.get_leaderboard(BADGE_OS_GM_ID, limit=10)
 
 
 @cache.cached(timeout=3600, key_prefix="leaderboard_campaign_gm")
@@ -95,7 +101,7 @@ def get_campaign_gm_leaderboard():
     Returns:
         List of (User, total_quantity) tuples.
     """
-    return TrophyService().get_leaderboard(BADGE_CAMPAIGN_GM_ID, limit=10)
+    return trophy_service.get_leaderboard(BADGE_CAMPAIGN_GM_ID, limit=10)
 
 
 @misc_bp.route("/badges/classement/", methods=["GET"])
