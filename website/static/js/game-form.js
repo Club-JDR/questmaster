@@ -14,6 +14,13 @@ $('#imgSelect').click(function() {
       let input = $('#imgLink');
       let url = input.val().trim();
 
+      // Only accept http:// or https:// URLs
+      if (url && !url.match(/^https?:\/\//i)) {
+        input.addClass('is-invalid');
+        return;
+      }
+      input.removeClass('is-invalid');
+
       // Check if it's a standard Imgur page link (not direct image link)
       let match = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)$/);
 
@@ -24,6 +31,7 @@ $('#imgSelect').click(function() {
       }
     $('#imgPreview').attr('src', $("#imgLink").val());
     $('#imgPreview').attr('style', '');
+    bootstrap.Modal.getInstance($('#uploadModal')[0]).hide();
 });
 
 // Read restriction_tags to create "tags" in the text field

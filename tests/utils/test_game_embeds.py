@@ -302,6 +302,36 @@ class TestBuildAnnonceEmbed:
             embed, _ = build_annonce_embed(game)
             assert embed["image"]["url"] == "https://example.com/image.png"
 
+    def test_image_http_url(self, embed_app):
+        with embed_app.app_context():
+            game = _make_game(img="http://example.com/image.png")
+            embed, _ = build_annonce_embed(game)
+            assert embed["image"]["url"] == "http://example.com/image.png"
+
+    def test_data_uri_image_excluded(self, embed_app):
+        with embed_app.app_context():
+            game = _make_game(img="data:image/png;base64,iVBORw0KGgo=")
+            embed, _ = build_annonce_embed(game)
+            assert "image" not in embed
+
+    def test_empty_image_excluded(self, embed_app):
+        with embed_app.app_context():
+            game = _make_game(img="")
+            embed, _ = build_annonce_embed(game)
+            assert "image" not in embed
+
+    def test_none_image_excluded(self, embed_app):
+        with embed_app.app_context():
+            game = _make_game(img=None)
+            embed, _ = build_annonce_embed(game)
+            assert "image" not in embed
+
+    def test_ftp_image_excluded(self, embed_app):
+        with embed_app.app_context():
+            game = _make_game(img="ftp://example.com/image.png")
+            embed, _ = build_annonce_embed(game)
+            assert "image" not in embed
+
 
 # ---------------------------------------------------------------------------
 # build_annonce_details_embed

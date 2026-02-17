@@ -134,9 +134,11 @@ def build_annonce_embed(
         "title": title,
         "color": color,
         "fields": fields,
-        "image": {"url": game.img},
         "footer": {},
     }
+
+    if game.img and game.img.startswith(("http://", "https://")):
+        embed["image"] = {"url": game.img}
 
     return embed, current_app.config["POSTS_CHANNEL_ID"]
 

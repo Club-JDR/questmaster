@@ -20,12 +20,12 @@
           </div>
             <div class="input-group mb-2">
               <div class="form-floating">
-                <input type="text" class="form-control" id="imgLink" name="img" {% if game and game.img
-                  %}value="{{ game.img }}" {% endif %}>
+                <input type="url" class="form-control" id="imgLink" name="img"
+                  pattern="https?://.*" placeholder="https://..."
+                  {% if game and game.img %}value="{{ game.img }}" {% endif %}>
                 <label for="imgLink" class="form-label">Lien vers l'image :</label>
               </div>
-              <button id="imgSelect" type="button" class="btn btn-primary" data-bs-dismiss="modal"
-                aria-label="Close">Choisir</button>
+              <button id="imgSelect" type="button" class="btn btn-primary">Choisir</button>
             </div>
           </div>
           
