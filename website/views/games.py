@@ -179,7 +179,9 @@ def create_game():
     try:
         game = game_service.create(data, gm_id)
         if action in ("open", "open-silent"):
-            game_service.publish(game.slug, silent=(action == "open-silent"))
+            game_service.publish(
+                game.slug, silent=(action == "open-silent"), user_id=payload["user_id"]
+            )
             msg = f"Annonce {game.name} postée."
         else:
             msg = f"Annonce {game.name} enregistrée."
@@ -203,11 +205,13 @@ def edit_game(slug):
     action = data.get("action")
 
     try:
-        game = game_service.update(slug, data)
+        game = game_service.update(slug, data, user_id=payload["user_id"])
         msg = "Annonce modifiée."
 
         if was_draft and action in ("open", "open-silent"):
-            game_service.publish(slug, silent=(action == "open-silent"))
+            game_service.publish(
+                slug, silent=(action == "open-silent"), user_id=payload["user_id"]
+            )
             msg = (
                 "Annonce modifiée et ouverte."
                 if action == "open-silent"
@@ -239,9 +243,11 @@ def change_game_status(slug):
         return _handle_delete(slug)
 
     if status == "publish":
-        return _handle_publish(slug)
+        return _handle_publish(slug, user_id=payload["user_id"])
 
-    return _handle_status_transition(slug, game, status, award_trophies)
+    return _handle_status_transition(
+        slug, game, status, award_trophies, user_id=payload["user_id"]
+    )
 
 
 @game_bp.route("/annonces/<slug>/alert/", methods=["POST"])
@@ -303,6 +309,7 @@ def add_game_session(slug):
             "create-session",
             game.id,
             f"Une session a été créée de {start} à {end}.",
+            user_id=payload["user_id"],
         )
         logger.info(f"Session {start}/{end} created for Game {game.id}")
         discord.send_game_embed(game, embed_type="add-session", start=start, end=end)
@@ -344,6 +351,7 @@ def edit_game_session(slug, session_id):
             game.id,
             f"Une session a été éditée : {old_start} → {old_end}, "
             f"remplacée par {new_start} → {new_end}.",
+            user_id=payload["user_id"],
         )
         logger.info(
             f"Session {old_start}/{old_end} of Game {game.slug} updated to {new_start}/{new_end}"
@@ -382,6 +390,7 @@ def remove_game_session(slug, session_id):
             "delete-session",
             game.id,
             f"Une session a été supprimée de {start} à {end}.",
+            user_id=payload["user_id"],
         )
         logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
         discord.send_game_embed(
@@ -551,10 +560,10 @@ def _handle_delete(slug):
     return redirect("/")
 
 
-def _handle_publish(slug):
+def _handle_publish(slug, user_id=None):
     """Publish a draft game and redirect to its detail page."""
     try:
-        game_service.publish(slug)
+        game_service.publish(slug, user_id=user_id)
         flash("Annonce publiée avec succès.", "success")
     except ValidationError as e:
         flash(e.message, "danger")
@@ -564,7 +573,7 @@ def _handle_publish(slug):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
-def _handle_status_transition(slug, game, status, award_trophies):
+def _handle_status_transition(slug, game, status, award_trophies, user_id=None):
     """Apply a status transition (close/reopen/archive) and redirect."""
     if status not in GAME_STATUS_LABELS:
         flash("Statut demandé non géré.", "danger")
@@ -572,11 +581,11 @@ def _handle_status_transition(slug, game, status, award_trophies):
 
     try:
         if status == "closed":
-            game_service.close(slug)
+            game_service.close(slug, user_id=user_id)
         elif status == "open":
-            game_service.reopen(slug)
+            game_service.reopen(slug, user_id=user_id)
         else:
-            game_service.archive(slug, award_trophies=award_trophies)
+            game_service.archive(slug, award_trophies=award_trophies, user_id=user_id)
         flash(f"Annonce {game.name} {GAME_STATUS_LABELS[status]}.", "success")
     except Exception:
         flash("Une erreur est survenue pendant la modification de statut.", "danger")

@@ -14,17 +14,20 @@ class GameEventService:
     def __init__(self, repository=None):
         self.repo = repository or GameEventRepository()
 
-    def log_event(self, action: str, game_id: int, description: str = None) -> GameEvent:
+    def log_event(
+        self, action: str, game_id: int, description: str | None = None, user_id: str | None = None
+    ) -> GameEvent:
         """Log a game event and commit the transaction.
 
         Args:
             action: Event action type (create, edit, delete, etc.).
             game_id: ID of the related game.
             description: Optional human-readable description.
+            user_id: Optional ID of the user that performed the action.
 
         Returns:
             Created GameEvent instance.
         """
-        event = self.repo.log(action, game_id, description)
+        event = self.repo.log(action, game_id, description, user_id)
         db.session.commit()
         return event

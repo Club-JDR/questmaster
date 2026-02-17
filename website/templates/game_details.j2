@@ -350,6 +350,7 @@
           <tr>
             <th scope="col">Date</th>
             <th scope="col">Action</th>
+            <th scope="col">Utilisateur</th>
             <th scope="col">Description</th>
           </tr>
         </thead>
@@ -370,6 +371,7 @@
               {% else %}{{ event.action }}
               {% endif %}
             </td>
+            <td>{{ event.user.name if event.user else '—' }}</td>
             <td>{{ event.description or '—' }}</td>
           </tr>
           {% endfor %}

@@ -234,6 +234,7 @@ class GameService:
                 "create",
                 game.id,
                 f"Annonce créée avec le statut {game.status}.",
+                user_id=game.gm_id,
             )
             logger.info(f"Game saved in DB with ID: {game.id}")
 
@@ -305,12 +306,13 @@ class GameService:
             self.discord.delete_role(game.role)
             logger.info(f"Role {game.role} deleted")
 
-    def update(self, slug: str, data: dict) -> Game:
+    def update(self, slug: str, data: dict, user_id: str | None = None) -> Game:
         """Update an existing game.
 
         Args:
             slug: Game slug.
             data: Updated game data.
+            user_id: ID of the user performing the update.
 
         Returns:
             Updated Game instance.
@@ -356,7 +358,9 @@ class GameService:
             game.restriction_tags = parse_restriction_tags(data)
 
             db.session.commit()
-            log_game_event("edit", game.id, "Le contenu de l'annonce a été édité.")
+            log_game_event(
+                "edit", game.id, "Le contenu de l'annonce a été édité.", user_id=user_id
+            )
             logger.info(f"Game {game.id} changes saved")
 
             # Update Discord embed if message exists
@@ -377,12 +381,13 @@ class GameService:
             logger.error(f"Failed to update game {game.id}: {e}", exc_info=True)
             raise
 
-    def publish(self, slug: str, silent: bool = False) -> Game:
+    def publish(self, slug: str, silent: bool = False, user_id: str | None = None) -> Game:
         """Publish a draft game to Discord.
 
         Args:
             slug: Game slug.
             silent: If True, don't send announcement (set to closed instead of open).
+            user_id: ID of the user performing the publish.
 
         Returns:
             Published Game instance.
@@ -421,6 +426,7 @@ class GameService:
                     if not silent
                     else "L'annonce a été ouverte silencieusement."
                 ),
+                user_id=user_id,
             )
             logger.info(
                 f"Game {game.id} published and {'opened' if not silent else 'opened silently'}."
@@ -436,11 +442,12 @@ class GameService:
                 self._rollback_discord_resources(game)
             raise
 
-    def close(self, slug: str) -> Game:
+    def close(self, slug: str, user_id: str | None = None) -> Game:
         """Close a game to new registrations.
 
         Args:
             slug: Game slug.
+            user_id: ID of the user performing the close.
 
         Returns:
             Updated Game instance.
@@ -452,7 +459,9 @@ class GameService:
         game.status = "closed"
 
         db.session.commit()
-        log_game_event("edit", game.id, "Le statut de l'annonce à changé en closed.")
+        log_game_event(
+            "edit", game.id, "Le statut de l'annonce à changé en closed.", user_id=user_id
+        )
         logger.info(f"Game status for {game.id} has been updated to closed")
 
         # Update Discord embed
@@ -465,11 +474,12 @@ class GameService:
 
         return game
 
-    def reopen(self, slug: str) -> Game:
+    def reopen(self, slug: str, user_id: str | None = None) -> Game:
         """Reopen a closed game.
 
         Args:
             slug: Game slug.
+            user_id: ID of the user performing the reopen.
 
         Returns:
             Updated Game instance.
@@ -481,7 +491,9 @@ class GameService:
         game.status = "open"
 
         db.session.commit()
-        log_game_event("edit", game.id, "Le statut de l'annonce à changé en open.")
+        log_game_event(
+            "edit", game.id, "Le statut de l'annonce à changé en open.", user_id=user_id
+        )
         logger.info(f"Game status for {game.id} has been updated to open")
 
         # Update Discord embed
@@ -494,12 +506,13 @@ class GameService:
 
         return game
 
-    def archive(self, slug: str, award_trophies: bool = True) -> None:
+    def archive(self, slug: str, award_trophies: bool = True, user_id: str | None = None) -> None:
         """Archive a game and clean up Discord resources.
 
         Args:
             slug: Game slug.
             award_trophies: Whether to award trophies to participants.
+            user_id: ID of the user performing the archive.
 
         Raises:
             NotFoundError: If game doesn't exist.
@@ -508,7 +521,9 @@ class GameService:
         game.status = "archived"
 
         db.session.commit()
-        log_game_event("edit", game.id, "Le statut de l'annonce à changé en archived.")
+        log_game_event(
+            "edit", game.id, "Le statut de l'annonce à changé en archived.", user_id=user_id
+        )
         logger.info(f"Game status for {game.id} has been updated to archived")
 
         # Award trophies
@@ -523,7 +538,7 @@ class GameService:
         self._cleanup_discord_resources(game)
         self._delete_game_message(game)
 
-        log_game_event("delete", game.id, msg)
+        log_game_event("delete", game.id, msg, user_id=user_id)
 
     def _award_game_trophies(self, game: Game) -> None:
         """Award trophies to GM and players.
@@ -683,13 +698,15 @@ class GameService:
                 log_game_event(
                     "register",
                     locked_game.id,
-                    f"{user.display_name} a été inscrit à l'annonce par le MJ ou un admin.",
+                    "Le·a joueur·euse a été ajouté·e à la partie par le MJ.",
+                    user_id=user.id,
                 )
             else:
                 log_game_event(
                     "register",
                     locked_game.id,
-                    f"{user.display_name} s'est inscrit sur l'annonce.",
+                    "Le·a joueur·euse s'est inscrit·e sur l'annonce.",
+                    user_id=user.id,
                 )
 
             logger.info(f"User {user.id} registered to Game {locked_game.id}")
@@ -759,7 +776,8 @@ class GameService:
         log_game_event(
             "unregister",
             game.id,
-            f"{user.display_name} a été désinscrit de l'annonce.",
+            "Le·a joueur·euse a été désinscrit·e de l'annonce.",
+            user_id=user.id,
         )
 
         return game

@@ -1,6 +1,7 @@
 """Jinja2 template filters for date formatting and color utilities."""
 
 import locale
+from zoneinfo import ZoneInfo
 
 
 def format_datetime(value, format="%a %d/%m - %Hh%M"):
@@ -14,6 +15,8 @@ def format_datetime(value, format="%a %d/%m - %Hh%M"):
         Formatted date string (e.g. 'Sam 10/09 - 20h30').
     """
     locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
+    if hasattr(value, "tzinfo") and value.tzinfo is not None:
+        value = value.astimezone(ZoneInfo("Europe/Paris"))
     return value.strftime(format)
 
 

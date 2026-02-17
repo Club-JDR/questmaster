@@ -23,7 +23,7 @@ class GameEvent(db.Model, SerializableMixin):
     __tablename__ = "game_event"
 
     _exclude_fields = []
-    _relationship_fields = ["game"]
+    _relationship_fields = ["game", "user_id"]
 
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(
@@ -35,6 +35,8 @@ class GameEvent(db.Model, SerializableMixin):
     game_id = db.Column(db.Integer, db.ForeignKey("game.id", ondelete="CASCADE"), nullable=False)
     description = db.Column(db.Text)
     game = db.relationship("Game", backref="events", cascade="all,delete")
+    user_id = db.Column(db.String(), db.ForeignKey("user.id"), nullable=True)
+    user = db.relationship("User")
 
     __table_args__ = (
         db.Index("ix_gameevent_timestamp", "timestamp"),
@@ -50,6 +52,7 @@ class GameEvent(db.Model, SerializableMixin):
             action=data.get("action"),
             game_id=data.get("game_id"),
             description=data.get("description"),
+            user_id=data.get("user_id"),
         )
 
     def update_from_dict(self, data):
@@ -69,6 +72,7 @@ class GameEvent(db.Model, SerializableMixin):
             and self.action == other.action
             and self.game_id == other.game_id
             and self.description == other.description
+            and self.user_id == other.user_id
         )
 
     def __ne__(self, other):
