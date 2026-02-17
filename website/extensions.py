@@ -26,12 +26,15 @@ def _seed_test_data():
     from tests.constants import (
         TEST_ADMIN_USER_ID,
         TEST_ADMIN_USER_NAME,
+        TEST_ADMIN_USER_USERNAME,
         TEST_CAMPAIGN_CHANNEL_ID,
         TEST_GM_USER_ID,
         TEST_GM_USER_NAME,
+        TEST_GM_USER_USERNAME,
         TEST_ONESHOT_CHANNEL_ID,
         TEST_REGULAR_USER_ID,
         TEST_REGULAR_USER_NAME,
+        TEST_REGULAR_USER_USERNAME,
         TEST_SPECIAL_EVENT_ID,
         TEST_SPECIAL_EVENT_NAME,
     )
@@ -39,9 +42,21 @@ def _seed_test_data():
 
     db.session.add_all(
         [
-            User(id=TEST_ADMIN_USER_ID, name=TEST_ADMIN_USER_NAME),
-            User(id=TEST_GM_USER_ID, name=TEST_GM_USER_NAME),
-            User(id=TEST_REGULAR_USER_ID, name=TEST_REGULAR_USER_NAME),
+            User(
+                id=TEST_ADMIN_USER_ID,
+                name=TEST_ADMIN_USER_NAME,
+                username=TEST_ADMIN_USER_USERNAME,
+            ),
+            User(
+                id=TEST_GM_USER_ID,
+                name=TEST_GM_USER_NAME,
+                username=TEST_GM_USER_USERNAME,
+            ),
+            User(
+                id=TEST_REGULAR_USER_ID,
+                name=TEST_REGULAR_USER_NAME,
+                username=TEST_REGULAR_USER_USERNAME,
+            ),
         ]
     )
     db.session.add(System(name="Appel de Cthulhu v7", icon="cthulhu.png"))

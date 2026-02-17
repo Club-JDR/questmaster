@@ -106,7 +106,7 @@ class TestGameService:
         game = game_service.create(data, admin_user.id, status="draft", create_resources=False)
 
         assert game is not None
-        assert game.slug.startswith("new-draft-game-par")
+        assert game.slug == f"new-draft-game-par-{admin_user.username}"
         assert game.status == "draft"
         assert game.name == "New Draft Game"
         assert game.party_size == 5
