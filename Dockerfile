@@ -34,6 +34,7 @@ RUN apk add --no-cache \
   && adduser -D -g '' questmaster
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
+  TZ=Europe/Paris \
   MUSL_LOCPATH="/usr/share/i18n/locales/musl" \
   LANG=fr_FR.UTF-8 \
   LANGUAGE=fr_FR:fr \
