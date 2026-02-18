@@ -16,7 +16,7 @@ dependencies = [
     "Flask-WTF==1.2.2",
     "Flask-Caching==2.3.1",
     "Flask-Admin==2.0.2",
-    "redis==5.3.1",
+    "redis==7.2.0",
     "gunicorn==25.1.0",
     "psutil==7.2.2",
     "psycopg2-binary==2.9.11",
