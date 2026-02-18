@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import User
+from website.models.user import get_user_profile as _get_user_profile
 from website.repositories.user import UserRepository
 
 
@@ -76,6 +77,16 @@ class UserService:
         """
         return self.repo.get_active_users()
 
+    def get_active_user_ids(self) -> list[str]:
+        """Get IDs of all users not marked as inactive.
+
+        Lightweight query that avoids loading full ORM objects.
+
+        Returns:
+            List of active user ID strings.
+        """
+        return self.repo.get_active_user_ids()
+
     def get_inactive_users(self) -> list[User]:
         """Get all users marked as inactive.
 
@@ -83,6 +94,40 @@ class UserService:
             List of inactive User instances.
         """
         return self.repo.get_inactive_users()
+
+    def get_inactive_user_ids(self) -> list[str]:
+        """Get IDs of all users marked as inactive.
+
+        Lightweight query that avoids loading full ORM objects.
+
+        Returns:
+            List of inactive user ID strings.
+        """
+        return self.repo.get_inactive_user_ids()
+
+    def get_by_ids(self, ids: list[str]) -> list[User]:
+        """Get users by a list of IDs.
+
+        Args:
+            ids: List of user ID strings.
+
+        Returns:
+            List of User instances matching the given IDs.
+        """
+        return self.repo.get_by_ids(ids)
+
+    @staticmethod
+    def get_user_profile(user_id: str, force_refresh: bool = False) -> dict:
+        """Fetch a user's Discord profile.
+
+        Args:
+            user_id: Discord user ID.
+            force_refresh: If True, bypass cache and fetch from Discord.
+
+        Returns:
+            Dict with 'name', 'avatar', and optionally 'not_found' keys.
+        """
+        return _get_user_profile(user_id, force_refresh=force_refresh)
 
     def mark_inactive(self, user_id: str) -> User:
         """Mark a user as inactive (left the Discord server).

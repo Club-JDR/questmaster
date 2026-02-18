@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from website.extensions import db
-from website.models.user import get_user_profile
 from website.services.user import UserService
 
 BATCH_SIZE = 50
@@ -20,20 +19,24 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
     Users marked as inactive (not_player_as_of is set) are excluded.
     When a 404 is encountered, the user is marked inactive.
 
+    Queries only user IDs first to avoid loading all ORM objects
+    (and triggering init_on_load for every active user).
+
     Args:
         app: Flask application instance for context.
         batch_size: Number of users to refresh per run.
     """
     with app.app_context():
         service = UserService()
-        users = service.get_active_users()
-        if not users:
+        user_ids = service.get_active_user_ids()
+        if not user_ids:
             return
 
-        to_refresh = random.sample(users, min(batch_size, len(users)))
+        sample_ids = random.sample(user_ids, min(batch_size, len(user_ids)))
+        to_refresh = service.get_by_ids(sample_ids)
         for user in to_refresh:
             try:
-                profile = get_user_profile(user.id, force_refresh=True)
+                profile = service.get_user_profile(user.id, force_refresh=True)
                 if profile.get("not_found"):
                     user.not_player_as_of = datetime.now(timezone.utc)
                     app.logger.info(f"[Scheduler] Marked user {user.id} as inactive (404)")
@@ -55,21 +58,25 @@ def check_inactive_users(app, batch_size=INACTIVE_CHECK_BATCH_SIZE):
     If the Discord API returns a valid profile, the not_player_as_of
     flag is cleared.
 
+    Queries only user IDs first to avoid loading all ORM objects
+    (and triggering init_on_load for every inactive user).
+
     Args:
         app: Flask application instance for context.
         batch_size: Number of inactive users to check per run.
     """
     with app.app_context():
         service = UserService()
-        inactive_users = service.get_inactive_users()
-        if not inactive_users:
+        inactive_ids = service.get_inactive_user_ids()
+        if not inactive_ids:
             return
 
-        to_check = random.sample(inactive_users, min(batch_size, len(inactive_users)))
+        sample_ids = random.sample(inactive_ids, min(batch_size, len(inactive_ids)))
+        to_check = service.get_by_ids(sample_ids)
         reactivated = 0
         for user in to_check:
             try:
-                profile = get_user_profile(user.id, force_refresh=True)
+                profile = service.get_user_profile(user.id, force_refresh=True)
                 if not profile.get("not_found"):
                     user.not_player_as_of = None
                     user.name = profile["name"]

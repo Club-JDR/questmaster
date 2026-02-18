@@ -58,6 +58,31 @@ class TestUserService:
         inactive_ids = [u.id for u in inactive_users]
         assert inactive_user.id in inactive_ids
 
+    def test_get_active_user_ids(self, db_session):
+        active_user = UserFactory(db_session)
+        inactive_user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        service = UserService()
+        ids = service.get_active_user_ids()
+        assert active_user.id in ids
+        assert inactive_user.id not in ids
+
+    def test_get_inactive_user_ids(self, db_session):
+        active_user = UserFactory(db_session)
+        inactive_user = UserFactory(db_session, not_player_as_of=datetime(2025, 1, 1))
+        service = UserService()
+        ids = service.get_inactive_user_ids()
+        assert inactive_user.id in ids
+        assert active_user.id not in ids
+
+    def test_get_by_ids(self, db_session):
+        user1 = UserFactory(db_session)
+        user2 = UserFactory(db_session)
+        service = UserService()
+        results = service.get_by_ids([user1.id, user2.id])
+        result_ids = [u.id for u in results]
+        assert user1.id in result_ids
+        assert user2.id in result_ids
+
     def test_mark_inactive(self, db_session):
         user = UserFactory(db_session)
         service = UserService()
