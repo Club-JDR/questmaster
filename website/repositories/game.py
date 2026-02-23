@@ -85,7 +85,7 @@ class GameRepository(BaseRepository[Game]):
         """
         return self.session.query(Game).filter_by(special_event_id=event_id).all()
 
-    def query_by_special_event(self, event_id: int):
+    def query_by_special_event(self, event_id: int) -> Optional[Game]:
         """Return a query object for games linked to a special event.
 
         Unlike ``find_by_special_event`` (which returns a list), this returns

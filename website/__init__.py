@@ -25,6 +25,7 @@ def create_app():
         Configured Flask application instance.
     """
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
 
     # Config
     app.secret_key = os.environ.get("FLASK_AUTH_SECRET")

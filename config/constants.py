@@ -119,6 +119,9 @@ AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 # Pagination
 GAMES_PER_PAGE = 12
+API_DEFAULT_PAGE = 1
+API_DEFAULT_PER_PAGE = 20
+API_MAX_PER_PAGE = 100
 
 # Routes
 GAME_DETAILS_ROUTE = "annonces.get_game_details"
