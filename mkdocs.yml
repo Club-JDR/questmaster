@@ -31,6 +31,7 @@ theme:
 plugins:
   - search
   - include-markdown
+  - swagger-ui-tag
   - mkdocstrings:
       handlers:
         python:
@@ -61,4 +62,6 @@ nav:
       - Exceptions: architecture/exceptions.md
       - Utils: architecture/utils.md
       - CLI: architecture/cli.md
+  - API:
+      - Reference: api/reference.md
   - Contributing: contributing.md

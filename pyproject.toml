@@ -29,6 +29,7 @@ dependencies = [
     "unidecode==1.4.0",
     "python-slugify==8.0.4",
     "apscheduler==3.11.2",
+    "PyJWT==2.11.0",
 ]
 
 [project.optional-dependencies]
@@ -49,6 +50,7 @@ docs = [
     "mkdocs-material",
     "mkdocstrings[python]",
     "mkdocs-include-markdown-plugin",
+    "mkdocs-swagger-ui-tag",
 ]
 
 [tool.pytest.ini_options]

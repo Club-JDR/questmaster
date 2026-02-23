@@ -31,3 +31,9 @@ class Settings:
     CACHE_DEFAULT_TIMEOUT = 300  # 5 minutes
     CACHE_KEY_PREFIX = "QuestMaster:"
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+
+    # JWT settings
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", os.environ.get("FLASK_AUTH_SECRET"))
+    JWT_ALGORITHM = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_REFRESH_WINDOW = timedelta(hours=24)

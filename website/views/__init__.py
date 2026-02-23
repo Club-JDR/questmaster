@@ -1,9 +1,10 @@
+from website.api import create_api_blueprint
+
 from .auth import auth_bp
 from .demo import demo_bp
 from .errors import error_bp
 from .filters import format_datetime, hex_color, text_color
 from .games import game_bp
-from .health import health_bp
 from .misc import misc_bp
 from .stats import stats_bp
 
@@ -11,11 +12,11 @@ from .stats import stats_bp
 def register_blueprints(app):
     app.register_blueprint(game_bp)
     app.register_blueprint(auth_bp)
-    app.register_blueprint(health_bp)
     app.register_blueprint(misc_bp)
     app.register_blueprint(error_bp)
     app.register_blueprint(stats_bp)
     app.register_blueprint(demo_bp)
+    app.register_blueprint(create_api_blueprint())
 
 
 def register_filters(app):

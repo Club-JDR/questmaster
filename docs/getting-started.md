@@ -25,6 +25,7 @@ Create a `.env` file at the root of the project with the values from the previou
 
 ```ini
 FLASK_AUTH_SECRET=""
+JWT_SECRET_KEY=""
 DISCORD_CLIENT_ID=""
 DISCORD_CLIENT_SECRET=""
 DISCORD_BOT_TOKEN=""
@@ -44,6 +45,15 @@ ADMIN_CHANNEL_ID=""
 UNITTEST_CHANNEL_ID=""
 FLASK_APP="website"
 ```
+
+Generate values for `FLASK_AUTH_SECRET` and `JWT_SECRET_KEY` using Python:
+
+```python
+import secrets
+secrets.token_urlsafe(64)
+```
+
+If `JWT_SECRET_KEY` is not set, it falls back to `FLASK_AUTH_SECRET`. Using a dedicated key is recommended in production.
 
 ## Using Docker Compose (recommended)
 
