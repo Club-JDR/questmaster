@@ -1,9 +1,9 @@
 """Flask extension instances and CLI commands."""
 
 import click
+from authlib.integrations.flask_client import OAuth
 from flask.cli import with_appcontext
 from flask_caching import Cache
-from flask_discord import DiscordOAuth2Session
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -13,7 +13,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 cache = Cache()
 csrf = CSRFProtect()
-discord = DiscordOAuth2Session()
+oauth = OAuth()
 
 
 def _is_db_initialized():
