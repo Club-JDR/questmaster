@@ -4,7 +4,7 @@ from collections import Counter
 
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, jsonify, render_template, request, url_for
+from flask import Blueprint, jsonify, make_response, render_template, request, url_for
 
 from config.constants import GAME_DETAILS_ROUTE
 from website.extensions import cache
@@ -64,7 +64,12 @@ def get_calendar_widget():
 @stats_bp.route("/api/calendar/")
 @cache.cached(query_string=True)
 def get_month_games_json():
-    """Return game sessions as JSON for the calendar frontend."""
+    """Return game sessions as JSON for the calendar frontend.
+
+    .. deprecated::
+        Use ``GET /api/v1/calendar/events/`` instead.  This endpoint will
+        be removed after 2026-06-01.
+    """
     start_str = request.args.get("start")
     end_str = request.args.get("end")
 
@@ -102,4 +107,8 @@ def get_month_games_json():
             }
         )
 
-    return jsonify(events)
+    resp = make_response(jsonify(events))
+    resp.headers["Deprecation"] = "true"
+    resp.headers["Sunset"] = "Mon, 01 Jun 2026 00:00:00 GMT"
+    resp.headers["Link"] = '</api/v1/calendar/events/>; rel="successor-version"'
+    return resp

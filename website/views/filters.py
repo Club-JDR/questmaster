@@ -1,19 +1,27 @@
 """Jinja2 template filters for date formatting and color utilities."""
 
 import locale
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 
 def format_datetime(value, format="%a %d/%m - %Hh%M"):
     """Format a datetime for display in French locale.
 
+    Accepts both ``datetime`` objects and ISO 8601 strings (as returned
+    by model ``to_dict()`` serialization).
+
     Args:
-        value: Datetime object to format.
+        value: Datetime object or ISO 8601 string to format.
         format: strftime format string. Defaults to '%a %d/%m - %Hh%M'.
 
     Returns:
         Formatted date string (e.g. 'Sam 10/09 - 20h30').
     """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
     locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
     if hasattr(value, "tzinfo") and value.tzinfo is not None:
         value = value.astimezone(ZoneInfo("Europe/Paris"))

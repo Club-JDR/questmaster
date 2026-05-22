@@ -51,6 +51,24 @@ vtt_service = VttService()
 
 
 # ---------------------------------------------------------------------------
+# Serialization helpers
+# ---------------------------------------------------------------------------
+
+
+def _serialize_games(games):
+    """Serialize a list of Game ORM objects to dicts with relationships."""
+    return [g.to_dict(include_relationships=True) for g in games]
+
+
+def _serialize_ref_data():
+    """Serialize systems and VTTs for search bar filter dropdowns."""
+    return {
+        "systems": [s.to_dict() for s in system_service.get_all()],
+        "vtts": [v.to_dict() for v in vtt_service.get_all()],
+    }
+
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
@@ -74,12 +92,11 @@ def search_games():
 
     return render_template(
         GAME_LIST_TEMPLATE,
-        games=games.items,
+        games=_serialize_games(games.items),
         title="Annonces",
         next_url=next_url,
         prev_url=prev_url,
-        systems=system_service.get_all(),
-        vtts=vtt_service.get_all(),
+        **_serialize_ref_data(),
     )
 
 
@@ -125,13 +142,12 @@ def search_games_by_event(event_id):
 
     return render_template(
         GAME_LIST_TEMPLATE,
-        games=games.items,
+        games=_serialize_games(games.items),
         title=f"Annonces – {event.name}",
         next_url=next_url,
         prev_url=prev_url,
-        systems=system_service.get_all(),
-        vtts=vtt_service.get_all(),
-        special_event=event,
+        special_event=event.to_dict(),
+        **_serialize_ref_data(),
     )
 
 
@@ -139,7 +155,7 @@ def search_games_by_event(event_id):
 def game_cards():
     """Return game cards HTML fragment for HTMX partial updates."""
     games, _ = get_filtered_games(request.args, who())
-    return render_template("game_cards_container.j2", games=games.items)
+    return render_template("game_cards_container.j2", games=_serialize_games(games.items))
 
 
 @game_bp.route("/annonces/<slug>/", methods=["GET"])
@@ -148,7 +164,9 @@ def get_game_details(slug):
     payload = who()
     game = game_service.get_by_slug_or_404(slug)
     is_player = "user_id" in payload and game_service.is_player(game, payload["user_id"])
-    return render_template("game_details.j2", game=game, is_player=is_player)
+    return render_template(
+        "game_details.j2", game=game.to_dict(include_relationships=True), is_player=is_player
+    )
 
 
 @game_bp.route("/annonce/", methods=["GET"])
@@ -491,7 +509,7 @@ def my_gm_games():
     )
     return render_template(
         GAME_LIST_TEMPLATE,
-        games=games.items,
+        games=_serialize_games(games.items),
         gm_only=True,
         title="Mes annonces",
         next_url=(
@@ -504,8 +522,7 @@ def my_gm_games():
             if games.has_prev
             else None
         ),
-        systems=system_service.get_all(),
-        vtts=vtt_service.get_all(),
+        **_serialize_ref_data(),
     )
 
 
@@ -519,7 +536,7 @@ def my_games():
     )
     return render_template(
         GAME_LIST_TEMPLATE,
-        games=games.items,
+        games=_serialize_games(games.items),
         title="Mes parties en cours",
         next_url=(
             url_for("annonces.my_games", page=games.next_num, **request_args)
@@ -531,8 +548,7 @@ def my_games():
             if games.has_prev
             else None
         ),
-        systems=system_service.get_all(),
-        vtts=vtt_service.get_all(),
+        **_serialize_ref_data(),
     )
 
 

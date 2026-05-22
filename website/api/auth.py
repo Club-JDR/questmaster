@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 import jwt
 import requests
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request, session
 
 from config.constants import DISCORD_API_BASE_URL
 from website.exceptions import UnauthorizedError, ValidationError
@@ -105,22 +105,74 @@ def _mint_token(user, user_service: UserService) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def api_login_required(fn):
-    """Require a valid JWT Bearer token and populate ``g.current_user``.
+def _authenticate_request(*, required: bool = True) -> None:
+    """Try to authenticate the current request via JWT or session cookie.
 
-    Stores the decoded JWT payload in ``g.current_user`` (no DB hit).
+    Checks the JWT Bearer token first; if absent, falls back to the Flask
+    session cookie.  Populates ``g.current_user`` with a dict matching the
+    JWT payload shape (``sub``, ``is_gm``, ``is_admin``, ``is_player``).
+
+    Args:
+        required: If True, raise when no credentials are found.
+            If False, set ``g.current_user`` to None instead.
 
     Raises:
-        UnauthorizedError: If the Authorization header is missing or invalid.
+        UnauthorizedError: If *required* is True and no valid credentials
+            are present.
+    """
+    # 1. JWT Bearer token (takes priority)
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        g.current_user = decode_token(token)
+        return
+
+    # 2. Flask session cookie fallback
+    user_id = session.get("user_id")
+    if user_id:
+        g.current_user = {
+            "sub": str(user_id),
+            "is_gm": session.get("is_gm", False),
+            "is_admin": session.get("is_admin", False),
+            "is_player": session.get("is_player", False),
+        }
+        return
+
+    # 3. No credentials
+    if required:
+        raise UnauthorizedError("Missing or invalid Authorization header", action="api_auth")
+    g.current_user = None
+
+
+def api_login_required(fn):
+    """Require authentication and populate ``g.current_user``.
+
+    Accepts either a JWT Bearer token or a Flask session cookie.
+    JWT is checked first; the session cookie is a fallback so that
+    browser JS can call the API without managing tokens.
+
+    Raises:
+        UnauthorizedError: If no valid credentials are present.
     """
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            raise UnauthorizedError("Missing or invalid Authorization header", action="api_auth")
-        token = auth_header[7:]
-        g.current_user = decode_token(token)
+        _authenticate_request(required=True)
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def api_login_optional(fn):
+    """Populate ``g.current_user`` when credentials are present.
+
+    Same as ``api_login_required`` but allows anonymous access:
+    ``g.current_user`` is set to ``None`` when no credentials are found.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        _authenticate_request(required=False)
         return fn(*args, **kwargs)
 
     return wrapper
