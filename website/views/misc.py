@@ -23,13 +23,15 @@ trophy_service = TrophyService()
 @misc_bp.route("/vtts/", methods=["GET"])
 def list_vtts():
     """List all VTTs."""
-    return render_template("list.j2", items=vtt_service.get_all(), title="Virtual TableTops")
+    vtts = [v.to_dict() for v in vtt_service.get_all()]
+    return render_template("list.j2", items=vtts, title="Virtual TableTops")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
 def list_systems():
     """List all game systems."""
-    return render_template("list.j2", items=system_service.get_all(), title="Systèmes")
+    systems = [s.to_dict() for s in system_service.get_all()]
+    return render_template("list.j2", items=systems, title="Systèmes")
 
 
 @misc_bp.route("/badges/", methods=["GET"])
@@ -60,7 +62,7 @@ def list_user_badges():
         "trophies.j2",
         trophies=user.trophy_summary,
         user_id=user.id,
-        user=user,
+        user=user.to_dict(),
     )
 
 
@@ -104,13 +106,18 @@ def get_campaign_gm_leaderboard():
     return trophy_service.get_leaderboard(BADGE_CAMPAIGN_GM_ID, limit=10)
 
 
+def _serialize_leaderboard(entries):
+    """Convert (User, count) tuples to (dict, count) tuples."""
+    return [(user.to_dict(), count) for user, count in entries]
+
+
 @misc_bp.route("/badges/classement/", methods=["GET"])
 def trophies_leaderboard():
     """Render the trophy leaderboard page."""
     return render_template(
         "trophies_leaderboard.j2",
-        os_leaderboard=get_os_leaderboard(),
-        campaign_leaderboard=get_campaign_leaderboard(),
-        os_gm_leaderboard=get_os_gm_leaderboard(),
-        campaign_gm_leaderboard=get_campaign_gm_leaderboard(),
+        os_leaderboard=_serialize_leaderboard(get_os_leaderboard()),
+        campaign_leaderboard=_serialize_leaderboard(get_campaign_leaderboard()),
+        os_gm_leaderboard=_serialize_leaderboard(get_os_gm_leaderboard()),
+        campaign_gm_leaderboard=_serialize_leaderboard(get_campaign_gm_leaderboard()),
     )

@@ -5,7 +5,7 @@ from collections import Counter
 from dateutil.parser import parse as parse_date
 from flask import Blueprint, jsonify, request
 
-from website.api.auth import api_login_required
+from website.api.auth import api_login_optional, api_login_required
 from website.exceptions import ValidationError
 from website.services.game_session import GameSessionService
 
@@ -54,7 +54,7 @@ def get_stats():
 
 
 @stats_bp.route("/calendar/events/", methods=["GET"])
-@api_login_required
+@api_login_optional
 def get_calendar_events():
     """Get game sessions for a date range (calendar view).
 

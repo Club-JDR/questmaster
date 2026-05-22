@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const isMobile = window.innerWidth < 768;      // tweak your breakpoint here
-  const calendarEl = document.getElementById("month-games-calendar");
+  var isMobile = window.innerWidth < 768;
+  var calendarEl = document.getElementById("month-games-calendar");
 
-  const calendar = new FullCalendar.Calendar(calendarEl, {
+  var calendar = new FullCalendar.Calendar(calendarEl, {
     themeSystem: 'bootstrap5',
     initialView: isMobile ? 'listMonth' : 'dayGridMonth',
     headerToolbar: isMobile
@@ -19,10 +19,27 @@ document.addEventListener("DOMContentLoaded", function () {
     timeZone: 'local',
     contentHeight: 'auto',
     events: function (fetchInfo, successCallback, failureCallback) {
-      fetch(`/api/calendar?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
-        .then(r => r.ok ? r.json() : Promise.reject("Network error"))
-        .then(data => successCallback(data))
-        .catch(err => failureCallback(err));
+      QuestMasterAPI.get('/calendar/events/', {
+        start: fetchInfo.startStr,
+        end: fetchInfo.endStr,
+      })
+        .then(function (data) {
+          var events = data.map(function (item) {
+            return {
+              id: item.id,
+              title: item.title,
+              start: item.start,
+              end: item.end,
+              color: item.color,
+              className: item.type === 'oneshot' ? 'event-oneshot' : 'event-campaign',
+              url: '/annonces/' + item.game_slug + '/',
+            };
+          });
+          successCallback(events);
+        })
+        .catch(function (err) {
+          failureCallback(err);
+        });
     },
     eventClick: function (info) {
       if (info.event.url) {
@@ -35,8 +52,8 @@ document.addEventListener("DOMContentLoaded", function () {
   calendar.render();
 
   // Re-render on orientation change or resize
-  window.addEventListener('resize', () => {
-    const newIsMobile = window.innerWidth < 768;
+  window.addEventListener('resize', function () {
+    var newIsMobile = window.innerWidth < 768;
     if (newIsMobile !== isMobile) {
       calendar.changeView(newIsMobile ? 'listMonth' : 'dayGridMonth');
       calendar.setOption('headerToolbar', newIsMobile

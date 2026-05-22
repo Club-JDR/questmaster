@@ -1,6 +1,7 @@
 """API test fixtures.
 
-Provides JWT token helpers and pre-authenticated API clients.
+Provides JWT token helpers, pre-authenticated API clients, and
+session-based test clients for cookie-auth fallback tests.
 """
 
 from datetime import datetime, timezone
@@ -99,3 +100,27 @@ def auth_headers_gm(gm_token):
 def auth_headers_admin(admin_token):
     """Authorization headers for the admin user."""
     return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture
+def session_client_user(test_app, regular_user):
+    """Flask test client with a session cookie for the regular user."""
+    client = test_app.test_client()
+    with client.session_transaction() as sess:
+        sess["user_id"] = regular_user.id
+        sess["is_gm"] = regular_user.is_gm
+        sess["is_admin"] = regular_user.is_admin
+        sess["is_player"] = regular_user.is_player
+    return client
+
+
+@pytest.fixture
+def session_client_gm(test_app, gm_user):
+    """Flask test client with a session cookie for the GM user."""
+    client = test_app.test_client()
+    with client.session_transaction() as sess:
+        sess["user_id"] = gm_user.id
+        sess["is_gm"] = gm_user.is_gm
+        sess["is_admin"] = gm_user.is_admin
+        sess["is_player"] = gm_user.is_player
+    return client

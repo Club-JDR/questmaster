@@ -117,6 +117,12 @@ class Game(db.Model):
         """Helper to serialize a list of related objects."""
         return [obj.to_dict() for obj in objects if hasattr(obj, "to_dict")]
 
+    def _serialize_relation_with_rels(self, objects):
+        """Serialize related objects including their own relationships."""
+        return [
+            obj.to_dict(include_relationships=True) for obj in objects if hasattr(obj, "to_dict")
+        ]
+
     def _add_relationships_to_dict(self, data):
         """Add relationship data to the dictionary."""
         data["gm"] = self._serialize_relation(getattr(self, "gm", None))
@@ -125,6 +131,7 @@ class Game(db.Model):
         data["players"] = self._serialize_relation_list(getattr(self, "players", []))
         data["sessions"] = self._serialize_relation_list(getattr(self, "sessions", []))
         data["special_event"] = self._serialize_relation(getattr(self, "special_event", None))
+        data["events"] = self._serialize_relation_with_rels(getattr(self, "events", []))
 
     def to_dict(self, include_relationships: bool = False):
         """
