@@ -114,6 +114,13 @@ jobs:
           docker compose logs app
           exit 1
 
+      - name: Extract built frontend assets from Docker image
+        run: |
+          rm -rf website/static/dist/
+          id=$(docker create $IMAGE_NAME)
+          docker cp "$id:/questmaster/website/static/dist" website/static/
+          docker rm "$id"
+
       - name: Run tests with coverage
         run: |
           docker compose run \
