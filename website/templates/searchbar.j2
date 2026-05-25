@@ -1,91 +1,102 @@
 {% set is_my_games_view = request.path.startswith('/mes_') %}
-{% set has_status_filter = request.args.get('open') or request.args.get('closed') or request.args.get('archived') or
-request.args.get('draft') %}
+{% set has_status_filter = request.args.get('open') or request.args.get('closed') or request.args.get('archived') or request.args.get('draft') %}
 {% set has_type_filter = request.args.get('oneshot') or request.args.get('campaign') %}
 {% set has_restriction_filter = request.args.get('all') or request.args.get('16+') or request.args.get('18+') %}
-<div class="collapse" id="searchBar">
-  <div class="p-4">
-    <form class="d-container-fluid" role="search" method="get" action="{{ request.path }}">
-      <div class="row">
-        <div class="col-sm-4 pb-2">
-          <div class="input-group me-2">
-            <span class="input-group-text" id="name">Nom</span>
-            <input type="text" class="form-control" placeholder="Nom de l'annonce" aria-label="name"
-              aria-describedby="name" name="name" {% if request.args.get( 'name' )
-              %}value="{{ request.args.get('name') }}" {% endif %}>
-          </div>
-        </div>
-        <div class="col-sm-4 pb-2">
-          <div class="input-group me-2">
-            <span class="input-group-text" id="system">Système</span>
-            <select class="form-select" name="system" aria-describedby="Système">
-              <option value="None"></option>
-              {% for s in systems %}
-              <option value="{{ s.id }}" {% if request.args.get('system')|int==s.id %}selected{% endif %}>{{ s.name }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="col-sm-4 pb-2">
-          <div class="input-group me-2">
-            <span class="input-group-text" id="vtt">VTT</span>
-            <select class="form-select" name="vtt" aria-describedby="VTT">
-              <option value="None"></option>
-              {% for v in vtts %}
-              <option value="{{ v.id }}" {% if request.args.get('vtt')|int==v.id %}selected{% endif %}>{{ v.name }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
+{% set has_active_search = request.args.get('name') or request.args.get('system') or request.args.get('vtt') or has_status_filter or has_type_filter or has_restriction_filter %}
+
+<details class="bg-base-100 rounded-box my-3 shadow-sm" {% if has_active_search %}open{% endif %}>
+  <summary class="btn btn-sm btn-outline m-2 cursor-pointer">
+    <i class="ph ph-funnel"></i> Recherche avancée
+    {% if has_active_search %}<span class="badge badge-primary badge-sm">actif</span>{% endif %}
+  </summary>
+  <div class="p-4 pt-2">
+    <form role="search" method="get" action="{{ request.path }}">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+        <label class="input input-bordered flex items-center gap-2">
+          <i class="ph ph-magnifying-glass text-base-content/40"></i>
+          <input type="text" class="grow" placeholder="Nom de l'annonce" name="name"
+            {% if request.args.get('name') %}value="{{ request.args.get('name') }}"{% endif %}>
+        </label>
+
+        <select class="select select-bordered" name="system">
+          <option value="">Système</option>
+          {% for s in systems %}
+          <option value="{{ s.id }}" {% if request.args.get('system')|int == s.id %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+
+        <select class="select select-bordered" name="vtt">
+          <option value="">VTT</option>
+          {% for v in vtts %}
+          <option value="{{ v.id }}" {% if request.args.get('vtt')|int == v.id %}selected{% endif %}>{{ v.name }}</option>
+          {% endfor %}
+        </select>
       </div>
-      <div class="row">
-        <div class="col-sm-3 pb-2">
-          <div class="btn-group me-2">
-            <input type="checkbox" class="btn-check" id="oneshot" autocomplete="off" name="oneshot" {% if
-              request.args.get('oneshot') or not has_type_filter %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-success" for="oneshot">Oneshots</label>
-            <input type="checkbox" class="btn-check" id="campaign" autocomplete="off" name="campaign" {% if
-              request.args.get('campaign') or not has_type_filter %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-primary" for="campaign">Campagnes</label>
-          </div>
+
+      <div class="flex flex-wrap gap-3 items-center">
+        {# Type #}
+        <div class="join" role="group" aria-label="Type">
+          <label class="join-item btn btn-sm has-[:checked]:color-oneshot">
+            <input type="checkbox" name="oneshot" id="oneshot" class="sr-only"
+              {% if request.args.get('oneshot') or not has_type_filter %}checked{% endif %}>
+            One-shots
+          </label>
+          <label class="join-item btn btn-sm has-[:checked]:color-campaign">
+            <input type="checkbox" name="campaign" id="campaign" class="sr-only"
+              {% if request.args.get('campaign') or not has_type_filter %}checked{% endif %}>
+            Campagnes
+          </label>
         </div>
-        <div class="col-sm-4 pb-2">
-          <div class="btn-group me-2">
-            <input type="checkbox" class="btn-check" id="open" autocomplete="off" name="open" {% if
-              request.args.get('open') or not has_status_filter %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-secondary" for="open">Ouvertes</label>
-            <input type="checkbox" class="btn-check" id="closed" autocomplete="off" name="closed" {% if
-              request.args.get('closed') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-secondary" for="closed">Complètes</label>
-            <input type="checkbox" class="btn-check" id="archived" autocomplete="off" name="archived" {% if
-              request.args.get('archived') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-secondary" for="archived">Archivées</label>
-            {% if payload['is_gm'] or payload['is_admin'] %}
-            <input type="checkbox" class="btn-check" id="draft" autocomplete="off" name="draft" {% if
-              request.args.get('draft') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-secondary" for="draft">Brouillons</label>
-            {% endif %}
-          </div>
+
+        {# Status #}
+        <div class="join" role="group" aria-label="Statut">
+          <label class="join-item btn btn-sm has-[:checked]:btn-neutral">
+            <input type="checkbox" name="open" id="open" class="sr-only"
+              {% if request.args.get('open') or not has_status_filter %}checked{% endif %}>
+            Ouvertes
+          </label>
+          <label class="join-item btn btn-sm has-[:checked]:btn-neutral">
+            <input type="checkbox" name="closed" id="closed" class="sr-only"
+              {% if request.args.get('closed') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
+            Complètes
+          </label>
+          <label class="join-item btn btn-sm has-[:checked]:btn-neutral">
+            <input type="checkbox" name="archived" id="archived" class="sr-only"
+              {% if request.args.get('archived') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
+            Archivées
+          </label>
+          {% if payload['is_gm'] or payload['is_admin'] %}
+          <label class="join-item btn btn-sm has-[:checked]:btn-neutral">
+            <input type="checkbox" name="draft" id="draft" class="sr-only"
+              {% if request.args.get('draft') or (is_my_games_view and not has_status_filter) %}checked{% endif %}>
+            Brouillons
+          </label>
+          {% endif %}
         </div>
-        <div class="col-sm-3 pb-2">
-          <div class="btn-group me-2">
-            <input type="checkbox" class="btn-check" id="all" autocomplete="off" name="all" {% if
-              request.args.get('all') or not has_restriction_filter %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-success" for="all">Tout public</label>
-            <input type="checkbox" class="btn-check" id="16+" autocomplete="off" name="16+" {% if
-              request.args.get('16+') or not has_restriction_filter %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-warning" for="16+">16+</label>
-            <input type="checkbox" class="btn-check" id="18+" autocomplete="off" name="18+" {% if
-              request.args.get('18+') or not has_restriction_filter %}checked{% endif %}>
-            <label class="btn btn-sm btn-outline-danger" for="18+">18+</label>
-          </div>
+
+        {# Restriction #}
+        <div class="join" role="group" aria-label="Public">
+          <label class="join-item btn btn-sm has-[:checked]:color-oneshot">
+            <input type="checkbox" name="all" id="all" class="sr-only"
+              {% if request.args.get('all') or not has_restriction_filter %}checked{% endif %}>
+            Tout public
+          </label>
+          <label class="join-item btn btn-sm has-[:checked]:color-16plus">
+            <input type="checkbox" name="16+" id="16plus" class="sr-only"
+              {% if request.args.get('16+') or not has_restriction_filter %}checked{% endif %}>
+            16+
+          </label>
+          <label class="join-item btn btn-sm has-[:checked]:color-18plus">
+            <input type="checkbox" name="18+" id="18plus" class="sr-only"
+              {% if request.args.get('18+') or not has_restriction_filter %}checked{% endif %}>
+            18+
+          </label>
         </div>
-        <div class="col-sm-2 pb-2 d-grid" id="search-submit-button">
-          <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
-        </div>
+
+        <button class="btn btn-sm btn-primary" type="submit" id="search-submit-button">
+          <i class="ph ph-magnifying-glass"></i> Rechercher
+        </button>
       </div>
     </form>
   </div>
-</div>
+</details>

@@ -3,9 +3,10 @@
 import os
 from importlib.metadata import version
 
-from website.utils import form_parsers, game_embeds, game_filters, logger
+from website.utils import assets, form_parsers, game_embeds, game_filters, logger
 
 __all__ = [
+    "assets",
     "form_parsers",
     "game_embeds",
     "game_filters",

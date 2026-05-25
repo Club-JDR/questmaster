@@ -1,153 +1,121 @@
 {% extends 'base.j2' %}
 {% block title %}Statistiques mensuelles{% endblock %}
 {% block content %}
-<h1 class="mb-4 text-center"><i class="bi bi-graph-up"></i> Statistiques - {{ month }}/{{ year }}</h1>
 
-{% set random_int = (range(1, 7) | random) %}{% set random_int2 = (range(1, 7) | random) %}
+<h1 class="text-center font-black text-2xl my-4">
+  <i class="ph ph-chart-line"></i> Statistiques — {{ month }}/{{ year }}
+</h1>
 
-<!-- Navigation -->
-<div class="d-flex justify-content-between mb-4">
-  <a class="btn btn-primary" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
-    ← Mois précédent
+<div class="flex justify-between mb-6">
+  <a class="btn btn-primary btn-sm gap-1" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
+    <i class="ph ph-caret-left"></i> Mois précédent
   </a>
-  <a class="btn btn-primary" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
-    Mois suivant →
+  <a class="btn btn-primary btn-sm gap-1" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
+    Mois suivant <i class="ph ph-caret-right"></i>
   </a>
 </div>
 
-<!-- Sessions Summary Section -->
-<div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
-  <div class="col">
-    <div class="card h-100 text-center border-success">
-      <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-dice-{{ random_int}}"></i> Sessions OS</h5>
-        <p class="display-6 text-success">{{ num_os }}</p>
-      </div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="card bg-base-100 shadow-md text-center">
+    <div class="card-body">
+      <h2 class="card-title justify-center text-success"><i class="ph ph-scroll"></i> Sessions OS</h2>
+      <p class="text-5xl font-black text-success">{{ num_os }}</p>
     </div>
   </div>
-  <div class="col">
-    <div class="card h-100 text-center border-primary">
-      <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-book"></i> Sessions de Campagnes</h5>
-        <p class="display-6 text-primary">{{ num_campaign }}</p>
-      </div>
+  <div class="card bg-base-100 shadow-md text-center">
+    <div class="card-body">
+      <h2 class="card-title justify-center text-primary"><i class="ph ph-books"></i> Sessions de Campagnes</h2>
+      <p class="text-5xl font-black text-primary">{{ num_campaign }}</p>
     </div>
   </div>
-  <div class="col">
-    <div class="card h-100 text-center">
-      <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-bar-chart"></i> Total</h5>
-        <p class="display-6 fw-bold">{{ num_os + num_campaign }}</p>
-      </div>
+  <div class="card bg-base-100 shadow-md text-center">
+    <div class="card-body">
+      <h2 class="card-title justify-center"><i class="ph ph-chart-bar"></i> Total</h2>
+      <p class="text-5xl font-black">{{ num_os + num_campaign }}</p>
     </div>
   </div>
 </div>
 
-<!-- OS and Campaign Tables Section -->
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="row">
-      <!-- OS Table -->
-      <div class="col-md-6">
-        <h5 class="mb-3"><i class="bi bi-dice-{{ random_int2 }}"></i> Liste des OS</h5>
-        {% for system, games in os.items() %}
-        <div class="mb-3">
-          <h6 class="text-success">{{ system }} <small class="text-muted">({{ games|length }} scénario{% if games|length
-              >
-              1
-              %}s{% endif %})</small></h6>
-          <div class="table-responsive">
-            <table class="table table-sm table-striped table-bordered">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Nom de la session</th>
-                  <th>MJ</th>
-                  <th>Sessions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% set game_list = os[system].items() | sort(attribute='1.count', reverse=true) %}
-                {% for slug, info in game_list %}
-                <tr>
-                  <td>{{ loop.index }}</td>
-                  <td>{{ info.name }}</td>
-                  <td>{{ info.gm }}</td>
-                  <td>{{ info.count }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
-      <!-- Campaign Table -->
-      <div class="col-md-6">
-        <h5 class="mb-3"><i class="bi bi-book"></i> Liste des campagnes</h5>
-        {% for system, games in campaign.items() %}
-        <div class="mb-3">
-          <h6 class="text-primary">{{ system }} <small class="text-muted">({{ games|length }} campagne{% if games|length
-              > 1 %}s{% endif %})</small></h6>
-          <div class="table-responsive">
-            <table class="table table-sm table-striped table-bordered">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Nom de la session</th>
-                  <th>MJ</th>
-                  <th>Sessions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% set game_list = campaign[system].items() | sort(attribute='1.count', reverse=true) %}
-                {% for slug, info in game_list %}
-                <tr>
-                  <td>{{ loop.index }}</td>
-                  <td>{{ info.name }}</td>
-                  <td>{{ info.gm }}</td>
-                  <td>{{ info.count }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body">
+      <h2 class="card-title text-success"><i class="ph ph-scroll"></i> Liste des OS</h2>
+      {% for system, games in os.items() %}
+      <div class="mt-3">
+        <h3 class="font-semibold text-success text-sm mb-1">{{ system }}
+          <span class="text-base-content/40 font-normal">({{ games|length }} scénario{% if games|length > 1 %}s{% endif %})</span>
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="table table-sm table-zebra w-full">
+            <thead>
+              <tr><th>#</th><th>Nom de la session</th><th>MJ</th><th>Sessions</th></tr>
+            </thead>
+            <tbody>
+              {% for slug, info in os[system].items() | sort(attribute='1.count', reverse=true) %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ info.name }}</td>
+                <td>{{ info.gm }}</td>
+                <td>{{ info.count }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        {% endfor %}
       </div>
-
+      {% endfor %}
     </div>
   </div>
+
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body">
+      <h2 class="card-title text-primary"><i class="ph ph-books"></i> Liste des campagnes</h2>
+      {% for system, games in campaign.items() %}
+      <div class="mt-3">
+        <h3 class="font-semibold text-primary text-sm mb-1">{{ system }}
+          <span class="text-base-content/40 font-normal">({{ games|length }} campagne{% if games|length > 1 %}s{% endif %})</span>
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="table table-sm table-zebra w-full">
+            <thead>
+              <tr><th>#</th><th>Nom de la session</th><th>MJ</th><th>Sessions</th></tr>
+            </thead>
+            <tbody>
+              {% for slug, info in campaign[system].items() | sort(attribute='1.count', reverse=true) %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ info.name }}</td>
+                <td>{{ info.gm }}</td>
+                <td>{{ info.count }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
 </div>
 
-
-<!-- MJ Ranking Section -->
-<div class="card mb-4">
+<div class="card bg-base-100 shadow-md">
   <div class="card-body">
-    <h5 class="card-title text-center"><i class="bi bi-trophy"></i> Classement des MJs</h5>
-    <div class="table-responsive">
-      <table class="table table-striped text-center mb-0">
+    <h2 class="card-title justify-center"><i class="ph ph-trophy"></i> Classement des MJs</h2>
+    <div class="overflow-x-auto">
+      <table class="table table-zebra text-center">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>MJ</th>
-            <th>Sessions</th>
-          </tr>
+          <tr><th>#</th><th>MJ</th><th>Sessions</th></tr>
         </thead>
         <tbody>
           {% for mj, count in mjs %}
           <tr>
             <td>
-            {% if loop.index == 1 %}
-              🥇
-            {% elif loop.index == 2 %}
-              🥈
-            {% elif loop.index == 3 %}
-              🥉
-            {% else %}
-              {{ loop.index }}
-            {% endif %}
+              {% if loop.index == 1 %}🥇
+              {% elif loop.index == 2 %}🥈
+              {% elif loop.index == 3 %}🥉
+              {% else %}{{ loop.index }}{% endif %}
             </td>
             <td>{{ mj }}</td>
             <td>{{ count }}</td>
@@ -158,4 +126,5 @@
     </div>
   </div>
 </div>
+
 {% endblock %}

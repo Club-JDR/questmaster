@@ -33,6 +33,18 @@ pip install pre-commit
 pre-commit install
 ```
 
+### Frontend
+
+Templates use [DaisyUI v5](https://daisyui.com/) + [Tailwind v4](https://tailwindcss.com/), built with [Vite](https://vitejs.dev/). Source lives in `assets/`; built output goes to `website/static/dist/` (gitignored).
+
+```sh
+npm install
+npm run build   # production build
+npm run dev     # watch mode — rebuilds on changes to assets/
+```
+
+Docker Compose users don't need to run this locally — the Docker build handles it automatically in a dedicated `frontend-builder` stage.
+
 ## Architecture
 
 The codebase follows a layered architecture. When adding or modifying code, respect these boundaries:
@@ -63,6 +75,7 @@ Every pull request is checked by the CI pipeline which runs:
 
 - **Conventional commit check** — all commits must follow the [conventional commits](https://www.conventionalcommits.org/) format.
 - **Linting** — import ordering with [isort](https://pycqa.github.io/isort/), formatting with [Black](https://github.com/psf/black), static analysis with [flake8](https://flake8.pycqa.org/) and docstring lint with [pydoclint](https://github.com/jsh9/pydoclint).
+- **Frontend build** — `npm ci && npm run build` runs in a dedicated Docker stage; built assets are copied into the app image. No Node.js setup is needed in CI.
 - **Tests and coverage** — pytest runs with coverage reported to [SonarCloud](https://sonarcloud.io/dashboard?id=Club-JDR_questmaster) for code quality analysis.
 
 On merge to `main`, [release-please](https://github.com/googleapis/release-please) creates or updates a release PR. Merging that PR creates a GitHub release and a version tag automatically, the CI also pushes the Docker image to GHCR.

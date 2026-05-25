@@ -6,7 +6,6 @@ from datetime import datetime
 from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from config.constants import (
-    DEFAULT_TIMEFORMAT,
     GAME_DETAILS_ROUTE,
     GAME_STATUS_LABELS,
     HUMAN_TIMEFORMAT,
@@ -151,7 +150,7 @@ def search_games_by_event(event_id):
     )
 
 
-@game_bp.route("/annonces/cards/")
+@game_bp.route("/annonces/cards/", methods=["GET"])
 def game_cards():
     """Return game cards HTML fragment for HTMX partial updates."""
     games, _ = get_filtered_games(request.args, who())
@@ -306,8 +305,8 @@ def add_game_session(slug):
     """Add session to a game and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
-    end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
+    start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
+    end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
 
     try:
         session_service.create(game, start, end)
@@ -342,8 +341,8 @@ def edit_game_session(slug, session_id):
     game = _get_game_if_authorized(payload, slug)
     session = session_service.get_by_id_or_404(session_id)
 
-    new_start = datetime.strptime(request.values.get("date_start"), DEFAULT_TIMEFORMAT)
-    new_end = datetime.strptime(request.values.get("date_end"), DEFAULT_TIMEFORMAT)
+    new_start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
+    new_end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
 
     old_start = session.start.strftime(HUMAN_TIMEFORMAT)
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)

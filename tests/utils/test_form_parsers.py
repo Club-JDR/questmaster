@@ -92,26 +92,23 @@ class TestGetAmbience:
 
 
 class TestParseRestrictionTags:
-    def test_valid_yaml_tags(self):
-        raw = '[{"value": "violence"}, {"value": "horreur"}]'
-        assert parse_restriction_tags({"restriction_tags": raw}) == "violence, horreur"
+    def test_plain_string_returned_as_is(self):
+        assert (
+            parse_restriction_tags({"restriction_tags": "violence, horreur"})
+            == "violence, horreur"
+        )
 
     def test_single_tag(self):
-        raw = '[{"value": "gore"}]'
-        assert parse_restriction_tags({"restriction_tags": raw}) == "gore"
+        assert parse_restriction_tags({"restriction_tags": "gore"}) == "gore"
+
+    def test_strips_whitespace(self):
+        assert parse_restriction_tags({"restriction_tags": "  gore  "}) == "gore"
 
     def test_empty_string(self):
         assert parse_restriction_tags({"restriction_tags": ""}) is None
 
+    def test_whitespace_only_returns_none(self):
+        assert parse_restriction_tags({"restriction_tags": "   "}) is None
+
     def test_missing_key(self):
         assert parse_restriction_tags({}) is None
-
-    def test_malformed_yaml_returns_none(self, parser_app):
-        with parser_app.test_request_context("/"):
-            result = parse_restriction_tags({"restriction_tags": "[{invalid yaml"})
-        assert result is None
-
-    def test_invalid_structure_returns_none(self, parser_app):
-        with parser_app.test_request_context("/"):
-            result = parse_restriction_tags({"restriction_tags": "just a string"})
-        assert result is None

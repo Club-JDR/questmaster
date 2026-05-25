@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/* ── Fixed semantic colors (theme-independent) ────────────────────────────────
+   Hardcoded values so these utilities are unaffected by theme changes.
+────────────────────────────────────────────────────────────────────────────── */
+@utility color-oneshot {
+  background-color: oklch(64.8% 0.15 160);
+  color: oklch(15% 0 0);
+  border-color: oklch(64.8% 0.15 160);
+}
+
+@utility color-campaign {
+  background-color: oklch(61.302% 0.202 261.294);
+  color: oklch(98% 0 0);
+  border-color: oklch(61.302% 0.202 261.294);
+}
+
+@utility color-16plus {
+  background-color: oklch(84.71% 0.199 83.87);
+  color: oklch(15% 0 0);
+  border-color: oklch(84.71% 0.199 83.87);
+}
+
+@utility color-18plus {
+  background-color: oklch(62.013% 0.208 28.717);
+  color: oklch(15% 0 0);
+  border-color: oklch(62.013% 0.208 28.717);
+}
+
+@utility border-oneshot {
+  border-color: oklch(64.8% 0.15 160);
+}
+
+@utility border-campaign {
+  border-color: oklch(61.302% 0.202 261.294);
+}
+
+@utility text-oneshot {
+  color: oklch(64.8% 0.15 160);
+}
+
+@utility text-campaign {
+  color: oklch(61.302% 0.202 261.294);
+}
+
+/* ── Shiny hover sweep ────────────────────────────────────────────────────────
+   Diagonal highlight that sweeps left→right on hover.
+   Works on any element with class="shiny" + position context.
+────────────────────────────────────────────────────────────────────────────── */
+.shiny {
+  position: relative;
+}
+
+.shiny::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.30) 50%,
+    transparent 75%
+  );
+  transform: translateX(-100%) skewX(-10deg);
+  transition: transform 0.55s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.shiny:hover::before {
+  transform: translateX(150%) skewX(-10deg);
+}
+
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
+
+/* ── FullCalendar (calendar.j2) ───────────────────────────────────────────────
+   Layout tweaks and DaisyUI theme integration for FullCalendar 6 (standard theme).
+────────────────────────────────────────────────────────────────────────────── */
+.fc-event {
+  white-space: normal !important;
+  line-height: 1.2em;
+  padding: 2px;
+}
+
+.fc-event-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial;
+}
+
+.fc-daygrid-event {
+  font-size: 0.85em;
+  padding: 2px 4px;
+}
+
+.fc .fc-button,
+.fc .fc-button-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  text-transform: none;
+}
+
+.fc .fc-button:hover,
+.fc .fc-button-primary:hover {
+  filter: brightness(92%);
+}
+
+.fc .fc-button:disabled,
+.fc .fc-button-primary:disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.fc .fc-button-active,
+.fc .fc-button:active,
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2);
+  filter: brightness(88%);
+}
+
+@media (max-width: 767.98px) {
+  .fc .fc-event,
+  .fc .fc-daygrid-event {
+    font-size: 0.75rem;
+    padding: 1px 2px;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: 0.85rem;
+  }
+
+  #month-games-calendar .fc-daygrid {
+    overflow-x: auto;
+  }
+
+  .fc .fc-toolbar-chunk button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* ── Theme color overrides ────────────────────────────────────────────────────
+   Overrides applied to both light and dark themes.
+   base-300 is intentionally darker than base-200 for navbar contrast.
+────────────────────────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --color-base-100: oklch(95% 0.004 265);
+  --color-base-200: oklch(91% 0.006 265);
+  --color-base-300: oklch(78% 0.010 265);
+
+  --color-primary: oklch(61.302% 0.202 261.294);
+  --color-primary-content: oklch(98% 0 0);
+  --color-secondary: oklch(92% 0.004 286.32);
+  --color-secondary-content: oklch(15% 0 0);
+  --color-accent: oklch(94.228% 0.189 105.306);
+  --color-accent-content: oklch(15% 0 0);
+  --color-neutral: oklch(35.519% 0.032 262.988);
+  --color-neutral-content: oklch(98% 0 0);
+  --color-info: oklch(72.06% 0.191 231.6);
+  --color-info-content: oklch(15% 0 0);
+  --color-success: oklch(64.8% 0.15 160);
+  --color-success-content: oklch(15% 0 0);
+  --color-warning: oklch(84.71% 0.199 83.87);
+  --color-warning-content: oklch(15% 0 0);
+  --color-error: oklch(62.013% 0.208 28.717);
+  --color-error-content: oklch(15% 0 0);
+}
+
+[data-theme="dark"] {
+  --color-base-100: oklch(30% 0.018 265);
+  --color-base-200: oklch(26% 0.016 265);
+  --color-base-300: oklch(16% 0.014 265);
+
+  --color-primary: oklch(61.302% 0.202 261.294);
+  --color-primary-content: oklch(98% 0 0);
+  --color-secondary: oklch(92% 0.004 286.32);
+  --color-secondary-content: oklch(15% 0 0);
+  --color-accent: oklch(94.228% 0.189 105.306);
+  --color-accent-content: oklch(15% 0 0);
+  --color-neutral: oklch(35.519% 0.032 262.988);
+  --color-neutral-content: oklch(98% 0 0);
+  --color-info: oklch(72.06% 0.191 231.6);
+  --color-info-content: oklch(15% 0 0);
+  --color-success: oklch(64.8% 0.15 160);
+  --color-success-content: oklch(15% 0 0);
+  --color-warning: oklch(84.71% 0.199 83.87);
+  --color-warning-content: oklch(15% 0 0);
+  --color-error: oklch(62.013% 0.208 28.717);
+  --color-error-content: oklch(15% 0 0);
+}

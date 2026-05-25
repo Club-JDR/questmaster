@@ -1,9 +1,6 @@
 """Form-parsing utilities for extracting structured data from Flask request forms."""
 
-import yaml
 from flask import request
-
-from website.utils.logger import logger
 
 
 def get_classification():
@@ -38,20 +35,13 @@ def get_ambience(data):
 
 
 def parse_restriction_tags(data):
-    """Parse YAML-encoded restriction tags from form data.
+    """Parse restriction tags from form data.
 
     Args:
         data: Form data dict containing optional 'restriction_tags' key.
 
     Returns:
-        Comma-separated tag string, or None if absent/invalid.
+        Stripped tag string, or None if absent.
     """
     raw = data.get("restriction_tags", "")
-    if not raw:
-        return None
-    try:
-        tags = yaml.safe_load(raw)
-        return ", ".join(item["value"] for item in tags)
-    except Exception as e:
-        logger.warning(f"Failed to parse restriction tags: {e}", exc_info=True)
-        return None
+    return raw.strip() or None

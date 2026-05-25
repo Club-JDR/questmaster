@@ -1,34 +1,36 @@
 {% extends 'base.j2' %}
-
 {% block title %}Badges{% endblock %}
-
 {% block content %}
-<h1 class="mb-4 text-center"><i class="bi bi-trophy"></i> Badges de {{ user.name }}</h1>
-<form method="GET" action="{{ url_for('misc.list_user_badges') }}" class="mb-4">
-  <div class="input-group mb-3">
-    <input type="text" id="userIdInput" class="form-control" name="user_id" placeholder="Entrez l'ID de l'utilisateur"
-      required>
-    <button class="btn btn-primary" type="submit">Rechercher</button>
+
+<h1 class="text-center font-black text-2xl my-4">
+  <i class="ph ph-trophy"></i> Badges de {{ user.name }}
+</h1>
+
+<form method="GET" action="{{ url_for('misc.list_user_badges') }}" class="mb-6">
+  <div class="join flex max-w-md mx-auto">
+    <input type="text" id="userIdInput" class="input input-bordered join-item flex-1"
+      name="user_id" placeholder="Entrez l'ID de l'utilisateur" required>
+    <button class="btn btn-primary join-item" type="submit">Rechercher</button>
   </div>
 </form>
+
 {% if user_id %}
-<div class="container text-center pt-4">
-  <div class="row row-cols-1 row-cols-md-4 g-4">
-    {% for t in trophies|sort(attribute='name') %}
-    <div class="col">
-      <div class="card text-center">
-        <div class="card-body">
-          <div class="top-section">
-            <img src="{{ t.icon }}" class="item-img" alt="{{ t.name }}">
-          </div>
-          <h5 class="card-title pt-4 bottom-content">{{ t.name }} ({{ t.quantity }})</h5>
-        </div>
-      </div>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+  {% for t in trophies|sort(attribute='name') %}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body items-center text-center py-4 px-3">
+      <img src="{{ t.icon }}" class="w-16 h-16 object-contain" alt="{{ t.name }}">
+      <h3 class="font-semibold text-sm mt-2">{{ t.name }}</h3>
+      <span class="badge badge-ghost badge-sm">×{{ t.quantity }}</span>
     </div>
-    {% endfor %}
   </div>
+  {% endfor %}
 </div>
 {% else %}
-<div class="alert alert-warning">Aucun utilisateur trouvé. Veuillez entrer un ID valide.</div>
+<div role="alert" class="alert alert-warning max-w-md mx-auto">
+  <i class="ph ph-warning"></i>
+  <span>Aucun utilisateur trouvé. Veuillez entrer un ID valide.</span>
+</div>
 {% endif %}
+
 {% endblock %}

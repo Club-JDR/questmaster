@@ -1,3 +1,12 @@
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY assets/ ./assets/
+COPY vite.config.js ./
+RUN npm run build
+
+
 FROM python:3.13-alpine3.21 AS builder
 
 WORKDIR /app
@@ -43,6 +52,7 @@ COPY --chmod=555 config ./config
 COPY --chmod=555 migrations/ ./migrations
 COPY --chmod=555 website/ ./website
 COPY --chmod=555 questmaster.py ./
+COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/static/dist/
 
 FROM base AS app-test
 COPY pyproject.toml .
