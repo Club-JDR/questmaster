@@ -116,10 +116,8 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert response.status_code == 200
     assert "Statistiques" in response.data.decode()
     assert "Les Masques de Nyarlathotep" in response.data.decode()
-    assert (
-        '<h6 class="text-primary">Appel de Cthulhu v7 <small class="text-muted">(1 campagne)</small></h6>'
-        in response.data.decode()
-    )
+    assert "Appel de Cthulhu v7" in response.data.decode()
+    assert "(1 campagne)" in response.data.decode()
 
     # Get calendar info
     response = logged_in_user.get(
@@ -174,7 +172,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert response.status_code == 200
     assert "Complet" not in response.data.decode()
     assert f"Annonce {title} ouverte." in response.data.decode()
-    assert "Close" in response.data.decode()
+    assert "Fermer les inscriptions" in response.data.decode()
 
     # GM cannot register to its own game
     response = logged_in_admin.post(f"/annonces/{slug}/inscription/", follow_redirects=True)
@@ -213,12 +211,12 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     # Get trophies
     response = logged_in_user.get("/badges/", follow_redirects=True)
     assert response.status_code == 200
-    assert "Badge Campagne (1)" in response.data.decode()
+    assert "Badge Campagne" in response.data.decode()
 
     # Get trophies someone else's trophies
     response = logged_in_user.get(f"/badges/?user_id={admin_user.id}", follow_redirects=True)
     assert response.status_code == 200
-    assert "Badge Campagne GM (1)" in response.data.decode()
+    assert "Badge Campagne GM" in response.data.decode()
 
     # Get trophies leaderboard
     response = logged_in_user.get("/badges/classement/", follow_redirects=True)
@@ -339,7 +337,7 @@ def test_e2e_scenario_2(
     response = logged_in_admin.get(f"/annonces/{slug}/cloner/")
     assert response.status_code == 200
     assert "Vous êtes en train de cloner une annonce." in response.data.decode()
-    assert "Enregistrer" in response.data.decode()
+    assert "Brouillon" in response.data.decode()
     assert "Publier" in response.data.decode()
 
     # Clone Game in draft

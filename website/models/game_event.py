@@ -23,7 +23,7 @@ class GameEvent(db.Model, SerializableMixin):
     __tablename__ = "game_event"
 
     _exclude_fields = []
-    _relationship_fields = ["user"]
+    _relationship_fields = ["user", "game"]
 
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(
