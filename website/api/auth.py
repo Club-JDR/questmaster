@@ -70,7 +70,7 @@ def decode_token(token: str, *, allow_expired: bool = False) -> dict:
         raise UnauthorizedError(f"Invalid token: {exc}", action="decode_token")
 
 
-def _mint_token(user, user_service: UserService) -> dict:
+def _mint_token(user) -> dict:
     """Mint a JWT access token for the given user.
 
     Roles are included in the token for client-side convenience (e.g. UI
@@ -81,7 +81,6 @@ def _mint_token(user, user_service: UserService) -> dict:
 
     Args:
         user: User ORM instance (must have refresh_roles called beforehand).
-        user_service: UserService instance (unused, reserved for future claims).
 
     Returns:
         Dict with ``access_token`` and ``expires_in`` keys.
@@ -305,7 +304,7 @@ def exchange_token():
     )
     user.refresh_roles()
 
-    return jsonify(_mint_token(user, user_service)), 200
+    return jsonify(_mint_token(user)), 200
 
 
 @auth_bp.route("/refresh/", methods=["POST"])
@@ -339,4 +338,4 @@ def refresh_token():
     user = user_service.get_by_id(payload["sub"])
     user.refresh_roles()
 
-    return jsonify(_mint_token(user, user_service)), 200
+    return jsonify(_mint_token(user)), 200
