@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
-  var isMobile = window.innerWidth < 768;
-  var calendarEl = document.getElementById("month-games-calendar");
+  let isMobile = window.innerWidth < 768;
+  const calendarEl = document.getElementById("month-games-calendar");
 
-  var calendar = new FullCalendar.Calendar(calendarEl, {
+  const calendar = new FullCalendar.Calendar(calendarEl, {
     themeSystem: 'standard',
     initialView: isMobile ? 'listMonth' : 'dayGridMonth',
     headerToolbar: isMobile
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
         end: fetchInfo.endStr,
       })
         .then(function (data) {
-          var events = data.map(function (item) {
+          const events = data.map(function (item) {
             return {
               id: item.id,
               title: item.title,
@@ -53,8 +53,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Re-render on orientation change or resize
   window.addEventListener('resize', function () {
-    var newIsMobile = window.innerWidth < 768;
+    const newIsMobile = window.innerWidth < 768;
     if (newIsMobile !== isMobile) {
+      isMobile = newIsMobile;
       calendar.changeView(newIsMobile ? 'listMonth' : 'dayGridMonth');
       calendar.setOption('headerToolbar', newIsMobile
         ? { left: 'prev,next', center: 'title', right: 'listMonth' }
