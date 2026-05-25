@@ -4,7 +4,7 @@
 {% set has_restriction_filter = request.args.get('all') or request.args.get('16+') or request.args.get('18+') %}
 {% set has_active_search = request.args.get('name') or request.args.get('system') or request.args.get('vtt') or has_status_filter or has_type_filter or has_restriction_filter %}
 
-<details class="bg-base-100 rounded-box my-3 shadow-sm" {% if has_active_search %}open{% endif %}>
+<details id="searchBar" class="bg-base-100 rounded-box my-3 shadow-sm" {% if has_active_search %}open{% endif %}>
   <summary class="btn btn-sm btn-outline m-2 cursor-pointer">
     <i class="ph ph-funnel"></i> Recherche avancée
     {% if has_active_search %}<span class="badge badge-primary badge-sm">actif</span>{% endif %}

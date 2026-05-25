@@ -11,7 +11,7 @@ export default defineConfig({
       input: {
         main: "assets/js/main.js",
         style: "assets/css/main.css",
-        intro: "assets/js/intro-init.js",
+        introManager: "assets/js/intro-manager.js",
         calendar: "assets/js/calendar.js",
       },
     },

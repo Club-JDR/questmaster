@@ -155,7 +155,7 @@
 
           {# Row 2 — aligns with Type: sur sélection toggle #}
           <label class="flex items-center justify-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" name="party_selection" class="toggle toggle-primary toggle-sm"
+            <input type="checkbox" id="party_selection" name="party_selection" class="toggle toggle-primary toggle-sm"
               {% if game and game.party_selection %}checked{% endif %}>
             <span class="text-sm text-base-content/60">Sur sélection</span>
           </label>
@@ -245,7 +245,7 @@
         </div>
 
         {# Classification (range slider with absent/mineur/majeur labels) #}
-        <div class="card bg-base-100 shadow-md">
+        <div id="classification" class="card bg-base-100 shadow-md">
           <div class="card-body p-4">
             <fieldset>
               <legend class="{{ lbl }}">Classification</legend>
@@ -274,7 +274,7 @@
         </div>
 
         {# Ambiance #}
-        <div class="card bg-base-100 shadow-md">
+        <div id="ambience" class="card bg-base-100 shadow-md">
           <div class="card-body p-4">
             <fieldset>
               <legend class="{{ lbl }}">Ambiance</legend>
@@ -326,7 +326,7 @@
       </div>
 
       {# ── SAVE/PUBLISH ACTIONS ── #}
-      <div class="space-y-2 sticky top-20">
+      <div id="gameActionButtons" class="space-y-2 sticky top-20">
 
         <button id="saveButton" type="submit" name="action" value="draft" class="btn btn-block gap-2">
           <i class="ph ph-floppy-disk" aria-hidden="true"></i>

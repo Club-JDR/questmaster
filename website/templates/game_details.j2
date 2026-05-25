@@ -286,7 +286,7 @@
               </div>
               <div class="ml-auto shrink-0 session-badge"></div>
               <div class="flex items-center gap-1 shrink-0">
-                <button class="btn btn-ghost btn-xs btn-square"
+                <button class="btn btn-ghost btn-xs btn-square"{% if loop.first %} id="calendarTriggerBtn"{% endif %}
                   onclick="document.getElementById('calendarModal{{ session.id }}').showModal()"
                   aria-label="Ajouter au calendrier">
                   <i class="ph ph-calendar-plus text-sm"></i>
@@ -402,7 +402,7 @@
   <div class="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
 
     {# ── PLAYER ROSTER ── #}
-    <div class="card bg-base-100 shadow-md overflow-hidden">
+    <div id="playerListCard" class="card bg-base-100 shadow-md overflow-hidden">
       <div class="card-body p-0">
         {# Count header #}
         <div class="bg-base-200 rounded-t-2xl p-4 text-center">
@@ -500,11 +500,11 @@
       {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status not in
       ["archived", "draft"] %}
       <div class="flex gap-2">
-        <a href="https://discord.com/channels/{{ DISCORD_GUILD_ID }}/{{ game.channel }}"
+        <a id="channel-btn" href="https://discord.com/channels/{{ DISCORD_GUILD_ID }}/{{ game.channel }}"
           class="btn btn-primary flex-1 gap-2">
           <i class="ph ph-discord-logo"></i> Discuter
         </a>
-        <button class="btn btn-warning gap-2" onclick="document.getElementById('alertModal').showModal()"
+        <button id="alert-btn" class="btn btn-warning gap-2" onclick="document.getElementById('alertModal').showModal()"
           aria-label="Signaler">
           <i class="ph ph-bell"></i>
           <span class="hidden sm:inline">Signaler</span>
