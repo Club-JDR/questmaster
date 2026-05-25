@@ -77,10 +77,12 @@ class TestGetStats:
 class TestGetCalendarEvents:
     """Tests for GET /api/v1/calendar/events/."""
 
-    def test_requires_auth(self, api_client):
-        """Endpoint requires authentication."""
+    @patch("website.api.stats.session_service")
+    def test_accessible_without_auth(self, mock_service, api_client):
+        """Endpoint is publicly accessible without authentication."""
+        mock_service.find_in_range.return_value = []
         response = api_client.get("/api/v1/calendar/events/?start=2026-01-01&end=2026-02-01")
-        assert response.status_code == 403
+        assert response.status_code == 200
 
     @patch("website.api.stats.session_service")
     def test_returns_events(self, mock_service, api_client, auth_headers_user):
