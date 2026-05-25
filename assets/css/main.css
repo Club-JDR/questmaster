@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "intro.js/introjs.css";
+@import "intro.js/themes/introjs-modern.css";
 
 /* ── Fixed semantic colors (theme-independent) ────────────────────────────────
    Hardcoded values so these utilities are unaffected by theme changes.
@@ -145,6 +146,31 @@
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
   }
+}
+
+/* ── Intro.js modern theme — opacity fix ─────────────────────────────────────
+   The default modern theme uses rgba(0,0,0,0.5); bump to fully opaque.
+────────────────────────────────────────────────────────────────────────────── */
+.introjs-tooltip {
+  background-color: rgba(0, 0, 0, 0.92);
+}
+.introjs-arrow.top,
+.introjs-arrow.top-middle,
+.introjs-arrow.top-right {
+  border-bottom-color: rgba(0, 0, 0, 0.92);
+}
+.introjs-arrow.bottom,
+.introjs-arrow.bottom-middle,
+.introjs-arrow.bottom-right {
+  border-top-color: rgba(0, 0, 0, 0.92);
+}
+.introjs-arrow.left,
+.introjs-arrow.left-bottom {
+  border-right-color: rgba(0, 0, 0, 0.92);
+}
+.introjs-arrow.right,
+.introjs-arrow.right-bottom {
+  border-left-color: rgba(0, 0, 0, 0.92);
 }
 
 /* ── Theme color overrides ────────────────────────────────────────────────────

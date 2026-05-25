@@ -11,7 +11,6 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Ysabeau:ital,wght@0,1;0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;0,1000;1,1;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900;1,1000&display=swap"
     rel="stylesheet">
   <link rel="shortcut icon" href="/static/img/favicon.ico">
-  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
   <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
   {% for url in asset_css('assets/js/main.js') %}
   <link rel="stylesheet" href="{{ url }}">
@@ -24,7 +23,7 @@
 <body class="min-h-screen bg-base-200 font-sans">
   <nav class="navbar bg-neutral text-neutral-content shadow-lg sticky top-0 z-50">
     <div class="navbar-start">
-      <a id="brand" href="/" class="btn btn-ghost">
+      <a id="brand" href="/">
         <img src="/static/img/logo.png" alt="QuestMaster" class="h-[50px]">
       </a>
     </div>
@@ -217,9 +216,7 @@
     </footer>
   </main>
   {% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"
-    integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"
     integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/konami@1.6.3/konami.min.js"></script>
   <script src="/static/js/konami.js"></script>
@@ -231,8 +228,7 @@
     isGM: {% if payload.get('is_gm') %} true{% else %} false{% endif %}
     };
   </script>
-  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-  <script src="/static/js/intro-manager.js"></script>
+  <script src="{{ asset('assets/js/intro-manager.js') }}"></script>
   {% endblock %}
 </body>
 
