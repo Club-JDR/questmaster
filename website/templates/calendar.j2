@@ -1,7 +1,9 @@
 {% extends 'base.j2' %}
 {% block title %}Calendrier{% endblock %}
 {% block head %}{{ super() }}
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
+{% for url in asset_css('assets/js/calendar.js') %}
+<link rel="stylesheet" href="{{ url }}">
+{% endfor %}
 {% endblock%}
 {% block content %}
 <h1 class="text-center font-black text-2xl my-4">
@@ -13,9 +15,5 @@
 {% endblock %}
 {% block scripts %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"
-  integrity="sha256-i4vDW9EgtaJmeauDDymtNF2omPZ1fCKpf4w1gBlU1IE=" crossorigin="anonymous"></script>
-<script src="/static/js/calendar.js">
-</script>
-
+<script src="{{ asset('assets/js/calendar.js') }}"></script>
 {% endblock %}
