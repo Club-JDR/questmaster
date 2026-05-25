@@ -66,13 +66,12 @@ def get_calendar_widget():
 def get_month_games_json():
     """Return game sessions as JSON for the calendar frontend.
 
-    .. deprecated::
-        Use ``GET /api/v1/calendar/events/`` instead.  This endpoint will
-        be removed after 2026-06-01.
+    Deprecated: use ``GET /api/v1/calendar/events/`` instead.
+    This endpoint will be removed after 2026-06-01.
 
     Returns:
-        JSON array of game session events, or an empty array with HTTP 400
-        if the date parameters are missing or invalid.
+        Response: JSON array of game session events, or an empty array with
+            HTTP 400 if the date parameters are missing or invalid.
     """
     start_str = request.args.get("start")
     end_str = request.args.get("end")
