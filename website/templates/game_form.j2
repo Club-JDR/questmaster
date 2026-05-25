@@ -1,39 +1,385 @@
 {% extends 'base.j2' %}
-{% block head %} {{ super() }}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" />
-<link rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"
-  integrity="sha256-GzSkJVLJbxDk36qko2cnawOGiqz/Y8GsQv/jMTUrx1Q=" crossorigin="anonymous">
-<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
-<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" /> {% endblock
-%} {% block content %}
-<h1 class="text-center">{% if game %}<i class="bi bi-pencil-square"></i>{% if clone %} Cloner {% else%} Éditer{% endif
-  %}
-  l'{% else %}Nouvelle {% endif%}annonce
+{% block title %}{% if game %}{% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce{% else %}Nouvelle annonce{% endif %}{% endblock %}
+
+{% block content %}
+<h1 class="text-center font-black text-2xl my-4">
+  {% if game %}<i class="ph ph-note-pencil" aria-hidden="true"></i> {% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce
+  {% else %}<i class="ph ph-plus-circle" aria-hidden="true"></i> Nouvelle annonce{% endif %}
 </h1>
-<form method="post" action="{% if game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}"
-  class="row needs-validation" novalidate>
-  {% include 'game_form/basics.j2' %}
-  {% include 'game_form/requirements.j2' %}
-  {% include 'game_form/optional.j2' %}
+
+{# Reusable label class — applied consistently to all field labels and legends #}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+<form method="post" action="{% if game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="gm_id"
-    value="{% if game and not clone %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
+  <input type="hidden" name="gm_id" value="{% if game and not clone %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
+
+  <div class="flex flex-col lg:flex-row gap-4">
+
+    {# ── LEFT COLUMN ── #}
+    <div class="flex-1 min-w-0 space-y-4">
+
+      {# ── ROW 1: 3 cards sharing 4 subgrid rows for field-level alignment ── #}
+      {# Row mapping: Nom/Date/Stepper | Type/Durée/Sur sélection | Système/Fréquence/XP | VTT/∅/Personnages #}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+
+        {# Card 1: Nom + Type + Système + VTT — spans 4 subgrid rows on lg+ #}
+        <div class="card bg-base-100 shadow-md lg:row-span-4 lg:grid lg:[grid-template-rows:subgrid] p-4 space-y-3 lg:space-y-0 lg:items-start">
+
+          <div class="flex flex-col gap-1">
+            <label for="game_name" class="{{ lbl }}">Nom de l'annonce</label>
+            <input type="text" id="game_name" name="name" class="input input-bordered w-full"
+              placeholder="Nom de l'annonce" autocomplete="off" required aria-required="true"
+              value="{{ game.name if game else '' }}"
+              {% if game and game.status != "draft" and not clone %}readonly aria-readonly="true"{% endif %}>
+          </div>
+
+          <fieldset>
+            <legend class="{{ lbl }}">Type de session</legend>
+            <div class="join flex-wrap" id="sessionType">
+              <label class="join-item btn btn-sm has-[:checked]:color-oneshot">
+                <input type="radio" name="type" value="oneshot" class="sr-only"
+                  {% if not game or game.type == 'oneshot' %}checked{% endif %}
+                  {% if game and game.status != "draft" and not clone %}disabled{% endif %}>
+                <i class="ph ph-scroll" aria-hidden="true"></i> One Shot
+              </label>
+              <label class="join-item btn btn-sm has-[:checked]:color-campaign">
+                <input type="radio" name="type" value="campaign" class="sr-only"
+                  {% if game and game.type == 'campaign' %}checked{% endif %}
+                  {% if game and game.type != 'campaign' and game.status != "draft" and not clone %}disabled{% endif %}>
+                <i class="ph ph-books" aria-hidden="true"></i> Campagne
+              </label>
+              {% if payload.active_events %}
+                {% for event in payload.active_events %}
+                  {% set color = hex_color(event.color) %}
+                  {% set tcolor = text_color(color) %}
+                  <label class="join-item btn btn-sm has-[:checked]:opacity-100 has-[:not(:checked)]:opacity-60"
+                    style="background-color:{{ color }};color:{{ tcolor }};border-color:{{ color }}">
+                    <input type="radio" name="type" value="specialevent-{{ event.id }}" class="sr-only"
+                      {% if game and game.special_event_id == event.id %}checked{% endif %}
+                      {% if game and game.status != 'draft' and not clone %}disabled{% endif %}>
+                    {{ event.emoji or '' }} {{ event.name }}
+                  </label>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </fieldset>
+
+          <div class="flex flex-col gap-1">
+            <label for="game_system" class="{{ lbl }}">Système</label>
+            <select id="game_system" name="system" class="select select-bordered w-full" required aria-required="true">
+              <option value="" {% if not game %}selected{% endif %}></option>
+              {% for s in systems %}
+              <option value="{{ s.id }}" {% if game and game.system_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label for="game_vtt" class="{{ lbl }}">VTT <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+            <select id="game_vtt" name="vtt" class="select select-bordered w-full">
+              <option value=""></option>
+              {% for v in vtts %}
+              <option value="{{ v.id }}" {% if game and game.vtt_id == v.id %}selected{% endif %}>{{ v.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+
+        {# Card 2: Date + Durée + Fréquence + ∅ #}
+        <div class="card bg-base-100 shadow-md lg:row-span-4 lg:grid lg:[grid-template-rows:subgrid] p-4 space-y-3 lg:space-y-0 lg:items-start">
+
+          <div class="flex flex-col gap-1">
+            <label for="game_date" class="{{ lbl }}">Date</label>
+            <input type="datetime-local" id="game_date" name="date" class="input input-bordered w-full"
+              required aria-required="true"
+              {% if game %}value="{{ game.date|format_datetime('%Y-%m-%dT%H:%M') }}"{% endif %}>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="{{ lbl }}">Durée</label>
+            <div class="space-y-1" id="lengthGroup">
+              <select name="length" class="select select-bordered select-sm w-full" required aria-required="true">
+                {% for val, label in [('1 session','1'), ('2 sessions','2'), ('3 sessions','3'), ('~5 sessions','5'), ('~10 sessions','~10'), ('10+ sessions','10+'), ('20+ sessions','20+')] %}
+                <option value="{{ val }}" {% if game and game.length == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="flex gap-2 items-center">
+                <span class="text-sm text-base-content/40" aria-hidden="true">session(s) de</span>
+                <label class="sr-only" for="session_length_input">Durée par session en heures</label>
+                <input type="number" id="session_length_input" step="0.5" min="0.5" max="24" name="session_length"
+                  value="{% if game %}{{ game.session_length }}{% else %}3.5{% endif %}"
+                  class="input input-bordered input-sm w-20" required aria-required="true">
+                <span class="text-sm text-base-content/40" aria-hidden="true">h</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label for="game_frequency" class="{{ lbl }}">Fréquence <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+            <select id="game_frequency" name="frequency" class="select select-bordered w-full">
+              <option value=""></option>
+              <option value="weekly" {% if game and game.frequency == "weekly" %}selected{% endif %}>Hebdomadaire</option>
+              <option value="bi-weekly" {% if game and game.frequency == "bi-weekly" %}selected{% endif %}>Une semaine sur deux</option>
+              <option value="monthly" {% if game and game.frequency == "monthly" %}selected{% endif %}>Mensuelle</option>
+              <option value="other" {% if game and game.frequency == "other" %}selected{% endif %}>Autre</option>
+            </select>
+          </div>
+
+          <div class="hidden lg:block"></div> {# empty slot — aligns with VTT row #}
+
+        </div>
+
+        {# Card 3: Joueurs (4 rows: Stepper | Sur sélection | XP | Personnages) #}
+        <div class="card bg-base-100 shadow-md lg:row-span-4 lg:grid lg:[grid-template-rows:subgrid] p-4 space-y-3 lg:space-y-0 lg:items-start">
+
+          {# Row 1 — aligns with Nom: party size stepper #}
+          <div class="flex flex-col items-center gap-1">
+            <div class="flex items-center gap-1">
+              <button type="button" class="btn btn-circle btn-sm btn-ghost" aria-label="Retirer un joueur"
+                onclick="var i=document.getElementById('party_size_input');i.value=Math.max(1,parseInt(i.value||1)-1)">
+                <i class="ph ph-minus" aria-hidden="true"></i>
+              </button>
+              <label class="sr-only" for="party_size_input">Nombre de joueurs</label>
+              <input type="number" id="party_size_input" step="1" min="1" max="99" name="party_size"
+                class="w-14 text-center text-3xl font-black text-primary bg-transparent border-none outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                value="{% if game %}{{ game.party_size }}{% else %}4{% endif %}" required aria-required="true">
+              <button type="button" class="btn btn-circle btn-sm btn-ghost" aria-label="Ajouter un joueur"
+                onclick="var i=document.getElementById('party_size_input');i.value=Math.min(99,parseInt(i.value||1)+1)">
+                <i class="ph ph-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="text-sm font-semibold text-base-content/60">Joueur·euses</div>
+          </div>
+
+          {# Row 2 — aligns with Type: sur sélection toggle #}
+          <label class="flex items-center justify-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" name="party_selection" class="toggle toggle-primary toggle-sm"
+              {% if game and game.party_selection %}checked{% endif %}>
+            <span class="text-sm text-base-content/60">Sur sélection</span>
+          </label>
+
+          {# Row 3 — aligns with Système: expérience #}
+          <div class="flex flex-col gap-1">
+            <label for="game_xp" class="{{ lbl }}">Expérience</label>
+            <select id="game_xp" name="xp" class="select select-bordered select-sm w-full">
+              <option value="all" {% if not game or game.xp == "all" %}selected{% endif %}>Débutants bienvenus</option>
+              <option value="beginners" {% if game and game.xp == "beginners" %}selected{% endif %}>Réservé aux débutants</option>
+              <option value="seasoned" {% if game and game.xp == "seasoned" %}selected{% endif %}>Interdit aux débutants</option>
+            </select>
+          </div>
+
+          {# Row 4 — aligns with VTT: personnages #}
+          <div class="flex flex-col gap-1">
+            <label for="game_characters" class="{{ lbl }}">Personnages</label>
+            <select id="game_characters" name="characters" class="select select-bordered select-sm w-full">
+              <option value="with_gm" {% if not game or game.characters == "with_gm" %}selected{% endif %}>Avec le·a MJ</option>
+              <option value="self" {% if game and game.characters == "self" %}selected{% endif %}>Seul·e</option>
+              <option value="pregen" {% if game and game.characters == "pregen" %}selected{% endif %}>Prétirés</option>
+              <option value="choice" {% if game and game.characters == "choice" %}selected{% endif %}>Au choix</option>
+            </select>
+          </div>
+
+        </div>
+
+      </div>
+
+      {# ── CARD: Description + Informations complémentaires ── #}
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body p-4 space-y-3">
+
+          <div class="flex flex-col gap-1">
+            <label for="game_description" class="{{ lbl }}">Description du scénario</label>
+            <textarea id="game_description" name="description" class="textarea textarea-bordered w-full auto-resize"
+              rows="6" placeholder="Décrivez votre scénario..." spellcheck="true"
+              required aria-required="true">{% if game %}{{ game.description }}{% endif %}</textarea>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label for="game_complement" class="{{ lbl }}">Informations complémentaires <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+            <textarea id="game_complement" name="complement" class="textarea textarea-bordered w-full auto-resize"
+              rows="2" spellcheck="true">{% if game and game.complement %}{{ game.complement }}{% endif %}</textarea>
+          </div>
+
+        </div>
+      </div>
+
+      {# ── ROW: Avertissement | Classification | Ambiance ── #}
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        {# Avertissement #}
+        <div class="card bg-base-100 shadow-md">
+          <div class="card-body p-4 space-y-3">
+
+            <fieldset>
+              <legend class="{{ lbl }}">Avertissement</legend>
+              <div class="join" id="restrictionGroup">
+                <label class="join-item btn btn-sm has-[:checked]:color-oneshot">
+                  <input type="radio" name="restriction" value="all" class="sr-only"
+                    {% if not game or game.restriction == 'all' %}checked{% endif %}>
+                  <i class="ph ph-seal-check" aria-hidden="true"></i> Tout public
+                </label>
+                <label class="join-item btn btn-sm has-[:checked]:color-16plus">
+                  <input type="radio" name="restriction" value="16+" class="sr-only"
+                    {% if game and game.restriction == '16+' %}checked{% endif %}>
+                  <i class="ph ph-seal-warning" aria-hidden="true"></i> 16+
+                </label>
+                <label class="join-item btn btn-sm has-[:checked]:color-18plus">
+                  <input type="radio" name="restriction" value="18+" class="sr-only"
+                    {% if game and game.restriction == '18+' %}checked{% endif %}>
+                  <i class="ph ph-seal-warning" aria-hidden="true"></i> 18+
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="flex flex-col gap-1">
+              <label for="restriction_tags" class="{{ lbl }}">Thèmes <span class="font-normal text-xs text-base-content/40">(séparés par des virgules)</span></label>
+              <input type="text" id="restriction_tags" name="restriction_tags"
+                class="input input-bordered input-sm w-full"
+                placeholder="violence, horreur, ..."
+                value="{% if game and game.restriction_tags is not none %}{{ game.restriction_tags }}{% endif %}">
+            </div>
+
+          </div>
+        </div>
+
+        {# Classification (range slider with absent/mineur/majeur labels) #}
+        <div class="card bg-base-100 shadow-md">
+          <div class="card-body p-4">
+            <fieldset>
+              <legend class="{{ lbl }}">Classification</legend>
+              {% set classifications = [
+                ('Action', 'class-action', game.classification.action if game else 0),
+                ('Investigation', 'class-investigation', game.classification.investigation if game else 0),
+                ('Interaction', 'class-interaction', game.classification.interaction if game else 0),
+                ('Horreur', 'class-horror', game.classification.horror if game else 0),
+              ] %}
+              <div class="space-y-3 mt-1">
+                {% for label, name, value in classifications %}
+                <div>
+                  <div class="flex justify-between text-xs text-base-content/60 mb-0.5">
+                    <span>{{ label }}</span>
+                    <span class="classification-label" data-for="{{ name }}">
+                      {% if value == 0 %}Absent{% elif value == 1 %}Mineur{% else %}Majeur{% endif %}
+                    </span>
+                  </div>
+                  <input type="range" class="range range-primary range-xs w-full" aria-label="{{ label }}"
+                    min="0" max="2" step="1" id="{{ name }}" name="{{ name }}" value="{{ value }}">
+                </div>
+                {% endfor %}
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        {# Ambiance #}
+        <div class="card bg-base-100 shadow-md">
+          <div class="card-body p-4">
+            <fieldset>
+              <legend class="{{ lbl }}">Ambiance</legend>
+              <div class="space-y-2 mt-1">
+                {% for key, icon, label in [
+                  ('chill', 'ph-couch', 'Décontractée'),
+                  ('serious', 'ph-book-open-text', 'Sérieuse'),
+                  ('comic', 'ph-mask-happy', 'Comique'),
+                  ('epic', 'ph-sword', 'Épique'),
+                ] %}
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" class="toggle toggle-primary toggle-sm" name="{{ key }}"
+                    {% if game and key in game.ambience %}checked{% endif %}>
+                  <span class="text-sm flex items-center gap-1.5">
+                    <i class="ph {{ icon }}" aria-hidden="true"></i> {{ label }}
+                  </span>
+                </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    {# ── RIGHT SIDEBAR ── #}
+    <div class="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-4">
+
+      {# ── IMAGE CARD ── #}
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body p-4 space-y-2">
+          <span class="{{ lbl }}">Image</span>
+          <img id="imgPreview"
+            src="{{ game.img if game and game.img else '/static/img/placeholder.jpeg' }}"
+            alt="Aperçu de l'image de l'annonce"
+            class="w-full h-36 object-cover rounded-lg"
+            onerror="this.src='/static/img/placeholder.jpeg'">
+          <div>
+            <label class="sr-only" for="imgUrlInput">URL de l'image</label>
+            <input type="url" id="imgUrlInput" name="img" class="input input-bordered input-sm w-full"
+              placeholder="https://i.imgur.com/..."
+              value="{{ game.img if game and game.img else '' }}"
+              oninput="document.getElementById('imgPreview').src=this.value||'/static/img/placeholder.jpeg'">
+          </div>
+          <p class="text-xs text-base-content/40">Lien direct. <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" class="link">imgur</a> recommandé.</p>
+        </div>
+      </div>
+
+      {# ── SAVE/PUBLISH ACTIONS ── #}
+      <div class="space-y-2 sticky top-20">
+
+        <button id="saveButton" type="submit" name="action" value="draft" class="btn btn-block gap-2">
+          <i class="ph ph-floppy-disk" aria-hidden="true"></i>
+          {% if game and not clone %}Enregistrer les modifications{% else %}Brouillon{% endif %}
+        </button>
+
+        <button id="openButton" type="submit" name="action" value="open-silent"
+          class="btn btn-primary btn-block gap-2"
+          {% if game and game.status != 'draft' and not clone %}disabled aria-disabled="true"{% endif %}>
+          <i class="ph ph-play-circle" aria-hidden="true"></i> Ouvrir (sans publier)
+        </button>
+
+        <button id="publishButton" type="submit" name="action" value="open"
+          class="btn btn-success btn-block gap-2"
+          {% if game and game.status != 'draft' and not clone %}disabled aria-disabled="true"{% endif %}>
+          <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> Publier sur Discord
+        </button>
+
+        {% if game and not clone %}
+        <a href="/annonces/{{ game.slug }}/" class="btn btn-ghost btn-block btn-sm gap-1 mt-1">
+          <i class="ph ph-arrow-left" aria-hidden="true"></i> Retour à l'annonce
+        </a>
+        {% endif %}
+
+      </div>
+
+    </div>
+
+  </div>
 </form>
 {% endblock %}
-{% block scripts %} {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify@4.17.8/dist/tagify.min.js"
-  integrity="sha256-cBY/Uc7f5GDeWDnEKtUMG00AZdN2Iwp6LqslivKpm2M=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
-  integrity="sha256-Huqxy3eUcaCwqqk92RwusapTfWlvAasF6p2rxV6FJaE=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"
-  integrity="sha256-+xpDzJZ/BxtMFrLCduljhDclmRS8Gr2W3UpKAxMBC9g=" crossorigin="anonymous"></script>
-<script src="/static/js/game-form.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.full.min.js"></script>
+
+{% block scripts %}{{ super() }}
 <script>
-  $('.select2').select2({
-    theme: 'bootstrap-5'
+  // Auto-resize textareas to always show full content without scrolling
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+    el.style.overflowY = 'hidden';
+  }
+  document.querySelectorAll('textarea.auto-resize').forEach(function(ta) {
+    autoResize(ta);
+    ta.addEventListener('input', function() { autoResize(this); });
   });
+
+  // Classification range sliders → Absent / Mineur / Majeur label
+  var classLabels = ['Absent', 'Mineur', 'Majeur'];
+  document.querySelectorAll('input[type=range].range').forEach(function(range) {
+    var lbl = document.querySelector('.classification-label[data-for="' + range.id + '"]');
+    if (lbl) {
+      range.addEventListener('input', function() { lbl.textContent = classLabels[this.value]; });
+    }
+  });
+
 </script>
 {% endblock %}

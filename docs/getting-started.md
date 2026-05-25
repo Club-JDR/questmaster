@@ -89,6 +89,15 @@ Install the dependencies:
 pip install -e ".[test,lint]"
 ```
 
+Build the frontend assets (requires [Node.js](https://nodejs.org/) 22+):
+
+```sh
+npm install
+npm run build       # or: npm run dev  (watch mode, rebuilds on file changes)
+```
+
+> **Docker Compose users**: skip this step — the Docker build runs `npm ci && npm run build` automatically in a dedicated `frontend-builder` stage.
+
 Start the database and redis:
 
 ```sh

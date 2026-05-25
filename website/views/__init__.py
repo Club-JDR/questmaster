@@ -1,4 +1,5 @@
 from website.api import create_api_blueprint
+from website.utils.assets import asset, asset_css
 
 from .auth import auth_bp
 from .demo import demo_bp
@@ -21,4 +22,6 @@ def register_blueprints(app):
 
 def register_filters(app):
     app.add_template_filter(format_datetime, name="format_datetime")
-    app.jinja_env.globals.update(hex_color=hex_color, text_color=text_color)
+    app.jinja_env.globals.update(
+        hex_color=hex_color, text_color=text_color, asset=asset, asset_css=asset_css
+    )

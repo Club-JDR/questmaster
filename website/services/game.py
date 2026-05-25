@@ -175,7 +175,6 @@ class GameService:
             ValidationError: If data is invalid.
             DiscordAPIError: If Discord resource creation fails.
         """
-        from config.constants import DEFAULT_TIMEFORMAT
         from website.utils.form_parsers import (
             get_ambience,
             get_classification,
@@ -202,7 +201,7 @@ class GameService:
                 restriction=data["restriction"],
                 party_size=data["party_size"],
                 xp=data["xp"],
-                date=datetime.strptime(data["date"], DEFAULT_TIMEFORMAT),
+                date=datetime.fromisoformat(data["date"].replace("T", " ")[:16]),
                 session_length=data["session_length"],
                 frequency=data.get("frequency") or None,
                 characters=data["characters"],
@@ -321,7 +320,6 @@ class GameService:
             NotFoundError: If game doesn't exist.
             ValidationError: If data is invalid.
         """
-        from config.constants import DEFAULT_TIMEFORMAT
         from website.utils.form_parsers import (
             get_ambience,
             get_classification,
@@ -342,7 +340,7 @@ class GameService:
             game.system_id = data["system"]
             game.vtt_id = data.get("vtt") or None
             game.description = data["description"]
-            game.date = datetime.strptime(data["date"], DEFAULT_TIMEFORMAT)
+            game.date = datetime.fromisoformat(data["date"].replace("T", " ")[:16])
             game.length = data["length"]
             game.party_size = data["party_size"]
             game.party_selection = "party_selection" in data

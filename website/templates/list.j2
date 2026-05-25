@@ -1,21 +1,17 @@
 {% extends 'base.j2' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<h1 class="text-center">🛠️ {{ title }}</h1>
-<div class="container text-center pt-4">
-  <div class="row row-cols-1 row-cols-md-4 g-4">
-    {% for i in items|sort(attribute='name') %}
-    <div class="col">
-      <div class="card text-center">
-        <div class="card-body">
-          <div class="top-section">
-            <img src="{{ i.icon }}" class="item-img" alt="{{ i.name }}">
-          </div>
-          <h5 class="card-title pt-4 bottom-content">{{ i.name }}</h5>
-        </div>
+<h1 class="text-center font-black text-2xl my-4"><i class="ph ph-gear"></i> {{ title }}</h1>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+  {% for i in items|sort(attribute='name') %}
+  <div class="card bg-base-100 shadow hover:shadow-md transition-shadow text-center">
+    <div class="card-body items-center gap-3 p-4">
+      <div class="h-16 flex items-center justify-center">
+        <img src="{{ i.icon }}" alt="{{ i.name }}" class="max-h-full max-w-full object-contain">
       </div>
+      <h5 class="card-title text-sm font-bold">{{ i.name }}</h5>
     </div>
-    {% endfor %}
   </div>
+  {% endfor %}
 </div>
 {% endblock %}

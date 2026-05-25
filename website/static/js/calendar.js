@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var calendarEl = document.getElementById("month-games-calendar");
 
   var calendar = new FullCalendar.Calendar(calendarEl, {
-    themeSystem: 'bootstrap5',
+    themeSystem: 'standard',
     initialView: isMobile ? 'listMonth' : 'dayGridMonth',
     headerToolbar: isMobile
       ? { left: 'prev,next', center: 'title', right: 'listMonth' }

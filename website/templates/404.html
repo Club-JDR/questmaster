@@ -1,9 +1,11 @@
-{% extends 'base.j2' %} {% block head %} {{ super() }}
-<link rel="stylesheet" href="/static/css/404.css"> {% endblock %} {% block title %}Page Not Found{% endblock %} {% block content %}
-<h1>La page demandée n'a pas été trouvée</h1>
-<div class="container">
-    <div class="row">
-        <div class="col-sm-12 col-md-12 mt-5 mb-5">
+{% extends 'base.j2' %}
+{% block head %}{{ super() }}
+<link rel="stylesheet" href="/static/css/404.css">
+{% endblock %}
+{% block title %}Page introuvable{% endblock %}
+{% block content %}
+<h1 class="text-center font-black text-2xl my-4">La page demandée n'a pas été trouvée</h1>
+<div class="max-w-2xl mx-auto my-8">
             <svg width="100%" height="auto" viewBox="0 0 636 324" fill="none" xmlns="http://www.w3.org/2000/svg">
   <g id="OBJECTS">
   <g id="Group">
@@ -316,9 +318,8 @@
   </linearGradient>
   </defs>
   </svg>
-        </div>
-    </div>
 </div>
-{% endblock %} {% block scripts %} {{ super() }}
+{% endblock %}
+{% block scripts %}{{ super() }}
 <script src="/static/js/404.js"></script>
 {% endblock %}

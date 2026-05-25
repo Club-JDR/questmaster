@@ -13,6 +13,7 @@ This app is meant for GMs to create new Games with all the details (name, type, 
 ## Project structure
 
 ```text
+assets/               # Frontend source (CSS, JS entry points — built by Vite)
 website/              # Main Flask application
   models/             #   SQLAlchemy models with serialization support
   repositories/       #   Data access layer (queries, generic CRUD)
@@ -22,7 +23,7 @@ website/              # Main Flask application
   utils/              #   Helpers (filters, embeds, form parsers, logging)
   exceptions/         #   Structured exception hierarchy
   templates/          #   Jinja2 templates
-  static/             #   CSS, JS, images
+  static/             #   Images and legacy JS; built assets output to static/dist/
   extensions.py       #   Flask extensions (db, migrate, csrf, cache, discord)
   scheduler.py        #   APScheduler background jobs
   bot.py              #   Discord bot instance
@@ -63,4 +64,3 @@ This roadmap isn't a Product roadmap. It doesn't include feature requests or bug
 - **Logging** — improve logging for better observability and debugging.
 - **Performances** — improve queries, cache and index for better performances.
 - **API + frontend split** — move from a monolithic Flask app with server-rendered templates to a Flask REST API backend and a Vue.js frontend.
-- **UI/UX** — Move from bootstrap to DaisyUI.

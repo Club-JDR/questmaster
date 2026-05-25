@@ -1,53 +1,53 @@
 {% extends 'base.j2' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<h1 class="text-center"><i class="bi bi-megaphone"></i> {{ title }}</h1>
+
+<h1 class="text-center font-black text-2xl my-4">
+  <i class="ph ph-megaphone"></i> {{ title }}
+</h1>
+
 {% if request.path == '/mes_parties/' %}
-<div class="container mt-3">
-  <div class="alert alert-primary alert-dismissible fade show" role="alert">
-    Les parties pour lesquelles je suis joueur·euse.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
+<div role="alert" class="alert alert-info mb-3">
+  <i class="ph ph-info"></i>
+  <span>Les parties pour lesquelles je suis joueur·euse.</span>
 </div>
 {% elif request.path == '/mes_annonces/' %}
-<div class="container mt-3">
-  <div class="alert alert-primary alert-dismissible fade show" role="alert">
-    Les parties pour lesquelles je suis MJ.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
+<div role="alert" class="alert alert-info mb-3">
+  <i class="ph ph-info"></i>
+  <span>Les parties pour lesquelles je suis MJ.</span>
 </div>
 {% endif %}
-<nav class="navbar bg-body-tertiary" aria-label="SearchBar">
-  <div class="container-fluid">
-    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#searchBar"
-      aria-controls="searchBar" aria-expanded="false" aria-label="Toggle search">Recherche avancée
-    </button>
-  </div>
-</nav>
+
 {% include 'searchbar.j2' %}
-{% if prev_url or next_url %}
-<nav class="navbar bg-body-tertiary fixed-bottom justify-content-center" aria-label="PageBar">
-  <div class="btn-group" role="group">
-    <a class="btn btn-outline-secondary {% if not prev_url %}disabled{% endif %}" href="{{ prev_url }}"
-      aria-label="Previous">Annonces précédentes</a>
-    <a class="btn btn-outline-secondary {% if not next_url %}disabled{% endif %}" href="{{ next_url }}"
-      aria-label="Previous">Annonces suivantes</a>
-  </div>
-</nav>
-{% endif %}
-<div class="row gy-5 p-4">
-  {% if games|length == 0 %}
-  <div class="alert alert-warning" role="alert">
-    Aucune annonce correspondant aux filtres sélectionnés !
-  </div>
-  {% else %}
-  <div id="game-cards-container" class="row row-cols-1 row-cols-md-3 g-4">
-    {% include "game_cards_container.j2" %}
-  </div>
-  {% endif %}
+
+{% if games|length == 0 %}
+<div role="alert" class="alert alert-warning mt-4">
+  <i class="ph ph-warning"></i>
+  <span>Aucune annonce correspondant aux filtres sélectionnés !</span>
 </div>
+{% else %}
+<div id="game-cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+  {% include "game_cards_container.j2" %}
+</div>
+{% endif %}
+
+{# Pagination — sticky bottom bar #}
+{% if prev_url or next_url %}
+<div class="fixed bottom-0 left-0 right-0 z-40 flex justify-center py-3 bg-base-200/80 backdrop-blur-sm border-t border-base-300">
+  <div class="join">
+    <a class="join-item btn btn-sm {% if not prev_url %}btn-disabled{% endif %}" href="{{ prev_url or '#' }}">
+      <i class="ph ph-caret-left"></i> Précédentes
+    </a>
+    <a class="join-item btn btn-sm {% if not next_url %}btn-disabled{% endif %}" href="{{ next_url or '#' }}">
+      Suivantes <i class="ph ph-caret-right"></i>
+    </a>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}
-{% block scripts %} {{ super() }}
+
+{% block scripts %}{{ super() }}
 {% if request.path in ['/', '/annonces/'] %}
 <script src="/static/js/cards.js"></script>
 {% endif %}

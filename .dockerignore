@@ -9,3 +9,4 @@ tests*.xml
 sonar-project.properties
 test-results
 .env
+node_modules/

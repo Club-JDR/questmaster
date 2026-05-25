@@ -1,76 +1,153 @@
-<div class="col" data-game-id="{{game.slug}}">
-  <div class="card game-card shadow h-100 shiny">
-    <div class="card-header text-light" style="
-    {# {% if game.special_event %}
-      background-color: {{ hex_color(game.special_event.color) }};
-      color: {{ text_color(hex_color(game.special_event.color)) }}; #}
-    {% if game.status == 'draft' %}
-      background-color: var(--bs-secondary);
-      color: white;
-    {% elif game.status == 'archived' %}
-      background-color: var(--bs-danger);
-      color: white;
-    {% elif game.status == 'closed' %}
-      background-color: var(--bs-dark);
-      color: white;
-    {% else %}
-      background-color: {% if game.type == 'campaign' %}var(--bs-primary){% else %}var(--bs-success){% endif %};
-      color: white;
-    {% endif %}
-  ">
-      <h5 class="card-title text-truncate">
-        {% if game.special_event %}
-        {{ game.special_event.emoji }} {{ game.name }} {{ game.special_event.emoji }}
-        {% else %}
-        {{ game.name }}
-        {% endif %}
-      </h5>
-    </div>
-    <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}" class="card-img-bottom img-preview"
-      alt="{{ game.name }}">
-    <div class="card-body">
-      <div class="row">
-        <div class="col-6">
-          <i class="bi bi-book"></i>&nbsp; {% if game.type=='campaign' %}Campagne{% else %}One Shot{% endif %}
+{% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
+{% set card_border = 'border-error' if game.status == 'archived' else 'border-base-300' if game.status == 'draft' else 'border-neutral' if game.status == 'closed' else 'border-campaign' if game.type == 'campaign' else 'border-oneshot' %}
+{% set icon_colors = 'color-campaign' if game.type == 'campaign' else 'color-oneshot' %}
+
+<div class="col [perspective:1200px] [aspect-ratio:63/88] self-start" data-game-id="{{ game.slug }}">
+  <a href="{% if request.path == '/demo/' %}#{% else %}/annonces/{{ game.slug }}/{% endif %}"
+    class="block no-underline overflow-hidden h-full rounded-2xl
+           border-4 {{ card_border }} game-card shiny
+           [transform-style:preserve-3d] shadow-md
+           relative"
+    {% if game.special_event %}style="border-color: {{ hex_color(game.special_event.color) }};"{% endif %}>
+
+    {# ── Full-bleed image ── #}
+    <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}"
+      alt="{{ game.name }}" class="absolute inset-0 w-full h-full object-cover">
+
+    {# ── Top overlay: type icon + name + player count ── #}
+    <div class="absolute inset-x-0 top-0 px-3 pt-3 pb-10 z-10
+                flex items-start justify-between gap-2
+                bg-gradient-to-b from-black/75 via-black/30 to-transparent"
+      {% if game.special_event %}style="background: linear-gradient(to bottom, {{ hex_color(game.special_event.color) }}cc 0%, transparent 100%);"{% endif %}>
+
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 {{ icon_colors }}"
+          {% if game.special_event %}style="background-color: {{ hex_color(game.special_event.color) }}44; color: {{ hex_color(game.special_event.color) }};"{% endif %}>
+          {% if game.type == 'campaign' %}<i class="ph ph-books text-sm"></i>
+          {% else %}<i class="ph ph-scroll text-sm"></i>{% endif %}
         </div>
-        <div class="col-6 text-truncate">
-          <i class="bi bi-joystick"></i>&nbsp; {{ game.system.name }}
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-6 text-truncate">
-          <i class="bi bi-person"></i>&nbsp; {{ game.gm.name }}
-        </div>
-        <div class="col-6">
-          <i class="bi bi-calendar"></i>&nbsp; {{ game.date|format_datetime }}
+        <div class="min-w-0">
+          <div class="font-black text-sm leading-tight truncate text-white drop-shadow-md">
+            {% if game.special_event %}{{ game.special_event.emoji }} {{ game.name }}
+            {% else %}{{ game.name }}{% endif %}
+          </div>
+          <div class="text-[0.6rem] text-white/60 leading-none mt-0.5 truncate">
+            {%- if game.special_event %}{{ game.special_event.name }}
+            {%- elif game.type == 'campaign' %}Campagne
+            {%- else %}One Shot{% endif %}
+          </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-6">
-          <i class="bi bi-people"></i>&nbsp; {{ game.players|length }}/{{ game.party_size }}
-          {% if game.party_selection %}(sur sélection){% endif %}
+
+      <div class="shrink-0 text-center">
+        <div class="font-black text-xl leading-none text-white drop-shadow-md"
+          {% if game.special_event %}style="color: {{ hex_color(game.special_event.color) }};"{% endif %}>
+          {{ game.players|length }}/{{ game.party_size }}{% if game.party_selection %}<i class="ph-fill ph-funnel text-sm align-middle ml-0.5"></i>{% endif %}
         </div>
-        <div class="col-6">
-          <i class="bi bi-clock-history"></i>&nbsp; {{ game.length }}
-        </div>
+        <div class="text-[0.55rem] text-white/50 leading-none mt-0.5 whitespace-nowrap">joueur·euses</div>
       </div>
-      <a href="{% if request.path=='/demo/' %}#{% else %}/annonces/{{game.slug}}/{% endif %}"
-        class="stretched-link"></a>
     </div>
-    {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
-    <div class="card-footer text-center">
-      {% if game.status=='draft' %}<span class="badge text-bg-secondary">brouillon</span>{% endif %}
-      {% if game.special_event %}
-      <span style="background-color: {{ hex_color(game.special_event.color) }};
-                   color: {{ text_color(hex_color(game.special_event.color)) }};" class="badge">
-        {{ game.special_event.name }}
-      </span>
-      {% endif %}
-      {% if game.restriction == 'all' %}
-      <span class="badge text-bg-success">Tout public</span> {% elif game.restriction == '16+' %}
-      <span class="badge text-bg-warning">16+</span> {% else %}
-      <span class="badge text-bg-danger">18+</span> {% endif %} {% for tag in tags %}<span class="badge bg-secondary">{{
-        tag }}</span>{% endfor %}
+
+    {# ── Bottom overlay: gradient cap + solid readable panel ── #}
+    <div class="absolute inset-x-0 bottom-0 z-10">
+
+      {# Gradient fade bridging image → panel #}
+      <div class="h-8 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+
+      {# Solid panel — always readable regardless of image #}
+      <div class="bg-black/75 backdrop-blur-sm px-3 py-2 space-y-1.5">
+
+        {# GM #}
+        <div class="flex items-center gap-2 text-xs">
+          <div class="w-14 shrink-0">
+            <div class="w-6 h-6 rounded-full overflow-hidden ring-1 ring-white/30">
+              <img src="{{ game.gm.avatar }}" alt="{{ game.gm.name }}" class="w-full h-full object-cover">
+            </div>
+          </div>
+          <div class="flex-1 font-semibold text-center truncate text-white">{{ game.gm.name }}</div>
+        </div>
+
+        {# System + VTT #}
+        <div class="flex items-center gap-2 text-xs">
+          <div class="w-14 shrink-0 flex gap-1">
+            <div class="w-6 h-6 rounded-full bg-white/20 overflow-hidden flex items-center justify-center">
+              {% if game.system.icon %}
+              <img src="{{ game.system.icon }}" alt="" class="w-full h-full object-cover">
+              {% else %}
+              <i class="ph ph-dice-five text-sm text-white/50"></i>
+              {% endif %}
+            </div>
+            {% if game.vtt %}
+            <div class="w-6 h-6 rounded-full bg-white/20 overflow-hidden flex items-center justify-center">
+              {% if game.vtt.icon %}
+              <img src="{{ game.vtt.icon }}" alt="" class="w-full h-full object-cover">
+              {% else %}
+              <i class="ph ph-monitor text-sm text-white/50"></i>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="flex-1 font-semibold text-center truncate text-white">
+            {{ game.system.name }}{% if game.vtt %} / {{ game.vtt.name }}{% endif %}
+          </div>
+        </div>
+
+        {# Date + frequency #}
+        <div class="flex items-center gap-2 text-xs">
+          <div class="w-14 shrink-0 flex gap-1">
+            <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <i class="ph-bold ph-calendar text-base text-white/60"></i>
+            </div>
+            <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <i class="ph-bold ph-clock text-base text-white/60"></i>
+            </div>
+          </div>
+          <div class="flex-1 text-center">
+            <div class="font-semibold truncate text-white">
+              {{ game.date|format_datetime('%a %d/%m · %Hh%M') }} · {{ game.length }}
+            </div>
+            {% if game.frequency %}
+            <div class="text-[0.6rem] text-white/50 italic">
+              {% if game.frequency == 'weekly' %}Hebdomadaire
+              {% elif game.frequency == 'bi-weekly' %}Bimensuelle
+              {% elif game.frequency == 'monthly' %}Mensuelle
+              {% else %}Fréquence variable{% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        {# Restriction + tags #}
+        <div class="flex flex-wrap gap-1 justify-center items-center pt-0.5">
+          {% if game.special_event %}
+          <span class="badge badge-sm"
+            style="background-color: {{ hex_color(game.special_event.color) }}; color: {{ text_color(hex_color(game.special_event.color)) }};">
+            {{ game.special_event.emoji or '' }} {{ game.special_event.name }}
+          </span>
+          {% endif %}
+          {% if game.restriction == 'all' %}
+          <span class="badge color-oneshot gap-1 font-semibold">
+            <i class="ph ph-seal-check"></i> Tout public
+          </span>
+          {% elif game.restriction == '16+' %}
+          <span class="badge color-16plus gap-1 font-semibold">
+            <i class="ph ph-seal-warning"></i> 16+
+          </span>
+          {% else %}
+          <span class="badge color-18plus gap-1 font-semibold">
+            <i class="ph ph-seal-warning"></i> 18+
+          </span>
+          {% endif %}
+          {% for tag in tags[:3] %}
+          <span class="badge badge-sm bg-white/20 text-white border-white/20">{{ tag.strip()|truncate(16, True, '…') }}</span>
+          {% endfor %}
+          {% if tags|length > 3 %}
+          <span class="badge badge-sm bg-white/10 text-white/50 border-white/10">+{{ tags|length - 3 }}</span>
+          {% endif %}
+        </div>
+
+      </div>
     </div>
-  </div>
+
+  </a>
 </div>

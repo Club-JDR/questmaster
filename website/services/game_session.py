@@ -190,8 +190,8 @@ class GameSessionService:
             "last_day": last_day,
             "num_os": num_os,
             "num_campaign": num_campaign,
-            "os_games": os_games,
-            "campaign_games": campaign_games,
+            "os_games": {k: dict(v) for k, v in os_games.items()},
+            "campaign_games": {k: dict(v) for k, v in campaign_games.items()},
             "gm_names": gm_names,
         }
 
