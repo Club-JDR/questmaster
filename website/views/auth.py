@@ -40,7 +40,7 @@ def login_required(view):
     return wrapped_view
 
 
-@auth_bp.route("/login/")
+@auth_bp.route("/login/", methods=["GET"])
 def login():
     """Initiate Discord OAuth2 login flow."""
     session.permanent = True
@@ -50,7 +50,7 @@ def login():
     return oauth.discord.authorize_redirect(redirect_uri)
 
 
-@auth_bp.route("/logout/")
+@auth_bp.route("/logout/", methods=["GET"])
 def logout():
     """Clear session and revoke Discord OAuth2 token."""
     token = session.get("_discord_token", {})
@@ -98,7 +98,7 @@ def is_safe_url(target):
     return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
 
 
-@auth_bp.route("/callback/")
+@auth_bp.route("/callback/", methods=["GET"])
 def callback():
     """Handle Discord OAuth2 callback and create user session."""
     token = oauth.discord.authorize_access_token()

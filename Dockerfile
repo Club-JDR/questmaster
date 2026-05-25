@@ -23,8 +23,8 @@ RUN apk add --no-cache \
   zlib-dev
 COPY pyproject.toml .
 RUN mkdir -p website && touch website/__init__.py \
-  && pip install --no-cache-dir --upgrade pip \
-  && pip install --no-cache-dir --prefix=/install .
+  && pip install --only-binary :all: --no-cache-dir --upgrade pip \
+  && pip install --only-binary :all: --no-cache-dir --prefix=/install .
 
 
 FROM python:3.13-alpine3.21 AS base
@@ -56,7 +56,7 @@ COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/sta
 
 FROM base AS app-test
 COPY pyproject.toml .
-RUN pip install --no-cache-dir ".[test,lint]"
+RUN pip install --only-binary :all: --no-cache-dir ".[test,lint]"
 COPY --chmod=555 tests/ ./tests
 
 FROM base AS app

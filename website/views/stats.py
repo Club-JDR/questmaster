@@ -48,20 +48,20 @@ def get_stats():
     )
 
 
-@stats_bp.route("/calendrier/")
+@stats_bp.route("/calendrier/", methods=["GET"])
 def get_calendar():
     """Render the interactive calendar page."""
     payload = who()
     return render_template("calendar.j2", payload=payload)
 
 
-@stats_bp.route("/calendrier/widget/")
+@stats_bp.route("/calendrier/widget/", methods=["GET"])
 def get_calendar_widget():
     """Render the embeddable calendar widget."""
     return render_template("calendar_widget.j2")
 
 
-@stats_bp.route("/api/calendar/")
+@stats_bp.route("/api/calendar/", methods=["GET"])
 @cache.cached(query_string=True)
 def get_month_games_json():
     """Return game sessions as JSON for the calendar frontend.
@@ -69,6 +69,10 @@ def get_month_games_json():
     .. deprecated::
         Use ``GET /api/v1/calendar/events/`` instead.  This endpoint will
         be removed after 2026-06-01.
+
+    Returns:
+        JSON array of game session events, or an empty array with HTTP 400
+        if the date parameters are missing or invalid.
     """
     start_str = request.args.get("start")
     end_str = request.args.get("end")
