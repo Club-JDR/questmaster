@@ -1,19 +1,23 @@
-document.addEventListener("DOMContentLoaded", function () {
-  let isMobile = window.innerWidth < 768;
-  const calendarEl = document.getElementById("month-games-calendar");
+import { Calendar } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import listPlugin from '@fullcalendar/list';
 
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    themeSystem: 'standard',
+document.addEventListener('DOMContentLoaded', function () {
+  let isMobile = window.innerWidth < 768;
+  const calendarEl = document.getElementById('month-games-calendar');
+
+  const calendar = new Calendar(calendarEl, {
+    plugins: [dayGridPlugin, listPlugin],
     initialView: isMobile ? 'listMonth' : 'dayGridMonth',
     headerToolbar: isMobile
       ? { left: 'prev,next', center: 'title', right: 'listMonth' }
       : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
     buttonText: {
-      today: 'Aujourd\'hui',
+      today: "Aujourd'hui",
       month: 'Mois',
       week: 'Semaine',
       day: 'Jour',
-      list: 'Liste'
+      list: 'Liste',
     },
     locale: 'fr',
     timeZone: 'local',
@@ -43,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     },
     eventClick: function (info) {
       if (info.event.url) {
-        window.open(info.event.url, "_blank");
+        window.open(info.event.url, '_blank');
         info.jsEvent.preventDefault();
       }
     },
@@ -51,15 +55,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   calendar.render();
 
-  // Re-render on orientation change or resize
   window.addEventListener('resize', function () {
     const newIsMobile = window.innerWidth < 768;
     if (newIsMobile !== isMobile) {
       isMobile = newIsMobile;
       calendar.changeView(newIsMobile ? 'listMonth' : 'dayGridMonth');
-      calendar.setOption('headerToolbar', newIsMobile
-        ? { left: 'prev,next', center: 'title', right: 'listMonth' }
-        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' });
+      calendar.setOption(
+        'headerToolbar',
+        newIsMobile
+          ? { left: 'prev,next', center: 'title', right: 'listMonth' }
+          : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' }
+      );
     }
   });
 });

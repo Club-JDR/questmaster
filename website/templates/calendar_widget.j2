@@ -5,7 +5,9 @@
   <meta charset="utf-8" />
   <title>Calendrier</title>
   <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1" />
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
+  {% for url in asset_css('assets/js/calendar.js') %}
+  <link rel="stylesheet" href="{{ url }}">
+  {% endfor %}
   <style>
     body,
     html {
@@ -49,10 +51,8 @@
 
 <body>
   <div id="month-games-calendar"></div>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"
-    integrity="sha256-i4vDW9EgtaJmeauDDymtNF2omPZ1fCKpf4w1gBlU1IE=" crossorigin="anonymous"></script>
   <script src="/static/js/api-client.js"></script>
-  <script src="/static/js/calendar.js"></script>
+  <script src="{{ asset('assets/js/calendar.js') }}"></script>
 </body>
 
 </html>

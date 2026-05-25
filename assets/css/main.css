@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "intro.js/introjs.css";
 
 /* ── Fixed semantic colors (theme-independent) ────────────────────────────────
    Hardcoded values so these utilities are unaffected by theme changes.
