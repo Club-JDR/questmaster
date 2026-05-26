@@ -113,17 +113,20 @@ class GameService:
         """
         return self.repo.get_by_slug_or_404(slug)
 
-    def generate_slug(self, name: str, gm_name: str) -> str:
+    def generate_slug(self, name: str, gm_name: str, exclude_slug: str | None = None) -> str:
         """Generate unique slug for a game.
 
         Args:
             name: Game name.
             gm_name: GM stable username (preferred) or display name (fallback).
+            exclude_slug: Slug to exclude from uniqueness check (used when renaming a game).
 
         Returns:
             Unique URL-safe slug.
         """
         existing_slugs = self.repo.get_all_slugs()
+        if exclude_slug:
+            existing_slugs.discard(exclude_slug)
         base_slug = slugify(f"{name}-par-{gm_name}")
         slug = base_slug
         i = 2
@@ -334,6 +337,11 @@ class GameService:
                 game_type, special_event_id = self.parse_game_type(data["type"])
                 game.type = game_type
                 game.special_event_id = special_event_id
+                if data["name"] != game.name:
+                    gm = self.user_service.get_by_id(game.gm_id)
+                    game.slug = self.generate_slug(
+                        data["name"], gm.slug_name, exclude_slug=game.slug
+                    )
                 game.name = data["name"]
 
             # Update fields

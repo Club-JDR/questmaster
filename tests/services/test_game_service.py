@@ -56,6 +56,46 @@ class TestGameService:
         slug = game_service.generate_slug("Collision Test", "TestGM")
         assert slug != base_slug
 
+    def test_generate_slug_exclude_does_not_produce_false_collision(
+        self, db_session, admin_user, default_system, game_service
+    ):
+        """Excluding the current slug should not cause a rename to itself to produce slug-2."""
+        existing_slug = "my-game-par-testgm"
+        GameFactory(
+            db_session,
+            slug=existing_slug,
+            name="My Game",
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+        )
+
+        slug = game_service.generate_slug("My Game", "TestGM", exclude_slug=existing_slug)
+        assert slug == existing_slug
+
+    def test_generate_slug_exclude_does_not_bypass_real_collision(
+        self, db_session, admin_user, default_system, game_service
+    ):
+        """Excluding the current slug must not hide collisions with other games."""
+        other_slug = "plop-par-testgm"
+        current_slug = "test-par-testgm"
+        GameFactory(
+            db_session,
+            slug=other_slug,
+            name="Plop",
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+        )
+        GameFactory(
+            db_session,
+            slug=current_slug,
+            name="Test",
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+        )
+
+        slug = game_service.generate_slug("Plop", "TestGM", exclude_slug=current_slug)
+        assert slug != other_slug
+
     def test_parse_game_type_oneshot(self, db_session, game_service):
         game_type, event_id = game_service.parse_game_type("oneshot")
         assert game_type == "oneshot"
@@ -187,6 +227,121 @@ class TestGameService:
         assert game.description == "Updated description"
         assert game.restriction == "16+"
         assert game.party_size == 6
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_draft_game_regenerates_slug_on_rename(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        old_slug = sample_game.slug
+
+        data = {
+            "name": "Renamed Game",
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "desc",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(old_slug, data)
+
+        assert game.name == "Renamed Game"
+        assert game.slug != old_slug
+        assert "renamed-game" in game.slug
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_draft_game_slug_unchanged_when_name_unchanged(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        old_slug = sample_game.slug
+
+        data = {
+            "name": sample_game.name,
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "Updated description",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(old_slug, data)
+
+        assert game.slug == old_slug
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_published_game_does_not_change_slug(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+        mock_discord,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        sample_game.status = "open"
+        sample_game.msg_id = "existing_msg"
+        db_session.commit()
+        old_slug = sample_game.slug
+
+        data = {
+            "name": "New Name That Should Be Ignored",
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "Updated description",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(old_slug, data)
+
+        assert game.slug == old_slug
+        assert game.name == sample_game.name
 
     def test_publish_game(
         self, db_session, sample_game, mock_discord, game_service, oneshot_channel
