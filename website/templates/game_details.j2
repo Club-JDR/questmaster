@@ -286,21 +286,18 @@
               </div>
               <div class="ml-auto shrink-0 session-badge"></div>
               <div class="flex items-center gap-1 shrink-0">
-                <button class="btn btn-ghost btn-xs btn-square"{% if loop.first %} id="calendarTriggerBtn"{% endif %}
-                  onclick="openCalendar(this)"
-                  data-name="{{ game.name }} par {{ game.gm.name }} #{{ loop.index }}"
+                <button class="btn btn-ghost btn-xs btn-square" {% if loop.first %} id="calendarTriggerBtn" {% endif %}
+                  onclick="openCalendar(this)" data-name="{{ game.name }} par {{ game.gm.name }} #{{ loop.index }}"
                   data-start-date="{{ session.start|format_datetime('%Y-%m-%d') }}"
                   data-end-date="{{ session.end|format_datetime('%Y-%m-%d') }}"
                   data-start-time="{{ session.start|format_datetime('%H:%M') }}"
                   data-end-time="{{ session.end|format_datetime('%H:%M') }}"
-                  data-description="{{ game.type }} - {{ game.gm.name }}"
-                  aria-label="Ajouter au calendrier">
+                  data-description="{{ game.type }} - {{ game.gm.name }}" aria-label="Ajouter au calendrier">
                   <i class="ph ph-calendar-plus text-sm"></i>
                 </button>
                 {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
                 {% if request.path != '/demo/inscription/' %}
-                <button class="btn btn-ghost btn-xs btn-square"
-                  data-session-id="{{ session.id }}"
+                <button class="btn btn-ghost btn-xs btn-square" data-session-id="{{ session.id }}"
                   data-session-index="{{ loop.index }}"
                   data-start="{{ session.start|format_datetime('%Y-%m-%dT%H:%M') }}"
                   data-end="{{ session.end|format_datetime('%Y-%m-%dT%H:%M') }}"
@@ -308,12 +305,10 @@
                   onclick="openEditSessionModal(this)" aria-label="Éditer">
                   <i class="ph ph-pencil-simple text-sm"></i>
                 </button>
-                <button class="btn btn-ghost btn-xs btn-square text-error"
-                  data-session-id="{{ session.id }}"
+                <button class="btn btn-ghost btn-xs btn-square text-error" data-session-id="{{ session.id }}"
                   data-session-index="{{ loop.index }}"
                   data-display="{{ session.start|format_datetime }} — {{ session.end|format_datetime }}"
-                  onclick="openDeleteSessionModal(this)"
-                  aria-label="Supprimer">
+                  onclick="openDeleteSessionModal(this)" aria-label="Supprimer">
                   <i class="ph ph-trash text-sm"></i>
                 </button>
                 {% endif %}
@@ -335,8 +330,8 @@
           {% set planned = length_map.get(game.length, 0) %}
           {% set is_open_ended = game.length in ['10+ sessions', '20+ sessions'] %}
           {% set session_count = game.sessions|length %}
-          {% if session_count >= 1 and (is_open_ended or (planned > 1 and session_count < planned)) %}
-          <div role="alert" class="alert alert-warning text-sm mt-2">
+          {% if session_count >= 1 and (is_open_ended or (planned > 1 and session_count < planned)) %} <div role="alert"
+            class="alert alert-warning text-sm mt-2">
             <i class="ph ph-calendar-plus" aria-hidden="true"></i>
             {% if is_open_ended %}
             <span>Pensez à planifier la prochaine session !</span>
@@ -346,281 +341,281 @@
             <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openAddSessionModal()">
               <i class="ph ph-plus" aria-hidden="true"></i> Ajouter
             </button>
-          </div>
-          {% endif %}
-          {% endif %}
-        </div>
-      </div>
-
-      {# Activity card (GM/Admin only) #}
-      {% if show_activity %}
-      <div class="card bg-base-100 shadow-md flex-1 min-w-0">
-        <div class="card-body p-4" id="event-list">
-          <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/50">
-            <i class="ph ph-notebook"></i> Activité
-          </h2>
-          {% if game.events %}
-          <div class="max-h-[20rem] overflow-y-auto">
-            <ul class="timeline timeline-vertical timeline-compact">
-              {% for event in game.events|sort(attribute='timestamp')|reverse %}
-              <li>
-                {% if not loop.first %}
-                <hr />{% endif %}
-                <div class="timeline-start text-xs text-base-content/40 whitespace-nowrap">
-                  {{ event.timestamp|format_datetime('%d/%m %H:%M') }}
-                </div>
-                <div class="timeline-middle">
-                  {% if event.action == 'create' %}
-                  <i class="ph ph-plus-circle text-success"></i>
-                  {% elif event.action == 'edit' %}
-                  <i class="ph ph-pencil-simple text-info"></i>
-                  {% elif event.action == 'delete' %}
-                  <i class="ph ph-trash text-error"></i>
-                  {% elif event.action == 'create-session' %}
-                  <i class="ph ph-calendar-plus text-success"></i>
-                  {% elif event.action == 'edit-session' %}
-                  <i class="ph ph-calendar-check text-info"></i>
-                  {% elif event.action == 'delete-session' %}
-                  <i class="ph ph-calendar-x text-error"></i>
-                  {% elif event.action == 'register' %}
-                  <i class="ph ph-user-plus text-success"></i>
-                  {% elif event.action == 'unregister' %}
-                  <i class="ph ph-user-minus text-error/40"></i>
-                  {% elif event.action == 'alert' %}
-                  <i class="ph ph-bell-ringing text-warning"></i>
-                  {% else %}
-                  <i class="ph ph-dot-outline text-base-content/30"></i>
-                  {% endif %}
-                </div>
-                <div class="timeline-end timeline-box border-base-200 py-2 px-3">
-                  <div class="font-semibold text-sm">
-                    {% if event.action == 'create' %}Création
-                    {% elif event.action == 'edit' %}Édition
-                    {% elif event.action == 'delete' %}Suppression
-                    {% elif event.action == 'create-session' %}Session ajoutée
-                    {% elif event.action == 'edit-session' %}Session modifiée
-                    {% elif event.action == 'delete-session' %}Session supprimée
-                    {% elif event.action == 'register' %}Inscription
-                    {% elif event.action == 'unregister' %}Désinscription
-                    {% elif event.action == 'alert' %}Alerte
-                    {% else %}{{ event.action }}
-                    {% endif %}
-                  </div>
-                  {% if event.description %}
-                  <p class="text-xs text-base-content/60 mt-0.5">{{ event.description }}</p>
-                  {% endif %}
-                  {% if event.user %}
-                  <p class="text-xs text-base-content/40 mt-0.5">par {{ event.user.name }}</p>
-                  {% endif %}
-                </div>
-                {% if not loop.last %}
-                <hr />{% endif %}
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% else %}
-          <div class="text-center py-10 text-base-content/30">
-            <i class="ph ph-notebook text-4xl"></i>
-            <p class="mt-2">Aucune activité enregistrée</p>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-
-    </div>
-
-  </div>
-
-  {# ── RIGHT COLUMN ── #}
-  <div class="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
-
-    {# ── PLAYER ROSTER ── #}
-    <div id="playerListCard" class="card bg-base-100 shadow-md overflow-hidden">
-      <div class="card-body p-0">
-        {# Count header #}
-        <div class="bg-base-200 rounded-t-2xl p-4 text-center">
-          <div class="text-3xl font-black text-primary">
-            {{ game.players|length }}<span class="text-base-content/20">/</span>{{ game.party_size }}
-          </div>
-          <div class="text-sm font-semibold text-base-content/60">
-            Joueur·euses
-            {% if game.party_selection and game.status != "closed" %}
-            · <span class="text-info text-xs">sur sélection</span>
-            {% endif %}
-          </div>
-        </div>
-
-        {# Avatars — grid of 4 columns; no rows of 3 #}
-        <div class="p-4">
-          {% set player_count = game.players|length %}
-          {% if game.party_selection %}
-          {% if game.status == "open" %}{% set total_slots = player_count + 1 if player_count >= game.party_size else
-          game.party_size %}
-          {% else %}{% set total_slots = [player_count, game.party_size]|max %}{% endif %}
-          {% else %}{% set total_slots = game.party_size %}{% endif %}
-          {% set empty_slots = total_slots - player_count %}
-          <div class="grid grid-cols-4 gap-2">
-            {% for player in game.players %}
-            <div class="player-avatar-wrapper flex flex-col items-center">
-              <div class="tooltip" data-tip="{{ player.name }}">
-                <div class="avatar">
-                  <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    <img src="{{ player.avatar }}" alt="{{ player.name }}" />
-                  </div>
-                </div>
-              </div>
-              <div class="text-[0.6rem] mt-0.5 truncate w-full text-center leading-tight">{{ player.name }}</div>
-            </div>
-            {% endfor %}
-            {% for _ in range(empty_slots) %}
-            <div class="flex flex-col items-center opacity-30">
-              <div class="avatar placeholder">
-                <div class="bg-base-300 text-base-content w-10 rounded-full flex items-center justify-center">
-                  <i class="ph ph-user text-lg"></i>
-                </div>
-              </div>
-              <div class="text-[0.6rem] mt-0.5 leading-tight">Libre</div>
-            </div>
-            {% endfor %}
-          </div>
-
-          {% if player_count > game.party_size and (payload['user_id'] == game.gm.id or payload['is_admin']) %}
-          <div role="alert" class="alert alert-warning mt-3 py-2 text-sm">
-            <i class="ph ph-warning"></i>
-            <span>{{ player_count - game.party_size }} joueur·euse{{ 's' if player_count - game.party_size > 1 }} en
-              trop</span>
-          </div>
-          {% endif %}
-        </div>
-
-        {# Footer info #}
-        <div class="bg-base-200 rounded-b-2xl px-4 py-3 text-center text-xs text-base-content/50 space-y-0.5">
-          <div>
-            {% if game.xp == "beginners" %}Réservé aux débutants
-            {% elif game.xp == "seasoned" %}Interdit aux débutants
-            {% else %}Débutants bienvenus{% endif %}
-          </div>
-          <div>
-            Personnages
-            {% if game.characters == "self" %}à faire seul·e
-            {% elif game.characters == "with_gm" %}à faire avec le·a MJ
-            {% elif game.characters == "pregen" %}prétirés
-            {% else %}à faire seul·e ou avec le·a MJ{% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# ── ACTIONS ── #}
-    <div class="space-y-2 sticky top-20">
-      {# Sign up button #}
-      {% if request.path == '/demo/inscription/' or (payload['user_id'] != game.gm.id and game.status == "open") %}
-      {% if not is_player %}
-      <form method="post" action="/annonces/{{ game.slug }}/inscription/">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="tooltip w-full"
-          data-tip="{% if not payload.get('user_id') %}Connectez-vous pour vous inscrire{% else %}S'inscrire à la partie{% endif %}">
-          <button type="submit" id="signup-btn" class="btn btn-success btn-block gap-2" {% if not payload.get('user_id')
-            or (payload['user_id']==game.gm.id) %}disabled{% endif %}>
-            <i class="ph ph-check-circle"></i> S'inscrire <span id="signup-timer"></span>
-          </button>
-        </div>
-      </form>
-      {% endif %}
-      {% endif %}
-
-      {# Discord + Report buttons #}
-      {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status not in
-      ["archived", "draft"] %}
-      <div class="flex gap-2">
-        <a id="channel-btn" href="https://discord.com/channels/{{ DISCORD_GUILD_ID }}/{{ game.channel }}"
-          class="btn btn-primary flex-1 gap-2">
-          <i class="ph ph-discord-logo"></i> Discuter
-        </a>
-        <button id="alert-btn" class="btn btn-warning gap-2" onclick="document.getElementById('alertModal').showModal()"
-          aria-label="Signaler">
-          <i class="ph ph-bell"></i>
-          <span class="hidden sm:inline">Signaler</span>
-        </button>
-      </div>
-      {% endif %}
-
-      {# GM/Admin Actions #}
-      {% if (request.path == '/demo/gerer/')
-      or (((payload.get('user_id') == game.gm.id) or payload.get('is_admin'))
-      and (request.path != '/demo/inscription/')) %}
-      <div class="divider text-xs text-base-content/40">Actions MJ</div>
-
-      <form id="actionsPanel" method="post" action="/annonces/{{ game.slug }}/statut/" class="space-y-2">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        {% if game.status != 'archived' %}
-        {# Edit + Manage row #}
-        <div class="flex gap-2">
-          <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/editer/{% endif %}"
-            id="editButton" class="btn btn-primary btn-sm flex-1 gap-1">
-            <i class="ph ph-note-pencil"></i> Éditer
-          </a>
-          {% if game.status not in ['draft', 'open'] or request.path == '/demo/gerer/' %}
-          <button id="manageButton" type="button" class="btn btn-primary btn-sm flex-1 gap-1"
-            onclick="document.getElementById('editPlayersModal').showModal()">
-            <i class="ph ph-users"></i> Gérer
-          </button>
-          {% endif %}
         </div>
         {% endif %}
-
-        {# Add session #}
-        <button id="addSessionButton" type="button"
-          class="btn btn-primary btn-sm btn-block gap-1 {% if game.status == 'draft' %}btn-disabled{% endif %}"
-          data-game-date="{{ game.date|format_datetime('%Y-%m-%dT%H:%M') }}"
-          data-session-length="{{ game.session_length }}"
-          data-frequency="{{ game.frequency or '' }}" onclick="openAddSessionModal()">
-          <i class="ph ph-plus-circle"></i> Ajouter une session
-        </button>
-
-        {% if game.status != 'archived' %}
-        {# Publish / Open / Close #}
-        {% if game.status != 'draft' and not game.msg_id and game.players|length < game.party_size %} <button
-          id="publishButton" type="submit" name="status" value="publish" class="btn btn-primary btn-sm btn-block gap-1">
-          <i class="ph ph-paper-plane-tilt"></i> Publier
-          </button>
-          {% endif %}
-          {% if game.status == 'open' %}
-          <button id="statusButton" type="submit" name="status" value="closed"
-            class="btn btn-primary btn-sm btn-block gap-1">
-            <i class="ph ph-lock"></i> Fermer les inscriptions
-          </button>
-          {% elif game.status == 'closed' %}
-          <button id="statusButton" type="submit" name="status" value="open"
-            class="btn btn-primary btn-sm btn-block gap-1">
-            <i class="ph ph-lock-open"></i> Ouvrir les inscriptions
-          </button>
-          {% endif %}
-
-          {# Archive / Delete draft #}
-          <button id="archiveButton" type="button" class="btn btn-sm btn-block btn-error gap-1"
-            onclick="document.getElementById('confirmArchiveModal').showModal()">
-            {% if game.status == 'draft' %}
-            <i class="ph ph-trash"></i> Supprimer le brouillon
-            {% else %}
-            <i class="ph ph-archive"></i> Archiver
-            {% endif %}
-          </button>
-          {% endif %}
-
-          {# Clone #}
-          <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/cloner/{% endif %}"
-            id="cloneButton" class="btn btn-ghost btn-sm btn-block gap-1">
-            <i class="ph ph-copy"></i> Cloner
-          </a>
-      </form>
-      {% endif %}
+        {% endif %}
+      </div>
     </div>
 
+    {# Activity card (GM/Admin only) #}
+    {% if show_activity %}
+    <div class="card bg-base-100 shadow-md flex-1 min-w-0">
+      <div class="card-body p-4" id="event-list">
+        <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/50">
+          <i class="ph ph-notebook"></i> Activité
+        </h2>
+        {% if game.events %}
+        <div class="max-h-[20rem] overflow-y-auto">
+          <ul class="timeline timeline-vertical timeline-compact">
+            {% for event in game.events|sort(attribute='timestamp')|reverse %}
+            <li>
+              {% if not loop.first %}
+              <hr />{% endif %}
+              <div class="timeline-start text-xs text-base-content/40 whitespace-nowrap">
+                {{ event.timestamp|format_datetime('%d/%m %H:%M') }}
+              </div>
+              <div class="timeline-middle">
+                {% if event.action == 'create' %}
+                <i class="ph ph-plus-circle text-success"></i>
+                {% elif event.action == 'edit' %}
+                <i class="ph ph-pencil-simple text-info"></i>
+                {% elif event.action == 'delete' %}
+                <i class="ph ph-trash text-error"></i>
+                {% elif event.action == 'create-session' %}
+                <i class="ph ph-calendar-plus text-success"></i>
+                {% elif event.action == 'edit-session' %}
+                <i class="ph ph-calendar-check text-info"></i>
+                {% elif event.action == 'delete-session' %}
+                <i class="ph ph-calendar-x text-error"></i>
+                {% elif event.action == 'register' %}
+                <i class="ph ph-user-plus text-success"></i>
+                {% elif event.action == 'unregister' %}
+                <i class="ph ph-user-minus text-error/40"></i>
+                {% elif event.action == 'alert' %}
+                <i class="ph ph-bell-ringing text-warning"></i>
+                {% else %}
+                <i class="ph ph-dot-outline text-base-content/30"></i>
+                {% endif %}
+              </div>
+              <div class="timeline-end timeline-box border-base-200 py-2 px-3">
+                <div class="font-semibold text-sm">
+                  {% if event.action == 'create' %}Création
+                  {% elif event.action == 'edit' %}Édition
+                  {% elif event.action == 'delete' %}Suppression
+                  {% elif event.action == 'create-session' %}Session ajoutée
+                  {% elif event.action == 'edit-session' %}Session modifiée
+                  {% elif event.action == 'delete-session' %}Session supprimée
+                  {% elif event.action == 'register' %}Inscription
+                  {% elif event.action == 'unregister' %}Désinscription
+                  {% elif event.action == 'alert' %}Alerte
+                  {% else %}{{ event.action }}
+                  {% endif %}
+                </div>
+                {% if event.description %}
+                <p class="text-xs text-base-content/60 mt-0.5">{{ event.description }}</p>
+                {% endif %}
+                {% if event.user %}
+                <p class="text-xs text-base-content/40 mt-0.5">par {{ event.user.name }}</p>
+                {% endif %}
+              </div>
+              {% if not loop.last %}
+              <hr />{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% else %}
+        <div class="text-center py-10 text-base-content/30">
+          <i class="ph ph-notebook text-4xl"></i>
+          <p class="mt-2">Aucune activité enregistrée</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
   </div>
+
+</div>
+
+{# ── RIGHT COLUMN ── #}
+<div class="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
+
+  {# ── PLAYER ROSTER ── #}
+  <div id="playerListCard" class="card bg-base-100 shadow-md overflow-hidden">
+    <div class="card-body p-0">
+      {# Count header #}
+      <div class="bg-base-200 rounded-t-2xl p-4 text-center">
+        <div class="text-3xl font-black text-primary">
+          {{ game.players|length }}<span class="text-base-content/20">/</span>{{ game.party_size }}
+        </div>
+        <div class="text-sm font-semibold text-base-content/60">
+          Joueur·euses
+          {% if game.party_selection and game.status != "closed" %}
+          · <span class="text-info text-xs">sur sélection</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Avatars — grid of 4 columns; no rows of 3 #}
+      <div class="p-4">
+        {% set player_count = game.players|length %}
+        {% if game.party_selection %}
+        {% if game.status == "open" %}{% set total_slots = player_count + 1 if player_count >= game.party_size else
+        game.party_size %}
+        {% else %}{% set total_slots = [player_count, game.party_size]|max %}{% endif %}
+        {% else %}{% set total_slots = game.party_size %}{% endif %}
+        {% set empty_slots = total_slots - player_count %}
+        <div class="grid grid-cols-4 gap-2">
+          {% for player in game.players %}
+          <div class="player-avatar-wrapper flex flex-col items-center">
+            <div class="tooltip" data-tip="{{ player.name }}">
+              <div class="avatar">
+                <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                  <img src="{{ player.avatar }}" alt="{{ player.name }}" />
+                </div>
+              </div>
+            </div>
+            <div class="text-[0.6rem] mt-0.5 truncate w-full text-center leading-tight">{{ player.name }}</div>
+          </div>
+          {% endfor %}
+          {% for _ in range(empty_slots) %}
+          <div class="flex flex-col items-center opacity-30">
+            <div class="avatar placeholder">
+              <div class="bg-base-300 text-base-content w-10 rounded-full flex items-center justify-center">
+                <i class="ph ph-user text-lg"></i>
+              </div>
+            </div>
+            <div class="text-[0.6rem] mt-0.5 leading-tight">Libre</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if player_count > game.party_size and (payload['user_id'] == game.gm.id or payload['is_admin']) %}
+        <div role="alert" class="alert alert-warning mt-3 py-2 text-sm">
+          <i class="ph ph-warning"></i>
+          <span>{{ player_count - game.party_size }} joueur·euse{{ 's' if player_count - game.party_size > 1 }} en
+            trop</span>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Footer info #}
+      <div class="bg-base-200 rounded-b-2xl px-4 py-3 text-center text-xs text-base-content/50 space-y-0.5">
+        <div>
+          {% if game.xp == "beginners" %}Réservé aux débutants
+          {% elif game.xp == "seasoned" %}Interdit aux débutants
+          {% else %}Débutants bienvenus{% endif %}
+        </div>
+        <div>
+          Personnages
+          {% if game.characters == "self" %}à faire seul·e
+          {% elif game.characters == "with_gm" %}à faire avec le·a MJ
+          {% elif game.characters == "pregen" %}prétirés
+          {% else %}à faire seul·e ou avec le·a MJ{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── ACTIONS ── #}
+  <div class="space-y-2 sticky top-20">
+    {# Sign up button #}
+    {% if request.path == '/demo/inscription/' or (payload['user_id'] != game.gm.id and game.status == "open") %}
+    {% if not is_player %}
+    <form method="post" action="/annonces/{{ game.slug }}/inscription/">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="tooltip w-full"
+        data-tip="{% if not payload.get('user_id') %}Connectez-vous pour vous inscrire{% else %}S'inscrire à la partie{% endif %}">
+        <button type="submit" id="signup-btn" class="btn btn-success btn-block gap-2" {% if not payload.get('user_id')
+          or (payload['user_id']==game.gm.id) %}disabled{% endif %}>
+          <i class="ph ph-check-circle"></i> S'inscrire <span id="signup-timer"></span>
+        </button>
+      </div>
+    </form>
+    {% endif %}
+    {% endif %}
+
+    {# Discord + Report buttons #}
+    {% if (game.gm.id == payload['user_id'] or payload['is_admin'] or is_player) and game.status not in
+    ["archived", "draft"] %}
+    <div class="flex gap-2">
+      <a id="channel-btn" href="https://discord.com/channels/{{ DISCORD_GUILD_ID }}/{{ game.channel }}"
+        class="btn btn-primary flex-1 gap-2">
+        <i class="ph ph-discord-logo"></i> Discuter
+      </a>
+      <button id="alert-btn" class="btn btn-warning gap-2" onclick="document.getElementById('alertModal').showModal()"
+        aria-label="Signaler">
+        <i class="ph ph-bell"></i>
+        <span class="hidden sm:inline">Signaler</span>
+      </button>
+    </div>
+    {% endif %}
+
+    {# GM/Admin Actions #}
+    {% if (request.path == '/demo/gerer/')
+    or (((payload.get('user_id') == game.gm.id) or payload.get('is_admin'))
+    and (request.path != '/demo/inscription/')) %}
+    <div class="divider text-xs text-base-content/40">Actions MJ</div>
+
+    <form id="actionsPanel" method="post" action="/annonces/{{ game.slug }}/statut/" class="space-y-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {% if game.status != 'archived' %}
+      {# Edit + Manage row #}
+      <div class="flex gap-2">
+        <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/editer/{% endif %}"
+          id="editButton" class="btn btn-primary btn-sm flex-1 gap-1">
+          <i class="ph ph-note-pencil"></i> Éditer
+        </a>
+        {% if game.status not in ['draft', 'open'] or request.path == '/demo/gerer/' %}
+        <button id="manageButton" type="button" class="btn btn-primary btn-sm flex-1 gap-1"
+          onclick="document.getElementById('editPlayersModal').showModal()">
+          <i class="ph ph-users"></i> Gérer
+        </button>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Add session #}
+      <button id="addSessionButton" type="button"
+        class="btn btn-primary btn-sm btn-block gap-1 {% if game.status == 'draft' %}btn-disabled{% endif %}"
+        data-game-date="{{ game.date|format_datetime('%Y-%m-%dT%H:%M') }}"
+        data-session-length="{{ game.session_length }}" data-frequency="{{ game.frequency or '' }}"
+        onclick="openAddSessionModal()">
+        <i class="ph ph-plus-circle"></i> Ajouter une session
+      </button>
+
+      {% if game.status != 'archived' %}
+      {# Publish / Open / Close #}
+      {% if game.status != 'draft' and not game.msg_id and game.players|length < game.party_size %} <button
+        id="publishButton" type="submit" name="status" value="publish" class="btn btn-primary btn-sm btn-block gap-1">
+        <i class="ph ph-paper-plane-tilt"></i> Publier
+        </button>
+        {% endif %}
+        {% if game.status == 'open' %}
+        <button id="statusButton" type="submit" name="status" value="closed"
+          class="btn btn-primary btn-sm btn-block gap-1">
+          <i class="ph ph-lock"></i> Fermer les inscriptions
+        </button>
+        {% elif game.status == 'closed' %}
+        <button id="statusButton" type="submit" name="status" value="open"
+          class="btn btn-primary btn-sm btn-block gap-1">
+          <i class="ph ph-lock-open"></i> Ouvrir les inscriptions
+        </button>
+        {% endif %}
+
+        {# Archive / Delete draft #}
+        <button id="archiveButton" type="button" class="btn btn-sm btn-block btn-error gap-1"
+          onclick="document.getElementById('confirmArchiveModal').showModal()">
+          {% if game.status == 'draft' %}
+          <i class="ph ph-trash"></i> Supprimer le brouillon
+          {% else %}
+          <i class="ph ph-archive"></i> Archiver
+          {% endif %}
+        </button>
+        {% endif %}
+
+        {# Clone #}
+        <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/cloner/{% endif %}"
+          id="cloneButton" class="btn btn-ghost btn-sm btn-block gap-1">
+          <i class="ph ph-copy"></i> Cloner
+        </a>
+    </form>
+    {% endif %}
+  </div>
+
+</div>
 
 </div>
 
@@ -734,27 +729,43 @@
           <span class="text-sm">Distribuer les badges</span>
         </label>
         {% set sessions = game.sessions | length %}
-        <div class="rounded-lg border border-base-200 p-2 space-y-1">
+        {% set length_map = {'2 sessions': 2, '3 sessions': 3, '~5 sessions': 5, '~10 sessions': 10} %}
+        {% set planned = length_map.get(game.length, 0) %}
+        {% set is_open_ended = game.length in ['10+ sessions', '20+ sessions'] %}
+        <div class="rounded-lg border border-base-200 p-2 space-y-1.5">
           <p class="text-xs text-base-content/50 px-1">
             {{ sessions }} session{% if sessions > 1 %}s{% endif %} renseignée{% if sessions > 1 %}s{% endif %}.
           </p>
-          <label class="flex items-center gap-3 cursor-pointer rounded-lg hover:bg-base-200 p-1">
-            <input class="toggle toggle-primary" type="checkbox" name="validate_sessions">
-            <span class="text-sm">Je confirme que les sessions sont correctes</span>
-          </label>
+          {% if (planned > 1 and sessions != planned) or (is_open_ended and sessions < 10) %} <div role="alert"
+            class="alert alert-warning py-1.5 px-2 text-xs">
+            <i class="ph ph-warning" aria-hidden="true"></i>
+            {% if is_open_ended %}
+            <span>Seulement {{ sessions }} session{% if sessions > 1 %}s{% endif %} renseignée{% if sessions > 1 %}s{%
+              endif %}, vérifiez que la partie est bien terminée.</span>
+            {% elif sessions < planned %} <span>Seulement {{ sessions }}/{{ planned }} sessions renseignées, la partie
+              semble incomplète.</span>
+              {% else %}
+              <span>{{ sessions }} sessions renseignées pour {{ planned }} prévues.</span>
+              {% endif %}
         </div>
         {% endif %}
+        <label class="flex items-center gap-3 cursor-pointer rounded-lg hover:bg-base-200 p-1">
+          <input class="toggle toggle-primary" type="checkbox" name="validate_sessions">
+          <span class="text-sm">Je confirme que les sessions sont correctes</span>
+        </label>
       </div>
-      <div class="modal-action">
-        <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
-        {% if game.status == 'draft' %}
-        <button type="submit" name="status" value="deleted" class="btn btn-error">Supprimer</button>
-        {% else %}
-        <button id="archiveBtn" type="submit" name="status" value="archived" class="btn btn-error" disabled>Archiver
-          (10)</button>
-        {% endif %}
-      </div>
-    </form>
+      {% endif %}
+  </div>
+  <div class="modal-action">
+    <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
+    {% if game.status == 'draft' %}
+    <button type="submit" name="status" value="deleted" class="btn btn-error">Supprimer</button>
+    {% else %}
+    <button id="archiveBtn" type="submit" name="status" value="archived" class="btn btn-error" disabled>Archiver
+      (10)</button>
+    {% endif %}
+  </div>
+  </form>
   </div>
   <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
@@ -762,7 +773,8 @@
 {# ── Session modals — single shared instances populated via JS ── #}
 <dialog id="editSessionModal" class="modal" aria-modal="true">
   <div class="modal-box">
-    <h3 class="text-lg font-bold"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <span class="session-modal-title">Éditer la session</span></h3>
+    <h3 class="text-lg font-bold"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <span
+        class="session-modal-title">Éditer la session</span></h3>
     <p class="text-sm text-base-content/50 session-modal-date"></p>
     <form method="post" action="" id="editSessionForm" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -817,8 +829,8 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="form-control">
         <div class="label"><span class="label-text">Décrivez les faits :</span></div>
-        <textarea class="textarea textarea-bordered w-full h-28" name="alertMessage" placeholder="Décrivez la situation..."
-          required></textarea>
+        <textarea class="textarea textarea-bordered w-full h-28" name="alertMessage"
+          placeholder="Décrivez la situation..." required></textarea>
       </label>
       <p class="text-xs text-base-content/50 mt-2">Transmis directement aux admins.{% if not payload['user_id'] ==
         game.gm.id %} Le·a MJ saura uniquement qu'un signalement a été fait.{% endif %}</p>
