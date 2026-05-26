@@ -328,6 +328,27 @@
             <p class="mt-2">Aucune session planifiée</p>
           </div>
           {% endif %}
+
+          {# Nudge: campaigns in progress where the GM may have forgotten to add the next session #}
+          {% if show_activity and game.status not in ['archived', 'draft'] %}
+          {% set length_map = {'2 sessions': 2, '3 sessions': 3, '~5 sessions': 5, '~10 sessions': 10} %}
+          {% set planned = length_map.get(game.length, 0) %}
+          {% set is_open_ended = game.length in ['10+ sessions', '20+ sessions'] %}
+          {% set session_count = game.sessions|length %}
+          {% if session_count >= 1 and (is_open_ended or (planned > 1 and session_count < planned)) %}
+          <div role="alert" class="alert alert-warning text-sm mt-2">
+            <i class="ph ph-calendar-plus" aria-hidden="true"></i>
+            {% if is_open_ended %}
+            <span>Pensez à planifier la prochaine session !</span>
+            {% else %}
+            <span>{{ session_count }}/{{ planned }} sessions renseignées — pensez à planifier la suite !</span>
+            {% endif %}
+            <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openAddSessionModal()">
+              <i class="ph ph-plus" aria-hidden="true"></i> Ajouter
+            </button>
+          </div>
+          {% endif %}
+          {% endif %}
         </div>
       </div>
 
