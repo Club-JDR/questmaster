@@ -231,7 +231,7 @@ def edit_game(slug):
 
         if was_draft and action in ("open", "open-silent"):
             game_service.publish(
-                slug, silent=(action == "open-silent"), user_id=payload["user_id"]
+                game.slug, silent=(action == "open-silent"), user_id=payload["user_id"]
             )
             msg = (
                 "Annonce modifiée et ouverte."
@@ -248,7 +248,7 @@ def edit_game(slug):
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     flash(msg, "success")
-    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=game.slug))
 
 
 @game_bp.route("/annonces/<slug>/statut/", methods=["POST"])
