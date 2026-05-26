@@ -586,7 +586,7 @@ class TestGameSessions:
         )
         body = response.data.decode()
         assert response.status_code == 200
-        assert 'startDate="2025-07-07"' in body
+        assert 'data-start-date="2025-07-07"' in body
 
     def test_add_session_rejects_invalid_dates(
         self,
@@ -623,7 +623,7 @@ class TestGameSessions:
         )
         body = response.data.decode()
         assert response.status_code == 200
-        assert 'startDate="2025-08-01"' in body
+        assert 'data-start-date="2025-08-01"' in body
 
     def test_edit_session_rejects_invalid_dates(
         self,

@@ -90,8 +90,8 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         f"/annonces/{slug}/sessions/ajouter/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
-    assert 'startDate="2025-07-07"' in response.data.decode()
-    assert 'endDate="2025-07-07"' in response.data.decode()
+    assert 'data-start-date="2025-07-07"' in response.data.decode()
+    assert 'data-end-date="2025-07-07"' in response.data.decode()
 
     # Edit session
     data = {"date_start": "2025-07-07 23:00", "date_end": "2025-07-07 20:00"}
@@ -108,8 +108,8 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
-    assert 'startDate="2025-07-08"' in response.data.decode()
-    assert 'endDate="2025-07-08"' in response.data.decode()
+    assert 'data-start-date="2025-07-08"' in response.data.decode()
+    assert 'data-end-date="2025-07-08"' in response.data.decode()
 
     # Get stats with two sessions
     response = logged_in_user.get("/stats/?year=2025&month=7")
@@ -133,7 +133,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         f"/annonces/{slug}/sessions/2/supprimer/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
-    assert 'startDate="2025-07-08"' not in response.data.decode()
+    assert 'data-start-date="2025-07-08"' not in response.data.decode()
 
     # User do not see any actions but can register
     response = logged_in_user.get(f"/annonces/{slug}/")
