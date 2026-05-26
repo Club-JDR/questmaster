@@ -361,6 +361,16 @@
 
 {% block scripts %}{{ super() }}
 <script>
+  // Pre-fill date to today at 20:30 for new games
+  (function() {
+    var d = document.getElementById('game_date');
+    if (d && !d.value) {
+      var now = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      d.value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T20:30';
+    }
+  })();
+
   // Auto-resize textareas to always show full content without scrolling
   function autoResize(el) {
     el.style.height = 'auto';
