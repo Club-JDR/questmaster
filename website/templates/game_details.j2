@@ -300,11 +300,19 @@
                 {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
                 {% if request.path != '/demo/inscription/' %}
                 <button class="btn btn-ghost btn-xs btn-square"
-                  onclick="document.getElementById('editSessionModal{{ session.id }}').showModal()" aria-label="Éditer">
+                  data-session-id="{{ session.id }}"
+                  data-session-index="{{ loop.index }}"
+                  data-start="{{ session.start|format_datetime('%Y-%m-%dT%H:%M') }}"
+                  data-end="{{ session.end|format_datetime('%Y-%m-%dT%H:%M') }}"
+                  data-display="{{ session.start|format_datetime }} — {{ session.end|format_datetime }}"
+                  onclick="openEditSessionModal(this)" aria-label="Éditer">
                   <i class="ph ph-pencil-simple text-sm"></i>
                 </button>
                 <button class="btn btn-ghost btn-xs btn-square text-error"
-                  onclick="document.getElementById('deleteSessionModal{{ session.id }}').showModal()"
+                  data-session-id="{{ session.id }}"
+                  data-session-index="{{ loop.index }}"
+                  data-display="{{ session.start|format_datetime }} — {{ session.end|format_datetime }}"
+                  onclick="openDeleteSessionModal(this)"
                   aria-label="Supprimer">
                   <i class="ph ph-trash text-sm"></i>
                 </button>
@@ -601,7 +609,7 @@
 {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
 
 {# ── Add Session ── #}
-<dialog id="addSessionModal" class="modal">
+<dialog id="addSessionModal" class="modal" aria-modal="true">
   <div class="modal-box">
     <h3 class="text-lg font-bold"><i class="ph ph-plus-circle text-primary"></i> Ajouter une session</h3>
     <form method="post" action="/annonces/{{ game.slug }}/sessions/ajouter" class="mt-4">
@@ -626,7 +634,7 @@
 </dialog>
 
 {# ── Edit Players ── #}
-<dialog id="editPlayersModal" class="modal">
+<dialog id="editPlayersModal" class="modal" aria-modal="true">
   <div class="modal-box w-11/12 max-w-2xl">
     <form method="post" action="/annonces/{{ game.slug }}/gerer/">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -680,12 +688,13 @@
 </dialog>
 
 {# ── Confirm Archive ── #}
-<dialog id="confirmArchiveModal" class="modal">
+<dialog id="confirmArchiveModal" class="modal" aria-modal="true">
   <div class="modal-box">
     <form method="post" action="/annonces/{{ game.slug }}/statut/">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <h3 class="text-lg font-bold flex items-center gap-2">
-        <i class="ph ph-warning"></i>
+        {% if game.status == 'draft' %}<i class="ph ph-trash" aria-hidden="true"></i>
+        {% else %}<i class="ph ph-archive" aria-hidden="true"></i>{% endif %}
         {% if game.status == 'draft' %}Supprimer ce brouillon ?{% else %}Partie terminée ?{% endif %}
       </h3>
       <div class="py-4 space-y-3">
@@ -703,12 +712,15 @@
           <span class="text-sm">Distribuer les badges</span>
         </label>
         {% set sessions = game.sessions | length %}
-        <p class="text-sm text-center text-base-content/60">{{ sessions }} session{% if sessions > 1 %}s{% endif %}
-          renseignée{% if sessions > 1 %}s{% endif %}.</p>
-        <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-base-200">
-          <input class="toggle toggle-primary" type="checkbox" name="validate_sessions">
-          <span class="text-sm">Je confirme que les sessions sont correctes</span>
-        </label>
+        <div class="rounded-lg border border-base-200 p-2 space-y-1">
+          <p class="text-xs text-base-content/50 px-1">
+            {{ sessions }} session{% if sessions > 1 %}s{% endif %} renseignée{% if sessions > 1 %}s{% endif %}.
+          </p>
+          <label class="flex items-center gap-3 cursor-pointer rounded-lg hover:bg-base-200 p-1">
+            <input class="toggle toggle-primary" type="checkbox" name="validate_sessions">
+            <span class="text-sm">Je confirme que les sessions sont correctes</span>
+          </label>
+        </div>
         {% endif %}
       </div>
       <div class="modal-action">
@@ -725,26 +737,21 @@
   <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
-{# ── Per-session modals (edit, delete, calendar) ── #}
-{% for session in game.sessions|sort(attribute='start') %}
-{# Edit session #}
-<dialog id="editSessionModal{{ session.id }}" class="modal">
+{# ── Session modals — single shared instances populated via JS ── #}
+<dialog id="editSessionModal" class="modal" aria-modal="true">
   <div class="modal-box">
-    <h3 class="text-lg font-bold">Éditer la session #{{ loop.index }}</h3>
-    <p class="text-sm text-base-content/50">{{ session.start|format_datetime }} — {{ session.end|format_datetime }}
-    </p>
-    <form method="post" action="/annonces/{{ game.slug }}/sessions/{{ session.id }}/editer" class="mt-4">
+    <h3 class="text-lg font-bold"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <span class="session-modal-title">Éditer la session</span></h3>
+    <p class="text-sm text-base-content/50 session-modal-date"></p>
+    <form method="post" action="" id="editSessionForm" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="flex flex-col sm:flex-row gap-3">
         <label class="form-control flex-1">
           <div class="label"><span class="label-text">Début</span></div>
-          <input type="datetime-local" name="date_start" class="input input-bordered w-full" value="{{ session.start }}"
-            required>
+          <input type="datetime-local" name="date_start" class="input input-bordered w-full" required>
         </label>
         <label class="form-control flex-1">
           <div class="label"><span class="label-text">Fin</span></div>
-          <input type="datetime-local" name="date_end" class="input input-bordered w-full" value="{{ session.end }}"
-            required>
+          <input type="datetime-local" name="date_end" class="input input-bordered w-full" required>
         </label>
       </div>
       <div class="modal-action">
@@ -755,16 +762,20 @@
   </div>
   <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
-{# Delete session #}
-<dialog id="deleteSessionModal{{ session.id }}" class="modal">
+<dialog id="deleteSessionModal" class="modal" aria-modal="true">
   <div class="modal-box">
-    <h3 class="text-lg font-bold text-error"><i class="ph ph-warning"></i> Supprimer la session #{{
-      loop.index }}</h3>
-    <p class="py-4"><strong>{{ session.start|format_datetime }} — {{ session.end|format_datetime }}</strong></p>
-    <p class="text-sm text-base-content/50">Cette action est irréversible.</p>
+    <h3 class="text-lg font-bold">
+      <i class="ph ph-trash" aria-hidden="true"></i>
+      <span class="session-modal-title">Supprimer la session</span>
+    </h3>
+    <p class="text-sm text-base-content/50 session-modal-date"></p>
+    <div role="alert" class="alert alert-error text-sm">
+      <i class="ph ph-warning" aria-hidden="true"></i>
+      <span>Cette action est irréversible.</span>
+    </div>
     <div class="modal-action">
       <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
-      <form method="post" action="/annonces/{{ game.slug }}/sessions/{{ session.id }}/supprimer">
+      <form method="post" action="" id="deleteSessionForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-error">Supprimer</button>
       </form>
@@ -772,20 +783,19 @@
   </div>
   <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
-{% endfor %}
 
 {% endif %}
 
 
 {# ── Alert Admin ── #}
-<dialog id="alertModal" class="modal">
+<dialog id="alertModal" class="modal" aria-modal="true">
   <div class="modal-box">
     <h3 class="text-lg font-bold"><i class="ph ph-bell text-warning"></i> Signalement</h3>
     <form method="POST" action="/annonces/{{ game.slug }}/alert/" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="form-control">
         <div class="label"><span class="label-text">Décrivez les faits :</span></div>
-        <textarea class="textarea textarea-bordered h-28" name="alertMessage" placeholder="Décrivez la situation..."
+        <textarea class="textarea textarea-bordered w-full h-28" name="alertMessage" placeholder="Décrivez la situation..."
           required></textarea>
       </label>
       <p class="text-xs text-base-content/50 mt-2">Transmis directement aux admins.{% if not payload['user_id'] ==
@@ -820,6 +830,26 @@
       language: 'fr',
       listStyle: 'dropdown'
     }, btn);
+  }
+
+  function openEditSessionModal(btn) {
+    var modal = document.getElementById('editSessionModal');
+    modal.querySelector('.session-modal-title').textContent = 'Éditer la session #' + btn.dataset.sessionIndex;
+    modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
+    document.getElementById('editSessionForm').action =
+      '/annonces/{{ game.slug }}/sessions/' + btn.dataset.sessionId + '/editer';
+    modal.querySelector('[name="date_start"]').value = btn.dataset.start;
+    modal.querySelector('[name="date_end"]').value = btn.dataset.end;
+    modal.showModal();
+  }
+
+  function openDeleteSessionModal(btn) {
+    var modal = document.getElementById('deleteSessionModal');
+    modal.querySelector('.session-modal-title').textContent = 'Supprimer la session #' + btn.dataset.sessionIndex;
+    modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
+    document.getElementById('deleteSessionForm').action =
+      '/annonces/{{ game.slug }}/sessions/' + btn.dataset.sessionId + '/supprimer';
+    modal.showModal();
   }
 
   function openAddSessionModal() {
