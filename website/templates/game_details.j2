@@ -555,7 +555,8 @@
         <button id="addSessionButton" type="button"
           class="btn btn-primary btn-sm btn-block gap-1 {% if game.status == 'draft' %}btn-disabled{% endif %}"
           data-game-date="{{ game.date|format_datetime('%Y-%m-%dT%H:%M') }}"
-          data-session-length="{{ game.session_length }}" onclick="openAddSessionModal()">
+          data-session-length="{{ game.session_length }}"
+          data-frequency="{{ game.frequency or '' }}" onclick="openAddSessionModal()">
           <i class="ph ph-plus-circle"></i> Ajouter une session
         </button>
 
@@ -855,14 +856,43 @@
   function openAddSessionModal() {
     var modal = document.getElementById('addSessionModal');
     var btn = document.getElementById('addSessionButton');
-    var gameDate = btn.dataset.gameDate;
     var sessionLength = parseInt(btn.dataset.sessionLength, 10);
-    var start = new Date(gameDate);
-    var end = new Date(start.getTime() + sessionLength * 3600000);
+    var frequency = btn.dataset.frequency || '';
     var pad = function (n) { return String(n).padStart(2, '0'); };
     var toLocalISO = function (d) {
       return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     };
+
+    // Find the latest existing session start from the DOM
+    var lastStart = null;
+    document.querySelectorAll('.session-row[data-session-start]').forEach(function (row) {
+      var d = new Date(row.dataset.sessionStart);
+      if (!lastStart || d > lastStart) lastStart = d;
+    });
+
+    var start;
+    if (lastStart && frequency && frequency !== 'other') {
+      start = new Date(lastStart.getTime());
+      if (frequency === 'weekly') {
+        start.setDate(start.getDate() + 7);
+      } else if (frequency === 'bi-weekly') {
+        start.setDate(start.getDate() + 14);
+      } else if (frequency === 'monthly') {
+        start.setMonth(start.getMonth() + 1);
+      }
+    } else {
+      var gameDate = new Date(btn.dataset.gameDate);
+      var now = new Date();
+      if (gameDate > now) {
+        start = gameDate;
+      } else {
+        // Game date is in the past: use today at the same time-of-day
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
+          gameDate.getHours(), gameDate.getMinutes());
+      }
+    }
+
+    var end = new Date(start.getTime() + sessionLength * 3600000);
     modal.querySelector('[name="date_start"]').value = toLocalISO(start);
     modal.querySelector('[name="date_end"]').value = toLocalISO(end);
     modal.showModal();
