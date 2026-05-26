@@ -287,7 +287,13 @@
               <div class="ml-auto shrink-0 session-badge"></div>
               <div class="flex items-center gap-1 shrink-0">
                 <button class="btn btn-ghost btn-xs btn-square"{% if loop.first %} id="calendarTriggerBtn"{% endif %}
-                  onclick="document.getElementById('calendarModal{{ session.id }}').showModal()"
+                  onclick="openCalendar(this)"
+                  data-name="{{ game.name }} par {{ game.gm.name }} #{{ loop.index }}"
+                  data-start-date="{{ session.start|format_datetime('%Y-%m-%d') }}"
+                  data-end-date="{{ session.end|format_datetime('%Y-%m-%d') }}"
+                  data-start-time="{{ session.start|format_datetime('%H:%M') }}"
+                  data-end-time="{{ session.end|format_datetime('%H:%M') }}"
+                  data-description="{{ game.type }} - {{ game.gm.name }}"
                   aria-label="Ajouter au calendrier">
                   <i class="ph ph-calendar-plus text-sm"></i>
                 </button>
@@ -770,34 +776,6 @@
 
 {% endif %}
 
-{# ── Calendar modals (for all users, one per session) ── #}
-{% for session in game.sessions|sort(attribute='start') %}
-<dialog id="calendarModal{{ session.id }}" class="modal">
-  <div class="modal-box max-w-sm text-center">
-    <h3 class="text-lg font-bold mb-1">
-      <i class="ph ph-calendar-plus text-primary"></i> Session #{{ loop.index }}
-    </h3>
-    <p class="text-sm text-base-content/60 mb-4">
-      {{ session.start|format_datetime('%A %d %B %Y') }}<br>
-      {{ session.start|format_datetime('%H:%M') }} — {{ session.end|format_datetime('%H:%M') }}
-    </p>
-    <div class="flex justify-center">
-      <add-to-calendar-button name="{{ game.name }} par {{ game.gm.name }} #{{ loop.index }}"
-        options="'Apple','Google','iCal','Outlook.com','Yahoo'"
-        startDate="{{ session.start|format_datetime('%Y-%m-%d') }}"
-        endDate="{{ session.end|format_datetime('%Y-%m-%d') }}" startTime="{{ session.start|format_datetime('%H:%M') }}"
-        endTime="{{ session.end|format_datetime('%H:%M') }}" timeZone="Europe/Paris"
-        description="{{ game.type }} - {{ game.gm.name }}" size="3" listStyle="overlay" language="fr"
-        buttonStyle="round" inline>
-      </add-to-calendar-button>
-    </div>
-    <div class="modal-action justify-center">
-      <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Fermer</button>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
-</dialog>
-{% endfor %}
 
 {# ── Alert Admin ── #}
 <dialog id="alertModal" class="modal">
@@ -829,6 +807,21 @@
 <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
 <script src="/static/js/game-events.js"></script>
 <script>
+  function openCalendar(btn) {
+    atcb_action({
+      name: btn.dataset.name,
+      options: ['Apple', 'Google', 'iCal', 'Outlook.com', 'Yahoo'],
+      startDate: btn.dataset.startDate,
+      endDate: btn.dataset.endDate,
+      startTime: btn.dataset.startTime,
+      endTime: btn.dataset.endTime,
+      timeZone: 'Europe/Paris',
+      description: btn.dataset.description,
+      language: 'fr',
+      listStyle: 'dropdown'
+    }, btn);
+  }
+
   function openAddSessionModal() {
     var modal = document.getElementById('addSessionModal');
     var btn = document.getElementById('addSessionButton');
