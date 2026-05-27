@@ -58,7 +58,7 @@ COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/sta
 FROM base AS app-test
 COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /bin/uv
 COPY pyproject.toml uv.lock ./
-RUN uv export --frozen --extra test --extra lint -o /tmp/requirements-test.txt \
+RUN uv export --frozen --no-emit-project --extra test --extra lint -o /tmp/requirements-test.txt \
   && pip install --require-hashes --only-binary :all: --no-cache-dir -r /tmp/requirements-test.txt
 COPY --chmod=555 tests/ ./tests
 
