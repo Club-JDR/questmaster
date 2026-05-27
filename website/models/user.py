@@ -19,6 +19,20 @@ from website.extensions import cache, db
 from website.models.base import SerializableMixin
 
 
+def _resolve_avatar_url(user: dict, user_id: str) -> str:
+    """Resolve a Discord avatar URL, falling back to the default."""
+    avatar_hash = user.get("avatar")
+    if not avatar_hash:
+        return DEFAULT_AVATAR
+    potential_url = AVATAR_BASE_URL.format(user_id, avatar_hash)
+    try:
+        if requests.head(potential_url).status_code == 200:
+            return potential_url
+    except requests.RequestException:
+        pass
+    return DEFAULT_AVATAR
+
+
 def get_user_profile(user_id, force_refresh=False):
     """Return parsed profile info (name and avatar URL), cached for 24h.
 
@@ -49,16 +63,7 @@ def get_user_profile(user_id, force_refresh=False):
         else:
             name = user.get("global_name") or user.get("username") or "Inconnu"
 
-        avatar_url = DEFAULT_AVATAR
-        avatar_hash = user.get("avatar")
-        if avatar_hash:
-            potential_url = AVATAR_BASE_URL.format(user_id, avatar_hash)
-            try:
-                response = requests.head(potential_url)
-                if response.status_code == 200:
-                    avatar_url = potential_url
-            except requests.RequestException:
-                pass
+        avatar_url = _resolve_avatar_url(user, user_id)
 
         profile = {"name": name, "avatar": avatar_url, "username": user.get("username")}
         cache.set(cache_key, profile, timeout=CACHE_USER_PROFILE_TIMEOUT)
