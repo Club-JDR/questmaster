@@ -29,7 +29,7 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 A [pre-commit](https://pre-commit.com/) configuration is provided. Install the hooks to run these checks automatically before each commit:
 
 ```sh
-pip install pre-commit
+uv tool install pre-commit
 pre-commit install
 ```
 

@@ -9,7 +9,7 @@ RUN npm run build
 
 
 FROM python:3.13-alpine3.21 AS builder
-
+COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /bin/uv
 WORKDIR /app
 RUN apk add --no-cache \
   bash \
@@ -22,10 +22,9 @@ RUN apk add --no-cache \
   python3-dev \
   tzdata \
   zlib-dev
-COPY pyproject.toml .
-RUN mkdir -p website && touch website/__init__.py \
-  && pip install --only-binary :all: --no-cache-dir --upgrade pip \
-  && pip install --only-binary :all: --no-cache-dir --prefix=/install .
+COPY pyproject.toml uv.lock ./
+RUN uv export --frozen --no-emit-project -o /tmp/requirements.txt \
+  && pip install --require-hashes --only-binary :all: --no-cache-dir --prefix=/install -r /tmp/requirements.txt
 
 
 FROM python:3.13-alpine3.21 AS base
@@ -57,8 +56,10 @@ COPY --chmod=555 questmaster.py ./
 COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/static/dist/
 
 FROM base AS app-test
-COPY pyproject.toml .
-RUN pip install --only-binary :all: --no-cache-dir ".[test,lint]"
+COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /bin/uv
+COPY pyproject.toml uv.lock ./
+RUN uv export --frozen --extra test --extra lint -o /tmp/requirements-test.txt \
+  && pip install --require-hashes --only-binary :all: --no-cache-dir -r /tmp/requirements-test.txt
 COPY --chmod=555 tests/ ./tests
 
 FROM base AS app

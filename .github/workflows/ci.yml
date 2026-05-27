@@ -32,23 +32,24 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
           python-version: '3.13'
 
-      - run: "pip install --only-binary :all: black==26.1.0 isort==5.13.2 flake8==7.1.1 pydoclint==0.8.3"
+      - name: Install lint dependencies from lockfile
+        run: uv sync --frozen --no-build --no-install-project --extra lint
 
       - name: Check import ordering with isort
-        run: isort --check website/ config/ tests/
+        run: uv run --no-sync --no-build isort --check website/ config/ tests/
 
       - name: Check formatting with Black
-        run: black --check website/ config/ tests/
+        run: uv run --no-sync --no-build black --check website/ config/ tests/
 
       - name: Lint with flake8
-        run: flake8 website/
+        run: uv run --no-sync --no-build flake8 website/
 
       - name: Lint with docstrings with pydoclint
-        run: pydoclint website/
+        run: uv run --no-sync --no-build pydoclint website/
 
   tests:
     name: Run Tests
