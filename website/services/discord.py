@@ -293,11 +293,11 @@ class DiscordService:
         self,
         game: Game,
         embed_type: str = "annonce",
-        start: Optional[datetime] = None,
-        end: Optional[datetime] = None,
+        start: str | datetime | None = None,
+        end: str | datetime | None = None,
         player: Optional[str] = None,
-        old_start: Optional[datetime] = None,
-        old_end: Optional[datetime] = None,
+        old_start: str | datetime | None = None,
+        old_end: str | datetime | None = None,
         alert_message: Optional[str] = None,
     ) -> str:
         """Send or update a Discord embed for a game event.
