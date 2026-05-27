@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.1](https://github.com/Club-JDR/questmaster/compare/v1.4.0...v1.4.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* **css:** match DaisyUI 5.5 :is() specificity in theme overrides ([48dd9cd](https://github.com/Club-JDR/questmaster/commit/48dd9cd24ea1e48370a518d04b29cfaefe4f8e1c))
+* increase ambience icon size ([51c0ebf](https://github.com/Club-JDR/questmaster/commit/51c0ebfa87a9279a0a289be6601f6741b844d789))
+* **stats:** stabilize cache key for monthly stats ([2c8a6d5](https://github.com/Club-JDR/questmaster/commit/2c8a6d5e316e98875de650a4811fb41f0f2f7069))
+* **templates:** replace details/summary with daisyui collapse to prevent dropdown handler interference ([4158d07](https://github.com/Club-JDR/questmaster/commit/4158d071e2fb8d1aae2ee86ff196090fec982115))
+* **templates:** show "joueur·euse" label for register/unregister events instead of "par" ([7e41316](https://github.com/Club-JDR/questmaster/commit/7e41316496b08b057045bdcde946b99f2dec2936))
+
 ## [1.4.0](https://github.com/Club-JDR/questmaster/compare/v1.3.0...v1.4.0) (2026-05-27)
 
 
