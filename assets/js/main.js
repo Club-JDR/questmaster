@@ -4,12 +4,9 @@ import "@phosphor-icons/web/regular";
 import "@phosphor-icons/web/bold";
 // @ts-ignore
 import "@phosphor-icons/web/fill";
+import { themeChange } from "theme-change";
 
-const getSavedTheme = () =>
-  localStorage.getItem("theme") ||
-  (globalThis.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-
-document.documentElement.dataset.theme = getSavedTheme();
+themeChange();
 
 document.addEventListener("click", (e) => {
   document.querySelectorAll(".menu details[open]").forEach((details) => {
@@ -45,14 +42,10 @@ document.addEventListener("mouseout", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll("input.theme-controller").forEach((el) => {
-    const input = /** @type {HTMLInputElement} */ (el);
-    input.checked = input.value === getSavedTheme();
-    input.addEventListener("change", () => {
-      const theme = input.value;
-      document.documentElement.dataset.theme = theme;
-      localStorage.setItem("theme", theme);
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    });
-  });
+  const toggle = /** @type {HTMLInputElement|null} */ (
+    document.querySelector("input.theme-controller")
+  );
+  if (toggle) {
+    toggle.checked = document.documentElement.dataset.theme === toggle.value;
+  }
 });
