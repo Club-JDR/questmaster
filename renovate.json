@@ -7,18 +7,44 @@
   "packageRules": [
     {
       "groupName": "Python dependencies (non-major)",
-      "matchManagers": ["pip_requirements", "pip_setup", "setup-cfg", "pep621"],
-      "matchUpdateTypes": ["minor", "patch"]
+      "matchManagers": [
+        "uv"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     },
     {
       "groupName": "Docker images (non-major)",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["minor", "patch"]
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     },
     {
       "groupName": "GitHub Actions (non-major)",
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"]
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    },
+    {
+      "groupName": "npm dependencies (non-major)",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     }
   ]
 }
