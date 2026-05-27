@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import calendar
-from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -22,6 +21,9 @@ class GameSessionService:
 
     Handles session creation, deletion, updates, and conflict detection.
     """
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}>"
 
     def __init__(self, repository=None):
         self.repo = repository or GameSessionRepository()
@@ -125,12 +127,13 @@ class GameSessionService:
         """
         return self.repo.find_in_range(start, end)
 
-    @cache.memoize(timeout=3600)
     def get_stats_for_period(self, year: int | None, month: int | None) -> dict:
         """Compute game statistics for a given month.
 
-        Aggregates session data into per-system, per-game counts for
-        oneshots and campaigns, along with GM participation.
+        Resolves None year/month to the current month, then delegates to the
+        cached implementation so the cache key is always a concrete (year, month)
+        pair — preventing separate cache entries for the same period when it is
+        reached via different URLs.
 
         Args:
             year: Year to compute stats for, or None for current month.
@@ -145,11 +148,15 @@ class GameSessionService:
         else:
             today = datetime.today()
             base_day = today.replace(day=1)
+        return self._compute_stats(base_day.year, base_day.month)
 
+    @cache.memoize(timeout=3600)
+    def _compute_stats(self, year: int, month: int) -> dict:
+        base_day = datetime(year, month, 1)
         last_day = datetime(
-            base_day.year,
-            base_day.month,
-            calendar.monthrange(base_day.year, base_day.month)[1],
+            year,
+            month,
+            calendar.monthrange(year, month)[1],
             23,
             59,
             59,
@@ -160,8 +167,8 @@ class GameSessionService:
 
         num_os = 0
         num_campaign = 0
-        os_games: dict = defaultdict(lambda: defaultdict(self._default_game_entry))
-        campaign_games: dict = defaultdict(lambda: defaultdict(self._default_game_entry))
+        os_games: dict[str, dict] = {}
+        campaign_games: dict[str, dict] = {}
         gm_names: list[str] = []
 
         for session in sessions:
@@ -172,12 +179,16 @@ class GameSessionService:
 
             if game.type == "oneshot":
                 num_os += 1
+                if system not in os_games:
+                    os_games[system] = {}
                 if slug in os_games[system]:
                     os_games[system][slug]["count"] += 1
                 else:
                     os_games[system][slug] = entry
             else:
                 num_campaign += 1
+                if system not in campaign_games:
+                    campaign_games[system] = {}
                 if slug in campaign_games[system]:
                     campaign_games[system][slug]["count"] += 1
                 else:
@@ -190,15 +201,10 @@ class GameSessionService:
             "last_day": last_day,
             "num_os": num_os,
             "num_campaign": num_campaign,
-            "os_games": {k: dict(v) for k, v in os_games.items()},
-            "campaign_games": {k: dict(v) for k, v in campaign_games.items()},
+            "os_games": os_games,
+            "campaign_games": campaign_games,
             "gm_names": gm_names,
         }
-
-    @staticmethod
-    def _default_game_entry():
-        """Return a default game entry dict for stats aggregation."""
-        return {"count": 0, "gm": ""}
 
     @staticmethod
     def _has_conflict(game, start_dt, end_dt, exclude_session_id=None):
