@@ -17,7 +17,7 @@ def get_classification():
             clean_key = key[len(prefix) :]
             try:
                 classification[clean_key] = int(request.form[key])
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 classification[clean_key] = 0
     return classification
 

@@ -15,12 +15,12 @@ def parse_pagination_args() -> tuple[int, int]:
     """
     try:
         page = int(request.args.get("page", API_DEFAULT_PAGE))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         page = API_DEFAULT_PAGE
 
     try:
         per_page = int(request.args.get("per_page", API_DEFAULT_PER_PAGE))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         per_page = API_DEFAULT_PER_PAGE
 
     page = max(1, page)

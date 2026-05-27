@@ -80,7 +80,7 @@ def get_calendar_events():
     try:
         start = parse_date(start_str)
         end = parse_date(end_str)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         raise ValidationError(
             "Invalid date format. Use ISO 8601 (e.g. 2026-01-01).",
             field="start,end",

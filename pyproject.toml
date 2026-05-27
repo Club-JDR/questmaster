@@ -61,6 +61,7 @@ markers = [
 
 [tool.black]
 line-length = 99
+target-version = ["py314"]
 
 [tool.isort]
 profile = "black"
