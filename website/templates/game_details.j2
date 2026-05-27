@@ -180,13 +180,13 @@
             <span class="text-[0.6rem] uppercase tracking-wider text-base-content/40">Restriction</span>
             <div class="flex flex-wrap items-center gap-1">
               {% if game.restriction == 'all' %}
-              <span class="badge color-oneshot gap-1 font-semibold badge-sm"><i class="ph ph-seal-check"></i> Tout
+              <span class="badge color-oneshot gap-1 font-semibold badge-md"><i class="ph ph-seal-check"></i> Tout
                 public</span>
               {% elif game.restriction == '16+' %}
-              <span class="badge color-16plus gap-1 font-semibold badge-sm"><i class="ph ph-seal-warning"></i>
+              <span class="badge color-16plus gap-1 font-semibold badge-md"><i class="ph ph-seal-warning"></i>
                 16+</span>
               {% else %}
-              <span class="badge color-18plus gap-1 font-semibold badge-sm"><i class="ph ph-seal-warning"></i>
+              <span class="badge color-18plus gap-1 font-semibold badge-md"><i class="ph ph-seal-warning"></i>
                 18+</span>
               {% endif %}
               {% if game.restriction_tags %}
@@ -203,13 +203,13 @@
             <span class="text-[0.6rem] uppercase tracking-wider text-base-content/40">Ambiance</span>
             <div class="flex flex-wrap gap-1">
               {% for ambience in game.ambience %}
-              {% if ambience == 'chill' %}<span class="badge badge-ghost badge-sm gap-1"><i class="ph ph-couch"></i>
+              {% if ambience == 'chill' %}<span class="badge badge-ghost badge-md gap-1"><i class="ph ph-couch"></i>
                 Décontractée</span>
-              {% elif ambience == 'comic' %}<span class="badge badge-ghost badge-sm gap-1"><i
+              {% elif ambience == 'comic' %}<span class="badge badge-ghost badge-md gap-1"><i
                   class="ph ph-mask-happy"></i> Comique</span>
-              {% elif ambience == 'serious' %}<span class="badge badge-ghost badge-sm gap-1"><i
+              {% elif ambience == 'serious' %}<span class="badge badge-ghost badge-md gap-1"><i
                   class="ph ph-book-open-text"></i> Sérieuse</span>
-              {% elif ambience == 'epic' %}<span class="badge badge-ghost badge-sm gap-1"><i class="ph ph-sword"></i>
+              {% elif ambience == 'epic' %}<span class="badge badge-ghost badge-md gap-1"><i class="ph ph-sword"></i>
                 Épique</span>
               {% endif %}
               {% endfor %}
