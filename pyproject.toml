@@ -30,7 +30,7 @@ dependencies = [
     "unidecode==1.4.0",
     "python-slugify==8.0.4",
     "apscheduler==3.11.2",
-    "PyJWT==2.11.0",
+    "PyJWT==2.13.0",
 ]
 
 [project.optional-dependencies]
