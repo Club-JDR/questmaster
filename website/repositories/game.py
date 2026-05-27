@@ -145,6 +145,31 @@ class GameRepository(BaseRepository[Game]):
         self.session.query(Game).filter_by(id=game_id).delete()
         self.session.flush()
 
+    def _build_status_conditions(self, status: list, user_payload: Optional[dict]) -> list:
+        """Build filter conditions for the status field, respecting user permissions.
+
+        Args:
+            status: List of requested statuses.
+            user_payload: Optional auth payload used to gate draft visibility.
+
+        Returns:
+            List of SQLAlchemy filter expressions.
+        """
+        conditions = []
+        for s in status:
+            if s != "draft":
+                conditions.append(Game.status == s)
+            elif user_payload and user_payload.get("is_admin"):
+                conditions.append(Game.status == "draft")
+            elif user_payload:
+                conditions.append(
+                    and_(
+                        Game.status == "draft",
+                        Game.gm_id == user_payload.get("user_id"),
+                    )
+                )
+        return conditions
+
     def search(
         self,
         filters: dict,
@@ -180,21 +205,9 @@ class GameRepository(BaseRepository[Game]):
         # Status filter with permission check
         status = filters.get("status", ["open"])
         if status:
-            status_filters = []
-            for s in status:
-                if s != "draft":
-                    status_filters.append(Game.status == s)
-                elif user_payload and user_payload.get("is_admin"):
-                    status_filters.append(Game.status == "draft")
-                elif user_payload:
-                    status_filters.append(
-                        and_(
-                            Game.status == "draft",
-                            Game.gm_id == user_payload.get("user_id"),
-                        )
-                    )
-            if status_filters:
-                query = query.filter(or_(*status_filters))
+            status_conditions = self._build_status_conditions(status, user_payload)
+            if status_conditions:
+                query = query.filter(or_(*status_conditions))
 
         # Type filter
         game_type = filters.get("game_type", ["oneshot", "campaign"])
