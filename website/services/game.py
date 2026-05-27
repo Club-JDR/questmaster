@@ -585,6 +585,30 @@ class GameService:
         except DiscordAPIError as e:
             logger.warning(f"Failed to delete role for game {game.id}: {e}")
 
+    def _auto_close_if_full(self, game: Game) -> None:
+        """Close the game and update the Discord embed if it has reached capacity.
+
+        Args:
+            game: Locked game instance.
+        """
+        if len(game.players) < game.party_size or game.party_selection:
+            return
+
+        game.status = "closed"
+        if game.msg_id:
+            try:
+                self.discord.send_game_embed(game, embed_type="annonce")
+                logger.info(f"Embed updated due to status change for game {game.id}")
+            except DiscordAPIError as e:
+                logger.warning(f"Failed to update embed on status change for game {game.id}: {e}")
+        log_game_event(
+            "edit",
+            game.id,
+            "Annonce fermée automatiquement après avoir atteint le nombre "
+            f"max de joueur·euses ({game.party_size}).",
+        )
+        logger.info(f"Game status for {game.id} has been updated to closed")
+
     def _delete_game_message(self, game: Game) -> None:
         """Delete Discord announcement message.
 
@@ -673,29 +697,7 @@ class GameService:
             locked_game.players.append(user)
 
             # Auto-close if full
-            if (
-                len(locked_game.players) >= locked_game.party_size
-                and not locked_game.party_selection
-            ):
-                locked_game.status = "closed"
-                if locked_game.msg_id:
-                    try:
-                        self.discord.send_game_embed(locked_game, embed_type="annonce")
-                        logger.info(
-                            f"Embed updated due to status change for game {locked_game.id}"
-                        )
-                    except DiscordAPIError as e:
-                        logger.warning(
-                            "Failed to update embed on status change "
-                            f"for game {locked_game.id}: {e}"
-                        )
-                log_game_event(
-                    "edit",
-                    locked_game.id,
-                    "Annonce fermée automatiquement après avoir atteint le nombre "
-                    f"max de joueur·euses ({locked_game.party_size}).",
-                )
-                logger.info(f"Game status for {locked_game.id} has been updated to closed")
+            self._auto_close_if_full(locked_game)
 
             db.session.commit()
 
