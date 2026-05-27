@@ -46,3 +46,6 @@ clubjdr.sql
 # Frontend build
 node_modules/
 website/static/dist/
+
+# uv virtual environment
+.venv/

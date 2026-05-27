@@ -83,10 +83,24 @@ docker compose run app-test python -m pytest tests/
 
 Edit the `.env` to change `POSTGRES_HOST` and `REDIS_HOST` to `localhost`.
 
-Install the dependencies:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it:
 
 ```sh
-pip install -e ".[test,lint]"
+pip install uv
+```
+
+Install the dependencies into a local virtual environment:
+
+```sh
+uv sync --extra test --extra lint
+```
+
+This creates a `.venv` in the project root. Either activate it for the session, or prefix every command below with `uv run`:
+
+```sh
+# activate (one time per shell session)
+source .venv/bin/activate        # Linux / macOS
+.venv\Scripts\Activate.ps1       # Windows PowerShell
 ```
 
 Build the frontend assets (requires [Node.js](https://nodejs.org/) 22+):
@@ -140,7 +154,7 @@ flask setup-test-db
 Install the docs dependencies:
 
 ```sh
-pip install -e ".[docs]"
+uv sync --extra docs
 ```
 
 Serve the documentation with live reload:
