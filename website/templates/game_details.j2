@@ -406,7 +406,9 @@
                 <p class="text-xs text-base-content/60 mt-0.5">{{ event.description }}</p>
                 {% endif %}
                 {% if event.user %}
-                <p class="text-xs text-base-content/40 mt-0.5">par {{ event.user.name }}</p>
+                <p class="text-xs text-base-content/40 mt-0.5">
+                  {% if event.action in ('register', 'unregister') %}joueur·euse :{% else %}par{% endif %}
+                  {{ event.user.name }}</p>
                 {% endif %}
               </div>
               {% if not loop.last %}
