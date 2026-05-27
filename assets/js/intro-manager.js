@@ -178,12 +178,23 @@ function runHomepageIntro() {
 
   intro.onbeforechange(function (target) {
     const id = target?.id;
-    if (annoncesDetails) annoncesDetails.open = !!id && annoncesIds.has(id);
-    if (informationsDetails) informationsDetails.open = !!id && infoIds.has(id);
+    const needsAnnonces = !!id && annoncesIds.has(id);
+    const needsInfo = !!id && infoIds.has(id);
+
+    if (annoncesDetails) annoncesDetails.open = needsAnnonces;
+    if (informationsDetails) informationsDetails.open = needsInfo;
 
     if (id === 'searchBar' && !target.open) {
       target.open = true;
       return new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    if (needsAnnonces || needsInfo) {
+      return new Promise(resolve => setTimeout(() => {
+        if (annoncesDetails) annoncesDetails.open = needsAnnonces;
+        if (informationsDetails) informationsDetails.open = needsInfo;
+        resolve();
+      }, 50));
     }
   });
 
@@ -259,11 +270,15 @@ function runRegistrationIntro() {
     });
   }
 
-  intro.setOptions({
-    ...INTRO_DEFAULTS,
-    steps,
-    showButtons: !showYesNo
-  });
+  intro.setOptions({ ...INTRO_DEFAULTS, steps });
+
+  if (showYesNo) {
+    intro.onchange(function () {
+      const isYesNoStep = this._currentStep === steps.length - 1;
+      const buttons = document.querySelector('.introjs-tooltipbuttons');
+      if (buttons) buttons.style.display = isYesNoStep ? 'none' : '';
+    });
+  }
 
   document.addEventListener('click', (event) => {
     const yes = document.getElementById('btn-yes-final');
@@ -450,7 +465,14 @@ function runPostGameIntro() {
 
   intro.onbeforechange(function (target) {
     if (!annoncesDetails) return;
-    annoncesDetails.open = target?.id === 'postNewGame';
+    const needsOpen = target?.id === 'postNewGame';
+    annoncesDetails.open = needsOpen;
+    if (needsOpen) {
+      return new Promise(resolve => setTimeout(() => {
+        annoncesDetails.open = true;
+        resolve();
+      }, 50));
+    }
   });
 
   intro.onexit(() => showOutroMessage());
