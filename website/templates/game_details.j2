@@ -25,7 +25,8 @@
 {# ── HERO ── #}
 <section class="relative rounded-2xl overflow-hidden mt-4 mb-4 shadow-2xl">
   <img src="{{ game.img or '/static/img/placeholder.jpeg' }}" alt="{{ game.name }}"
-    class="absolute inset-0 w-full h-full object-cover" />
+    class="absolute inset-0 w-full h-full object-cover"
+    onerror="this.onerror=null;this.src='/static/img/placeholder.jpeg'" />
 
   {# Top gradient — keeps pills readable without darkening the whole image #}
   <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>

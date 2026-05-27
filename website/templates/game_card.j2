@@ -12,7 +12,8 @@
 
     {# ── Full-bleed image ── #}
     <img src="{{ game.img if game.img else '/static/img/placeholder.jpeg' }}"
-      alt="{{ game.name }}" class="absolute inset-0 w-full h-full object-cover" loading="lazy">
+      alt="{{ game.name }}" class="absolute inset-0 w-full h-full object-cover" loading="lazy"
+      onerror="this.onerror=null;this.src='/static/img/placeholder.jpeg'">
 
     {# ── Top overlay: type icon + name + player count ── #}
     <div class="absolute inset-x-0 top-0 px-3 pt-3 pb-10 z-10
