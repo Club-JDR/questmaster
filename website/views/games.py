@@ -307,17 +307,21 @@ def add_game_session(slug):
     game = _get_game_if_authorized(payload, slug)
     start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
     end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
+    start_fmt = start.strftime(HUMAN_TIMEFORMAT)
+    end_fmt = end.strftime(HUMAN_TIMEFORMAT)
 
     try:
         session_service.create(game, start, end)
         log_game_event(
             "create-session",
             game.id,
-            f"Une session a été créée de {start} à {end}.",
+            f"Une session a été créée du {start_fmt} au {end_fmt}.",
             user_id=payload["user_id"],
         )
         logger.info(f"Session {start}/{end} created for Game {game.id}")
-        discord_service.send_game_embed(game, embed_type="add-session", start=start, end=end)
+        discord_service.send_game_embed(
+            game, embed_type="add-session", start=start_fmt, end=end_fmt
+        )
         flash("Session ajoutée.", "success")
     except ValidationError:
         flash(
@@ -389,23 +393,23 @@ def remove_game_session(slug, session_id):
     payload = who()
     game = _get_game_if_authorized(payload, slug)
     session = session_service.get_by_id_or_404(session_id)
-    start = session.start
-    end = session.end
+    start = session.start.strftime(HUMAN_TIMEFORMAT)
+    end = session.end.strftime(HUMAN_TIMEFORMAT)
 
     try:
         session_service.delete(session)
         log_game_event(
             "delete-session",
             game.id,
-            f"Une session a été supprimée de {start} à {end}.",
+            f"Une session a été supprimée du {start} au {end}.",
             user_id=payload["user_id"],
         )
         logger.info(f"Session {start}/{end} of Game {game.slug} has been removed")
         discord_service.send_game_embed(
             game,
             embed_type="del-session",
-            start=start.strftime(HUMAN_TIMEFORMAT),
-            end=end.strftime(HUMAN_TIMEFORMAT),
+            start=start,
+            end=end,
         )
         flash("Session supprimée.", "success")
     except QuestMasterError:
