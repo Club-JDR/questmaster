@@ -12,7 +12,7 @@ const getSavedTheme = () =>
 document.documentElement.dataset.theme = getSavedTheme();
 
 document.addEventListener("click", (e) => {
-  document.querySelectorAll("details[open]").forEach((details) => {
+  document.querySelectorAll(".menu details[open]").forEach((details) => {
     if (!details.contains(/** @type {Node} */ (e.target))) {
       details.removeAttribute("open");
     }
