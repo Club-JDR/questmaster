@@ -174,10 +174,13 @@
 }
 
 /* ── Theme color overrides ────────────────────────────────────────────────────
-   Overrides applied to both light and dark themes.
+   DaisyUI 5.5+ wraps its theme selectors via addBase() → Lightning CSS inflates
+   specificity to (0,4,1) using :is(). Plain [data-theme] rules (0,1,0) lose.
+   Mirror the same :is() selector so our overrides share the same specificity
+   and win by source order (they appear last in the stylesheet).
    base-300 is intentionally darker than base-200 for navbar contrast.
 ────────────────────────────────────────────────────────────────────────────── */
-[data-theme="light"] {
+:is(:root:has(input.theme-controller[value=light]:checked), [data-theme="light"]) {
   --color-base-100: oklch(95% 0.004 265);
   --color-base-200: oklch(91% 0.006 265);
   --color-base-300: oklch(78% 0.010 265);
@@ -200,7 +203,7 @@
   --color-error-content: oklch(15% 0 0);
 }
 
-[data-theme="dark"] {
+:is(:root:has(input.theme-controller[value=dark]:checked), [data-theme="dark"]) {
   --color-base-100: oklch(30% 0.018 265);
   --color-base-200: oklch(26% 0.016 265);
   --color-base-300: oklch(16% 0.014 265);
