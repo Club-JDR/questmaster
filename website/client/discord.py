@@ -55,7 +55,7 @@ class Discord:
         if reason:
             headers["X-Audit-Log-Reason"] = reason
 
-        for attempt in range(max_retries):
+        for _ in range(max_retries):
             r = requests.request(method, url, headers=headers, json=json, params=params)
 
             # Handle rate limiting (HTTP 429)
