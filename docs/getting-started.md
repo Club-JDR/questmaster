@@ -103,7 +103,7 @@ source .venv/bin/activate        # Linux / macOS
 .venv\Scripts\Activate.ps1       # Windows PowerShell
 ```
 
-Build the frontend assets (requires [Node.js](https://nodejs.org/) 22+):
+Build the frontend assets (requires [Node.js](https://nodejs.org/) 24+):
 
 ```sh
 npm install

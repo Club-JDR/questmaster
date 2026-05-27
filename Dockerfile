@@ -1,4 +1,4 @@
-FROM node:22-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -8,7 +8,7 @@ COPY website/templates/ ./website/templates/
 RUN npm run build
 
 
-FROM python:3.13-alpine3.21 AS builder
+FROM python:3.14-alpine3.23 AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /bin/uv
 WORKDIR /app
 RUN apk add --no-cache \
@@ -27,7 +27,7 @@ RUN uv export --frozen --no-emit-project -o /tmp/requirements.txt \
   && pip install --require-hashes --only-binary :all: --no-cache-dir --prefix=/install -r /tmp/requirements.txt
 
 
-FROM python:3.13-alpine3.21 AS base
+FROM python:3.14-alpine3.23 AS base
 WORKDIR /questmaster
 RUN apk add --no-cache \
   curl \
