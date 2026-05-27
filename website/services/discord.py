@@ -347,7 +347,13 @@ class DiscordService:
             raise ValueError(f"Unknown embed type: {embed_type}")
 
         embed, target = embed_builders[embed_type](
-            game, start, end, player, old_start, old_end, alert_message
+            game,
+            start=start,
+            end=end,
+            player=player,
+            old_start=old_start,
+            old_end=old_end,
+            alert_message=alert_message,
         )
 
         if embed_type == "annonce" and game.msg_id:

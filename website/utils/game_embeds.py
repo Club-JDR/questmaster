@@ -101,21 +101,10 @@ def _get_embed_color(game) -> int:
 
 # -----------------------------------------------------------------------------
 # Embed builder functions
-#
-# All builders share a uniform signature so they can be called generically
-# by DiscordService.send_game_embed via a dispatch dict.
 # -----------------------------------------------------------------------------
 
 
-def build_annonce_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_annonce_embed(game, **_) -> tuple[dict, str]:
     """Build a Discord embed for a game announcement.
 
     Args:
@@ -143,15 +132,7 @@ def build_annonce_embed(
     return embed, current_app.config["POSTS_CHANNEL_ID"]
 
 
-def build_annonce_details_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_annonce_details_embed(game, **_) -> tuple[dict, str]:
     """Build the initial channel message with GM reminders.
 
     Args:
@@ -178,15 +159,7 @@ def build_annonce_details_embed(
     return embed, game.channel
 
 
-def build_add_session_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_add_session_embed(game, start=None, end=None, **_) -> tuple[dict, str]:
     """Build embed notifying players of a new session.
 
     Args:
@@ -212,15 +185,7 @@ def build_add_session_embed(
     return embed, game.channel
 
 
-def build_edit_session_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_edit_session_embed(game, start=None, old_start=None, **_) -> tuple[dict, str]:
     """Build embed notifying players of a rescheduled session.
 
     Args:
@@ -243,15 +208,7 @@ def build_edit_session_embed(
     return embed, game.channel
 
 
-def build_delete_session_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_delete_session_embed(game, start=None, end=None, **_) -> tuple[dict, str]:
     """Build embed notifying players of a cancelled session.
 
     Args:
@@ -273,15 +230,7 @@ def build_delete_session_embed(
     return embed, game.channel
 
 
-def build_register_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_register_embed(game, player=None, **_) -> tuple[dict, str]:
     """Build embed notifying the channel of a new player registration.
 
     Args:
@@ -299,15 +248,7 @@ def build_register_embed(
     return embed, game.channel
 
 
-def build_alert_embed(
-    game,
-    start=None,
-    end=None,
-    player=None,
-    old_start=None,
-    old_end=None,
-    alert_message=None,
-) -> tuple[dict, str]:
+def build_alert_embed(game, player=None, alert_message=None, **_) -> tuple[dict, str]:
     """Build embed reporting an alert from a game participant.
 
     Args:
