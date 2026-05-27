@@ -4,6 +4,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY assets/ ./assets/
 COPY vite.config.js ./
+COPY website/templates/ ./website/templates/
 RUN npm run build
 
 
