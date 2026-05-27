@@ -1,13 +1,9 @@
 """Base repository with generic CRUD operations."""
 
-from typing import Generic, TypeVar
-
 from website.extensions import db
 
-T = TypeVar("T")
 
-
-class BaseRepository(Generic[T]):
+class BaseRepository[T]:
     """Base repository providing common CRUD operations.
 
     Repositories never commit — they only add, flush, and delete.
