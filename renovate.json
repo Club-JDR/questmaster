@@ -35,6 +35,16 @@
         "minor",
         "patch"
       ]
+    },
+    {
+      "groupName": "npm dependencies (non-major)",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     }
   ]
 }
