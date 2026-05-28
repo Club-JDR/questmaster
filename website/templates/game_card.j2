@@ -28,7 +28,7 @@
           {% else %}<i class="ph ph-scroll text-sm"></i>{% endif %}
         </div>
         <div class="min-w-0">
-          <div class="font-black text-sm leading-tight truncate text-white drop-shadow-md">
+          <div class="font-black text-base leading-tight line-clamp-2 text-white drop-shadow-md">
             {% if game.special_event %}{{ game.special_event.emoji }} {{ game.name }}
             {% else %}{{ game.name }}{% endif %}
           </div>
