@@ -50,6 +50,27 @@
   color: oklch(98% 0 0);
 }
 
+/* ── Scrollbar hide utility ───────────────────────────────────────────────── */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* ── Carousel scroll-position indicator dots ─────────────────────────────── */
+#carousel-indicator > div {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.3;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#carousel-indicator > div.active {
+  opacity: 1;
+  transform: scale(1.35);
+}
+
 /* ── Shiny hover sweep ────────────────────────────────────────────────────────
    Diagonal highlight that sweeps left→right on hover.
    Works on any element with class="shiny" + position context.
