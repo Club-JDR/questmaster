@@ -1,6 +1,8 @@
 {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
 {% set card_border = 'border-error' if game.status == 'archived' else 'border-base-300' if game.status == 'draft' else 'border-neutral' if game.status == 'closed' else 'border-campaign' if game.type == 'campaign' else 'border-oneshot' %}
 {% set icon_colors = 'color-campaign' if game.type == 'campaign' else 'color-oneshot' %}
+{% set latest_session_start = (game.sessions | map(attribute='start') | list | sort | last) if game.sessions else none %}
+{% set display_date = latest_session_start if (latest_session_start and latest_session_start > game.date) else game.date %}
 
 <div class="col [perspective:1200px] [aspect-ratio:63/88] self-start" data-game-id="{{ game.slug }}">
   <a href="{% if request.path == '/demo/' %}#{% else %}/annonces/{{ game.slug }}/{% endif %}"
@@ -105,7 +107,7 @@
           </div>
           <div class="flex-1 text-center">
             <div class="font-semibold truncate text-white">
-              {{ game.date|format_datetime('%a %d/%m · %Hh%M') }} · {{ game.length }}
+              {{ display_date|format_datetime('%a %d/%m · %Hh%M') }} · {{ game.length }}
             </div>
             {% if game.frequency %}
             <div class="text-[0.6rem] text-white/50 italic">
