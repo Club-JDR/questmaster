@@ -2,6 +2,81 @@
 let _staleToast = null;
 /** @type {string | null} */
 let _lastHtml = null;
+let _hintShown = false;
+let _scrollListenerActive = false;
+
+/**
+ * @param {HTMLElement} container
+ * @param {HTMLElement} indicator
+ */
+function syncActiveDot(container, indicator) {
+  const first = /** @type {HTMLElement | null} */ (container.firstElementChild);
+  if (!first) return;
+  const cardWidth = first.offsetWidth;
+  const gap = 12; // gap-3 = 12px
+  const index = Math.min(
+    Math.round(container.scrollLeft / (cardWidth + gap)),
+    indicator.children.length - 1
+  );
+  Array.from(indicator.children).forEach(function (dot, i) {
+    dot.classList.toggle("active", i === index);
+  });
+}
+
+function buildCarouselDots() {
+  const container = document.getElementById("game-cards-container");
+  const indicator = document.getElementById("carousel-indicator");
+  if (!container || !indicator) return;
+
+  if (globalThis.innerWidth >= 640) {
+    indicator.innerHTML = "";
+    return;
+  }
+
+  const count = container.children.length;
+  if (count <= 1) {
+    indicator.innerHTML = "";
+    return;
+  }
+
+  indicator.innerHTML = Array.from({ length: count }, function () {
+    return "<div></div>";
+  }).join("");
+
+  if (!_scrollListenerActive) {
+    _scrollListenerActive = true;
+    container.addEventListener(
+      "scroll",
+      function () { syncActiveDot(container, indicator); },
+      { passive: true }
+    );
+  }
+
+  syncActiveDot(container, indicator);
+}
+
+/** @param {HTMLElement} container */
+function maybeShowSwipeHint(container) {
+  if (_hintShown) return;
+  if (globalThis.innerWidth >= 640) return;
+  if (localStorage.getItem("qm_swipe_hinted")) return;
+  if (!container || container.children.length <= 1) return;
+
+  _hintShown = true;
+
+  if (globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    localStorage.setItem("qm_swipe_hinted", "1");
+    return;
+  }
+
+  setTimeout(function () {
+    container.scrollBy({ left: 70, behavior: "smooth" });
+    setTimeout(function () {
+      container.scrollBy({ left: -70, behavior: "smooth" });
+      localStorage.setItem("qm_swipe_hinted", "1");
+    }, 650);
+  }, 900);
+}
 
 function refreshCards() {
   const params = new URLSearchParams(globalThis.location.search);
@@ -24,6 +99,8 @@ function refreshCards() {
 
       if (globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         container.innerHTML = html;
+        buildCarouselDots();
+        maybeShowSwipeHint(container);
         return;
       }
 
@@ -35,8 +112,10 @@ function refreshCards() {
         "transitionend",
         function () {
           container.innerHTML = html;
-          container.offsetHeight; // force reflow before fade-in
+          container.getBoundingClientRect(); // force reflow before fade-in
           container.style.opacity = "1";
+          buildCarouselDots();
+          maybeShowSwipeHint(container);
         },
         { once: true }
       );
@@ -55,5 +134,10 @@ function refreshCards() {
     });
 }
 
-refreshCards(); // Replace skeleton cards as soon as the script loads
-setInterval(refreshCards, 10000);
+if (["/" , "/annonces/"].includes(location.pathname)) {
+  refreshCards(); // Replace skeleton cards as soon as the script loads
+  setInterval(refreshCards, 10000);
+} else {
+  const _c = document.getElementById("game-cards-container");
+  if (_c) { buildCarouselDots(); maybeShowSwipeHint(_c); }
+}
