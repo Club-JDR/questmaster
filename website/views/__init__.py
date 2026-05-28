@@ -4,7 +4,7 @@ from website.utils.assets import asset, asset_css
 from .auth import auth_bp
 from .demo import demo_bp
 from .errors import error_bp
-from .filters import format_datetime, hex_color, text_color
+from .filters import duration_hours, format_datetime, hex_color, text_color
 from .games import game_bp
 from .misc import misc_bp
 from .stats import stats_bp
@@ -22,6 +22,7 @@ def register_blueprints(app):
 
 def register_filters(app):
     app.add_template_filter(format_datetime, name="format_datetime")
+    app.add_template_filter(duration_hours, name="duration_hours")
     app.jinja_env.globals.update(
         hex_color=hex_color, text_color=text_color, asset=asset, asset_css=asset_css
     )
