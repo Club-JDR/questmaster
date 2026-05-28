@@ -143,13 +143,13 @@ function runHomepageIntro() {
     },
     {
       element: '#game-cards-container',
-      intro: "Voici la liste des annonces ouvertes.<br><br>Le code couleur est le suivant :<br>" +
-        "- <span class='text-success font-semibold'>Vert</span> : les OS,<br>" +
-        "- <span class='text-primary font-semibold'>Bleu</span> : les campagnes,<br><br>" +
-        "D'autres couleurs peuvent apparaître lors des recherches :<br>" +
-        "- <span class='text-base-content font-semibold'>Noir</span> : annonces complètes,<br>" +
-        "- <span class='text-error font-semibold'>Rouge</span> : archivées,<br>" +
-        "- <span class='text-base-content/60 font-semibold'>Gris</span> : brouillons (non publiées).",
+      intro: "Voici la liste des annonces ouvertes.<br><br>La couleur de la bordure indique le type :<br>" +
+        "- <span class='text-success font-semibold'>Vert</span> : One Shot,<br>" +
+        "- <span class='text-primary font-semibold'>Bleu</span> : Campagne.<br><br>" +
+        "Un ruban dans le coin supérieur droit indique le statut :<br>" +
+        "- <span class='text-info font-semibold'>Bleu</span> : brouillon,<br>" +
+        "- <span class='text-base-content font-semibold'>Sombre</span> : complète,<br>" +
+        "- <span class='text-error font-semibold'>Rouge</span> : archivée.",
       title: "Liste des annonces"
     },
     {
