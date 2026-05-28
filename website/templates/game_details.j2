@@ -281,7 +281,7 @@
                 <div class="text-xs text-base-content/50">
                   <i class="ph ph-clock"></i>
                   {{ session.start|format_datetime('%H:%M') }} — {{ session.end|format_datetime('%H:%M') }}
-                  <span class="text-base-content/30 ml-1">({{ game.session_length }}h)</span>
+                  <span class="text-base-content/30 ml-1">({{ session.start | duration_hours(session.end) }}h)</span>
                 </div>
               </div>
               <div class="ml-auto shrink-0 session-badge"></div>
