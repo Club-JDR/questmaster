@@ -45,6 +45,11 @@
   color: oklch(61.302% 0.202 261.294);
 }
 
+@utility navbar-bg {
+  background-color: oklch(35.519% 0.032 262.988);
+  color: oklch(98% 0 0);
+}
+
 /* ── Shiny hover sweep ────────────────────────────────────────────────────────
    Diagonal highlight that sweeps left→right on hover.
    Works on any element with class="shiny" + position context.
