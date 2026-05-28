@@ -27,7 +27,11 @@
 </div>
 {% else %}
 <div id="game-cards-container" class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-4 pb-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-3 xl:grid-cols-4">
-  {% include "game_cards_container.j2" %}
+  {% if request.path in ['/', '/annonces/'] %}
+    {% for i in range(games|length) %}{% include "game_card_skeleton.j2" %}{% endfor %}
+  {% else %}
+    {% include "game_cards_container.j2" %}
+  {% endif %}
 </div>
 {% endif %}
 

@@ -4,7 +4,7 @@ let _staleToast = null;
 let _lastHtml = null;
 
 function refreshCards() {
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(globalThis.location.search);
   const container = document.getElementById("game-cards-container");
   if (!container) return;
 
@@ -19,20 +19,17 @@ function refreshCards() {
       const prev = _lastHtml;
       _lastHtml = html;
 
-      if (prev === null) {
-        // First poll: silently establish baseline, no animation
+      // Skip when content hasn't changed since last fetch
+      if (prev !== null && prev === html) return;
+
+      if (globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         container.innerHTML = html;
         return;
       }
 
-      if (prev === html) return;
-
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        container.innerHTML = html;
-        return;
-      }
-
+      // Fade out (skeletons or stale cards) → swap → fade in
       container.style.transition = "opacity 0.2s ease";
+      container.getBoundingClientRect(); // force reflow to commit transition start state
       container.style.opacity = "0";
       container.addEventListener(
         "transitionend",
@@ -58,4 +55,5 @@ function refreshCards() {
     });
 }
 
+refreshCards(); // Replace skeleton cards as soon as the script loads
 setInterval(refreshCards, 10000);
