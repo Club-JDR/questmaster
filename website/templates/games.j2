@@ -26,7 +26,7 @@
   <span>Aucune annonce correspondant aux filtres sélectionnés !</span>
 </div>
 {% else %}
-<div id="game-cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+<div id="game-cards-container" class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-4 pb-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-3 xl:grid-cols-4">
   {% include "game_cards_container.j2" %}
 </div>
 {% endif %}

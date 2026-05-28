@@ -4,7 +4,7 @@
 {% set latest_session_start = (game.sessions | map(attribute='start') | list | sort | last) if game.sessions else none %}
 {% set display_date = latest_session_start if (latest_session_start and latest_session_start > game.date) else game.date %}
 
-<div class="col [perspective:1200px] [aspect-ratio:63/88] self-start" data-game-id="{{ game.slug }}">
+<div class="col [perspective:1200px] [aspect-ratio:63/88] self-start shrink-0 w-[85vw] snap-start sm:w-auto" data-game-id="{{ game.slug }}">
   <a href="{% if request.path == '/demo/' %}#{% else %}/annonces/{{ game.slug }}/{% endif %}"
     class="block no-underline overflow-hidden h-full rounded-2xl
            border-4 {{ card_border }} game-card shiny
