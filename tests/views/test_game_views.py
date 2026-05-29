@@ -748,7 +748,7 @@ class TestGameSearch:
 
     def test_search_by_name(self, client, mock_discord_lookups, db_session, open_game):
         """Searching by name matches the open_game's name via ilike filter."""
-        response = client.get(f"/annonces/?name={open_game.name}")
+        response = client.get(f"/annonces/cards/?name={open_game.name}")
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name in body
@@ -757,14 +757,14 @@ class TestGameSearch:
         self, client, mock_discord_lookups, db_session, open_game, default_system
     ):
         """open_game uses default_system, so filtering by its ID returns it."""
-        response = client.get(f"/annonces/?system={default_system.id}")
+        response = client.get(f"/annonces/cards/?system={default_system.id}")
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name in body
 
     def test_search_by_vtt(self, client, mock_discord_lookups, db_session, open_game, default_vtt):
         """open_game uses default_vtt, so filtering by its ID returns it."""
-        response = client.get(f"/annonces/?vtt={default_vtt.id}")
+        response = client.get(f"/annonces/cards/?vtt={default_vtt.id}")
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name in body
@@ -773,7 +773,7 @@ class TestGameSearch:
         self, client, mock_discord_lookups, db_session, open_game
     ):
         """Filtering by status=open should include the open_game."""
-        response = client.get("/annonces/?open=on")
+        response = client.get("/annonces/cards/?open=on")
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name in body
@@ -782,14 +782,14 @@ class TestGameSearch:
         self, client, mock_discord_lookups, db_session, open_game
     ):
         """Filtering by status=archived only should exclude the open_game."""
-        response = client.get("/annonces/?archived=on")
+        response = client.get("/annonces/cards/?archived=on")
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name not in body
 
     def test_search_name_no_match(self, client, mock_discord_lookups, db_session, open_game):
         """A name filter that matches nothing should not show the open_game."""
-        response = client.get("/annonces/?name=NonExistentGame12345")
+        response = client.get("/annonces/cards/?name=NonExistentGame12345")
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name not in body
@@ -805,7 +805,7 @@ class TestGameSearch:
     ):
         """open_game matches all combined filters: system, vtt, open, oneshot, all-ages."""
         response = client.get(
-            f"/annonces/?system={default_system.id}&vtt={default_vtt.id}"
+            f"/annonces/cards/?system={default_system.id}&vtt={default_vtt.id}"
             "&open=on&oneshot=on&all=on"
         )
         body = response.data.decode()
