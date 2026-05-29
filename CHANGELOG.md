@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.5.0](https://github.com/Club-JDR/questmaster/compare/v1.4.1...v1.5.0) (2026-05-29)
+
+
+### Features
+
+* **mobile:** carousel dots and swipe hint on cards pages ([be56e5e](https://github.com/Club-JDR/questmaster/commit/be56e5ec72612ce705de101b8b1426f6bb27e07c))
+* **mobile:** swipe carousel for game cards ([29fd148](https://github.com/Club-JDR/questmaster/commit/29fd1485e9845ac3a86cf676ce1a435666e88dd9))
+* **ui:** show latest session date on game card when more recent than game date ([26b8b2d](https://github.com/Club-JDR/questmaster/commit/26b8b2dbb0d4fe19cd1ac68f249523622f4722c8))
+* **ui:** smooth card refresh with skeleton loading state ([5a6b92e](https://github.com/Club-JDR/questmaster/commit/5a6b92ef6bb9aa82ccd90cce8443e84053a109c5))
+* **ui:** smooth fade transition on game card refresh ([dcacdc1](https://github.com/Club-JDR/questmaster/commit/dcacdc1dc939b455d77424348af4eb405b130310))
+* **ui:** type-based card border color + status ribbon for non-open games ([bb284ec](https://github.com/Club-JDR/questmaster/commit/bb284ec8b40e5ebe0e01547f0a8119ac15a5ae27))
+
+
+### Bug Fixes
+
+* **deps:** update dependency redis to v8 ([0df3979](https://github.com/Club-JDR/questmaster/commit/0df3979cf2e94e4b52f99d6bbfc40e96656529b7))
+* **templates:** compute per-session duration via duration_hours filter, handles serialized ISO strings ([3caf371](https://github.com/Club-JDR/questmaster/commit/3caf3719f57e77bf82a2a3dec9792198f9aac1d1))
+* **tests:** use /annonces/cards/ endpoint for card-content assertions ([d15f86f](https://github.com/Club-JDR/questmaster/commit/d15f86f1f288a6ef579775e9fe85b585046fd753))
+* **theme:** fix FOUC with inline script, wire theme-change to toggle for persistence ([9ae113f](https://github.com/Club-JDR/questmaster/commit/9ae113f9c7ee336941acef9d5e4ee686b5dcdd70))
+* **theme:** respect OS dark mode preference when no theme is stored in localStorage ([52289b6](https://github.com/Club-JDR/questmaster/commit/52289b61910a9aa99a3f5c6a12db55434f94fc0a))
+* **ui:** hardcode navbar color to be consistent across themes ([3bf4dfa](https://github.com/Club-JDR/questmaster/commit/3bf4dfa081496b04dcd590efe842393660ee0e71))
+* **ui:** improve game card title legibility ([64d5ae2](https://github.com/Club-JDR/questmaster/commit/64d5ae26b0d8d1302d648d13e8fe3b9bef76ad53))
+* **ui:** make draft/save button always visible with btn-outline ([6da9bf2](https://github.com/Club-JDR/questmaster/commit/6da9bf2005e4fdc35644200c546b4902a1af1994))
+
 ## [1.4.1](https://github.com/Club-JDR/questmaster/compare/v1.4.0...v1.4.1) (2026-05-27)
 
 
