@@ -466,7 +466,7 @@ class GameService:
 
         db.session.commit()
         log_game_event(
-            "edit", game.id, "Le statut de l'annonce à changé en closed.", user_id=user_id
+            "edit", game.id, "L'annonce a été fermée aux inscriptions.", user_id=user_id
         )
         logger.info(f"Game status for {game.id} has been updated to closed")
 
@@ -498,7 +498,7 @@ class GameService:
 
         db.session.commit()
         log_game_event(
-            "edit", game.id, "Le statut de l'annonce à changé en open.", user_id=user_id
+            "edit", game.id, "L'annonce a été ouverte aux inscriptions.", user_id=user_id
         )
         logger.info(f"Game status for {game.id} has been updated to open")
 
@@ -533,9 +533,7 @@ class GameService:
         game.status = "archived"
 
         db.session.commit()
-        log_game_event(
-            "edit", game.id, "Le statut de l'annonce à changé en archived.", user_id=user_id
-        )
+        log_game_event("edit", game.id, "L'annonce a été archivée.", user_id=user_id)
         logger.info(f"Game status for {game.id} has been updated to archived")
 
         # Award trophies
