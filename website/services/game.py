@@ -522,8 +522,14 @@ class GameService:
 
         Raises:
             NotFoundError: If game doesn't exist.
+
+        Note:
+            Idempotent: calling on an already-archived game is a no-op, preventing
+            double trophy awards on duplicate form submissions or browser retries.
         """
         game = self.get_by_slug(slug)
+        if game.status == "archived":
+            return
         game.status = "archived"
 
         db.session.commit()
