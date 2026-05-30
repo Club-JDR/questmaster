@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/Club-JDR/questmaster/compare/v1.5.0...v1.5.1) (2026-05-30)
+
+
+### Bug Fixes
+
+* **game:** improve game_event log messages for status transitions ([627e8ff](https://github.com/Club-JDR/questmaster/commit/627e8ff8fe8da01439f1e3330b27da2b3b6e2fba))
+* **game:** prevent double trophy award on duplicate archive requests ([f6e3f7c](https://github.com/Club-JDR/questmaster/commit/f6e3f7c80d1b826a2b951aff9251d9eaaf804653))
+
 ## [1.5.0](https://github.com/Club-JDR/questmaster/compare/v1.4.1...v1.5.0) (2026-05-29)
 
 
