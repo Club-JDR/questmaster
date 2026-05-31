@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from website.api import create_api_blueprint
 from website.utils.assets import asset, asset_css
 
@@ -24,5 +26,9 @@ def register_filters(app):
     app.add_template_filter(format_datetime, name="format_datetime")
     app.add_template_filter(duration_hours, name="duration_hours")
     app.jinja_env.globals.update(
-        hex_color=hex_color, text_color=text_color, asset=asset, asset_css=asset_css
+        hex_color=hex_color,
+        text_color=text_color,
+        asset=asset,
+        asset_css=asset_css,
+        now=lambda: datetime.now().isoformat(),
     )
