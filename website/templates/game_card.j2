@@ -1,10 +1,11 @@
 {% set tags = game.restriction_tags.split(',') if game.restriction_tags else [] %}
 {% set card_border = 'border-campaign' if game.type == 'campaign' else 'border-oneshot' %}
 {% set icon_colors = 'color-campaign' if game.type == 'campaign' else 'color-oneshot' %}
-{% set latest_session_start = (game.sessions | map(attribute='start') | list | sort | last) if game.sessions else none
-%}
-{% set display_date = latest_session_start if (latest_session_start and latest_session_start > game.date) else game.date
-%}
+{% set _now = now() %}
+{% set _sessions = game.sessions or [] %}
+{% set _future = _sessions | selectattr('start', 'ge', _now) | sort(attribute='start') | list %}
+{% set _past = _sessions | selectattr('start', 'lt', _now) | sort(attribute='start', reverse=true) | list %}
+{% set display_date = _future[0].start if _future else (_past[0].start if _past else game.date) %}
 
 <div class="col [perspective:1200px] [aspect-ratio:63/88] self-start shrink-0 w-[85vw] snap-start sm:w-auto"
   data-game-id="{{ game.slug }}">
