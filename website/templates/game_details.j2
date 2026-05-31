@@ -269,12 +269,12 @@
           </h2>
           {% if game.sessions %}
           <div class="max-h-[20rem] overflow-y-auto space-y-2" id="sessions-list">
-            {% for session in game.sessions|sort(attribute='start') %}
+            {% for session in game.sessions|sort(attribute='start', reverse=true) %}
             <div class="session-row flex items-center gap-3 rounded-lg px-3 py-2.5 border border-base-200"
               data-session-start="{{ session.start }}">
               <div
                 class="text-lg font-black text-primary w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 shrink-0">
-                {{ loop.index }}
+                {{ loop.revindex }}
               </div>
               <div class="min-w-0">
                 <div class="font-semibold leading-tight">{{ session.start|format_datetime('%A %d/%m') }}</div>
@@ -298,7 +298,7 @@
                 {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
                 {% if request.path != '/demo/inscription/' %}
                 <button class="btn btn-ghost btn-xs btn-square" data-session-id="{{ session.id }}"
-                  data-session-index="{{ loop.index }}"
+                  data-session-index="{{ loop.revindex }}"
                   data-start="{{ session.start|format_datetime('%Y-%m-%dT%H:%M') }}"
                   data-end="{{ session.end|format_datetime('%Y-%m-%dT%H:%M') }}"
                   data-display="{{ session.start|format_datetime }} — {{ session.end|format_datetime }}"
@@ -306,7 +306,7 @@
                   <i class="ph ph-pencil-simple text-sm"></i>
                 </button>
                 <button class="btn btn-ghost btn-xs btn-square text-error" data-session-id="{{ session.id }}"
-                  data-session-index="{{ loop.index }}"
+                  data-session-index="{{ loop.revindex }}"
                   data-display="{{ session.start|format_datetime }} — {{ session.end|format_datetime }}"
                   onclick="openDeleteSessionModal(this)" aria-label="Supprimer">
                   <i class="ph ph-trash text-sm"></i>
