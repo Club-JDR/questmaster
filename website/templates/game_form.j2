@@ -312,15 +312,17 @@
           <img id="imgPreview"
             src="{{ game.img if game and game.img else '/static/img/placeholder.jpeg' }}"
             alt="Aperçu de l'image de l'annonce"
-            class="w-full h-36 object-cover rounded-lg"
-            onerror="this.src='/static/img/placeholder.jpeg'">
+            class="w-full h-36 object-cover rounded-lg">
           <div>
             <label class="sr-only" for="imgUrlInput">URL de l'image</label>
             <input type="url" id="imgUrlInput" name="img" class="input input-bordered input-sm w-full"
               placeholder="https://i.imgur.com/..."
-              value="{{ game.img if game and game.img else '' }}"
-              oninput="document.getElementById('imgPreview').src=this.value||'/static/img/placeholder.jpeg'">
+              value="{{ game.img if game and game.img else '' }}">
           </div>
+          <p id="imgError" class="hidden text-xs text-error flex items-center gap-1">
+            <i class="ph ph-warning" aria-hidden="true"></i>
+            Ce lien ne pointe pas vers une image valide. L'image doit s'afficher dans le cadre ci-dessus.
+          </p>
           <p class="text-xs text-base-content/40">Lien direct. <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" class="link">imgur</a> recommandé.</p>
         </div>
       </div>
@@ -360,36 +362,5 @@
 {% endblock %}
 
 {% block scripts %}{{ super() }}
-<script>
-  // Pre-fill date to today at 20:30 for new games
-  (function() {
-    var d = document.getElementById('game_date');
-    if (d && !d.value) {
-      var now = new Date();
-      var pad = function(n) { return String(n).padStart(2, '0'); };
-      d.value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T20:30';
-    }
-  })();
-
-  // Auto-resize textareas to always show full content without scrolling
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-    el.style.overflowY = 'hidden';
-  }
-  document.querySelectorAll('textarea.auto-resize').forEach(function(ta) {
-    autoResize(ta);
-    ta.addEventListener('input', function() { autoResize(this); });
-  });
-
-  // Classification range sliders → Absent / Mineur / Majeur label
-  var classLabels = ['Absent', 'Mineur', 'Majeur'];
-  document.querySelectorAll('input[type=range].range').forEach(function(range) {
-    var lbl = document.querySelector('.classification-label[data-for="' + range.id + '"]');
-    if (lbl) {
-      range.addEventListener('input', function() { lbl.textContent = classLabels[this.value]; });
-    }
-  });
-
-</script>
+<script src="{{ url_for('static', filename='js/game-form.js') }}" defer></script>
 {% endblock %}
