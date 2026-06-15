@@ -22,7 +22,12 @@ def _is_db_initialized():
 
 
 def _seed_test_data():
-    """Seed the database with reference data for tests."""
+    """Seed the database with reference data for tests.
+
+    Idempotent: each record is only inserted if it does not already exist, so
+    re-seeding a non-empty database (e.g. after an interrupted run) is safe and
+    does not raise duplicate-key errors.
+    """
     from tests.constants import (
         TEST_ADMIN_USER_ID,
         TEST_ADMIN_USER_NAME,
@@ -40,38 +45,37 @@ def _seed_test_data():
     )
     from website.models import Channel, SpecialEvent, System, User, Vtt
 
-    db.session.add_all(
-        [
-            User(
-                id=TEST_ADMIN_USER_ID,
-                name=TEST_ADMIN_USER_NAME,
-                username=TEST_ADMIN_USER_USERNAME,
-            ),
-            User(
-                id=TEST_GM_USER_ID,
-                name=TEST_GM_USER_NAME,
-                username=TEST_GM_USER_USERNAME,
-            ),
-            User(
-                id=TEST_REGULAR_USER_ID,
-                name=TEST_REGULAR_USER_NAME,
-                username=TEST_REGULAR_USER_USERNAME,
-            ),
-        ]
-    )
-    db.session.add(System(name="Appel de Cthulhu v7", icon="cthulhu.png"))
-    db.session.add(Vtt(name="Foundry", icon="foundry.png"))
-    db.session.add(Channel(id=TEST_ONESHOT_CHANNEL_ID, type="oneshot", size=20))
-    db.session.add(Channel(id=TEST_CAMPAIGN_CHANNEL_ID, type="campaign", size=20))
-    db.session.add(
-        SpecialEvent(
-            id=TEST_SPECIAL_EVENT_ID,
-            name=TEST_SPECIAL_EVENT_NAME,
-            emoji="\U0001f419",
-            color=15360,
-            active=True,
+    users = [
+        User(id=TEST_ADMIN_USER_ID, name=TEST_ADMIN_USER_NAME, username=TEST_ADMIN_USER_USERNAME),
+        User(id=TEST_GM_USER_ID, name=TEST_GM_USER_NAME, username=TEST_GM_USER_USERNAME),
+        User(
+            id=TEST_REGULAR_USER_ID,
+            name=TEST_REGULAR_USER_NAME,
+            username=TEST_REGULAR_USER_USERNAME,
+        ),
+    ]
+    for user in users:
+        if db.session.get(User, user.id) is None:
+            db.session.add(user)
+
+    if db.session.query(System).filter_by(name="Appel de Cthulhu v7").first() is None:
+        db.session.add(System(name="Appel de Cthulhu v7", icon="cthulhu.png"))
+    if db.session.query(Vtt).filter_by(name="Foundry").first() is None:
+        db.session.add(Vtt(name="Foundry", icon="foundry.png"))
+    if db.session.get(Channel, TEST_ONESHOT_CHANNEL_ID) is None:
+        db.session.add(Channel(id=TEST_ONESHOT_CHANNEL_ID, type="oneshot", size=20))
+    if db.session.get(Channel, TEST_CAMPAIGN_CHANNEL_ID) is None:
+        db.session.add(Channel(id=TEST_CAMPAIGN_CHANNEL_ID, type="campaign", size=20))
+    if db.session.get(SpecialEvent, TEST_SPECIAL_EVENT_ID) is None:
+        db.session.add(
+            SpecialEvent(
+                id=TEST_SPECIAL_EVENT_ID,
+                name=TEST_SPECIAL_EVENT_NAME,
+                emoji="\U0001f419",
+                color=15360,
+                active=True,
+            )
         )
-    )
     db.session.commit()
 
 
