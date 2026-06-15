@@ -204,11 +204,14 @@ class User(db.Model, SerializableMixin):
 
     def refresh_roles(self):
         """Refresh role info from Discord (cached for 5 minutes)."""
+        from website.services.setting import SettingsService
+
+        settings = SettingsService()
         try:
             roles = get_user_roles(self.id)
-            self.is_gm = current_app.config["DISCORD_GM_ROLE_ID"] in roles
-            self.is_admin = current_app.config["DISCORD_ADMIN_ROLE_ID"] in roles
-            self.is_player = current_app.config["DISCORD_PLAYER_ROLE_ID"] in roles
+            self.is_gm = settings.get("DISCORD_GM_ROLE_ID") in roles
+            self.is_admin = settings.get("DISCORD_ADMIN_ROLE_ID") in roles
+            self.is_player = settings.get("DISCORD_PLAYER_ROLE_ID") in roles
         except Exception:
             self.is_gm = False
             self.is_admin = False

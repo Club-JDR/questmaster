@@ -64,8 +64,10 @@ def create_app():
 
     @app.context_processor
     def inject_guild_id():
-        """Inject Discord guild ID into template context."""
-        return {"DISCORD_GUILD_ID": app.config["DISCORD_GUILD_ID"]}
+        """Inject Discord guild ID into template context (DB override aware)."""
+        from website.services import SettingsService
+
+        return {"DISCORD_GUILD_ID": SettingsService().get("DISCORD_GUILD_ID")}
 
     @app.context_processor
     def inject_version():

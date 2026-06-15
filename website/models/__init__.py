@@ -4,6 +4,7 @@ from .channel import Channel
 from .game import Game
 from .game_event import GameEvent
 from .game_session import GameSession
+from .setting import AppSetting
 from .special_event import SpecialEvent
 from .system import System
 from .trophy import Trophy, UserTrophy
@@ -15,6 +16,7 @@ __all__ = [
     "Game",
     "GameEvent",
     "GameSession",
+    "AppSetting",
     "SpecialEvent",
     "System",
     "Trophy",
