@@ -26,15 +26,34 @@ from website.extensions import _setup_test_database
 from website.models import Channel, System, User, Vtt
 
 
+def pytest_addoption(parser):
+    """Register the ``--drop-db`` flag used to wipe the test DB on teardown."""
+    parser.addoption(
+        "--drop-db",
+        action="store_true",
+        default=False,
+        help=(
+            "Drop all database tables after the test module finishes. "
+            "Use in CI for a guaranteed clean slate; off by default so a "
+            "developer's local test database is left intact."
+        ),
+    )
+
+
 @pytest.fixture(scope="module")
-def test_app():
+def test_app(request):
     """Create and configure the Flask test application."""
     app = create_app()
     with app.app_context():
         _setup_test_database()
         yield app
         db.session.remove()
-        db.drop_all()
+        # Only drop tables when explicitly requested (``--drop-db``) or when the
+        # CI env var is set. Locally we leave the database intact so a
+        # developer's test DB is not wiped; idempotent seeding
+        # (_seed_test_data) makes re-runs safe.
+        if request.config.getoption("--drop-db") or os.environ.get("CI"):
+            db.drop_all()
 
 
 @pytest.fixture

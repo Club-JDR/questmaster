@@ -131,6 +131,7 @@ jobs:
             --workdir /github/workspace \
             app-test \
             python -m pytest tests/ \
+              --drop-db \
               --cov website \
               --cov-report xml:test-results/coverage.xml \
               --junitxml=test-results/junit.xml

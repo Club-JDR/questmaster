@@ -66,8 +66,24 @@ New logic should go in the **service layer**. Views should stay thin.
 - Run the test suite before pushing:
 
   ```sh
-  python -m pytest tests/ -m "not integration"
+  uv run pytest tests/ -m "not integration"
   ```
+
+### Test database lifecycle
+
+Tests run against a real (PostgreSQL) database. Reference data is seeded
+idempotently, so the suite can run safely against a database that already
+contains data — re-runs won't fail on duplicate keys.
+
+By default, tables are **not** dropped on teardown, so your local test
+database is left intact between runs. Pass `--drop-db` to wipe all tables
+after the run (used by CI for a guaranteed clean slate):
+
+```sh
+uv run pytest tests/ --drop-db
+```
+
+Setting the `CI` environment variable has the same effect as `--drop-db`.
 
 ## CI Pipeline
 
