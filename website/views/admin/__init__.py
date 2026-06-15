@@ -32,6 +32,7 @@ ADMIN_SECTIONS = [
     {"endpoint": "admin.list_vtts", "label": "VTTs", "icon": "ph-desktop"},
     {"endpoint": "admin.list_channels", "label": "Catégories (salons)", "icon": "ph-hash"},
     {"endpoint": "admin.list_game_events", "label": "Journaux", "icon": "ph-scroll"},
+    {"endpoint": "admin.edit_settings", "label": "Paramètres", "icon": "ph-sliders"},
 ]
 
 
@@ -76,6 +77,7 @@ from website.views.admin import (  # noqa: E402,F401
     channels,
     game_events,
     games,
+    settings,
     special_events,
     systems,
     trophies,

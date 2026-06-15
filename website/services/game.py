@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from flask import current_app
 from slugify import slugify
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -47,8 +46,10 @@ class GameService:
         session_service=None,
         trophy_service=None,
         discord_service=None,
+        settings_service=None,
     ):
         from website.services.discord import DiscordService
+        from website.services.setting import SettingsService
 
         self.repo = repository or GameRepository()
         self.user_service = user_service or UserService()
@@ -56,6 +57,7 @@ class GameService:
         self.session_service = session_service or GameSessionService()
         self.trophy_service = trophy_service or TrophyService()
         self.discord = discord_service or DiscordService()
+        self.settings_service = settings_service or SettingsService()
 
     def list_all(self) -> list[Game]:
         """List all games ordered by date (most recent first).
@@ -670,7 +672,7 @@ class GameService:
             return
 
         try:
-            self.discord.delete_message(game.msg_id, current_app.config["POSTS_CHANNEL_ID"])
+            self.discord.delete_message(game.msg_id, self.settings_service.get("POSTS_CHANNEL_ID"))
             game.msg_id = None
             db.session.commit()
             logger.info(f"Discord embed message deleted for archived game {game.id}")

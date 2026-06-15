@@ -10,8 +10,6 @@ Usage:
     discord.send_game_embed(game, embed_type="annonce")
 """
 
-from flask import current_app
-
 from config.constants import (
     EMBED_COLOR_BLUE,
     EMBED_COLOR_DEFAULT,
@@ -129,7 +127,9 @@ def build_annonce_embed(game, **_) -> tuple[dict, str]:
     if game.img and game.img.startswith(("http://", "https://")):
         embed["image"] = {"url": game.img}
 
-    return embed, current_app.config["POSTS_CHANNEL_ID"]
+    from website.services.setting import SettingsService
+
+    return embed, SettingsService().get("POSTS_CHANNEL_ID")
 
 
 def build_annonce_details_embed(game, **_) -> tuple[dict, str]:
@@ -270,4 +270,6 @@ def build_alert_embed(game, player=None, alert_message=None, **_) -> tuple[dict,
             f"**Annonce :**\n{game_url}\n"
         ),
     }
-    return embed, current_app.config["ADMIN_CHANNEL_ID"]
+    from website.services.setting import SettingsService
+
+    return embed, SettingsService().get("ADMIN_CHANNEL_ID")

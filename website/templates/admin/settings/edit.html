@@ -1,0 +1,50 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+{% block admin_content %}
+{{ ui.header('Paramètres', 'ph-sliders') }}
+
+<div class="alert alert-info mb-4">
+  <i class="ph ph-info" aria-hidden="true"></i>
+  <span>
+    Ces valeurs remplacent la configuration issue des variables d'environnement.
+    Laissez un champ vide pour revenir à la valeur d'environnement.
+  </span>
+</div>
+
+<form method="post" action="{{ url_for('admin.edit_settings') }}" class="space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {% for group, items in settings|groupby('group') %}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body space-y-3">
+      <h2 class="card-title text-base">{{ group }}</h2>
+
+      {% for item in items %}
+      <div class="flex flex-col gap-1">
+        <label for="{{ item.key }}" class="{{ lbl }}">{{ item.label }}</label>
+        <input type="text" id="{{ item.key }}" name="{{ item.key }}"
+               class="input input-bordered w-full font-mono"
+               autocomplete="off"
+               value="{{ item.override or '' }}"
+               placeholder="{{ item.env_value or '(non défini)' }}">
+        <span class="text-xs text-base-content/50">
+          <span class="font-mono">{{ item.key }}</span>
+          &middot; Environnement&nbsp;:
+          <span class="font-mono">{{ item.env_value or '(non défini)' }}</span>
+          {% if item.override %}
+          &middot; <span class="text-success">surchargé</span>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="flex justify-end gap-2">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

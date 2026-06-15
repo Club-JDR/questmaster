@@ -19,6 +19,7 @@ from tests.factories import (
     VttFactory,
 )
 from website.models import (
+    AppSetting,
     Channel,
     Game,
     SpecialEvent,
@@ -40,6 +41,7 @@ ADMIN_LIST_ROUTES = [
     "/admin/vtts/",
     "/admin/channels/",
     "/admin/game-events/",
+    "/admin/settings/",
 ]
 
 
@@ -284,6 +286,46 @@ def test_unique_trophy_hides_increment_buttons(admin_client, db_session):
     body = response.data.decode()
     # The increment action for this unique pair must be absent from the page.
     assert f"/admin/user-trophies/{user.id}/{trophy.id}/increment" not in body
+
+
+# -- Settings (config overrides) ---------------------------------------------
+
+
+@pytest.fixture
+def clean_app_settings(db_session):
+    """Clear app_setting overrides before and after a settings test."""
+    db_session.query(AppSetting).delete()
+    db_session.commit()
+    yield
+    db_session.query(AppSetting).delete()
+    db_session.commit()
+
+
+def test_settings_page_shows_env_fallback(admin_client, db_session):
+    response = admin_client.get("/admin/settings/")
+    assert response.status_code == 200
+    # The overridable keys are surfaced as form fields.
+    assert 'name="DISCORD_GM_ROLE_ID"' in response.data.decode()
+
+
+def test_settings_save_creates_override(admin_client, db_session, mock_csrf, clean_app_settings):
+    response = admin_client.post(
+        "/admin/settings/",
+        data={"DISCORD_GM_ROLE_ID": "custom-gm-role"},
+    )
+    assert response.status_code == 302
+    stored = db_session.get(AppSetting, "DISCORD_GM_ROLE_ID")
+    assert stored.value == "custom-gm-role"
+    assert stored.updated_by_id == "admin"
+
+
+def test_settings_save_empty_clears_override(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    db_session.add(AppSetting(key="POSTS_CHANNEL_ID", value="old-channel"))
+    db_session.commit()
+    admin_client.post("/admin/settings/", data={"POSTS_CHANNEL_ID": ""})
+    assert db_session.get(AppSetting, "POSTS_CHANNEL_ID") is None
 
 
 # -- Users -------------------------------------------------------------------
