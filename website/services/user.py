@@ -129,6 +129,24 @@ class UserService:
         """
         return _get_user_profile(user_id, force_refresh=force_refresh)
 
+    def update(self, user_id: str, data: dict) -> User:
+        """Update an existing user's editable fields.
+
+        Args:
+            user_id: Discord user ID.
+            data: Dictionary of fields to update (name, username, not_player_as_of).
+
+        Returns:
+            Updated User instance.
+
+        Raises:
+            NotFoundError: If user does not exist.
+        """
+        user = self.get_by_id(user_id)
+        user.update_from_dict(data)
+        db.session.commit()
+        return user
+
     def mark_inactive(self, user_id: str) -> User:
         """Mark a user as inactive (left the Discord server).
 

@@ -87,7 +87,17 @@
           </details>
         </li>
         {% if payload['is_admin'] %}
-        <li><a href="/admin" class="font-bold text-error">Admin</a></li>
+        <li>
+          <details>
+            <summary id="adminMenu" class="font-bold text-error">Admin</summary>
+            <ul class="bg-base-100 text-base-content rounded-box z-50 w-64 p-2 shadow-xl">
+              <li><a href="{{ url_for('admin.index') }}">Tableau de bord</a></li>
+              {% for section in admin_sections %}
+              <li><a href="{{ url_for(section.endpoint) }}">{{ section.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </details>
+        </li>
         {% endif %}
       </ul>
     </div>
@@ -171,7 +181,17 @@
             </details>
           </li>
           {% if payload['is_admin'] %}
-          <li><a href="/admin">Admin</a></li>
+          <li>
+            <details>
+              <summary class="font-bold text-error">Admin</summary>
+              <ul>
+                <li><a href="{{ url_for('admin.index') }}">Tableau de bord</a></li>
+                {% for section in admin_sections %}
+                <li><a href="{{ url_for(section.endpoint) }}">{{ section.label }}</a></li>
+                {% endfor %}
+              </ul>
+            </details>
+          </li>
           {% endif %}
         </ul>
       </div>

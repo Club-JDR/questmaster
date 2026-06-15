@@ -4,17 +4,14 @@ import os
 import uuid
 
 from flask import Flask, g
-from flask_admin import Admin
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from website import models
 from website.bot import set_bot
 from website.client.discord import Discord
 from website.extensions import cache, csrf, db, migrate, oauth, seed_trophies, setup_test_db
 from website.scheduler import start_scheduler
 from website.utils import get_app_version
 from website.utils.logger import configure_logging
-from website.views import admin as admin_view
 from website.views import register_blueprints, register_filters
 
 
@@ -94,25 +91,6 @@ def create_app():
     # Create bot instance and store it
     bot_instance = Discord(app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"])
     set_bot(bot_instance)
-
-    # Admin
-    app.config["FLASK_ADMIN_SWATCH"] = "cosmo"
-    admin = Admin(
-        app,
-        name="QuestMaster Admin",
-        index_view=admin_view.SecureAdminIndexView(),
-    )
-    admin.add_view(admin_view.UserAdmin(models.User, db, name="Utilisateurs"))
-    admin.add_view(admin_view.GameAdmin(models.Game, db, name="Annonces"))
-    admin.add_view(admin_view.SpecialEventAdmin(models.SpecialEvent, db, name="Événements"))
-    admin.add_view(
-        admin_view.UserTrophyAdmin(models.UserTrophy, db, name="Association Utilisateurs/Badges")
-    )
-    admin.add_view(admin_view.AdminView(models.Trophy, db, name="Badges"))
-    admin.add_view(admin_view.VttAdmin(models.Vtt, db, name="VTTs"))
-    admin.add_view(admin_view.SystemAdmin(models.System, db, name="Systèmes"))
-    admin.add_view(admin_view.ChannelAdmin(models.Channel, db, name="Catégories (salons)"))
-    admin.add_view(admin_view.GameEventAdmin(models.GameEvent, db, name="Journaux"))
 
     register_blueprints(app)
     register_filters(app)

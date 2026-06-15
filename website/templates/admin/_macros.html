@@ -1,0 +1,36 @@
+{# Reusable admin UI macros. #}
+
+{% macro header(title, icon='ph-gear', new_url=None, new_label='Ajouter') %}
+<div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
+  <h1 class="text-2xl font-black flex items-center gap-2">
+    <i class="ph {{ icon }}" aria-hidden="true"></i> {{ title }}
+  </h1>
+  {% if new_url %}
+  <a href="{{ new_url }}" class="btn btn-primary btn-sm gap-1">
+    <i class="ph ph-plus" aria-hidden="true"></i> {{ new_label }}
+  </a>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro delete_button(action, confirm='Confirmer la suppression ?') %}
+<form method="post" action="{{ action }}" class="inline"
+      onsubmit="return confirm('{{ confirm }}');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Supprimer">
+    <i class="ph ph-trash" aria-hidden="true"></i>
+  </button>
+</form>
+{% endmacro %}
+
+{% macro edit_link(url) %}
+<a href="{{ url }}" class="btn btn-ghost btn-xs" aria-label="Éditer">
+  <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+</a>
+{% endmacro %}
+
+{% macro empty_row(colspan, message='Aucun élément.') %}
+<tr>
+  <td colspan="{{ colspan }}" class="text-center text-base-content/50 py-6">{{ message }}</td>
+</tr>
+{% endmacro %}

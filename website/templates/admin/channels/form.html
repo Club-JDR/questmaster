@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+{% block admin_content %}
+{{ ui.header('Catégorie' if channel else 'Nouvelle catégorie', 'ph-hash') }}
+
+<div class="card bg-base-100 shadow-md max-w-xl">
+  <form method="post"
+        action="{{ url_for('admin.edit_channel', channel_id=channel.id) if channel else url_for('admin.create_channel') }}"
+        class="card-body space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="flex flex-col gap-1">
+      <label for="id" class="{{ lbl }}">Discord ID</label>
+      {% if channel %}
+      <input type="text" class="input input-bordered w-full font-mono" value="{{ channel.id }}" disabled>
+      {% else %}
+      <input type="text" id="id" name="id" class="input input-bordered w-full font-mono" required
+             autocomplete="off" placeholder="123456789012345678">
+      {% endif %}
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="type" class="{{ lbl }}">Type</label>
+      <select id="type" name="type" class="select select-bordered w-full" required>
+        {% for t in game_types %}
+        <option value="{{ t }}" {% if channel and channel.type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="size" class="{{ lbl }}">Taille (nombre de salons)</label>
+      <input type="number" id="size" name="size" class="input input-bordered w-full" min="0"
+             value="{{ channel.size if channel else 0 }}">
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <a href="{{ url_for('admin.list_channels') }}" class="btn btn-ghost">Annuler</a>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

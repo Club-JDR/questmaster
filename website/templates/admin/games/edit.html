@@ -1,0 +1,269 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+{% set cls = game.classification or {} %}
+{% set amb = game.ambience or [] %}
+
+{% block admin_content %}
+{{ ui.header('Éditer l\'annonce', 'ph-note-pencil') }}
+
+<form method="post" action="{{ url_for('admin.edit_game', game_id=game.id) }}" class="space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {# ── Identité & état ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+      <div class="flex flex-col gap-1">
+        <label for="name" class="{{ lbl }}">Nom</label>
+        <input type="text" id="name" name="name" class="input input-bordered w-full"
+               value="{{ game.name }}" required>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="slug" class="{{ lbl }}">Slug</label>
+        <input type="text" id="slug" name="slug" class="input input-bordered w-full font-mono"
+               value="{{ game.slug }}" required>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="type" class="{{ lbl }}">Type</label>
+        <select id="type" name="type" class="select select-bordered w-full" required>
+          {% for t in game_types %}
+          <option value="{{ t }}" {% if game.type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="status" class="{{ lbl }}">Statut</label>
+        <select id="status" name="status" class="select select-bordered w-full" required>
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if game.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="gm_id" class="{{ lbl }}">MJ</label>
+        <select id="gm_id" name="gm_id" class="select select-bordered w-full" required>
+          {% for u in users %}
+          <option value="{{ u.id }}" {% if game.gm_id == u.id %}selected{% endif %}>{{ u.name }} ({{ u.id }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="special_event_id" class="{{ lbl }}">Événement
+          <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+        <select id="special_event_id" name="special_event_id" class="select select-bordered w-full">
+          <option value=""></option>
+          {% for e in special_events %}
+          <option value="{{ e.id }}" {% if game.special_event_id == e.id %}selected{% endif %}>{{ e.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Système, planning ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+      <div class="flex flex-col gap-1">
+        <label for="system_id" class="{{ lbl }}">Système</label>
+        <select id="system_id" name="system_id" class="select select-bordered w-full" required>
+          {% for s in systems %}
+          <option value="{{ s.id }}" {% if game.system_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="vtt_id" class="{{ lbl }}">VTT
+          <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+        <select id="vtt_id" name="vtt_id" class="select select-bordered w-full">
+          <option value=""></option>
+          {% for v in vtts %}
+          <option value="{{ v.id }}" {% if game.vtt_id == v.id %}selected{% endif %}>{{ v.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="length" class="{{ lbl }}">Durée (texte)</label>
+        <input type="text" id="length" name="length" class="input input-bordered w-full"
+               value="{{ game.length }}" required>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="session_length" class="{{ lbl }}">Durée d'une session (h)</label>
+        <input type="number" id="session_length" name="session_length" step="0.5" min="0.5" max="24"
+               class="input input-bordered w-full" value="{{ game.session_length }}" required>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="date" class="{{ lbl }}">Date</label>
+        <input type="datetime-local" id="date" name="date" class="input input-bordered w-full"
+               value="{{ game.date|format_datetime('%Y-%m-%dT%H:%M') }}" required>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="frequency" class="{{ lbl }}">Fréquence
+          <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+        <select id="frequency" name="frequency" class="select select-bordered w-full">
+          <option value=""></option>
+          {% for f in frequencies %}
+          <option value="{{ f }}" {% if game.frequency == f %}selected{% endif %}>{{ f }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Joueurs & paramètres ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+      <div class="flex flex-col gap-1">
+        <label for="party_size" class="{{ lbl }}">Nombre de joueur·euses</label>
+        <input type="number" id="party_size" name="party_size" min="1" max="99"
+               class="input input-bordered w-full" value="{{ game.party_size }}" required>
+      </div>
+
+      <label class="flex items-center gap-2 cursor-pointer select-none md:mt-7">
+        <input type="checkbox" name="party_selection" class="toggle toggle-primary toggle-sm"
+               {% if game.party_selection %}checked{% endif %}>
+        <span class="text-sm text-base-content/60">Sur sélection</span>
+      </label>
+
+      <div class="flex flex-col gap-1">
+        <label for="xp" class="{{ lbl }}">Expérience</label>
+        <select id="xp" name="xp" class="select select-bordered w-full">
+          {% for x in xp_levels %}
+          <option value="{{ x }}" {% if game.xp == x %}selected{% endif %}>{{ x }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="characters" class="{{ lbl }}">Personnages</label>
+        <select id="characters" name="characters" class="select select-bordered w-full">
+          <option value=""></option>
+          {% for c in characters %}
+          <option value="{{ c }}" {% if game.characters == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="restriction" class="{{ lbl }}">Avertissement</label>
+        <select id="restriction" name="restriction" class="select select-bordered w-full" required>
+          {% for r in restrictions %}
+          <option value="{{ r }}" {% if game.restriction == r %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="restriction_tags" class="{{ lbl }}">Thèmes
+          <span class="font-normal text-xs text-base-content/40">(séparés par des virgules)</span></label>
+        <input type="text" id="restriction_tags" name="restriction_tags" class="input input-bordered w-full"
+               value="{{ game.restriction_tags if game.restriction_tags is not none else '' }}">
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Contenu ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 space-y-3">
+
+      <div class="flex flex-col gap-1">
+        <label for="description" class="{{ lbl }}">Description</label>
+        <textarea id="description" name="description" rows="6"
+                  class="textarea textarea-bordered w-full" required>{{ game.description }}</textarea>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="complement" class="{{ lbl }}">Informations complémentaires
+          <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+        <textarea id="complement" name="complement" rows="2"
+                  class="textarea textarea-bordered w-full">{{ game.complement if game.complement else '' }}</textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <fieldset>
+          <legend class="{{ lbl }}">Classification (0–2)</legend>
+          <div class="space-y-2 mt-1">
+            {% for label, name in [('Action', 'class-action'), ('Investigation', 'class-investigation'),
+                                    ('Interaction', 'class-interaction'), ('Horreur', 'class-horror')] %}
+            {% set key = name[6:] %}
+            <div>
+              <div class="flex justify-between text-xs text-base-content/60 mb-0.5">
+                <span>{{ label }}</span>
+              </div>
+              <input type="range" class="range range-primary range-xs w-full" min="0" max="2" step="1"
+                     id="{{ name }}" name="{{ name }}" value="{{ cls.get(key, 0) }}">
+            </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="{{ lbl }}">Ambiance</legend>
+          <div class="space-y-2 mt-1">
+            {% for key, label in [('chill', 'Décontractée'), ('serious', 'Sérieuse'),
+                                   ('comic', 'Comique'), ('epic', 'Épique')] %}
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" class="toggle toggle-primary toggle-sm" name="{{ key }}"
+                     {% if key in amb %}checked{% endif %}>
+              <span class="text-sm">{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Ressources Discord & image ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+      <div class="flex flex-col gap-1 md:col-span-2">
+        <label for="img" class="{{ lbl }}">Image (URL)</label>
+        <input type="url" id="img" name="img" class="input input-bordered w-full"
+               value="{{ game.img if game.img else '' }}">
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="channel" class="{{ lbl }}">Channel ID</label>
+        <input type="text" id="channel" name="channel" class="input input-bordered w-full font-mono"
+               value="{{ game.channel if game.channel else '' }}">
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="msg_id" class="{{ lbl }}">Message ID</label>
+        <input type="text" id="msg_id" name="msg_id" class="input input-bordered w-full font-mono"
+               value="{{ game.msg_id if game.msg_id else '' }}">
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="role" class="{{ lbl }}">Role ID</label>
+        <input type="text" id="role" name="role" class="input input-bordered w-full font-mono"
+               value="{{ game.role if game.role else '' }}">
+      </div>
+
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('admin.list_games') }}" class="btn btn-ghost">Annuler</a>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

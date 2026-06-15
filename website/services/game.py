@@ -57,6 +57,53 @@ class GameService:
         self.trophy_service = trophy_service or TrophyService()
         self.discord = discord_service or DiscordService()
 
+    def list_all(self) -> list[Game]:
+        """List all games ordered by date (most recent first).
+
+        Intended for the admin panel.
+
+        Returns:
+            List of Game instances.
+        """
+        return self.repo.get_all_ordered()
+
+    def admin_update(self, game_id: int, data: dict) -> Game:
+        """Update a game's fields directly from the admin panel.
+
+        Unlike :meth:`update`, this performs a direct field assignment of any
+        provided column (including ``slug``, ``status``, and Discord identifiers)
+        without slug regeneration, draft-only guards, or Discord embed syncing.
+        It mirrors the behaviour of the previous Flask-Admin model editor.
+
+        Args:
+            game_id: Game ID.
+            data: Dictionary of fields to update.
+
+        Returns:
+            Updated Game instance.
+
+        Raises:
+            NotFoundError: If the game doesn't exist.
+            ValidationError: If a field value is invalid.
+        """
+        game = self.get_by_id(game_id)
+
+        try:
+            # Slug is protected by update_from_dict; the admin may edit it explicitly.
+            if "slug" in data:
+                game.slug = data["slug"]
+            game.update_from_dict(data)
+            db.session.commit()
+            logger.info(f"Game {game.id} updated via admin panel")
+            return game
+        except ValidationError:
+            db.session.rollback()
+            raise
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to admin-update game {game_id}: {e}", exc_info=True)
+            raise
+
     def get_by_id(self, game_id: int) -> Game:
         """Get game by ID.
 
