@@ -23,6 +23,15 @@
 </form>
 {% endmacro %}
 
+{% macro post_icon_button(action, icon, css='btn-ghost', label='') %}
+<form method="post" action="{{ action }}" class="inline">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn {{ css }} btn-xs" aria-label="{{ label }}" title="{{ label }}">
+    <i class="ph {{ icon }}" aria-hidden="true"></i>
+  </button>
+</form>
+{% endmacro %}
+
 {% macro edit_link(url) %}
 <a href="{{ url }}" class="btn btn-ghost btn-xs" aria-label="Éditer">
   <i class="ph ph-pencil-simple" aria-hidden="true"></i>

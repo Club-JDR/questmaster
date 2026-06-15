@@ -24,6 +24,16 @@
         <td>{{ ut.trophy.name }}</td>
         <td>{{ ut.quantity }}</td>
         <td class="text-right whitespace-nowrap">
+          {% if ut.trophy.unique %}
+          <span class="badge badge-info badge-sm align-middle" title="Badge unique">Unique</span>
+          {% else %}
+          {{ ui.post_icon_button(
+               url_for('admin.increment_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id),
+               'ph-plus', 'btn-ghost text-success', 'Incrémenter') }}
+          {{ ui.post_icon_button(
+               url_for('admin.decrement_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id),
+               'ph-minus', 'btn-ghost text-warning', 'Décrémenter') }}
+          {% endif %}
           {{ ui.edit_link(url_for('admin.edit_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id)) }}
           {{ ui.delete_button(url_for('admin.delete_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id)) }}
         </td>

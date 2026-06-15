@@ -243,6 +243,49 @@ def test_delete_user_trophy(admin_client, db_session, mock_csrf):
     assert db_session.get(UserTrophy, (user.id, trophy.id)) is None
 
 
+# -- Trophy increment / decrement quick actions (Phase 2) --------------------
+
+
+def test_increment_user_trophy(admin_client, db_session, mock_csrf):
+    trophy = TrophyFactory(db_session)
+    user = UserFactory(db_session)
+    ut = UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
+    response = admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/increment")
+    assert response.status_code == 302
+    db_session.refresh(ut)
+    assert ut.quantity == 2
+
+
+def test_decrement_user_trophy_above_one(admin_client, db_session, mock_csrf):
+    trophy = TrophyFactory(db_session)
+    user = UserFactory(db_session)
+    ut = UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=3)
+    response = admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/decrement")
+    assert response.status_code == 302
+    db_session.refresh(ut)
+    assert ut.quantity == 2
+
+
+def test_decrement_user_trophy_at_one_removes_record(admin_client, db_session, mock_csrf):
+    trophy = TrophyFactory(db_session)
+    user = UserFactory(db_session)
+    UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
+    response = admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/decrement")
+    assert response.status_code == 302
+    assert db_session.get(UserTrophy, (user.id, trophy.id)) is None
+
+
+def test_unique_trophy_hides_increment_buttons(admin_client, db_session):
+    trophy = TrophyFactory(db_session, unique=True)
+    user = UserFactory(db_session)
+    UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
+    response = admin_client.get("/admin/user-trophies/")
+    assert response.status_code == 200
+    body = response.data.decode()
+    # The increment action for this unique pair must be absent from the page.
+    assert f"/admin/user-trophies/{user.id}/{trophy.id}/increment" not in body
+
+
 # -- Users -------------------------------------------------------------------
 
 

@@ -197,6 +197,34 @@ class TrophyService:
         self.repo.delete_user_trophy(user_trophy)
         db.session.commit()
 
+    def decrement_user_trophy(
+        self, user_id: str, trophy_id: int, amount: int = 1
+    ) -> UserTrophy | None:
+        """Decrement a user/trophy quantity, removing the record if it hits zero.
+
+        Quantity never drops below 1: decrementing a record whose quantity would
+        reach 0 deletes the association instead.
+
+        Args:
+            user_id: User ID.
+            trophy_id: Trophy ID.
+            amount: Amount to subtract. Defaults to 1.
+
+        Returns:
+            The updated UserTrophy instance, or None if the record was removed.
+
+        Raises:
+            NotFoundError: If the association does not exist.
+        """
+        user_trophy = self.get_user_trophy(user_id, trophy_id)
+        if user_trophy.quantity - amount <= 0:
+            self.repo.delete_user_trophy(user_trophy)
+            db.session.commit()
+            return None
+        user_trophy.quantity -= amount
+        db.session.commit()
+        return user_trophy
+
     def award(self, user_id: str, trophy_id: int, amount: int = 1) -> UserTrophy:
         """Award a trophy to a user.
 

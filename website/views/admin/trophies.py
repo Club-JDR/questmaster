@@ -141,3 +141,25 @@ def delete_user_trophy(user_id, trophy_id):
     trophy_service.delete_user_trophy(user_id, trophy_id)
     flash("Association supprimée.", "success")
     return redirect(url_for("admin.list_user_trophies"))
+
+
+@admin_bp.route("/user-trophies/<user_id>/<int:trophy_id>/increment", methods=["POST"])
+def increment_user_trophy(user_id, trophy_id):
+    """Increment a (non-unique) trophy quantity by one."""
+    try:
+        trophy_service.award(user_id, trophy_id, amount=1)
+        flash("Badge incrémenté.", "success")
+    except NotFoundError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.list_user_trophies"))
+
+
+@admin_bp.route("/user-trophies/<user_id>/<int:trophy_id>/decrement", methods=["POST"])
+def decrement_user_trophy(user_id, trophy_id):
+    """Decrement a trophy quantity by one, removing the row when it reaches zero."""
+    try:
+        trophy_service.decrement_user_trophy(user_id, trophy_id)
+        flash("Badge décrémenté.", "success")
+    except NotFoundError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.list_user_trophies"))
