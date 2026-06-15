@@ -1,0 +1,22 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('QuestMaster Admin', 'ph-gauge') }}
+
+<p class="text-base-content/70 mb-4">
+  Panneau d'administration. Choisissez une section ci-dessous ou dans le menu latéral.
+</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% for section in admin_sections %}
+  <a href="{{ url_for(section.endpoint) }}"
+     class="card bg-base-100 shadow-md hover:shadow-lg transition-shadow">
+    <div class="card-body flex-row items-center gap-3 p-4">
+      <i class="ph {{ section.icon }} text-3xl text-primary" aria-hidden="true"></i>
+      <span class="font-semibold">{{ section.label }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

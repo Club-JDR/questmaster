@@ -9,6 +9,19 @@ class GameEventRepository(BaseRepository[GameEvent]):
 
     model_class = GameEvent
 
+    def get_recent(self, limit: int = 200) -> list[GameEvent]:
+        """Retrieve the most recent game events.
+
+        Args:
+            limit: Maximum number of events to return. Defaults to 200.
+
+        Returns:
+            List of GameEvent instances ordered by timestamp (newest first).
+        """
+        return (
+            self.session.query(GameEvent).order_by(GameEvent.timestamp.desc()).limit(limit).all()
+        )
+
     def log(
         self, action: str, game_id: int, description: str | None = None, user_id: str | None = None
     ) -> GameEvent:

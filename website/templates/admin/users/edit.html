@@ -1,0 +1,37 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+{% block admin_content %}
+{{ ui.header('Éditer un utilisateur', 'ph-user') }}
+
+<div class="card bg-base-100 shadow-md max-w-xl">
+  <form method="post" action="{{ url_for('admin.edit_user', user_id=user.id) }}" class="card-body space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="flex flex-col gap-1">
+      <label class="{{ lbl }}">Discord ID</label>
+      <input type="text" class="input input-bordered w-full font-mono" value="{{ user.id }}" disabled>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="name" class="{{ lbl }}">Nom</label>
+      <input type="text" id="name" name="name" class="input input-bordered w-full"
+             value="{{ user.name }}" required>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="not_player_as_of" class="{{ lbl }}">Inactif depuis
+        <span class="font-normal text-xs text-base-content/40">(laisser vide si actif)</span></label>
+      <input type="datetime-local" id="not_player_as_of" name="not_player_as_of"
+             class="input input-bordered w-full"
+             value="{% if user.not_player_as_of %}{{ user.not_player_as_of|format_datetime('%Y-%m-%dT%H:%M') }}{% endif %}">
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <a href="{{ url_for('admin.list_users') }}" class="btn btn-ghost">Annuler</a>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

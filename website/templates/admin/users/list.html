@@ -1,0 +1,39 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Utilisateurs', 'ph-users') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Discord ID</th>
+        <th>Nom</th>
+        <th>Inactif depuis</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td class="font-mono text-xs">{{ user.id }}</td>
+        <td>{{ user.name }}</td>
+        <td>
+          {% if user.not_player_as_of %}
+          <span class="badge badge-warning badge-sm">{{ user.not_player_as_of|format_datetime('%Y-%m-%d') }}</span>
+          {% else %}
+          <span class="badge badge-success badge-sm">Actif</span>
+          {% endif %}
+        </td>
+        <td class="text-right">
+          {{ ui.edit_link(url_for('admin.edit_user', user_id=user.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(4, 'Aucun utilisateur.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

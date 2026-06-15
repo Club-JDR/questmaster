@@ -15,6 +15,55 @@ class TrophyRepository(BaseRepository[Trophy]):
 
     model_class = Trophy
 
+    def get_all_ordered(self) -> list[Trophy]:
+        """Retrieve all trophy definitions ordered by name.
+
+        Returns:
+            List of Trophy instances sorted alphabetically.
+        """
+        return self.session.query(Trophy).order_by(Trophy.name).all()
+
+    def get_by_name(self, name: str) -> Trophy | None:
+        """Find a trophy definition by its name.
+
+        Args:
+            name: Trophy name to search for.
+
+        Returns:
+            Trophy instance if found, None otherwise.
+        """
+        return self.session.query(Trophy).filter_by(name=name).first()
+
+    def get_all_user_trophies(self) -> list[UserTrophy]:
+        """Retrieve all user/trophy associations.
+
+        Returns:
+            List of UserTrophy instances.
+        """
+        return self.session.query(UserTrophy).join(Trophy).order_by(Trophy.name).all()
+
+    def add_user_trophy(self, user_trophy: UserTrophy) -> UserTrophy:
+        """Persist a new user/trophy association.
+
+        Args:
+            user_trophy: UserTrophy instance to add.
+
+        Returns:
+            The persisted UserTrophy instance.
+        """
+        self.session.add(user_trophy)
+        self.session.flush()
+        return user_trophy
+
+    def delete_user_trophy(self, user_trophy: UserTrophy) -> None:
+        """Delete a user/trophy association.
+
+        Args:
+            user_trophy: UserTrophy instance to remove.
+        """
+        self.session.delete(user_trophy)
+        self.session.flush()
+
     def get_user_trophy(self, user_id: str, trophy_id: int) -> UserTrophy | None:
         """Get a user's trophy record.
 

@@ -2,7 +2,7 @@
 
 import logging
 
-from website.exceptions import NotFoundError
+from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models.trophy import Trophy, UserTrophy
 from website.models.user import User
@@ -43,12 +43,159 @@ class TrophyService:
         return trophy
 
     def get_all(self) -> list[Trophy]:
-        """Get all trophy definitions.
+        """Get all trophy definitions ordered by name.
 
         Returns:
             List of all Trophy instances.
         """
-        return self.repo.get_all()
+        return self.repo.get_all_ordered()
+
+    def create_trophy(self, name: str, unique: bool = False, icon: str | None = None) -> Trophy:
+        """Create a new trophy definition.
+
+        Args:
+            name: Trophy name (must be unique).
+            unique: Whether the trophy can only be earned once. Defaults to False.
+            icon: Optional path or URL to the trophy icon.
+
+        Returns:
+            Created Trophy instance.
+
+        Raises:
+            ValidationError: If a trophy with this name already exists.
+        """
+        if self.repo.get_by_name(name):
+            raise ValidationError("Trophy name already exists.", field="name")
+        trophy = Trophy(name=name, unique=unique, icon=icon)
+        self.repo.add(trophy)
+        db.session.commit()
+        return trophy
+
+    def update_trophy(self, trophy_id: int, data: dict) -> Trophy:
+        """Update a trophy definition.
+
+        Args:
+            trophy_id: Trophy ID.
+            data: Dictionary of fields to update.
+
+        Returns:
+            Updated Trophy instance.
+
+        Raises:
+            ValidationError: If the new name conflicts with another trophy.
+        """
+        trophy = self.repo.get_by_id_or_404(trophy_id)
+        if "name" in data and data["name"] != trophy.name:
+            existing = self.repo.get_by_name(data["name"])
+            if existing:
+                raise ValidationError("Trophy name already exists.", field="name")
+        trophy.update_from_dict(data)
+        db.session.commit()
+        return trophy
+
+    def delete_trophy(self, trophy_id: int) -> None:
+        """Delete a trophy definition.
+
+        Args:
+            trophy_id: Trophy ID.
+        """
+        trophy = self.repo.get_by_id_or_404(trophy_id)
+        self.repo.delete(trophy)
+        db.session.commit()
+
+    def get_all_user_trophies(self) -> list[UserTrophy]:
+        """Get all user/trophy associations.
+
+        Returns:
+            List of UserTrophy instances ordered by trophy name.
+        """
+        return self.repo.get_all_user_trophies()
+
+    def get_user_trophy(self, user_id: str, trophy_id: int) -> UserTrophy:
+        """Get a single user/trophy association.
+
+        Args:
+            user_id: User ID.
+            trophy_id: Trophy ID.
+
+        Returns:
+            UserTrophy instance.
+
+        Raises:
+            NotFoundError: If the association does not exist.
+        """
+        user_trophy = self.repo.get_user_trophy(user_id, trophy_id)
+        if user_trophy is None:
+            raise NotFoundError(
+                f"UserTrophy for user {user_id} and trophy {trophy_id} not found",
+                resource_type="UserTrophy",
+            )
+        return user_trophy
+
+    def create_user_trophy(self, user_id: str, trophy_id: int, quantity: int = 1) -> UserTrophy:
+        """Create a user/trophy association.
+
+        Enforces trophy uniqueness: unique trophies can only be awarded once and
+        their quantity is forced to 1.
+
+        Args:
+            user_id: User ID.
+            trophy_id: Trophy ID.
+            quantity: Quantity to award. Defaults to 1.
+
+        Returns:
+            Created UserTrophy instance.
+
+        Raises:
+            ValidationError: If the user already owns this trophy.
+        """
+        trophy = self.get_by_id(trophy_id)
+        if self.repo.get_user_trophy(user_id, trophy_id) is not None:
+            raise ValidationError(
+                "User already owns this trophy.",
+                field="trophy_id",
+            )
+        if trophy.unique:
+            quantity = 1
+        user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=quantity)
+        self.repo.add_user_trophy(user_trophy)
+        db.session.commit()
+        return user_trophy
+
+    def update_user_trophy(self, user_id: str, trophy_id: int, quantity: int) -> UserTrophy:
+        """Update the quantity of a user/trophy association.
+
+        Args:
+            user_id: User ID.
+            trophy_id: Trophy ID.
+            quantity: New quantity (forced to 1 for unique trophies).
+
+        Returns:
+            Updated UserTrophy instance.
+
+        Raises:
+            NotFoundError: If the association does not exist.
+        """
+        user_trophy = self.get_user_trophy(user_id, trophy_id)
+        if user_trophy.trophy.unique:
+            quantity = 1
+        user_trophy.quantity = max(1, quantity)
+        db.session.commit()
+        return user_trophy
+
+    def delete_user_trophy(self, user_id: str, trophy_id: int) -> None:
+        """Delete a user/trophy association.
+
+        Args:
+            user_id: User ID.
+            trophy_id: Trophy ID.
+
+        Raises:
+            NotFoundError: If the association does not exist.
+        """
+        user_trophy = self.get_user_trophy(user_id, trophy_id)
+        self.repo.delete_user_trophy(user_trophy)
+        db.session.commit()
 
     def award(self, user_id: str, trophy_id: int, amount: int = 1) -> UserTrophy:
         """Award a trophy to a user.

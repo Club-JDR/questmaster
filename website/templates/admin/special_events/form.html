@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+{% block admin_content %}
+{{ ui.header('Événement' if event else 'Nouvel événement', 'ph-sparkle') }}
+
+<div class="card bg-base-100 shadow-md max-w-xl">
+  <form method="post"
+        action="{{ url_for('admin.edit_special_event', event_id=event.id) if event else url_for('admin.create_special_event') }}"
+        class="card-body space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="flex flex-col gap-1">
+      <label for="name" class="{{ lbl }}">Nom</label>
+      <input type="text" id="name" name="name" class="input input-bordered w-full"
+             value="{{ event.name if event else '' }}" required autocomplete="off">
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="emoji" class="{{ lbl }}">Emoji
+        <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+      <input type="text" id="emoji" name="emoji" class="input input-bordered w-full"
+             value="{{ event.emoji if event and event.emoji else '' }}">
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="color" class="{{ lbl }}">Couleur</label>
+      <input type="color" id="color" name="color" class="h-10 w-20 p-0 border-none cursor-pointer bg-transparent"
+             value="{{ hex_color(event.color) if event and event.color is not none else '#000000' }}">
+    </div>
+
+    <label class="flex items-center gap-2 cursor-pointer select-none">
+      <input type="checkbox" name="active" class="toggle toggle-primary toggle-sm"
+             {% if event and event.active %}checked{% endif %}>
+      <span class="text-sm text-base-content/60">Actif</span>
+    </label>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <a href="{{ url_for('admin.list_special_events') }}" class="btn btn-ghost">Annuler</a>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('VTTs', 'ph-desktop', url_for('admin.create_vtt'), 'Nouveau VTT') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nom</th>
+        <th>Icône</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vtt in vtts %}
+      <tr>
+        <td>{{ vtt.id }}</td>
+        <td>{{ vtt.name }}</td>
+        <td class="text-xs text-base-content/60">{{ vtt.icon or '—' }}</td>
+        <td class="text-right whitespace-nowrap">
+          {{ ui.edit_link(url_for('admin.edit_vtt', vtt_id=vtt.id)) }}
+          {{ ui.delete_button(url_for('admin.delete_vtt', vtt_id=vtt.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(4, 'Aucun VTT.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

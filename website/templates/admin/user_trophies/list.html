@@ -1,0 +1,37 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Association Utilisateurs/Badges', 'ph-medal', url_for('admin.create_user_trophy'), 'Attribuer un badge') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Badge</th>
+        <th>Quantité</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ut in user_trophies %}
+      <tr>
+        <td>
+          {{ ut.user.name }}
+          <span class="font-mono text-xs text-base-content/50 block">{{ ut.user_id }}</span>
+        </td>
+        <td>{{ ut.trophy.name }}</td>
+        <td>{{ ut.quantity }}</td>
+        <td class="text-right whitespace-nowrap">
+          {{ ui.edit_link(url_for('admin.edit_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id)) }}
+          {{ ui.delete_button(url_for('admin.delete_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(4, 'Aucune association.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

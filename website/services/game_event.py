@@ -14,6 +14,17 @@ class GameEventService:
     def __init__(self, repository=None):
         self.repo = repository or GameEventRepository()
 
+    def get_recent(self, limit: int = 200) -> list[GameEvent]:
+        """Get the most recent game events for the audit trail.
+
+        Args:
+            limit: Maximum number of events to return. Defaults to 200.
+
+        Returns:
+            List of GameEvent instances ordered by timestamp (newest first).
+        """
+        return self.repo.get_recent(limit)
+
     def log_event(
         self, action: str, game_id: int, description: str | None = None, user_id: str | None = None
     ) -> GameEvent:

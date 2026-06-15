@@ -1,0 +1,49 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Événements', 'ph-sparkle', url_for('admin.create_special_event'), 'Nouvel événement') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Emoji</th>
+        <th>Couleur</th>
+        <th>Actif</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for event in events %}
+      <tr>
+        <td>{{ event.name }}</td>
+        <td class="text-lg">{{ event.emoji or '—' }}</td>
+        <td>
+          {% if event.color is not none %}
+          <span class="inline-flex items-center gap-2">
+            <span class="w-5 h-5 rounded border border-base-300" style="background-color: {{ hex_color(event.color) }}"></span>
+            <span class="font-mono text-xs">{{ hex_color(event.color) }}</span>
+          </span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if event.active %}
+          <span class="badge badge-success badge-sm">Oui</span>
+          {% else %}
+          <span class="badge badge-ghost badge-sm">Non</span>
+          {% endif %}
+        </td>
+        <td class="text-right whitespace-nowrap">
+          {{ ui.edit_link(url_for('admin.edit_special_event', event_id=event.id)) }}
+          {{ ui.delete_button(url_for('admin.delete_special_event', event_id=event.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(5, 'Aucun événement.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

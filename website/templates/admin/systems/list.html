@@ -1,0 +1,34 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Systèmes', 'ph-cube', url_for('admin.create_system'), 'Nouveau système') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nom</th>
+        <th>Icône</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for system in systems %}
+      <tr>
+        <td>{{ system.id }}</td>
+        <td>{{ system.name }}</td>
+        <td class="text-xs text-base-content/60">{{ system.icon or '—' }}</td>
+        <td class="text-right whitespace-nowrap">
+          {{ ui.edit_link(url_for('admin.edit_system', system_id=system.id)) }}
+          {{ ui.delete_button(url_for('admin.delete_system', system_id=system.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(4, 'Aucun système.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

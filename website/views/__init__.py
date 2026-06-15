@@ -3,6 +3,7 @@ from datetime import datetime
 from website.api import create_api_blueprint
 from website.utils.assets import asset, asset_css
 
+from .admin import admin_bp
 from .auth import auth_bp
 from .demo import demo_bp
 from .errors import error_bp
@@ -19,6 +20,7 @@ def register_blueprints(app):
     app.register_blueprint(error_bp)
     app.register_blueprint(stats_bp)
     app.register_blueprint(demo_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(create_api_blueprint())
 
 

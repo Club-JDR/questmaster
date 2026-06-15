@@ -1,0 +1,34 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Catégories (salons)', 'ph-hash', url_for('admin.create_channel'), 'Nouvelle catégorie') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Taille</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for channel in channels %}
+      <tr>
+        <td class="font-mono text-xs">{{ channel.id }}</td>
+        <td><span class="badge badge-outline">{{ channel.type }}</span></td>
+        <td>{{ channel.size }}</td>
+        <td class="text-right whitespace-nowrap">
+          {{ ui.edit_link(url_for('admin.edit_channel', channel_id=channel.id)) }}
+          {{ ui.delete_button(url_for('admin.delete_channel', channel_id=channel.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(4, 'Aucune catégorie.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
