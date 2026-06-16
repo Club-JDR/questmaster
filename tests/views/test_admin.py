@@ -206,8 +206,8 @@ def test_award_user_trophy(admin_client, db_session, mock_csrf):
     trophy = TrophyFactory(db_session)
     user = UserFactory(db_session)
     response = admin_client.post(
-        "/admin/user-trophies/new",
-        data={"user_id": user.id, "trophy_id": str(trophy.id), "quantity": "3"},
+        f"/admin/users/{user.id}/trophies/award",
+        data={"trophy_id": str(trophy.id), "quantity": "3"},
     )
     assert response.status_code == 302
     ut = db_session.get(UserTrophy, (user.id, trophy.id))
@@ -221,11 +221,11 @@ def test_award_unique_trophy_rejects_duplicate(admin_client, db_session, mock_cs
     UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
 
     response = admin_client.post(
-        "/admin/user-trophies/new",
-        data={"user_id": user.id, "trophy_id": str(trophy.id), "quantity": "1"},
+        f"/admin/users/{user.id}/trophies/award",
+        data={"trophy_id": str(trophy.id), "quantity": "1"},
     )
-    # Validation error -> form re-rendered, no redirect, still a single row.
-    assert response.status_code == 200
+    # Validation error -> flashed and redirected, still a single row.
+    assert response.status_code == 302
     rows = db_session.query(UserTrophy).filter_by(user_id=user.id, trophy_id=trophy.id).all()
     assert len(rows) == 1
 
@@ -234,7 +234,7 @@ def test_edit_user_trophy_quantity(admin_client, db_session, mock_csrf):
     trophy = TrophyFactory(db_session)
     user = UserFactory(db_session)
     ut = UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
-    admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/edit", data={"quantity": "5"})
+    admin_client.post(f"/admin/users/{user.id}/trophies/{trophy.id}/edit", data={"quantity": "5"})
     db_session.refresh(ut)
     assert ut.quantity == 5
 
@@ -243,7 +243,7 @@ def test_delete_user_trophy(admin_client, db_session, mock_csrf):
     trophy = TrophyFactory(db_session)
     user = UserFactory(db_session)
     UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
-    admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/delete")
+    admin_client.post(f"/admin/users/{user.id}/trophies/{trophy.id}/delete")
     assert db_session.get(UserTrophy, (user.id, trophy.id)) is None
 
 
@@ -254,7 +254,7 @@ def test_increment_user_trophy(admin_client, db_session, mock_csrf):
     trophy = TrophyFactory(db_session)
     user = UserFactory(db_session)
     ut = UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
-    response = admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/increment")
+    response = admin_client.post(f"/admin/users/{user.id}/trophies/{trophy.id}/increment")
     assert response.status_code == 302
     db_session.refresh(ut)
     assert ut.quantity == 2
@@ -264,7 +264,7 @@ def test_decrement_user_trophy_above_one(admin_client, db_session, mock_csrf):
     trophy = TrophyFactory(db_session)
     user = UserFactory(db_session)
     ut = UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=3)
-    response = admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/decrement")
+    response = admin_client.post(f"/admin/users/{user.id}/trophies/{trophy.id}/decrement")
     assert response.status_code == 302
     db_session.refresh(ut)
     assert ut.quantity == 2
@@ -274,7 +274,7 @@ def test_decrement_user_trophy_at_one_removes_record(admin_client, db_session, m
     trophy = TrophyFactory(db_session)
     user = UserFactory(db_session)
     UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
-    response = admin_client.post(f"/admin/user-trophies/{user.id}/{trophy.id}/decrement")
+    response = admin_client.post(f"/admin/users/{user.id}/trophies/{trophy.id}/decrement")
     assert response.status_code == 302
     assert db_session.get(UserTrophy, (user.id, trophy.id)) is None
 
@@ -283,11 +283,11 @@ def test_unique_trophy_hides_increment_buttons(admin_client, db_session):
     trophy = TrophyFactory(db_session, unique=True)
     user = UserFactory(db_session)
     UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
-    response = admin_client.get("/admin/user-trophies/")
+    response = admin_client.get(f"/admin/users/{user.id}/trophies")
     assert response.status_code == 200
     body = response.data.decode()
     # The increment action for this unique pair must be absent from the page.
-    assert f"/admin/user-trophies/{user.id}/{trophy.id}/increment" not in body
+    assert f"/admin/users/{user.id}/trophies/{trophy.id}/increment" not in body
 
 
 # -- Settings (config overrides) ---------------------------------------------
@@ -495,13 +495,12 @@ def test_game_events_search_spans_relationships(admin_client, db_session, defaul
     assert b"Audit row" not in miss.data
 
 
-def test_user_trophies_search_by_user_name(admin_client, db_session, mock_csrf):
-    """User/trophy search matches on the associated user's name."""
-    token = uuid4().hex[:10]
-    user = UserFactory(db_session, name=f"Searchable {token}")
+def test_user_trophies_page_lists_user_badges(admin_client, db_session, mock_csrf):
+    """The per-user badges page lists the trophies that user owns."""
+    user = UserFactory(db_session)
     trophy = TrophyFactory(db_session)
     UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
 
-    response = admin_client.get(f"/admin/user-trophies/?q={token}")
+    response = admin_client.get(f"/admin/users/{user.id}/trophies")
     assert response.status_code == 200
-    assert user.name in response.data.decode()
+    assert trophy.name in response.data.decode()

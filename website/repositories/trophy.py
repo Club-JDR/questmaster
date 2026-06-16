@@ -1,10 +1,10 @@
 """Trophy repository for badge and achievement data access."""
 
-from sqlalchemy import String, cast, func, or_
+from sqlalchemy import func
 
 from website.models.trophy import Trophy, UserTrophy
 from website.models.user import User
-from website.repositories.base import BaseRepository, Pagination, paginate_query
+from website.repositories.base import BaseRepository
 
 
 class TrophyRepository(BaseRepository[Trophy]):
@@ -20,36 +20,22 @@ class TrophyRepository(BaseRepository[Trophy]):
         """Return all trophy definitions ordered by name."""
         return self.session.query(Trophy).order_by(Trophy.name)
 
-    def paginate_user_trophies(
-        self, page: int = 1, per_page: int = 25, search: str | None = None
-    ) -> Pagination:
-        """Return a paginated, optionally searched, list of user/trophy rows.
+    def get_user_trophies(self, user_id: str) -> list[UserTrophy]:
+        """Return all trophy associations for a single user.
 
         Args:
-            page: Page number (1-based).
-            per_page: Items per page.
-            search: Optional term matched against user ID, user name, or
-                trophy name.
+            user_id: User ID whose badges to retrieve.
 
         Returns:
-            Pagination result of UserTrophy associations ordered by trophy name.
+            List of UserTrophy associations ordered by trophy name.
         """
-        query = (
+        return (
             self.session.query(UserTrophy)
             .join(UserTrophy.trophy)
-            .join(UserTrophy.user)
+            .filter(UserTrophy.user_id == user_id)
             .order_by(Trophy.name)
+            .all()
         )
-        if search:
-            term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    cast(User.id, String).ilike(term),
-                    User.name.ilike(term),
-                    Trophy.name.ilike(term),
-                )
-            )
-        return paginate_query(query, page, per_page)
 
     def get_all_ordered(self) -> list[Trophy]:
         """Retrieve all trophy definitions ordered by name.

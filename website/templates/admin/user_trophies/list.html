@@ -1,51 +1,88 @@
 {% extends 'admin/base.html' %}
 {% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
 
 {% block admin_content %}
-{{ ui.header('Association Utilisateurs/Badges', 'ph-medal', url_for('admin.create_user_trophy'), 'Attribuer un badge') }}
+{{ ui.header('Badges de ' ~ user.name, 'ph-medal') }}
 
-{{ ui.search_bar(search, 'Rechercher (utilisateur ou badge)…') }}
+<a href="{{ url_for('admin.list_users') }}" class="btn btn-ghost btn-sm gap-1 mb-4">
+  <i class="ph ph-arrow-left" aria-hidden="true"></i> Retour aux utilisateurs
+</a>
 
+{# ── Award a new badge ── #}
+{% if available_trophies %}
+<div class="card bg-base-100 shadow-md mb-6">
+  <form method="post" action="{{ url_for('admin.award_user_trophy', user_id=user.id) }}"
+        class="card-body">
+    <h2 class="card-title text-base mb-2">
+      <i class="ph ph-plus-circle" aria-hidden="true"></i> Attribuer un badge
+    </h2>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="flex items-center gap-3 flex-wrap">
+      <label for="trophy_id" class="{{ lbl }} mb-0">Badge</label>
+      <select id="trophy_id" name="trophy_id" class="select select-bordered w-64" required>
+        {% for trophy in available_trophies %}
+        <option value="{{ trophy.id }}">{{ trophy.name }}{% if trophy.unique %} (unique){% endif %}</option>
+        {% endfor %}
+      </select>
+      <label for="quantity" class="{{ lbl }} mb-0">Quantité</label>
+      <input type="number" id="quantity" name="quantity" value="1" min="1"
+             class="input input-bordered w-24">
+      <button type="submit" class="btn btn-primary gap-1 ml-auto">
+        <i class="ph ph-plus" aria-hidden="true"></i> Attribuer
+      </button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{# ── Owned badges ── #}
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
       <tr>
-        <th>Utilisateur</th>
         <th>Badge</th>
         <th>Quantité</th>
         <th class="text-right">Actions</th>
       </tr>
     </thead>
     <tbody>
-      {% for ut in pagination.items %}
+      {% for ut in user_trophies %}
       <tr>
         <td>
-          {{ ut.user.name }}
-          <span class="font-mono text-xs text-base-content/50 block">{{ ut.user_id }}</span>
-        </td>
-        <td>{{ ut.trophy.name }}</td>
-        <td>{{ ut.quantity }}</td>
-        <td class="text-right whitespace-nowrap">
+          {{ ut.trophy.name }}
           {% if ut.trophy.unique %}
           <span class="badge badge-info badge-sm align-middle" title="Badge unique">Unique</span>
-          {% else %}
-          {{ ui.post_icon_button(
-               url_for('admin.increment_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id),
-               'ph-plus', 'btn-ghost text-success', 'Incrémenter') }}
-          {{ ui.post_icon_button(
-               url_for('admin.decrement_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id),
-               'ph-minus', 'btn-ghost text-warning', 'Décrémenter') }}
           {% endif %}
-          {{ ui.edit_link(url_for('admin.edit_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id)) }}
-          {{ ui.delete_button(url_for('admin.delete_user_trophy', user_id=ut.user_id, trophy_id=ut.trophy_id)) }}
+        </td>
+        <td>
+          {% if ut.trophy.unique %}
+          {{ ut.quantity }}
+          {% else %}
+          <form method="post" id="ut-{{ ut.trophy_id }}"
+                action="{{ url_for('admin.edit_user_trophy', user_id=user.id, trophy_id=ut.trophy_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="number" name="quantity" value="{{ ut.quantity }}" min="1"
+                   class="input input-bordered input-sm w-24">
+          </form>
+          {% endif %}
+        </td>
+        <td class="text-right whitespace-nowrap">
+          {% if not ut.trophy.unique %}
+          <button type="submit" form="ut-{{ ut.trophy_id }}"
+                  class="btn btn-ghost btn-xs text-success" aria-label="Enregistrer" title="Enregistrer">
+            <i class="ph ph-check" aria-hidden="true"></i>
+          </button>
+          {% endif %}
+          {{ ui.delete_button(
+               url_for('admin.delete_user_trophy', user_id=user.id, trophy_id=ut.trophy_id),
+               'Retirer ce badge à l\'utilisateur ?') }}
         </td>
       </tr>
       {% else %}
-      {{ ui.empty_row(4, 'Aucune association.') }}
+      {{ ui.empty_row(3, 'Aucun badge.') }}
       {% endfor %}
     </tbody>
   </table>
 </div>
-
-{{ ui.pager(pagination, search) }}
 {% endblock %}

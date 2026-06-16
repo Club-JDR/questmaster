@@ -66,21 +66,16 @@ class TrophyService:
         """
         return self.repo.paginate(page=page, per_page=per_page, search=search)
 
-    def list_user_trophies_paginated(
-        self, page: int = 1, per_page: int = 25, search: str | None = None
-    ) -> Pagination:
-        """Get a paginated, optionally searched, list of user/trophy rows.
+    def list_for_user(self, user_id: str) -> list[UserTrophy]:
+        """Get all trophy associations (badges) for a single user.
 
         Args:
-            page: Page number (1-based).
-            per_page: Items per page.
-            search: Optional term matched against user ID, user name, or
-                trophy name.
+            user_id: User ID whose badges to retrieve.
 
         Returns:
-            Pagination result of UserTrophy instances.
+            List of UserTrophy instances ordered by trophy name.
         """
-        return self.repo.paginate_user_trophies(page=page, per_page=per_page, search=search)
+        return self.repo.get_user_trophies(user_id)
 
     def create_trophy(self, name: str, unique: bool = False, icon: str | None = None) -> Trophy:
         """Create a new trophy definition.

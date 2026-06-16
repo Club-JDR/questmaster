@@ -23,11 +23,6 @@ ADMIN_SECTIONS = [
     {"endpoint": "admin.list_games", "label": "Annonces", "icon": "ph-scroll"},
     {"endpoint": "admin.list_special_events", "label": "Événements", "icon": "ph-sparkle"},
     {"endpoint": "admin.list_trophies", "label": "Badges", "icon": "ph-trophy"},
-    {
-        "endpoint": "admin.list_user_trophies",
-        "label": "Association Utilisateurs/Badges",
-        "icon": "ph-medal",
-    },
     {"endpoint": "admin.list_systems", "label": "Systèmes", "icon": "ph-cube"},
     {"endpoint": "admin.list_vtts", "label": "VTTs", "icon": "ph-desktop"},
     {"endpoint": "admin.list_channels", "label": "Catégories (salons)", "icon": "ph-hash"},

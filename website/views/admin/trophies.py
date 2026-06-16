@@ -78,77 +78,68 @@ def delete_trophy(trophy_id):
     return redirect(url_for("admin.list_trophies"))
 
 
-# --- User/trophy associations ----------------------------------------------
+# --- Per-user badges (user/trophy associations) ----------------------------
 
 
-@admin_bp.route("/user-trophies/", methods=["GET"])
-def list_user_trophies():
-    """List user/trophy associations with search and pagination."""
-    page, search = get_list_params()
-    pagination = trophy_service.list_user_trophies_paginated(
-        page=page, per_page=ADMIN_PAGE_SIZE, search=search
-    )
-    return render_template("admin/user_trophies/list.html", pagination=pagination, search=search)
-
-
-@admin_bp.route("/user-trophies/new", methods=["GET", "POST"])
-def create_user_trophy():
-    """Award a trophy to a user."""
-    if request.method == "POST":
-        try:
-            trophy_service.create_user_trophy(
-                user_id=request.form.get("user_id", "").strip(),
-                trophy_id=int(request.form.get("trophy_id")),
-                quantity=int(request.form.get("quantity") or 1),
-            )
-            flash("Badge attribué.", "success")
-            return redirect(url_for("admin.list_user_trophies"))
-        except (ValidationError, NotFoundError) as e:
-            flash(str(e), "danger")
-
-    return render_template(
-        "admin/user_trophies/form.html",
-        user_trophy=None,
-        users=user_service.get_all(),
-        trophies=trophy_service.get_all(),
-    )
-
-
-@admin_bp.route("/user-trophies/<user_id>/<int:trophy_id>/edit", methods=["GET", "POST"])
-def edit_user_trophy(user_id, trophy_id):
-    """Edit the quantity of a user/trophy association."""
+@admin_bp.route("/users/<user_id>/trophies", methods=["GET"])
+def user_trophies(user_id):
+    """List and manage a single user's badges."""
     try:
-        user_trophy = trophy_service.get_user_trophy(user_id, trophy_id)
+        user = user_service.get_by_id(user_id)
     except NotFoundError:
-        flash("Association introuvable.", "danger")
-        return redirect(url_for("admin.list_user_trophies"))
+        flash("Utilisateur introuvable.", "danger")
+        return redirect(url_for("admin.list_users"))
 
-    if request.method == "POST":
+    owned = trophy_service.list_for_user(user_id)
+    owned_ids = {ut.trophy_id for ut in owned}
+    available = [t for t in trophy_service.get_all() if t.id not in owned_ids]
+    return render_template(
+        "admin/user_trophies/list.html",
+        user=user,
+        user_trophies=owned,
+        available_trophies=available,
+    )
+
+
+@admin_bp.route("/users/<user_id>/trophies/award", methods=["POST"])
+def award_user_trophy(user_id):
+    """Award a badge to the user."""
+    try:
+        trophy_service.create_user_trophy(
+            user_id=user_id,
+            trophy_id=int(request.form.get("trophy_id")),
+            quantity=int(request.form.get("quantity") or 1),
+        )
+        flash("Badge attribué.", "success")
+    except (ValidationError, NotFoundError) as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.user_trophies", user_id=user_id))
+
+
+@admin_bp.route("/users/<user_id>/trophies/<int:trophy_id>/edit", methods=["POST"])
+def edit_user_trophy(user_id, trophy_id):
+    """Set the quantity of one of the user's badges."""
+    try:
         trophy_service.update_user_trophy(
             user_id,
             trophy_id,
             quantity=int(request.form.get("quantity") or 1),
         )
-        flash("Association mise à jour.", "success")
-        return redirect(url_for("admin.list_user_trophies"))
-
-    return render_template(
-        "admin/user_trophies/form.html",
-        user_trophy=user_trophy,
-        users=user_service.get_all(),
-        trophies=trophy_service.get_all(),
-    )
+        flash("Badge mis à jour.", "success")
+    except NotFoundError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.user_trophies", user_id=user_id))
 
 
-@admin_bp.route("/user-trophies/<user_id>/<int:trophy_id>/delete", methods=["POST"])
+@admin_bp.route("/users/<user_id>/trophies/<int:trophy_id>/delete", methods=["POST"])
 def delete_user_trophy(user_id, trophy_id):
-    """Remove a user/trophy association."""
+    """Remove one of the user's badges."""
     trophy_service.delete_user_trophy(user_id, trophy_id)
-    flash("Association supprimée.", "success")
-    return redirect(url_for("admin.list_user_trophies"))
+    flash("Badge retiré.", "success")
+    return redirect(url_for("admin.user_trophies", user_id=user_id))
 
 
-@admin_bp.route("/user-trophies/<user_id>/<int:trophy_id>/increment", methods=["POST"])
+@admin_bp.route("/users/<user_id>/trophies/<int:trophy_id>/increment", methods=["POST"])
 def increment_user_trophy(user_id, trophy_id):
     """Increment a (non-unique) trophy quantity by one."""
     try:
@@ -156,10 +147,10 @@ def increment_user_trophy(user_id, trophy_id):
         flash("Badge incrémenté.", "success")
     except NotFoundError as e:
         flash(str(e), "danger")
-    return redirect(url_for("admin.list_user_trophies"))
+    return redirect(url_for("admin.user_trophies", user_id=user_id))
 
 
-@admin_bp.route("/user-trophies/<user_id>/<int:trophy_id>/decrement", methods=["POST"])
+@admin_bp.route("/users/<user_id>/trophies/<int:trophy_id>/decrement", methods=["POST"])
 def decrement_user_trophy(user_id, trophy_id):
     """Decrement a trophy quantity by one, removing the row when it reaches zero."""
     try:
@@ -167,4 +158,4 @@ def decrement_user_trophy(user_id, trophy_id):
         flash("Badge décrémenté.", "success")
     except NotFoundError as e:
         flash(str(e), "danger")
-    return redirect(url_for("admin.list_user_trophies"))
+    return redirect(url_for("admin.user_trophies", user_id=user_id))
