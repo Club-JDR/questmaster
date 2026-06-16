@@ -28,7 +28,11 @@
           <span class="badge badge-success badge-sm">Actif</span>
           {% endif %}
         </td>
-        <td class="text-right">
+        <td class="text-right whitespace-nowrap">
+          <a href="{{ url_for('admin.user_games', user_id=user.id) }}"
+             class="btn btn-ghost btn-xs" aria-label="Annonces de l'utilisateur" title="Annonces">
+            <i class="ph ph-scroll" aria-hidden="true"></i>
+          </a>
           {{ ui.edit_link(url_for('admin.edit_user', user_id=user.id)) }}
         </td>
       </tr>

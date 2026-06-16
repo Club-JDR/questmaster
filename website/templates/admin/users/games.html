@@ -1,0 +1,56 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% macro games_table(games, empty_message) %}
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Statut</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for game in games %}
+      <tr>
+        <td>
+          <a href="/annonces/{{ game.slug }}/" class="link link-hover font-semibold" target="_blank" rel="noopener">{{ game.name }}</a>
+          <span class="font-mono text-xs text-base-content/50 block">{{ game.slug }}</span>
+        </td>
+        <td><span class="badge badge-outline badge-sm">{{ game.type }}</span></td>
+        <td class="whitespace-nowrap text-sm">{{ game.date|format_datetime('%Y-%m-%d %H:%M') }}</td>
+        <td><span class="badge badge-sm">{{ game.status }}</span></td>
+        <td class="text-right">
+          {{ ui.edit_link(url_for('admin.edit_game', game_id=game.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(5, empty_message) }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% block admin_content %}
+{{ ui.header('Annonces de ' ~ user.name, 'ph-scroll') }}
+
+<a href="{{ url_for('admin.list_users') }}" class="btn btn-ghost btn-sm gap-1 mb-4">
+  <i class="ph ph-arrow-left" aria-hidden="true"></i> Retour aux utilisateurs
+</a>
+
+<h2 class="text-lg font-bold flex items-center gap-2 mb-2">
+  <i class="ph ph-crown" aria-hidden="true"></i> En tant que MJ
+  <span class="badge badge-neutral badge-sm">{{ gm_games|length }}</span>
+</h2>
+{{ games_table(gm_games, 'Aucune annonce en tant que MJ.') }}
+
+<h2 class="text-lg font-bold flex items-center gap-2 mt-8 mb-2">
+  <i class="ph ph-users" aria-hidden="true"></i> En tant que joueur
+  <span class="badge badge-neutral badge-sm">{{ player_games|length }}</span>
+</h2>
+{{ games_table(player_games, 'Aucune annonce en tant que joueur.') }}
+{% endblock %}
