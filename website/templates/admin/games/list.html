@@ -25,7 +25,11 @@
           <a href="/annonces/{{ game.slug }}/" class="link link-hover font-semibold" target="_blank" rel="noopener">{{ game.name }}</a>
           <span class="font-mono text-xs text-base-content/50 block">{{ game.slug }}</span>
         </td>
-        <td>{{ game.gm.name if game.gm else '—' }}</td>
+        <td>
+          {% if game.gm %}
+          <a href="{{ url_for('admin.user_games', user_id=game.gm.id) }}" class="link link-hover">{{ game.gm.name }}</a>
+          {% else %}—{% endif %}
+        </td>
         <td><span class="badge badge-outline badge-sm">{{ game.type }}</span></td>
         <td class="whitespace-nowrap text-sm">{{ game.date|format_datetime('%Y-%m-%d %H:%M') }}</td>
         <td><span class="badge badge-sm">{{ game.status }}</span></td>
