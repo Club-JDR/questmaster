@@ -344,6 +344,26 @@ def test_edit_user(admin_client, db_session, mock_csrf):
     assert user.not_player_as_of is not None
 
 
+def test_user_games_lists_gm_and_player_games(admin_client, db_session, default_system):
+    user = UserFactory(db_session)
+    gm_game = GameFactory(db_session, name="GMed Game", gm_id=user.id, system_id=default_system.id)
+    played_game = GameFactory(db_session, name="Played Game", system_id=default_system.id)
+    played_game.players.append(user)
+    db_session.flush()
+
+    resp = admin_client.get(f"/admin/users/{user.id}/games")
+
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "GMed Game" in body
+    assert "Played Game" in body
+
+
+def test_user_games_unknown_user_redirects(admin_client):
+    resp = admin_client.get("/admin/users/000000000000000000/games")
+    assert resp.status_code == 302
+
+
 # -- Games -------------------------------------------------------------------
 
 

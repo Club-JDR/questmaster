@@ -9,10 +9,12 @@ from flask import flash, redirect, render_template, request, url_for
 # Local imports
 from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError
+from website.services.game import GameService
 from website.services.user import UserService
 from website.views.admin import admin_bp, get_list_params
 
 user_service = UserService()
+game_service = GameService()
 
 
 @admin_bp.route("/users/", methods=["GET"])
@@ -43,3 +45,20 @@ def edit_user(user_id):
         return redirect(url_for("admin.list_users"))
 
     return render_template("admin/users/edit.html", user=user)
+
+
+@admin_bp.route("/users/<user_id>/games", methods=["GET"])
+def user_games(user_id):
+    """List all games for a user, split by GM role and player role."""
+    try:
+        user = user_service.get_by_id(user_id)
+    except NotFoundError:
+        flash("Utilisateur introuvable.", "danger")
+        return redirect(url_for("admin.list_users"))
+
+    return render_template(
+        "admin/users/games.html",
+        user=user,
+        gm_games=game_service.list_by_gm(user_id),
+        player_games=game_service.list_by_player(user_id),
+    )

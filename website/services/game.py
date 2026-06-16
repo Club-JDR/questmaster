@@ -82,6 +82,28 @@ class GameService:
         """
         return self.repo.paginate(page=page, per_page=per_page, search=search)
 
+    def list_by_gm(self, gm_id: str) -> list[Game]:
+        """List all games run by a given GM.
+
+        Args:
+            gm_id: GM user ID.
+
+        Returns:
+            List of Game instances GMed by this user.
+        """
+        return self.repo.find_by_gm(gm_id)
+
+    def list_by_player(self, player_id: str) -> list[Game]:
+        """List all games a given user is registered to as a player.
+
+        Args:
+            player_id: Player user ID.
+
+        Returns:
+            List of Game instances where the user is a registered player.
+        """
+        return self.repo.find_by_player(player_id)
+
     def admin_update(self, game_id: int, data: dict) -> Game:
         """Update a game's fields directly from the admin panel.
 
