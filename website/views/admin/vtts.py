@@ -4,18 +4,20 @@
 from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
+from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
 from website.services.vtt import VttService
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 vtt_service = VttService()
 
 
 @admin_bp.route("/vtts/", methods=["GET"])
 def list_vtts():
-    """List all VTTs."""
-    vtts = vtt_service.get_all()
-    return render_template("admin/vtts/list.html", vtts=vtts)
+    """List VTTs with search and pagination."""
+    page, search = get_list_params()
+    pagination = vtt_service.list_paginated(page=page, per_page=ADMIN_PAGE_SIZE, search=search)
+    return render_template("admin/vtts/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/vtts/new", methods=["GET", "POST"])

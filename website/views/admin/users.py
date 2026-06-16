@@ -7,18 +7,20 @@ from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
+from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError
 from website.services.user import UserService
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 user_service = UserService()
 
 
 @admin_bp.route("/users/", methods=["GET"])
 def list_users():
-    """List all users."""
-    users = user_service.get_all()
-    return render_template("admin/users/list.html", users=users)
+    """List users with search and pagination."""
+    page, search = get_list_params()
+    pagination = user_service.list_paginated(page=page, per_page=ADMIN_PAGE_SIZE, search=search)
+    return render_template("admin/users/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/users/<user_id>/edit", methods=["GET", "POST"])

@@ -11,6 +11,11 @@ class SpecialEventRepository(BaseRepository[SpecialEvent]):
     """
 
     model_class = SpecialEvent
+    search_columns = [SpecialEvent.name]
+
+    def base_query(self):
+        """Return all special events ordered by name."""
+        return self.session.query(SpecialEvent).order_by(SpecialEvent.name)
 
     def get_all(self, active_only: bool = False) -> list[SpecialEvent]:
         """Get all special events, optionally filtered by active status.

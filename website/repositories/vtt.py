@@ -8,6 +8,11 @@ class VttRepository(BaseRepository[Vtt]):
     """Repository for Vtt entities."""
 
     model_class = Vtt
+    search_columns = [Vtt.id, Vtt.name]
+
+    def base_query(self):
+        """Return all VTTs ordered by name."""
+        return self.session.query(Vtt).order_by(Vtt.name)
 
     def get_all_ordered(self) -> list[Vtt]:
         """Retrieve all VTTs ordered by name.

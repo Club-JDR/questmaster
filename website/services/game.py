@@ -69,6 +69,19 @@ class GameService:
         """
         return self.repo.get_all_ordered()
 
+    def list_paginated(self, page: int = 1, per_page: int = 25, search: str | None = None):
+        """List games (all statuses) paginated, for the admin panel.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against game name and slug.
+
+        Returns:
+            Pagination result of Game instances ordered by date (newest first).
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
+
     def admin_update(self, game_id: int, data: dict) -> Game:
         """Update a game's fields directly from the admin panel.
 

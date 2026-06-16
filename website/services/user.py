@@ -6,6 +6,7 @@ from website.exceptions import NotFoundError
 from website.extensions import db
 from website.models import User
 from website.models.user import get_user_profile as _get_user_profile
+from website.repositories.base import Pagination
 from website.repositories.user import UserRepository
 
 
@@ -68,6 +69,21 @@ class UserService:
             List of all User instances.
         """
         return self.repo.get_all()
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of users.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against user ID and name.
+
+        Returns:
+            Pagination result of User instances.
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
 
     def get_active_users(self) -> list[User]:
         """Get all users not marked as inactive.

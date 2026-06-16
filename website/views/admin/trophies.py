@@ -4,10 +4,11 @@
 from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
+from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
 from website.services.trophy import TrophyService
 from website.services.user import UserService
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 trophy_service = TrophyService()
 user_service = UserService()
@@ -18,9 +19,10 @@ user_service = UserService()
 
 @admin_bp.route("/trophies/", methods=["GET"])
 def list_trophies():
-    """List all trophy definitions (badges)."""
-    trophies = trophy_service.get_all()
-    return render_template("admin/trophies/list.html", trophies=trophies)
+    """List trophy definitions (badges) with search and pagination."""
+    page, search = get_list_params()
+    pagination = trophy_service.list_paginated(page=page, per_page=ADMIN_PAGE_SIZE, search=search)
+    return render_template("admin/trophies/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/trophies/new", methods=["GET", "POST"])
@@ -81,9 +83,12 @@ def delete_trophy(trophy_id):
 
 @admin_bp.route("/user-trophies/", methods=["GET"])
 def list_user_trophies():
-    """List all user/trophy associations."""
-    user_trophies = trophy_service.get_all_user_trophies()
-    return render_template("admin/user_trophies/list.html", user_trophies=user_trophies)
+    """List user/trophy associations with search and pagination."""
+    page, search = get_list_params()
+    pagination = trophy_service.list_user_trophies_paginated(
+        page=page, per_page=ADMIN_PAGE_SIZE, search=search
+    )
+    return render_template("admin/user_trophies/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/user-trophies/new", methods=["GET", "POST"])

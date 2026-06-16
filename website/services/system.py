@@ -3,6 +3,7 @@
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import cache, db
 from website.models import System
+from website.repositories.base import Pagination
 from website.repositories.system import SystemRepository
 
 
@@ -23,6 +24,21 @@ class SystemService:
             List of System instances.
         """
         return self.repo.get_all_ordered()
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of systems.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against system ID and name.
+
+        Returns:
+            Pagination result of System instances.
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
 
     def get_by_id(self, id: int) -> System:
         """Get system by ID.

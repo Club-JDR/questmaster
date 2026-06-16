@@ -1,10 +1,10 @@
 """Trophy repository for badge and achievement data access."""
 
-from sqlalchemy import func
+from sqlalchemy import String, cast, func, or_
 
 from website.models.trophy import Trophy, UserTrophy
 from website.models.user import User
-from website.repositories.base import BaseRepository
+from website.repositories.base import BaseRepository, Pagination, paginate_query
 
 
 class TrophyRepository(BaseRepository[Trophy]):
@@ -14,6 +14,42 @@ class TrophyRepository(BaseRepository[Trophy]):
     """
 
     model_class = Trophy
+    search_columns = [Trophy.name]
+
+    def base_query(self):
+        """Return all trophy definitions ordered by name."""
+        return self.session.query(Trophy).order_by(Trophy.name)
+
+    def paginate_user_trophies(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Return a paginated, optionally searched, list of user/trophy rows.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against user ID, user name, or
+                trophy name.
+
+        Returns:
+            Pagination result of UserTrophy associations ordered by trophy name.
+        """
+        query = (
+            self.session.query(UserTrophy)
+            .join(UserTrophy.trophy)
+            .join(UserTrophy.user)
+            .order_by(Trophy.name)
+        )
+        if search:
+            term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    cast(User.id, String).ilike(term),
+                    User.name.ilike(term),
+                    Trophy.name.ilike(term),
+                )
+            )
+        return paginate_query(query, page, per_page)
 
     def get_all_ordered(self) -> list[Trophy]:
         """Retrieve all trophy definitions ordered by name.

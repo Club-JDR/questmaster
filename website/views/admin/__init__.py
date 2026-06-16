@@ -8,7 +8,7 @@ layer. Access is gated to authenticated admins via a ``before_request`` guard.
 # Standard library imports
 
 # Third-party imports
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, request, session
 
 # Local imports
 from config.constants import MSG_ADMIN_ACCESS_REQUIRED
@@ -34,6 +34,18 @@ ADMIN_SECTIONS = [
     {"endpoint": "admin.list_game_events", "label": "Journaux", "icon": "ph-scroll"},
     {"endpoint": "admin.edit_settings", "label": "Paramètres", "icon": "ph-sliders"},
 ]
+
+
+def get_list_params() -> tuple[int, str | None]:
+    """Parse common ``page`` and ``q`` query-string params for list views.
+
+    Returns:
+        Tuple of (page, search) where page is a 1-based int and search is the
+        trimmed query string, or None when absent/empty.
+    """
+    page = request.args.get("page", 1, type=int)
+    search = (request.args.get("q") or "").strip() or None
+    return page, search
 
 
 def is_admin_authenticated() -> bool:

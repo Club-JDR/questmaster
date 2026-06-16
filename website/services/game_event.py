@@ -2,6 +2,7 @@
 
 from website.extensions import db
 from website.models import GameEvent
+from website.repositories.base import Pagination
 from website.repositories.game_event import GameEventRepository
 
 
@@ -24,6 +25,22 @@ class GameEventService:
             List of GameEvent instances ordered by timestamp (newest first).
         """
         return self.repo.get_recent(limit)
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, page of audit events.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against action, description, game
+                slug, and user name.
+
+        Returns:
+            Pagination result of GameEvent instances (newest first).
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
 
     def log_event(
         self, action: str, game_id: int, description: str | None = None, user_id: str | None = None

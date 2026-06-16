@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('Événements', 'ph-sparkle', url_for('admin.create_special_event'), 'Nouvel événement') }}
 
+{{ ui.search_bar(search, 'Rechercher par nom…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -16,7 +18,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for event in events %}
+      {% for event in pagination.items %}
       <tr>
         <td>{{ event.name }}</td>
         <td class="text-lg">{{ event.emoji or '—' }}</td>
@@ -46,4 +48,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

@@ -4,9 +4,10 @@
 from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
+from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
 from website.services.special_event import SpecialEventService
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 special_event_service = SpecialEventService()
 
@@ -27,9 +28,12 @@ def _parse_color(raw: str | None) -> int | None:
 
 @admin_bp.route("/special-events/", methods=["GET"])
 def list_special_events():
-    """List all special events."""
-    events = special_event_service.get_all()
-    return render_template("admin/special_events/list.html", events=events)
+    """List special events with search and pagination."""
+    page, search = get_list_params()
+    pagination = special_event_service.list_paginated(
+        page=page, per_page=ADMIN_PAGE_SIZE, search=search
+    )
+    return render_template("admin/special_events/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/special-events/new", methods=["GET", "POST"])

@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('Systèmes', 'ph-cube', url_for('admin.create_system'), 'Nouveau système') }}
 
+{{ ui.search_bar(search, 'Rechercher par ID ou nom…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -15,7 +17,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for system in systems %}
+      {% for system in pagination.items %}
       <tr>
         <td>{{ system.id }}</td>
         <td>{{ system.name }}</td>
@@ -31,4 +33,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

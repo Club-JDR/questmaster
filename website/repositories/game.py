@@ -18,6 +18,11 @@ class GameRepository(BaseRepository[Game]):
     """
 
     model_class = Game
+    search_columns = [Game.name, Game.slug]
+
+    def base_query(self):
+        """Return all games ordered by date (most recent first)."""
+        return self.session.query(Game).order_by(Game.date.desc())
 
     def get_all_ordered(self) -> list[Game]:
         """Retrieve all games ordered by date (most recent first).

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import Channel
+from website.repositories.base import Pagination
 from website.repositories.channel import ChannelRepository
 from website.utils.logger import logger
 
@@ -31,6 +32,21 @@ class ChannelService:
             List of Channel instances.
         """
         return self.repo.get_all()
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of channel categories.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against channel ID and type.
+
+        Returns:
+            Pagination result of Channel instances.
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
 
     def get_by_id(self, channel_id: str) -> Channel:
         """Get a channel category by ID.

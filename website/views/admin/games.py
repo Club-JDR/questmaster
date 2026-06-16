@@ -5,6 +5,7 @@ from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
 from config.constants import (
+    ADMIN_PAGE_SIZE,
     GAME_CHAR,
     GAME_FREQUENCIES,
     GAME_STATUS,
@@ -19,7 +20,7 @@ from website.services.system import SystemService
 from website.services.user import UserService
 from website.services.vtt import VttService
 from website.utils.form_parsers import get_ambience, get_classification, parse_restriction_tags
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 game_service = GameService()
 system_service = SystemService()
@@ -88,9 +89,10 @@ def _form_context() -> dict:
 
 @admin_bp.route("/games/", methods=["GET"])
 def list_games():
-    """List all games."""
-    games = game_service.list_all()
-    return render_template("admin/games/list.html", games=games)
+    """List games with search and pagination."""
+    page, search = get_list_params()
+    pagination = game_service.list_paginated(page=page, per_page=ADMIN_PAGE_SIZE, search=search)
+    return render_template("admin/games/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/games/<int:game_id>/edit", methods=["GET", "POST"])

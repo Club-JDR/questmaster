@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('Annonces', 'ph-scroll') }}
 
+{{ ui.search_bar(search, 'Rechercher par nom ou slug…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -17,7 +19,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for game in games %}
+      {% for game in pagination.items %}
       <tr>
         <td>
           <a href="/annonces/{{ game.slug }}/" class="link link-hover font-semibold" target="_blank" rel="noopener">{{ game.name }}</a>
@@ -39,4 +41,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

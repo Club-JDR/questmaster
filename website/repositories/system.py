@@ -8,6 +8,11 @@ class SystemRepository(BaseRepository[System]):
     """Repository for System entities."""
 
     model_class = System
+    search_columns = [System.id, System.name]
+
+    def base_query(self):
+        """Return all systems ordered by name."""
+        return self.session.query(System).order_by(System.name)
 
     def get_all_ordered(self) -> list[System]:
         """Retrieve all systems ordered by name.

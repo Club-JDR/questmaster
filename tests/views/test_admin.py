@@ -5,6 +5,8 @@ delegating to the existing service layer. Admin edits are database-only
 (no Discord side effects), so these tests do not require Discord credentials.
 """
 
+from uuid import uuid4
+
 import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID
@@ -412,3 +414,74 @@ def test_game_events_list_renders(admin_client, db_session, default_system):
     response = admin_client.get("/admin/game-events/")
     assert response.status_code == 200
     assert b"Created via test" in response.data
+
+
+# -- Search & pagination -----------------------------------------------------
+
+
+def test_list_search_filters_results(admin_client, db_session, mock_csrf):
+    """A simple list view filters rows by the ``q`` query parameter."""
+    token = uuid4().hex[:10]
+    match = SystemFactory(db_session, name=f"Matching {token}")
+    other = SystemFactory(db_session, name=f"Unrelated {uuid4().hex[:10]}")
+
+    response = admin_client.get(f"/admin/systems/?q={token}")
+    body = response.data.decode()
+
+    assert response.status_code == 200
+    assert match.name in body
+    assert other.name not in body
+
+
+def test_list_search_no_match_shows_empty(admin_client, db_session):
+    """Searching for a term with no matches renders the empty-state row."""
+    response = admin_client.get(f"/admin/systems/?q=nomatch-{uuid4().hex}")
+    assert response.status_code == 200
+    assert "Aucun système." in response.data.decode()
+
+
+def test_list_paginates_and_preserves_search(admin_client, db_session, mock_csrf):
+    """Results beyond one page are split, with search preserved across pages."""
+    token = uuid4().hex[:10]
+    # 26 systems (> ADMIN_PAGE_SIZE of 25) so a second page is required.
+    for i in range(26):
+        SystemFactory(db_session, name=f"PageSys-{i:02d}-{token}")
+
+    page_one = admin_client.get(f"/admin/systems/?q={token}").data.decode()
+    # First page holds the first 25 (00–24), not the 26th (index 25).
+    assert "PageSys-00-" in page_one
+    assert "PageSys-25-" not in page_one
+    # Pagination nav points to page 2 while keeping the search term.
+    assert "page=2" in page_one
+    assert f"q={token}" in page_one
+
+    page_two = admin_client.get(f"/admin/systems/?q={token}&page=2").data.decode()
+    assert "PageSys-25-" in page_two
+    assert "PageSys-00-" not in page_two
+
+
+def test_game_events_search_spans_relationships(admin_client, db_session, default_system):
+    """Audit-trail search matches the related game's slug."""
+    token = uuid4().hex[:10]
+    game = GameFactory(db_session, slug=f"slug-{token}", system_id=default_system.id)
+    GameEventFactory(db_session, game_id=game.id, action="create", description="Audit row")
+
+    hit = admin_client.get(f"/admin/game-events/?q={token}")
+    assert hit.status_code == 200
+    assert b"Audit row" in hit.data
+
+    miss = admin_client.get(f"/admin/game-events/?q=absent-{uuid4().hex}")
+    assert miss.status_code == 200
+    assert b"Audit row" not in miss.data
+
+
+def test_user_trophies_search_by_user_name(admin_client, db_session, mock_csrf):
+    """User/trophy search matches on the associated user's name."""
+    token = uuid4().hex[:10]
+    user = UserFactory(db_session, name=f"Searchable {token}")
+    trophy = TrophyFactory(db_session)
+    UserTrophyFactory(db_session, user_id=user.id, trophy_id=trophy.id, quantity=1)
+
+    response = admin_client.get(f"/admin/user-trophies/?q={token}")
+    assert response.status_code == 200
+    assert user.name in response.data.decode()

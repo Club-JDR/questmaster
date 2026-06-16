@@ -8,6 +8,11 @@ class ChannelRepository(BaseRepository[Channel]):
     """Repository for Channel (Discord category) entities."""
 
     model_class = Channel
+    search_columns = [Channel.id, Channel.type]
+
+    def base_query(self):
+        """Return all channel categories ordered by ID."""
+        return self.session.query(Channel).order_by(Channel.id)
 
     def get_smallest_by_type(self, type: str) -> Channel | None:
         """Find the category with the fewest channels for a game type.
