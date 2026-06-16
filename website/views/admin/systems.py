@@ -4,18 +4,20 @@
 from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
+from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
 from website.services.system import SystemService
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 system_service = SystemService()
 
 
 @admin_bp.route("/systems/", methods=["GET"])
 def list_systems():
-    """List all game systems."""
-    systems = system_service.get_all()
-    return render_template("admin/systems/list.html", systems=systems)
+    """List game systems with search and pagination."""
+    page, search = get_list_params()
+    pagination = system_service.list_paginated(page=page, per_page=ADMIN_PAGE_SIZE, search=search)
+    return render_template("admin/systems/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/systems/new", methods=["GET", "POST"])

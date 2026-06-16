@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('Catégories (salons)', 'ph-hash', url_for('admin.create_channel'), 'Nouvelle catégorie') }}
 
+{{ ui.search_bar(search, 'Rechercher par ID ou type…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -15,7 +17,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for channel in channels %}
+      {% for channel in pagination.items %}
       <tr>
         <td class="font-mono text-xs">{{ channel.id }}</td>
         <td><span class="badge badge-outline">{{ channel.type }}</span></td>
@@ -31,4 +33,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

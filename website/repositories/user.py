@@ -8,6 +8,11 @@ class UserRepository(BaseRepository[User]):
     """Repository for User entities."""
 
     model_class = User
+    search_columns = [User.id, User.name]
+
+    def base_query(self):
+        """Return all users ordered by display name."""
+        return self.session.query(User).order_by(User.name)
 
     def get_active_users(self) -> list[User]:
         """Retrieve all users not marked as inactive.

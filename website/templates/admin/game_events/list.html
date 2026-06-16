@@ -4,7 +4,7 @@
 {% block admin_content %}
 {{ ui.header('Journaux', 'ph-scroll') }}
 
-<p class="text-base-content/60 text-sm mb-3">200 événements les plus récents.</p>
+{{ ui.search_bar(search, 'Rechercher (action, annonce, utilisateur…)') }}
 
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra table-sm">
@@ -18,7 +18,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for event in events %}
+      {% for event in pagination.items %}
       <tr>
         <td class="whitespace-nowrap font-mono text-xs">{{ event.timestamp|format_datetime('%Y-%m-%d %H:%M') }}</td>
         <td><span class="badge badge-outline badge-sm">{{ event.action }}</span></td>
@@ -32,4 +32,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

@@ -3,6 +3,7 @@
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import cache, db
 from website.models import Vtt
+from website.repositories.base import Pagination
 from website.repositories.vtt import VttRepository
 
 
@@ -23,6 +24,21 @@ class VttService:
             List of Vtt instances.
         """
         return self.repo.get_all_ordered()
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of VTTs.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against VTT ID and name.
+
+        Returns:
+            Pagination result of Vtt instances.
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
 
     def get_by_id(self, id: int) -> Vtt:
         """Get VTT by ID.

@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('Association Utilisateurs/Badges', 'ph-medal', url_for('admin.create_user_trophy'), 'Attribuer un badge') }}
 
+{{ ui.search_bar(search, 'Rechercher (utilisateur ou badge)…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -15,7 +17,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for ut in user_trophies %}
+      {% for ut in pagination.items %}
       <tr>
         <td>
           {{ ut.user.name }}
@@ -44,4 +46,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

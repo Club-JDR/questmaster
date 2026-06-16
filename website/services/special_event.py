@@ -3,6 +3,7 @@
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import SpecialEvent
+from website.repositories.base import Pagination
 from website.repositories.special_event import SpecialEventRepository
 
 
@@ -26,6 +27,21 @@ class SpecialEventService:
             List of SpecialEvent instances ordered by name.
         """
         return self.repo.get_all(active_only=active_only)
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of special events.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against the event name.
+
+        Returns:
+            Pagination result of SpecialEvent instances.
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
 
     def get_active(self) -> list[SpecialEvent]:
         """Get all active special events.

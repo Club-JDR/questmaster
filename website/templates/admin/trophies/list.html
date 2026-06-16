@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('Badges', 'ph-trophy', url_for('admin.create_trophy'), 'Nouveau badge') }}
 
+{{ ui.search_bar(search, 'Rechercher par nom…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -16,7 +18,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for trophy in trophies %}
+      {% for trophy in pagination.items %}
       <tr>
         <td>{{ trophy.id }}</td>
         <td>{{ trophy.name }}</td>
@@ -39,4 +41,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

@@ -6,6 +6,7 @@ from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models.trophy import Trophy, UserTrophy
 from website.models.user import User
+from website.repositories.base import Pagination
 from website.repositories.trophy import TrophyRepository
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,37 @@ class TrophyService:
             List of all Trophy instances.
         """
         return self.repo.get_all_ordered()
+
+    def list_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of trophy definitions.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against the trophy name.
+
+        Returns:
+            Pagination result of Trophy instances.
+        """
+        return self.repo.paginate(page=page, per_page=per_page, search=search)
+
+    def list_user_trophies_paginated(
+        self, page: int = 1, per_page: int = 25, search: str | None = None
+    ) -> Pagination:
+        """Get a paginated, optionally searched, list of user/trophy rows.
+
+        Args:
+            page: Page number (1-based).
+            per_page: Items per page.
+            search: Optional term matched against user ID, user name, or
+                trophy name.
+
+        Returns:
+            Pagination result of UserTrophy instances.
+        """
+        return self.repo.paginate_user_trophies(page=page, per_page=per_page, search=search)
 
     def create_trophy(self, name: str, unique: bool = False, icon: str | None = None) -> Trophy:
         """Create a new trophy definition.

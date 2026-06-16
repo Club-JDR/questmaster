@@ -4,6 +4,8 @@
 {% block admin_content %}
 {{ ui.header('VTTs', 'ph-desktop', url_for('admin.create_vtt'), 'Nouveau VTT') }}
 
+{{ ui.search_bar(search, 'Rechercher par ID ou nom…') }}
+
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
     <thead>
@@ -15,7 +17,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for vtt in vtts %}
+      {% for vtt in pagination.items %}
       <tr>
         <td>{{ vtt.id }}</td>
         <td>{{ vtt.name }}</td>
@@ -31,4 +33,6 @@
     </tbody>
   </table>
 </div>
+
+{{ ui.pager(pagination, search) }}
 {% endblock %}

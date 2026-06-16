@@ -4,19 +4,20 @@
 from flask import flash, redirect, render_template, request, url_for
 
 # Local imports
-from config.constants import GAME_TYPES
+from config.constants import ADMIN_PAGE_SIZE, GAME_TYPES
 from website.exceptions import NotFoundError, ValidationError
 from website.services.channel import ChannelService
-from website.views.admin import admin_bp
+from website.views.admin import admin_bp, get_list_params
 
 channel_service = ChannelService()
 
 
 @admin_bp.route("/channels/", methods=["GET"])
 def list_channels():
-    """List all Discord channel categories."""
-    channels = channel_service.get_all()
-    return render_template("admin/channels/list.html", channels=channels)
+    """List Discord channel categories with search and pagination."""
+    page, search = get_list_params()
+    pagination = channel_service.list_paginated(page=page, per_page=ADMIN_PAGE_SIZE, search=search)
+    return render_template("admin/channels/list.html", pagination=pagination, search=search)
 
 
 @admin_bp.route("/channels/new", methods=["GET", "POST"])
