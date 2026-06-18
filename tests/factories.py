@@ -20,6 +20,7 @@ from tests.constants import TEST_ADMIN_USER_ID
 from website import db
 from website.models import (
     Channel,
+    DiscordMessage,
     Game,
     GameEvent,
     GameSession,
@@ -258,6 +259,31 @@ def ChannelFactory(session, **overrides):
     session.add(channel)
     session.flush()
     return channel
+
+
+def DiscordMessageFactory(session, **overrides):
+    """Create and persist a DiscordMessage instance.
+
+    Args:
+        session: The SQLAlchemy session.
+        **overrides: Any DiscordMessage column values to override.
+
+    Returns:
+        A flushed DiscordMessage instance (an embed by default).
+    """
+    defaults = {
+        "discord_msg_id": _unique_discord_id(),
+        "channel_id": "555000111222333444",
+        "channel_label": "Annonces",
+        "type": "embed",
+        "title": "Test title",
+        "description": "Test description",
+    }
+    defaults.update(overrides)
+    message = DiscordMessage(**defaults)
+    session.add(message)
+    session.flush()
+    return message
 
 
 def SpecialEventFactory(session, **overrides):

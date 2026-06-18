@@ -138,6 +138,24 @@ class Discord:
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
+    def edit_message(self, msg_id: str, content: str, channel_id: str) -> dict:
+        """Edit the text content of an existing message.
+
+        Args:
+            msg_id: Message ID to edit.
+            content: New message content string.
+            channel_id: Channel containing the message.
+
+        Returns:
+            Dict with the updated message data.
+        """
+        payload = {"content": content}
+        return self._request(
+            endpoint=f"/channels/{channel_id}/messages/{msg_id}",
+            method="PATCH",
+            json=payload,
+        )
+
     def edit_embed_message(self, msg_id: str, embed: dict, channel_id: str) -> dict:
         """Edit an existing embed message.
 

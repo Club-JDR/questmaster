@@ -27,4 +27,7 @@ def edit_settings():
         except ValidationError as e:
             flash(str(e), "danger")
 
-    return render_template("admin/settings/edit.html", settings=settings_service.get_effective())
+    return render_template(
+        "admin/settings/edit.html",
+        settings=settings_service.get_effective(),
+    )

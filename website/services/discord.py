@@ -254,6 +254,22 @@ class DiscordService:
         """
         return self.bot.send_embed_message(embed, channel_id)
 
+    def edit_message(self, message_id: str, content: str, channel_id: str) -> dict:
+        """Edit the text content of an existing plain message.
+
+        Args:
+            message_id: Message ID to edit.
+            content: New message content.
+            channel_id: Channel containing the message.
+
+        Returns:
+            Updated message data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.edit_message(message_id, content, channel_id)
+
     def edit_embed(self, message_id: str, embed: dict, channel_id: str) -> dict:
         """Edit an existing embed message.
 

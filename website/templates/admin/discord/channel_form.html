@@ -1,0 +1,30 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+{% block admin_content %}
+{{ ui.header('Nouveau salon de publication', 'ph-hash') }}
+
+<div class="card bg-base-100 shadow-md max-w-xl">
+  <form method="post" action="{{ url_for('admin.new_discord_channel') }}" class="card-body space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="flex flex-col gap-1">
+      <label for="label" class="{{ lbl }}">Nom</label>
+      <input type="text" id="label" name="label" class="input input-bordered w-full"
+             placeholder="Annonces" autocomplete="off">
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="channel_id" class="{{ lbl }}">ID du salon Discord</label>
+      <input type="text" id="channel_id" name="channel_id" class="input input-bordered w-full font-mono"
+             placeholder="123456789012345678" autocomplete="off" required>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <a href="{{ url_for('admin.list_discord_messages') }}" class="btn btn-ghost">Annuler</a>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

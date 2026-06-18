@@ -23,6 +23,8 @@ Repositories:
 | `TrophyRepository` | [`Trophy`](models.md#website.models.Trophy), [`UserTrophy`](models.md#website.models.UserTrophy) | Achievement data and leaderboard aggregations |
 | `UserRepository` | [`User`](models.md#website.models.User) | User entity retrieval |
 | `VttRepository` | [`Vtt`](models.md#website.models.Vtt) | Virtual tabletop platform lookups |
+| `SettingRepository` | [`AppSetting`](models.md#website.models.AppSetting) | Runtime config override storage and lookups |
+| `DiscordMessageRepository` | [`DiscordMessage`](models.md#website.models.DiscordMessage) | Admin-sent Discord message queries (search + pagination) |
 
 ## API Reference
 

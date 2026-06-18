@@ -27,6 +27,11 @@ ADMIN_SECTIONS = [
     {"endpoint": "admin.list_vtts", "label": "VTTs", "icon": "ph-desktop"},
     {"endpoint": "admin.list_channels", "label": "Catégories (salons)", "icon": "ph-hash"},
     {"endpoint": "admin.list_game_events", "label": "Journaux", "icon": "ph-scroll"},
+    {
+        "endpoint": "admin.list_discord_messages",
+        "label": "Messages Discord",
+        "icon": "ph-paper-plane-tilt",
+    },
     {"endpoint": "admin.edit_settings", "label": "Paramètres", "icon": "ph-sliders"},
 ]
 
@@ -82,6 +87,7 @@ def index():
 # Import route modules so their routes register on ``admin_bp``.
 from website.views.admin import (  # noqa: E402,F401
     channels,
+    discord_messages,
     game_events,
     games,
     settings,

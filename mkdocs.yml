@@ -64,4 +64,5 @@ nav:
       - CLI: architecture/cli.md
   - API:
       - Reference: api/reference.md
+  - Admin Panel: admin.md
   - Contributing: contributing.md

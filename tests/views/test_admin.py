@@ -11,6 +11,7 @@ import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID
 from tests.factories import (
+    DiscordMessageFactory,
     GameEventFactory,
     GameFactory,
     SpecialEventFactory,
@@ -23,6 +24,7 @@ from tests.factories import (
 from website.models import (
     AppSetting,
     Channel,
+    DiscordMessage,
     Game,
     SpecialEvent,
     System,
@@ -43,6 +45,7 @@ ADMIN_LIST_ROUTES = [
     "/admin/vtts/",
     "/admin/channels/",
     "/admin/game-events/",
+    "/admin/discord/",
     "/admin/settings/",
 ]
 
@@ -451,6 +454,146 @@ def test_list_search_filters_results(admin_client, db_session, mock_csrf):
     assert response.status_code == 200
     assert match.name in body
     assert other.name not in body
+
+
+# -- Discord messaging (Phase 3) ---------------------------------------------
+
+
+@pytest.fixture
+def post_channel(db_session):
+    """Register a postable channel in the managed settings list; return its ID."""
+    from website.services.setting import SettingsService
+
+    channel_id = "555000111222333444"
+    SettingsService().add_post_channel("Annonces", channel_id)
+    return channel_id
+
+
+@pytest.fixture
+def mock_discord_msg_api(monkeypatch):
+    """Patch the Discord API behind the admin message service."""
+    from unittest.mock import MagicMock
+
+    import website.views.admin.discord_messages as dm
+
+    mock = MagicMock()
+    mock.send_message.return_value = {"id": "msg-plain-1"}
+    mock.send_embed.return_value = {"id": "msg-embed-1"}
+    mock.edit_message.return_value = {}
+    mock.edit_embed.return_value = {}
+    mock.delete_message.return_value = {}
+    monkeypatch.setattr(dm.discord_message_service, "discord", mock)
+    return mock
+
+
+def test_compose_plain_message(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={"channel": post_channel, "type": "plain", "content": "Hello world"},
+    )
+    assert response.status_code == 302
+    mock_discord_msg_api.send_message.assert_called_once_with("Hello world", post_channel)
+    message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-plain-1").first()
+    assert message is not None
+    assert message.type == "plain"
+    assert message.content == "Hello world"
+    assert message.channel_id == post_channel
+    assert message.channel_label == "Annonces"
+
+
+def test_compose_embed_message(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={
+            "channel": post_channel,
+            "type": "embed",
+            "title": "Embed title",
+            "description": "Embed body",
+            "color": "#00ff00",
+        },
+    )
+    assert response.status_code == 302
+    mock_discord_msg_api.send_embed.assert_called_once()
+    message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-embed-1").first()
+    assert message is not None
+    assert message.type == "embed"
+    assert message.title == "Embed title"
+    assert message.color == 0x00FF00
+
+
+def test_compose_unknown_channel_rejected(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={"channel": "NOT_A_CHANNEL", "type": "plain", "content": "x"},
+    )
+    # Validation error -> form re-rendered, nothing sent or persisted.
+    assert response.status_code == 200
+    mock_discord_msg_api.send_message.assert_not_called()
+    assert db_session.query(DiscordMessage).count() == 0
+
+
+def test_compose_discord_error_not_persisted(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    from website.exceptions import DiscordAPIError
+
+    mock_discord_msg_api.send_message.side_effect = DiscordAPIError("boom", status_code=500)
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={"channel": post_channel, "type": "plain", "content": "Hello"},
+    )
+    assert response.status_code == 200
+    assert db_session.query(DiscordMessage).count() == 0
+
+
+def test_edit_embed_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
+    message = DiscordMessageFactory(db_session, type="embed", title="Old title")
+    response = admin_client.post(
+        f"/admin/discord/{message.id}/edit",
+        data={"type": "embed", "title": "New title", "description": "Updated"},
+    )
+    assert response.status_code == 302
+    mock_discord_msg_api.edit_embed.assert_called_once()
+    db_session.refresh(message)
+    assert message.title == "New title"
+    assert message.description == "Updated"
+
+
+def test_delete_discord_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
+    message = DiscordMessageFactory(db_session, type="embed")
+    message_id = message.id
+    response = admin_client.post(f"/admin/discord/{message_id}/delete")
+    assert response.status_code == 302
+    mock_discord_msg_api.delete_message.assert_called_once()
+    assert db_session.get(DiscordMessage, message_id) is None
+
+
+def test_add_post_channel(admin_client, db_session, mock_csrf):
+    from website.services.setting import SettingsService
+
+    response = admin_client.post(
+        "/admin/discord/channels/new",
+        data={"label": "Taverne", "channel_id": "777111222333444555"},
+    )
+    assert response.status_code == 302
+    channels = SettingsService().get_post_channels()
+    assert {"label": "Taverne", "channel_id": "777111222333444555"} in channels
+
+
+def test_remove_post_channel(admin_client, db_session, mock_csrf):
+    from website.services.setting import SettingsService
+
+    service = SettingsService()
+    service.add_post_channel("Taverne", "777111222333444555")
+    response = admin_client.post("/admin/discord/channels/777111222333444555/delete")
+    assert response.status_code == 302
+    assert service.get_post_channels() == []
 
 
 def test_list_search_no_match_shows_empty(admin_client, db_session):

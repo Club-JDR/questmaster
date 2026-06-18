@@ -2,6 +2,7 @@
 
 from website.services.channel import ChannelService
 from website.services.discord import DiscordService
+from website.services.discord_message import DiscordMessageService
 from website.services.game import GameService
 from website.services.game_event import GameEventService
 from website.services.game_session import GameSessionService
@@ -24,4 +25,5 @@ __all__ = [
     "TrophyService",
     "GameService",
     "DiscordService",
+    "DiscordMessageService",
 ]
