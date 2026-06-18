@@ -121,7 +121,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
 
     # Get calendar info
     response = logged_in_user.get(
-        "/api/calendar/?start=2025-06-01T00:00:00+02:00&end=2025-07-13T00:00:00+02:00"
+        "/api/v1/calendar/events/?start=2025-06-01T00:00:00+02:00&end=2025-07-13T00:00:00+02:00"
     )
     assert response.status_code == 200
     assert '"start":"2025-07-01T20:30:00"' in response.data.decode()
