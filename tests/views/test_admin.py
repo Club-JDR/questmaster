@@ -202,6 +202,29 @@ def test_delete_special_event(admin_client, db_session, mock_csrf):
     assert db_session.get(SpecialEvent, event.id) is None
 
 
+def test_special_event_games_lists_linked_games(admin_client, db_session, default_system):
+    event = SpecialEventFactory(db_session)
+    linked = GameFactory(
+        db_session,
+        name="Linked Game",
+        system_id=default_system.id,
+        special_event_id=event.id,
+    )
+    unlinked = GameFactory(db_session, name="Unlinked Game", system_id=default_system.id)
+
+    resp = admin_client.get(f"/admin/special-events/{event.id}/games")
+
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert linked.name in body
+    assert unlinked.name not in body
+
+
+def test_special_event_games_unknown_event_redirects(admin_client):
+    resp = admin_client.get("/admin/special-events/999999/games")
+    assert resp.status_code == 302
+
+
 # -- User/trophy associations ------------------------------------------------
 
 

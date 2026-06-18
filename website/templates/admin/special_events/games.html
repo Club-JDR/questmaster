@@ -1,0 +1,53 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Annonces de ' ~ (event.emoji ~ ' ' if event.emoji else '') ~ event.name, 'ph-sparkle') }}
+
+<a href="{{ url_for('admin.list_special_events') }}" class="btn btn-ghost btn-sm gap-1 mb-4">
+  <i class="ph ph-arrow-left" aria-hidden="true"></i> Retour aux événements
+</a>
+
+<h2 class="text-lg font-bold flex items-center gap-2 mb-2">
+  <i class="ph ph-scroll" aria-hidden="true"></i> Annonces
+  <span class="badge badge-neutral badge-sm">{{ games|length }}</span>
+</h2>
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>MJ</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Statut</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for game in games %}
+      <tr>
+        <td>
+          <a href="/annonces/{{ game.slug }}/" class="link link-hover font-semibold" target="_blank" rel="noopener">{{ game.name }}</a>
+          <span class="font-mono text-xs text-base-content/50 block">{{ game.slug }}</span>
+        </td>
+        <td>
+          {% if game.gm %}
+          <a href="{{ url_for('admin.user_games', user_id=game.gm.id) }}" class="link link-hover">{{ game.gm.name }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td><span class="badge badge-outline badge-sm">{{ game.type }}</span></td>
+        <td class="whitespace-nowrap text-sm">{{ game.date|format_datetime('%Y-%m-%d %H:%M') }}</td>
+        <td><span class="badge badge-sm">{{ game.status }}</span></td>
+        <td class="text-right">
+          {{ ui.edit_link(url_for('admin.edit_game', game_id=game.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(6, 'Aucune annonce pour cet événement.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

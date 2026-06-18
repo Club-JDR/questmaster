@@ -104,6 +104,17 @@ class GameService:
         """
         return self.repo.find_by_player(player_id)
 
+    def list_by_special_event(self, event_id: int) -> list[Game]:
+        """List all games linked to a given special event.
+
+        Args:
+            event_id: Special event ID.
+
+        Returns:
+            List of Game instances linked to this special event.
+        """
+        return self.repo.find_by_special_event(event_id)
+
     def admin_update(self, game_id: int, data: dict) -> Game:
         """Update a game's fields directly from the admin panel.
 

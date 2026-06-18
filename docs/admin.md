@@ -23,7 +23,7 @@ sub-section. The same list is shown in the sidebar inside the panel.
 | Dashboard | `/admin/` | Landing page with links to every section |
 | Utilisateurs | `/admin/users/` | List users; edit display name and activity status; view a user's games and badges |
 | Annonces | `/admin/games/` | List games; full-field edit; delete |
-| Événements | `/admin/special-events/` | CRUD for special (themed) events |
+| Événements | `/admin/special-events/` | CRUD for special (themed) events; view an event's games |
 | Badges | `/admin/trophies/` | CRUD for trophy **definitions** |
 | Systèmes | `/admin/systems/` | CRUD for RPG systems |
 | VTTs | `/admin/vtts/` | CRUD for virtual tabletops |

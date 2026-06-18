@@ -38,6 +38,10 @@
           {% endif %}
         </td>
         <td class="text-right whitespace-nowrap">
+          <a href="{{ url_for('admin.special_event_games', event_id=event.id) }}"
+             class="btn btn-ghost btn-xs" aria-label="Annonces de l'événement" title="Annonces">
+            <i class="ph ph-scroll" aria-hidden="true"></i>
+          </a>
           {{ ui.edit_link(url_for('admin.edit_special_event', event_id=event.id)) }}
           {{ ui.delete_button(url_for('admin.delete_special_event', event_id=event.id)) }}
         </td>

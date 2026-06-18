@@ -6,10 +6,12 @@ from flask import flash, redirect, render_template, request, url_for
 # Local imports
 from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
+from website.services.game import GameService
 from website.services.special_event import SpecialEventService
 from website.views.admin import admin_bp, get_list_params
 
 special_event_service = SpecialEventService()
+game_service = GameService()
 
 
 def _parse_color(raw: str | None) -> int | None:
@@ -81,6 +83,22 @@ def edit_special_event(event_id):
             flash(str(e), "danger")
 
     return render_template("admin/special_events/form.html", event=event)
+
+
+@admin_bp.route("/special-events/<int:event_id>/games", methods=["GET"])
+def special_event_games(event_id):
+    """List all games linked to a specific special event."""
+    try:
+        event = special_event_service.get_by_id(event_id)
+    except NotFoundError:
+        flash("Événement introuvable.", "danger")
+        return redirect(url_for("admin.list_special_events"))
+
+    return render_template(
+        "admin/special_events/games.html",
+        event=event,
+        games=game_service.list_by_special_event(event_id),
+    )
 
 
 @admin_bp.route("/special-events/<int:event_id>/delete", methods=["POST"])
