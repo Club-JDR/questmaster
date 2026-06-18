@@ -142,18 +142,3 @@ class TestApiLoginOptional:
         assert len(data) == 1
         assert data[0]["title"] == "Public Game"
         assert data[0]["game_slug"] == "public-game"
-
-
-class TestOldCalendarDeprecation:
-    """Tests for deprecation headers on the legacy /api/calendar/ endpoint."""
-
-    @patch("website.views.stats.session_service")
-    def test_deprecation_headers_present(self, mock_service, api_client):
-        """Legacy endpoint returns Deprecation, Sunset, and Link headers."""
-        mock_service.find_in_range.return_value = []
-
-        response = api_client.get("/api/calendar/?start=2026-01-01&end=2026-02-01")
-        assert response.status_code == 200
-        assert response.headers.get("Deprecation") == "true"
-        assert "2026" in response.headers.get("Sunset", "")
-        assert "/api/v1/calendar/events/" in response.headers.get("Link", "")

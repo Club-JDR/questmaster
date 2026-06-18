@@ -2,12 +2,9 @@
 
 from collections import Counter
 
-from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, jsonify, make_response, render_template, request, url_for
+from flask import Blueprint, render_template, request
 
-from config.constants import GAME_DETAILS_ROUTE
-from website.extensions import cache
 from website.services.game_session import GameSessionService
 from website.views.auth import who
 
@@ -59,59 +56,3 @@ def get_calendar():
 def get_calendar_widget():
     """Render the embeddable calendar widget."""
     return render_template("calendar_widget.j2")
-
-
-@stats_bp.route("/api/calendar/", methods=["GET"])
-@cache.cached(query_string=True)
-def get_month_games_json():
-    """Return game sessions as JSON for the calendar frontend.
-
-    Deprecated: use ``GET /api/v1/calendar/events/`` instead.
-    This endpoint will be removed after 2026-06-01.
-
-    Returns:
-        Response: JSON array of game session events, or an empty array with
-            HTTP 400 if the date parameters are missing or invalid.
-    """
-    start_str = request.args.get("start")
-    end_str = request.args.get("end")
-
-    if not start_str or not end_str:
-        return jsonify([]), 400
-
-    try:
-        start = parse_date(start_str)
-        end = parse_date(end_str)
-    except ValueError:
-        return jsonify([]), 400
-
-    sessions = session_service.find_in_range(start, end)
-
-    events = []
-    for session in sessions:
-        start = session.start
-        end = session.end
-
-        # If it crosses midnight, force the end to same day
-        if end.date() > start.date():
-            end = start.replace(hour=23, minute=59, second=59)
-
-        events.append(
-            {
-                "id": session.id,
-                "title": f"{session.game.name}",
-                "start": start.isoformat(),
-                "end": end.isoformat(),
-                "color": "#75b798" if session.game.type == "oneshot" else "#0d6efd",
-                "className": (
-                    "event-oneshot" if session.game.type == "oneshot" else "event-campaign"
-                ),
-                "url": url_for(GAME_DETAILS_ROUTE, slug=session.game.slug),
-            }
-        )
-
-    resp = make_response(jsonify(events))
-    resp.headers["Deprecation"] = "true"
-    resp.headers["Sunset"] = "Mon, 01 Jun 2026 00:00:00 GMT"
-    resp.headers["Link"] = '</api/v1/calendar/events/>; rel="successor-version"'
-    return resp
