@@ -1,6 +1,7 @@
 """SQLAlchemy model definitions for QuestMaster."""
 
 from .channel import Channel
+from .discord_message import DiscordMessage
 from .game import Game
 from .game_event import GameEvent
 from .game_session import GameSession
@@ -13,6 +14,7 @@ from .vtt import Vtt
 
 __all__ = [
     "Channel",
+    "DiscordMessage",
     "Game",
     "GameEvent",
     "GameSession",

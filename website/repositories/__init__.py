@@ -2,6 +2,7 @@
 
 from website.repositories.base import BaseRepository
 from website.repositories.channel import ChannelRepository
+from website.repositories.discord_message import DiscordMessageRepository
 from website.repositories.game import GameRepository
 from website.repositories.game_event import GameEventRepository
 from website.repositories.game_session import GameSessionRepository
@@ -14,6 +15,7 @@ from website.repositories.vtt import VttRepository
 
 __all__ = [
     "BaseRepository",
+    "DiscordMessageRepository",
     "SystemRepository",
     "VttRepository",
     "ChannelRepository",

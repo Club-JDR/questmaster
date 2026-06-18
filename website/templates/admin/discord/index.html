@@ -1,0 +1,91 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
+  <h1 class="text-2xl font-black flex items-center gap-2">
+    <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> Messages Discord
+  </h1>
+  <div class="flex gap-2 flex-wrap">
+    <a href="{{ url_for('admin.new_discord_channel') }}" class="btn btn-primary btn-sm gap-1">
+      <i class="ph ph-plus" aria-hidden="true"></i> Ajouter un salon
+    </a>
+    <a href="{{ url_for('admin.compose_discord_message') }}" class="btn btn-primary btn-sm gap-1">
+      <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> Composer un message
+    </a>
+  </div>
+</div>
+
+{# ── Postable channels ── #}
+<h2 class="font-semibold text-base mb-2">Salons de publication</h2>
+<div class="card bg-base-100 shadow-md overflow-x-auto mb-6">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>ID du salon</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for channel in channels %}
+      <tr>
+        <td>{{ channel.label }}</td>
+        <td class="font-mono text-xs">{{ channel.channel_id }}</td>
+        <td class="text-right">
+          {{ ui.delete_button(url_for('admin.delete_discord_channel', channel_id=channel.channel_id),
+             'Retirer ce salon ?') }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(3, 'Aucun salon de publication. Ajoutez-en un pour pouvoir composer un message.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ── Sent messages ── #}
+<h2 class="font-semibold text-base mb-2">Messages envoyés</h2>
+{{ ui.search_bar(search, 'Rechercher par titre ou contenu…') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Envoyé le</th>
+        <th>Salon</th>
+        <th>Type</th>
+        <th>Aperçu</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for message in pagination.items %}
+      <tr>
+        <td class="whitespace-nowrap text-sm">{{ message.sent_at|format_datetime('%Y-%m-%d %H:%M') }}</td>
+        <td class="text-xs">{{ message.channel_label or message.channel_id }}</td>
+        <td>
+          {% if message.is_embed %}
+          <span class="badge badge-info badge-sm">Embed</span>
+          {% else %}
+          <span class="badge badge-ghost badge-sm">Texte</span>
+          {% endif %}
+        </td>
+        <td class="max-w-xs truncate">
+          {{ (message.title or message.content or '')|truncate(80) }}
+        </td>
+        <td class="text-right whitespace-nowrap">
+          {{ ui.edit_link(url_for('admin.edit_discord_message', message_id=message.id)) }}
+          {{ ui.delete_button(url_for('admin.delete_discord_message', message_id=message.id),
+             'Supprimer ce message (aussi sur Discord) ?') }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(5, 'Aucun message envoyé.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ ui.pager(pagination, search) }}
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+{% set is_edit = message is not none %}
+{% set action = url_for('admin.edit_discord_message', message_id=message.id) if is_edit
+                else url_for('admin.compose_discord_message') %}
+
+{% block admin_content %}
+{{ ui.header('Éditer le message' if is_edit else 'Composer un message', 'ph-paper-plane-tilt') }}
+
+{% if not channels and not is_edit %}
+<div class="alert alert-warning mb-4">
+  <i class="ph ph-warning" aria-hidden="true"></i>
+  <span>
+    Aucun salon n'est configuré. Ajoutez un salon dans les
+    <a href="{{ url_for('admin.edit_settings') }}" class="link">Paramètres</a> (groupe « Salons Discord »).
+  </span>
+</div>
+{% endif %}
+
+<div class="card bg-base-100 shadow-md max-w-2xl">
+  <form method="post" action="{{ action }}" class="card-body space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── Channel ── #}
+    <div class="flex flex-col gap-1">
+      <label for="channel" class="{{ lbl }}">Salon</label>
+      {% if is_edit %}
+      <input type="text" class="input input-bordered w-full"
+             value="{{ message.channel_label or message.channel_id }}" disabled>
+      <span class="text-xs text-base-content/40">Le salon d'un message envoyé ne peut pas être modifié.</span>
+      {% else %}
+      <select id="channel" name="channel" class="select select-bordered w-full" required>
+        <option value=""></option>
+        {% for channel in channels %}
+        <option value="{{ channel.channel_id }}" {% if form.channel == channel.channel_id %}selected{% endif %}>
+          {{ channel.label }}
+        </option>
+        {% endfor %}
+      </select>
+      {% endif %}
+    </div>
+
+    {# ── Type ── #}
+    <fieldset>
+      <legend class="{{ lbl }}">Type de message</legend>
+      <div class="join">
+        <label class="join-item btn btn-sm has-[:checked]:btn-primary">
+          <input type="radio" name="type" value="plain" class="sr-only msg-type"
+                 {% if form.type != 'embed' %}checked{% endif %} {% if is_edit %}disabled{% endif %}>
+          <i class="ph ph-text-aa" aria-hidden="true"></i> Texte
+        </label>
+        <label class="join-item btn btn-sm has-[:checked]:btn-primary">
+          <input type="radio" name="type" value="embed" class="sr-only msg-type"
+                 {% if form.type == 'embed' %}checked{% endif %} {% if is_edit %}disabled{% endif %}>
+          <i class="ph ph-cards" aria-hidden="true"></i> Embed
+        </label>
+      </div>
+      {% if is_edit %}
+      {# Disabled radios don't submit; keep the type for the POST. #}
+      <input type="hidden" name="type" value="{{ message.type }}">
+      {% endif %}
+    </fieldset>
+
+    {# ── Plain text fields ── #}
+    <div id="plainFields" class="flex flex-col gap-1 {% if form.type == 'embed' %}hidden{% endif %}">
+      <label for="content" class="{{ lbl }}">Contenu</label>
+      <textarea id="content" name="content" rows="5"
+                class="textarea textarea-bordered w-full">{{ form.content }}</textarea>
+    </div>
+
+    {# ── Embed fields ── #}
+    <div id="embedFields" class="space-y-3 {% if form.type != 'embed' %}hidden{% endif %}">
+      <div class="flex flex-col gap-1">
+        <label for="title" class="{{ lbl }}">Titre</label>
+        <input type="text" id="title" name="title" maxlength="256"
+               class="input input-bordered w-full" value="{{ form.title }}">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="description" class="{{ lbl }}">Description</label>
+        <textarea id="description" name="description" rows="5" maxlength="4096"
+                  class="textarea textarea-bordered w-full">{{ form.description }}</textarea>
+      </div>
+      <div class="flex flex-wrap gap-4">
+        <div class="flex flex-col gap-1">
+          <label for="color" class="{{ lbl }}">Couleur</label>
+          <input type="color" id="color" name="color"
+                 class="h-10 w-20 p-0 border-none cursor-pointer bg-transparent"
+                 value="{{ form.color or '#5865f2' }}">
+        </div>
+        <div class="flex flex-col gap-1 grow">
+          <label for="footer" class="{{ lbl }}">Pied de page
+            <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+          <input type="text" id="footer" name="footer" maxlength="256"
+                 class="input input-bordered w-full" value="{{ form.footer }}">
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="image_url" class="{{ lbl }}">Image (URL)
+          <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+        <input type="url" id="image_url" name="image_url"
+               class="input input-bordered w-full" value="{{ form.image_url }}">
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <a href="{{ url_for('admin.list_discord_messages') }}" class="btn btn-ghost">Annuler</a>
+      <button type="submit" class="btn btn-primary gap-1">
+        <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+        {{ 'Enregistrer' if is_edit else 'Envoyer' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}{{ super() }}
+<script>
+  (function () {
+    const plain = document.getElementById('plainFields');
+    const embed = document.getElementById('embedFields');
+    function sync() {
+      const checked = document.querySelector('input.msg-type:checked');
+      const isEmbed = checked && checked.value === 'embed';
+      plain.classList.toggle('hidden', isEmbed);
+      embed.classList.toggle('hidden', !isEmbed);
+    }
+    document.querySelectorAll('input.msg-type').forEach(function (el) {
+      el.addEventListener('change', sync);
+    });
+    sync();
+  })();
+</script>
+{% endblock %}

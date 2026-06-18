@@ -23,6 +23,8 @@ Models define:
 | `Channel` | A Discord channel category managed by the app |
 | `SpecialEvent` | A special community event (e.g. Halloween, Christmas) |
 | `Vtt` | A virtual tabletop tool (e.g. Foundry, Roll20) |
+| `AppSetting` | A runtime configuration override (and the managed postable-channel list) |
+| `DiscordMessage` | A plain or embed message sent to Discord from the admin panel |
 
 ## API Reference
 

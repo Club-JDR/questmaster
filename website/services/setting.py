@@ -9,6 +9,8 @@ overridable and always come from the environment.
 
 from __future__ import annotations
 
+import json
+
 from flask import current_app, g, has_app_context
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -16,6 +18,11 @@ from website.exceptions import ValidationError
 from website.extensions import db
 from website.repositories.setting import SettingRepository
 from website.utils.logger import logger
+
+# Key under which the admin-managed list of postable Discord channels is stored.
+# Distinct from OVERRIDABLE_SETTINGS (env-backed overrides): this is a fully
+# DB-managed JSON list of ``{"label": ..., "id": ...}`` entries.
+POST_CHANNELS_KEY = "discord_post_channels"
 
 # Setting groups, used only to organise the admin settings page.
 _GROUP_SERVER = "Serveur Discord"
@@ -145,6 +152,104 @@ class SettingsService:
             self.repo.delete_by_key(key)
         db.session.commit()
         self._invalidate()
+
+    def _read_post_channels(self) -> list[dict]:
+        """Read and normalise the stored postable-channel list.
+
+        Returns:
+            List of ``{"label": str, "id": str}`` dicts. Invalid or missing
+            data yields an empty list.
+        """
+        setting = self.repo.get_by_key(POST_CHANNELS_KEY)
+        if setting is None or not setting.value:
+            return []
+        try:
+            items = json.loads(setting.value)
+        except ValueError, TypeError:
+            logger.warning("Stored post channels are not valid JSON; ignoring.")
+            return []
+        return [
+            {"label": str(item.get("label") or item["id"]), "id": str(item["id"])}
+            for item in items
+            if isinstance(item, dict) and item.get("id")
+        ]
+
+    def _write_post_channels(self, channels: list[dict], updated_by_id: str | None) -> None:
+        """Persist the postable-channel list as JSON and commit.
+
+        Args:
+            channels: List of ``{"label", "id"}`` dicts.
+            updated_by_id: Discord ID of the admin performing the change.
+        """
+        self.repo.upsert(POST_CHANNELS_KEY, json.dumps(channels), updated_by_id)
+        db.session.commit()
+        self._invalidate()
+
+    def get_post_channels(self) -> list[dict]:
+        """Return the admin-managed Discord channels an admin may post into.
+
+        Returns:
+            List of dicts with ``label`` and ``channel_id``.
+        """
+        return [{"label": c["label"], "channel_id": c["id"]} for c in self._read_post_channels()]
+
+    def is_post_channel(self, channel_id: str) -> bool:
+        """Check whether a Discord channel ID is a configured postable channel.
+
+        Args:
+            channel_id: Discord channel ID.
+
+        Returns:
+            True if the channel is in the managed postable list.
+        """
+        return any(c["id"] == channel_id for c in self._read_post_channels())
+
+    def get_post_channel_label(self, channel_id: str) -> str | None:
+        """Return the human label for a postable channel ID, if configured.
+
+        Args:
+            channel_id: Discord channel ID.
+
+        Returns:
+            The channel label, or None if not configured.
+        """
+        for c in self._read_post_channels():
+            if c["id"] == channel_id:
+                return c["label"]
+        return None
+
+    def add_post_channel(
+        self, label: str, channel_id: str, updated_by_id: str | None = None
+    ) -> None:
+        """Add a channel to the managed postable list.
+
+        Args:
+            label: Human-friendly channel name shown in the compose dropdown.
+            channel_id: Discord channel ID to post into.
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the ID is missing or already present.
+        """
+        channel_id = (channel_id or "").strip()
+        label = (label or "").strip()
+        if not channel_id:
+            raise ValidationError("Channel ID is required.", field="channel_id")
+        channels = self._read_post_channels()
+        if any(c["id"] == channel_id for c in channels):
+            raise ValidationError("Channel already added.", field="channel_id")
+        channels.append({"label": label or channel_id, "id": channel_id})
+        self._write_post_channels(channels, updated_by_id)
+
+    def remove_post_channel(self, channel_id: str, updated_by_id: str | None = None) -> None:
+        """Remove a channel from the managed postable list.
+
+        Args:
+            channel_id: Discord channel ID to remove.
+            updated_by_id: Discord ID of the admin performing the change.
+        """
+        channels = [c for c in self._read_post_channels() if c["id"] != channel_id]
+        self._write_post_channels(channels, updated_by_id)
 
     def set_many(self, values: dict[str, str | None], updated_by_id: str | None = None) -> None:
         """Apply several overrides in one transaction.
