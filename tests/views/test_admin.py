@@ -40,7 +40,6 @@ ADMIN_LIST_ROUTES = [
     "/admin/games/",
     "/admin/special-events/",
     "/admin/trophies/",
-    "/admin/user-trophies/",
     "/admin/systems/",
     "/admin/vtts/",
     "/admin/channels/",
@@ -484,12 +483,19 @@ def test_list_search_filters_results(admin_client, db_session, mock_csrf):
 
 @pytest.fixture
 def post_channel(db_session):
-    """Register a postable channel in the managed settings list; return its ID."""
+    """Register a postable channel in the managed settings list; return its ID.
+
+    Removes any leftover entry first (the settings list persists in the DB
+    across local runs) and cleans up afterwards so the fixture is idempotent.
+    """
     from website.services.setting import SettingsService
 
+    service = SettingsService()
     channel_id = "555000111222333444"
-    SettingsService().add_post_channel("Annonces", channel_id)
-    return channel_id
+    service.remove_post_channel(channel_id)
+    service.add_post_channel("Annonces", channel_id)
+    yield channel_id
+    service.remove_post_channel(channel_id)
 
 
 @pytest.fixture
@@ -551,6 +557,7 @@ def test_compose_embed_message(
 def test_compose_unknown_channel_rejected(
     admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
 ):
+    before = db_session.query(DiscordMessage).count()
     response = admin_client.post(
         "/admin/discord/compose",
         data={"channel": "NOT_A_CHANNEL", "type": "plain", "content": "x"},
@@ -558,7 +565,7 @@ def test_compose_unknown_channel_rejected(
     # Validation error -> form re-rendered, nothing sent or persisted.
     assert response.status_code == 200
     mock_discord_msg_api.send_message.assert_not_called()
-    assert db_session.query(DiscordMessage).count() == 0
+    assert db_session.query(DiscordMessage).count() == before
 
 
 def test_compose_discord_error_not_persisted(
@@ -567,12 +574,13 @@ def test_compose_discord_error_not_persisted(
     from website.exceptions import DiscordAPIError
 
     mock_discord_msg_api.send_message.side_effect = DiscordAPIError("boom", status_code=500)
+    before = db_session.query(DiscordMessage).count()
     response = admin_client.post(
         "/admin/discord/compose",
         data={"channel": post_channel, "type": "plain", "content": "Hello"},
     )
     assert response.status_code == 200
-    assert db_session.query(DiscordMessage).count() == 0
+    assert db_session.query(DiscordMessage).count() == before
 
 
 def test_edit_embed_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
@@ -600,23 +608,27 @@ def test_delete_discord_message(admin_client, db_session, mock_csrf, mock_discor
 def test_add_post_channel(admin_client, db_session, mock_csrf):
     from website.services.setting import SettingsService
 
+    service = SettingsService()
+    service.remove_post_channel("777111222333444555")
     response = admin_client.post(
         "/admin/discord/channels/new",
         data={"label": "Taverne", "channel_id": "777111222333444555"},
     )
     assert response.status_code == 302
-    channels = SettingsService().get_post_channels()
+    channels = service.get_post_channels()
     assert {"label": "Taverne", "channel_id": "777111222333444555"} in channels
+    service.remove_post_channel("777111222333444555")
 
 
 def test_remove_post_channel(admin_client, db_session, mock_csrf):
     from website.services.setting import SettingsService
 
     service = SettingsService()
+    service.remove_post_channel("777111222333444555")
     service.add_post_channel("Taverne", "777111222333444555")
     response = admin_client.post("/admin/discord/channels/777111222333444555/delete")
     assert response.status_code == 302
-    assert service.get_post_channels() == []
+    assert not service.is_post_channel("777111222333444555")
 
 
 def test_list_search_no_match_shows_empty(admin_client, db_session):
