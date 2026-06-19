@@ -42,17 +42,20 @@ fake_games = [
             "horror": 1,
         },
         "img": "https://r2.foundryvtt.com/website-uploads-public/screen/user_70/toa-banner-2025-05-13.webp",
-        "date": session_start,
+        "date": session_start.isoformat(),
         "session_length": "3.5",
         "players": [
             {"name": "Riri", "avatar": "https://picsum.photos/id/237/200/300"},
             {"name": "Fifi", "avatar": "https://picsum.photos/id/96/367/267"},
         ],
         "sessions": [
-            {"start": session_start, "end": session_start + timedelta(hours=3)},
             {
-                "start": session_start + timedelta(weeks=1),
-                "end": session_start + timedelta(weeks=1, hours=3),
+                "start": session_start.isoformat(),
+                "end": (session_start + timedelta(hours=3)).isoformat(),
+            },
+            {
+                "start": (session_start + timedelta(weeks=1)).isoformat(),
+                "end": (session_start + timedelta(weeks=1, hours=3)).isoformat(),
             },
         ],
     },
@@ -69,7 +72,7 @@ fake_games = [
         "restriction_tags": "gore, suicide, folie",
         "party_size": "4",
         "img": "https://files.d20.io/marketplace/1630181/oGojkYY7dVVWvgeTZc75GA/med.png?1613370570436",
-        "date": session_start + timedelta(days=2, hours=1),
+        "date": (session_start + timedelta(days=2, hours=1)).isoformat(),
     },
     {
         "name": "La Nécropole",
@@ -84,7 +87,7 @@ fake_games = [
         "restriction_tags": "claustrophobie,gore",
         "party_size": "4",
         "img": "https://shop.novalisgames.com/product/image/large/escth13fr_illu1_20220112.jpg",
-        "date": session_start + timedelta(days=3, minutes=30),
+        "date": (session_start + timedelta(days=3, minutes=30)).isoformat(),
     },
 ]
 
