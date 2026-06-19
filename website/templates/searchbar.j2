@@ -14,18 +14,18 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
         <label class="input input-bordered flex items-center gap-2">
           <i class="ph ph-magnifying-glass text-base-content/40"></i>
-          <input type="text" class="grow" placeholder="Nom de l'annonce" name="name"
+          <input type="text" class="grow" placeholder="Nom de l'annonce" aria-label="Nom de l'annonce" name="name"
             {% if request.args.get('name') %}value="{{ request.args.get('name') }}"{% endif %}>
         </label>
 
-        <select class="select select-bordered" name="system">
+        <select class="select select-bordered" name="system" aria-label="Système">
           <option value="">Système</option>
           {% for s in systems %}
           <option value="{{ s.id }}" {% if request.args.get('system')|int == s.id %}selected{% endif %}>{{ s.name }}</option>
           {% endfor %}
         </select>
 
-        <select class="select select-bordered" name="vtt">
+        <select class="select select-bordered" name="vtt" aria-label="VTT">
           <option value="">VTT</option>
           {% for v in vtts %}
           <option value="{{ v.id }}" {% if request.args.get('vtt')|int == v.id %}selected{% endif %}>{{ v.name }}</option>

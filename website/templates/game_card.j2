@@ -52,7 +52,7 @@
             {% if game.special_event %}{{ game.special_event.emoji }} {{ game.name }}
             {% else %}{{ game.name }}{% endif %}
           </div>
-          <div class="text-[0.6rem] text-white/60 leading-none mt-0.5 truncate">
+          <div class="text-[0.6rem] text-white/90 drop-shadow-md leading-none mt-0.5 truncate">
             {%- if game.special_event %}{{ game.special_event.name }}
             {%- elif game.type == 'campaign' %}Campagne
             {%- else %}One Shot{% endif %}
@@ -66,7 +66,7 @@
           {{ game.players|length }}/{{ game.party_size }}{% if game.party_selection %}<i
             class="ph-fill ph-funnel text-sm align-middle ml-0.5"></i>{% endif %}
         </div>
-        <div class="text-[0.55rem] text-white/50 leading-none mt-0.5 whitespace-nowrap">joueur·euses</div>
+        <div class="text-[0.55rem] text-white/90 drop-shadow-md leading-none mt-0.5 whitespace-nowrap">joueur·euses</div>
       </div>
     </div>
 
@@ -129,7 +129,7 @@
               {{ display_date|format_datetime('%a %d/%m · %Hh%M') }} · {{ game.length }}
             </div>
             {% if game.frequency %}
-            <div class="text-[0.6rem] text-white/50 italic">
+            <div class="text-[0.6rem] text-white/80 italic">
               {% if game.frequency == 'weekly' %}Hebdomadaire
               {% elif game.frequency == 'bi-weekly' %}Bimensuelle
               {% elif game.frequency == 'monthly' %}Mensuelle
@@ -165,7 +165,7 @@
             }}</span>
           {% endfor %}
           {% if tags|length > 3 %}
-          <span class="badge badge-sm bg-white/10 text-white/50 border-white/10">+{{ tags|length - 3 }}</span>
+          <span class="badge badge-sm bg-white/10 text-white/80 border-white/10">+{{ tags|length - 3 }}</span>
           {% endif %}
         </div>
 

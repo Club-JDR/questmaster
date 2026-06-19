@@ -18,14 +18,14 @@
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
   <div class="card bg-base-100 shadow-md text-center">
     <div class="card-body">
-      <h2 class="card-title justify-center text-success"><i class="ph ph-scroll"></i> Sessions OS</h2>
-      <p class="text-5xl font-black text-success">{{ num_os }}</p>
+      <h2 class="card-title justify-center text-oneshot-accent"><i class="ph ph-scroll"></i> Sessions OS</h2>
+      <p class="text-5xl font-black text-oneshot-accent">{{ num_os }}</p>
     </div>
   </div>
   <div class="card bg-base-100 shadow-md text-center">
     <div class="card-body">
-      <h2 class="card-title justify-center text-primary"><i class="ph ph-books"></i> Sessions de Campagnes</h2>
-      <p class="text-5xl font-black text-primary">{{ num_campaign }}</p>
+      <h2 class="card-title justify-center text-campaign-accent"><i class="ph ph-books"></i> Sessions de Campagnes</h2>
+      <p class="text-5xl font-black text-campaign-accent">{{ num_campaign }}</p>
     </div>
   </div>
   <div class="card bg-base-100 shadow-md text-center">
@@ -40,11 +40,11 @@
 
   <div class="card bg-base-100 shadow-md">
     <div class="card-body">
-      <h2 class="card-title text-success"><i class="ph ph-scroll"></i> Liste des OS</h2>
+      <h2 class="card-title text-oneshot-accent"><i class="ph ph-scroll"></i> Liste des OS</h2>
       {% for system, games in os.items() %}
       <div class="mt-3">
-        <h3 class="font-semibold text-success text-sm mb-1">{{ system }}
-          <span class="text-base-content/40 font-normal">({{ games|length }} scénario{% if games|length > 1 %}s{% endif %})</span>
+        <h3 class="font-semibold text-oneshot-accent text-sm mb-1">{{ system }}
+          <span class="text-base-content/70 font-normal">({{ games|length }} scénario{% if games|length > 1 %}s{% endif %})</span>
         </h3>
         <div class="overflow-x-auto">
           <table class="table table-sm table-zebra w-full">
@@ -70,11 +70,11 @@
 
   <div class="card bg-base-100 shadow-md">
     <div class="card-body">
-      <h2 class="card-title text-primary"><i class="ph ph-books"></i> Liste des campagnes</h2>
+      <h2 class="card-title text-campaign-accent"><i class="ph ph-books"></i> Liste des campagnes</h2>
       {% for system, games in campaign.items() %}
       <div class="mt-3">
-        <h3 class="font-semibold text-primary text-sm mb-1">{{ system }}
-          <span class="text-base-content/40 font-normal">({{ games|length }} campagne{% if games|length > 1 %}s{% endif %})</span>
+        <h3 class="font-semibold text-campaign-accent text-sm mb-1">{{ system }}
+          <span class="text-base-content/70 font-normal">({{ games|length }} campagne{% if games|length > 1 %}s{% endif %})</span>
         </h3>
         <div class="overflow-x-auto">
           <table class="table table-sm table-zebra w-full">
