@@ -50,14 +50,42 @@
   color: oklch(98% 0 0);
 }
 
+/* ── Accessible accent TEXT colors (WCAG 1.4.3 contrast) ──────────────────────
+   Readable variants of the brand/semantic colors for COLORED TEXT on a base
+   background. The vibrant tokens (text-oneshot/text-campaign, text-success/
+   text-primary/text-info/text-error) are tuned for FILLS or decorative icons
+   and fail 4.5:1 as small text on base-100. A single fixed value can't satisfy
+   both themes (light needs a darker shade, dark a brighter one), so these are
+   theme-aware via the per-theme `--color-*-accent` vars below — each measured
+   to clear ≥4.5:1 on base-100 in BOTH light and dark. Use for readable colored
+   text; keep the vibrant utilities for badges/borders/icons. */
+@utility text-oneshot-accent {
+  color: var(--color-oneshot-accent);
+}
+
+@utility text-campaign-accent {
+  color: var(--color-campaign-accent);
+}
+
+@utility text-error-accent {
+  color: var(--color-error-accent);
+}
+
+@utility text-info-accent {
+  color: var(--color-info-accent);
+}
+
 /* ── Scrollbar hide utility ───────────────────────────────────────────────── */
 @utility scrollbar-hide {
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ── Carousel scroll-position indicator dots ─────────────────────────────── */
-#carousel-indicator > div {
+#carousel-indicator>div {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -66,7 +94,7 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-#carousel-indicator > div.active {
+#carousel-indicator>div.active {
   opacity: 1;
   transform: scale(1.35);
 }
@@ -97,7 +125,36 @@
   transform: translateX(150%) skewX(-10deg);
 }
 
-@plugin "daisyui";
+/* ── Accessibility: visible focus indicators (WCAG 2.4.7 / 2.4.11) ─────────────
+   A consistent, high-contrast focus ring for every keyboard-focusable element.
+   `outline` is additive, so it layers on top of DaisyUI's own focus styling
+   without removing it.
+────────────────────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Button groups built from a visually-hidden <input> wrapped in a styled
+   <label> (the `join-item btn` / toggle patterns): the input itself is
+   `sr-only`, so surface the focus ring on the visible label instead. */
+label:has(> input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ── WCAG 2.4.11 Focus Not Obscured ───────────────────────────────────────────
+   The navbar is sticky (top-0, z-50). Offset in-page scrolling so targets
+   reached via the skip link, an in-page anchor or keyboard focus aren't left
+   hidden underneath it. */
+html {
+  scroll-padding-top: 5rem;
+}
+
+@plugin "daisyui" {
+  themes: false;
+}
 
 @plugin "daisyui/theme" {
   name: "light";
@@ -122,6 +179,11 @@
   --color-warning-content: oklch(15% 0 0);
   --color-error: oklch(62.013% 0.208 28.717);
   --color-error-content: oklch(15% 0 0);
+  /* Accessible accent text colors (light) — measured ≥4.5:1 on base-100 */
+  --color-oneshot-accent: oklch(50% 0.12 160);
+  --color-campaign-accent: oklch(52% 0.16 261.294);
+  --color-error-accent: oklch(53% 0.16 27);
+  --color-info-accent: oklch(50% 0.13 231.6);
 }
 
 @plugin "daisyui/theme" {
@@ -147,6 +209,11 @@
   --color-warning-content: oklch(15% 0 0);
   --color-error: oklch(62.013% 0.208 28.717);
   --color-error-content: oklch(15% 0 0);
+  /* Accessible accent text colors (dark) — measured ≥4.5:1 on base-100 */
+  --color-oneshot-accent: oklch(67% 0.12 160);
+  --color-campaign-accent: oklch(69% 0.16 261.294);
+  --color-error-accent: oklch(70% 0.16 27);
+  --color-info-accent: oklch(68% 0.13 231.6);
 }
 
 /* ── FullCalendar (calendar.j2) ───────────────────────────────────────────────

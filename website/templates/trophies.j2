@@ -8,8 +8,8 @@
 
 <form method="GET" action="{{ url_for('misc.list_user_badges') }}" class="mb-6">
   <div class="join flex max-w-md mx-auto">
-    <input type="text" id="userIdInput" class="input input-bordered join-item flex-1"
-      name="user_id" placeholder="Entrez l'ID de l'utilisateur" required>
+    <input type="text" id="userIdInput" class="input input-bordered join-item flex-1" name="user_id"
+      placeholder="Entrez l'ID de l'utilisateur" aria-label="ID de l'utilisateur" required>
     <button class="btn btn-primary join-item" type="submit">Rechercher</button>
   </div>
 </form>

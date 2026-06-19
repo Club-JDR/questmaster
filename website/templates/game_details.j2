@@ -18,7 +18,8 @@
 {% endblock %}
 
 {% block main_class %}container mx-auto px-4 pb-16 min-h-screen{% endblock %}
-{% block main_attrs %}id="game-details-container" data-game-id="{{ game.slug }}"{% endblock %}
+{% block main_id %}game-details-container{% endblock %}
+{% block main_attrs %}data-game-id="{{ game.slug }}"{% endblock %}
 
 {% block content %}
 
@@ -133,7 +134,7 @@
           <span class="font-semibold text-white">{{ game.date|format_datetime('%a %d/%m · %Hh%M') }} · {{ game.length
             }}×{{ game.session_length }}h</span>
           {% if game.frequency %}
-          <span class="text-white/50 italic hidden sm:inline">
+          <span class="text-white/80 italic hidden sm:inline">
             {%- if game.frequency == 'weekly' %}· Hebdo.
             {%- elif game.frequency == 'bi-weekly' %}· Bimensuelle
             {%- elif game.frequency == 'monthly' %}· Mensuelle
@@ -160,10 +161,11 @@
           description.') | urlize }}</p>
         {% if game.complement %}
         <details class="mt-3" open>
-          <summary class="text-sm font-semibold text-base-content/50 cursor-pointer hover:text-base-content/70">
+          <summary class="text-sm font-semibold text-base-content/70 cursor-pointer hover:text-base-content/70">
             <i class="ph ph-info"></i> Informations complémentaires
           </summary>
-          <p class="whitespace-pre-line text-sm text-base-content/60 mt-2 leading-relaxed">{{ game.complement | urlize }}</p>
+          <p class="whitespace-pre-line text-sm text-base-content/70 mt-2 leading-relaxed">{{ game.complement | urlize
+            }}</p>
         </details>
         {% endif %}
       </div>
@@ -176,7 +178,7 @@
 
           {# Restriction #}
           <div class="flex flex-col gap-1">
-            <span class="text-[0.6rem] uppercase tracking-wider text-base-content/40">Restriction</span>
+            <span class="text-[0.6rem] uppercase tracking-wider text-base-content/70">Restriction</span>
             <div class="flex flex-wrap items-center gap-1">
               {% if game.restriction == 'all' %}
               <span class="badge color-oneshot gap-1 font-semibold badge-md"><i class="ph ph-seal-check"></i> Tout
@@ -190,7 +192,7 @@
               {% endif %}
               {% if game.restriction_tags %}
               {% for tag in game.restriction_tags.split(',') %}
-              <span class="badge badge-ghost badge-sm">{{ tag.strip()|truncate(20) }}</span>
+              <span class="badge badge-sm">{{ tag.strip()|truncate(20) }}</span>
               {% endfor %}
               {% endif %}
             </div>
@@ -199,16 +201,16 @@
           {# Ambiance #}
           {% if game.ambience %}
           <div class="flex flex-col gap-1">
-            <span class="text-[0.6rem] uppercase tracking-wider text-base-content/40">Ambiance</span>
+            <span class="text-[0.6rem] uppercase tracking-wider text-base-content/70">Ambiance</span>
             <div class="flex flex-wrap gap-1">
               {% for ambience in game.ambience %}
-              {% if ambience == 'chill' %}<span class="badge badge-ghost badge-md gap-1"><i class="ph ph-couch"></i>
+              {% if ambience == 'chill' %}<span class="badge badge-md gap-1"><i class="ph ph-couch"></i>
                 Décontractée</span>
-              {% elif ambience == 'comic' %}<span class="badge badge-ghost badge-md gap-1"><i
-                  class="ph ph-mask-happy"></i> Comique</span>
-              {% elif ambience == 'serious' %}<span class="badge badge-ghost badge-md gap-1"><i
-                  class="ph ph-book-open-text"></i> Sérieuse</span>
-              {% elif ambience == 'epic' %}<span class="badge badge-ghost badge-md gap-1"><i class="ph ph-sword"></i>
+              {% elif ambience == 'comic' %}<span class="badge badge-md gap-1"><i class="ph ph-mask-happy"></i>
+                Comique</span>
+              {% elif ambience == 'serious' %}<span class="badge badge-md gap-1"><i class="ph ph-book-open-text"></i>
+                Sérieuse</span>
+              {% elif ambience == 'epic' %}<span class="badge badge-md gap-1"><i class="ph ph-sword"></i>
                 Épique</span>
               {% endif %}
               {% endfor %}
@@ -221,13 +223,13 @@
         {# Row 2: Classification #}
         {% if game.classification %}
         <div class="flex flex-col gap-1.5">
-          <span class="text-[0.6rem] uppercase tracking-wider text-base-content/40">Classification</span>
+          <span class="text-[0.6rem] uppercase tracking-wider text-base-content/70">Classification</span>
           <div class="grid grid-cols-2 gap-x-4 gap-y-1.5">
             <div class="flex flex-col gap-1.5">
               {% for key, label in [('action', 'Action'), ('interaction', 'Interaction')] %}
               {% if key in game.classification %}
               <div class="flex items-center gap-2">
-                <span class="text-base-content/60 w-20 shrink-0">{{ label }}</span>
+                <span class="text-base-content/70 w-20 shrink-0">{{ label }}</span>
                 <div class="flex gap-0.5 flex-1">
                   <progress class="progress progress-primary flex-1" value="{{ game.classification[key] }}"
                     max="2"></progress>
@@ -240,7 +242,7 @@
               {% for key, label in [('investigation', 'Investigation'), ('horror', 'Horreur')] %}
               {% if key in game.classification %}
               <div class="flex items-center gap-2">
-                <span class="text-base-content/60 w-20 shrink-0">{{ label }}</span>
+                <span class="text-base-content/70 w-20 shrink-0">{{ label }}</span>
                 <div class="flex gap-0.5 flex-1">
                   <progress class="progress progress-primary flex-1" value="{{ game.classification[key] }}"
                     max="2"></progress>
@@ -264,7 +266,7 @@
       {# Sessions card #}
       <div class="card bg-base-100 shadow-md {% if show_activity %}flex-1 min-w-0{% else %}w-full{% endif %}">
         <div class="card-body p-4">
-          <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/50">
+          <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/70">
             <i class="ph ph-calendar-dots"></i> Sessions
           </h2>
           {% if game.sessions %}
@@ -278,15 +280,15 @@
               </div>
               <div class="min-w-0">
                 <div class="font-semibold leading-tight">{{ session.start|format_datetime('%A %d/%m') }}</div>
-                <div class="text-xs text-base-content/50">
+                <div class="text-xs text-base-content/70">
                   <i class="ph ph-clock"></i>
                   {{ session.start|format_datetime('%H:%M') }} — {{ session.end|format_datetime('%H:%M') }}
-                  <span class="text-base-content/30 ml-1">({{ session.start | duration_hours(session.end) }}h)</span>
+                  <span class="text-base-content/70 ml-1">({{ session.start | duration_hours(session.end) }}h)</span>
                 </div>
               </div>
               <div class="ml-auto shrink-0 session-badge"></div>
               <div class="flex items-center gap-1 shrink-0">
-                <button class="btn btn-ghost btn-xs btn-square" {% if loop.first %} id="calendarTriggerBtn" {% endif %}
+                <button class="btn btn-xs btn-square" {% if loop.first %} id="calendarTriggerBtn" {% endif %}
                   onclick="openCalendar(this)" data-name="{{ game.name }} par {{ game.gm.name }} #{{ loop.index }}"
                   data-start-date="{{ session.start|format_datetime('%Y-%m-%d') }}"
                   data-end-date="{{ session.end|format_datetime('%Y-%m-%d') }}"
@@ -297,7 +299,7 @@
                 </button>
                 {% if payload['user_id'] == game.gm.id or payload['is_admin'] %}
                 {% if request.path != '/demo/inscription/' %}
-                <button class="btn btn-ghost btn-xs btn-square" data-session-id="{{ session.id }}"
+                <button class="btn btn-xs btn-square" data-session-id="{{ session.id }}"
                   data-session-index="{{ loop.revindex }}"
                   data-start="{{ session.start|format_datetime('%Y-%m-%dT%H:%M') }}"
                   data-end="{{ session.end|format_datetime('%Y-%m-%dT%H:%M') }}"
@@ -305,7 +307,7 @@
                   onclick="openEditSessionModal(this)" aria-label="Éditer">
                   <i class="ph ph-pencil-simple text-sm"></i>
                 </button>
-                <button class="btn btn-ghost btn-xs btn-square text-error" data-session-id="{{ session.id }}"
+                <button class="btn btn-xs btn-square text-error" data-session-id="{{ session.id }}"
                   data-session-index="{{ loop.revindex }}"
                   data-display="{{ session.start|format_datetime }} — {{ session.end|format_datetime }}"
                   onclick="openDeleteSessionModal(this)" aria-label="Supprimer">
@@ -320,7 +322,7 @@
           {% else %}
           <div class="text-center py-10 text-base-content/30">
             <i class="ph ph-calendar-x text-4xl"></i>
-            <p class="mt-2">Aucune session planifiée</p>
+            <p class="mt-2 text-base-content/70">Aucune session planifiée</p>
           </div>
           {% endif %}
 
@@ -351,7 +353,7 @@
     {% if show_activity %}
     <div class="card bg-base-100 shadow-md flex-1 min-w-0">
       <div class="card-body p-4" id="event-list">
-        <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/50">
+        <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/70">
           <i class="ph ph-notebook"></i> Activité
         </h2>
         {% if game.events %}
@@ -361,7 +363,7 @@
             <li>
               {% if not loop.first %}
               <hr />{% endif %}
-              <div class="timeline-start text-xs text-base-content/40 whitespace-nowrap">
+              <div class="timeline-start text-xs text-base-content/70 whitespace-nowrap">
                 {{ event.timestamp|format_datetime('%d/%m %H:%M') }}
               </div>
               <div class="timeline-middle">
@@ -402,10 +404,10 @@
                   {% endif %}
                 </div>
                 {% if event.description %}
-                <p class="text-xs text-base-content/60 mt-0.5">{{ event.description }}</p>
+                <p class="text-xs text-base-content/70 mt-0.5">{{ event.description }}</p>
                 {% endif %}
                 {% if event.user %}
-                <p class="text-xs text-base-content/40 mt-0.5">
+                <p class="text-xs text-base-content/70 mt-0.5">
                   {% if event.action in ('register', 'unregister') %}joueur·euse :{% else %}par{% endif %}
                   {{ event.user.name }}</p>
                 {% endif %}
@@ -419,7 +421,7 @@
         {% else %}
         <div class="text-center py-10 text-base-content/30">
           <i class="ph ph-notebook text-4xl"></i>
-          <p class="mt-2">Aucune activité enregistrée</p>
+          <p class="mt-2 text-base-content/70">Aucune activité enregistrée</p>
         </div>
         {% endif %}
       </div>
@@ -441,10 +443,10 @@
         <div class="text-3xl font-black text-primary">
           {{ game.players|length }}<span class="text-base-content/20">/</span>{{ game.party_size }}
         </div>
-        <div class="text-sm font-semibold text-base-content/60">
+        <div class="text-sm font-semibold text-base-content/70">
           Joueur·euses
           {% if game.party_selection and game.status != "closed" %}
-          · <span class="text-info text-xs">sur sélection</span>
+          · <span class="text-sm">sur sélection</span>
           {% endif %}
         </div>
       </div>
@@ -493,7 +495,7 @@
       </div>
 
       {# Footer info #}
-      <div class="bg-base-200 rounded-b-2xl px-4 py-3 text-center text-xs text-base-content/50 space-y-0.5">
+      <div class="bg-base-200 rounded-b-2xl px-4 py-3 text-center text-xs text-base-content/70 space-y-0.5">
         <div>
           {% if game.xp == "beginners" %}Réservé aux débutants
           {% elif game.xp == "seasoned" %}Interdit aux débutants
@@ -548,7 +550,7 @@
     {% if (request.path == '/demo/gerer/')
     or (((payload.get('user_id') == game.gm.id) or payload.get('is_admin'))
     and (request.path != '/demo/inscription/')) %}
-    <div class="divider text-xs text-base-content/40">Actions MJ</div>
+    <div class="divider text-xs text-base-content/70">Actions MJ</div>
 
     <form id="actionsPanel" method="post" action="/annonces/{{ game.slug }}/statut/" class="space-y-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -610,7 +612,7 @@
 
         {# Clone #}
         <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/cloner/{% endif %}"
-          id="cloneButton" class="btn btn-ghost btn-sm btn-block gap-1">
+          id="cloneButton" class="btn btn-sm btn-block gap-1">
           <i class="ph ph-copy"></i> Cloner
         </a>
     </form>
@@ -649,7 +651,7 @@
       </div>
     </form>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
 
 {# ── Edit Players ── #}
@@ -659,10 +661,10 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <h3 class="text-lg font-bold"><i class="ph ph-users text-primary"></i> Gérer les joueur·euses</h3>
 
-      <div role="tablist" class="tabs tabs-bordered mt-4">
+      <div role="tablist" class="tabs tabs-lift mt-4">
         <input type="radio" name="player_tabs" role="tab" class="tab" aria-label="Inscriptions" checked />
         <div role="tabpanel" class="tab-content py-4">
-          <p class="text-sm text-base-content/60 mb-4">Décochez pour désinscrire, puis confirmez.</p>
+          <p class="text-sm text-base-content/70 mb-4">Décochez pour désinscrire, puis confirmez.</p>
           {% if game.players|length > 0 %}
           <div class="flex flex-wrap gap-4 justify-center mb-4">
             {% for player in game.players %}
@@ -679,18 +681,18 @@
             <i class="ph ph-check-circle"></i> Confirmer
           </button>
           {% else %}
-          <div class="text-center py-4 text-base-content/40">Aucun·e joueur·euse</div>
+          <div class="text-center py-4 text-base-content/70">Aucun·e joueur·euse</div>
           {% endif %}
         </div>
 
         <input type="radio" name="player_tabs" role="tab" class="tab" aria-label="Ajouter" />
         <div role="tabpanel" class="tab-content py-4">
-          <p class="text-sm text-base-content/60 mb-4">
+          <p class="text-sm text-base-content/70 mb-4">
             Ajoutez via <a href="https://support.discord.com/hc/fr/articles/206346498" target="_blank"
               rel="noopener noreferrer" class="link link-primary">ID Discord</a>.
           </p>
           <div class="flex gap-2">
-            <input type="text" class="input input-bordered flex-1" placeholder="ID Discord" name="discord_id">
+            <input type="text" class="input input-bordered flex-1" placeholder="ID Discord" aria-label="ID Discord" name="discord_id">
             <button type="submit" class="btn btn-primary gap-1" name="action" value="add">
               <i class="ph ph-user-plus"></i> Ajouter
             </button>
@@ -703,7 +705,7 @@
       </div>
     </form>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
 
 {# ── Confirm Archive ── #}
@@ -735,7 +737,7 @@
         {% set planned = length_map.get(game.length, 0) %}
         {% set is_open_ended = game.length in ['10+ sessions', '20+ sessions'] %}
         <div class="rounded-lg border border-base-200 p-2 space-y-1.5">
-          <p class="text-xs text-base-content/50 px-1">
+          <p class="text-xs text-base-content/70 px-1">
             {{ sessions }} session{% if sessions > 1 %}s{% endif %} renseignée{% if sessions > 1 %}s{% endif %}.
           </p>
           {% if (planned > 1 and sessions != planned) or (is_open_ended and sessions < 10) %} <div role="alert"
@@ -769,7 +771,7 @@
   </div>
   </form>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
 
 {# ── Session modals — single shared instances populated via JS ── #}
@@ -777,7 +779,7 @@
   <div class="modal-box">
     <h3 class="text-lg font-bold"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <span
         class="session-modal-title">Éditer la session</span></h3>
-    <p class="text-sm text-base-content/50 session-modal-date"></p>
+    <p class="text-sm text-base-content/70 session-modal-date"></p>
     <form method="post" action="" id="editSessionForm" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="flex flex-col sm:flex-row gap-3">
@@ -796,7 +798,7 @@
       </div>
     </form>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
 <dialog id="deleteSessionModal" class="modal" aria-modal="true">
   <div class="modal-box">
@@ -804,7 +806,7 @@
       <i class="ph ph-trash" aria-hidden="true"></i>
       <span class="session-modal-title">Supprimer la session</span>
     </h3>
-    <p class="text-sm text-base-content/50 session-modal-date"></p>
+    <p class="text-sm text-base-content/70 session-modal-date"></p>
     <div role="alert" class="alert alert-error text-sm">
       <i class="ph ph-warning" aria-hidden="true"></i>
       <span>Cette action est irréversible.</span>
@@ -817,7 +819,7 @@
       </form>
     </div>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
 
 {% endif %}
@@ -834,7 +836,7 @@
         <textarea class="textarea textarea-bordered w-full h-28" name="alertMessage"
           placeholder="Décrivez la situation..." required></textarea>
       </label>
-      <p class="text-xs text-base-content/50 mt-2">Transmis directement aux admins.{% if not payload['user_id'] ==
+      <p class="text-xs text-base-content/70 mt-2">Transmis directement aux admins.{% if not payload['user_id'] ==
         game.gm.id %} Le·a MJ saura uniquement qu'un signalement a été fait.{% endif %}</p>
       <div class="modal-action">
         <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
@@ -842,7 +844,7 @@
       </div>
     </form>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
 {% endif %}
 
@@ -973,7 +975,7 @@
       var diffMs = start - now;
       var diffDays = Math.round(diffMs / 86400000);
       if (diffMs < 0) {
-        badge.innerHTML = '<span class="badge badge-ghost badge-sm opacity-60">Passée</span>';
+        badge.innerHTML = '<span class="badge badge-sm opacity-60">Passée</span>';
         row.classList.add('opacity-60');
       } else if (diffDays === 0) {
         badge.innerHTML = '<span class="badge badge-success badge-sm animate-pulse font-bold">Aujourd\'hui</span>';
@@ -983,7 +985,7 @@
         badge.innerHTML = '<span class="badge badge-info badge-sm">Dans ' + diffDays + 'j</span>';
       } else if (diffDays <= 30) {
         var weeks = Math.round(diffDays / 7);
-        badge.innerHTML = '<span class="badge badge-ghost badge-sm">Dans ' + weeks + ' sem.</span>';
+        badge.innerHTML = '<span class="badge badge-sm">Dans ' + weeks + ' sem.</span>';
       }
     });
   });
