@@ -30,6 +30,7 @@ dependencies = [
     "python-slugify==8.0.4",
     "apscheduler==3.11.2",
     "PyJWT==2.13.0",
+    "marshmallow==4.1.0",
 ]
 
 [project.optional-dependencies]

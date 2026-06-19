@@ -197,6 +197,23 @@ def _load_and_refresh_user():
     return user
 
 
+def load_current_user():
+    """Load the authenticated user with live (cache-backed) roles.
+
+    Requires that ``g.current_user`` has already been populated by
+    ``@api_login_required`` (or ``@api_login_optional``). Use this in view
+    functions that need ownership or role checks beyond what the simple
+    decorators provide (e.g. "GM or admin", "owner or admin").
+
+    Returns:
+        User ORM instance with up-to-date roles.
+
+    Raises:
+        UnauthorizedError: If the user no longer exists.
+    """
+    return _load_and_refresh_user()
+
+
 def require_gm(fn):
     """Require the authenticated user to have the GM role.
 

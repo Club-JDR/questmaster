@@ -3,20 +3,25 @@
 from flask import request
 
 
-def get_classification():
-    """Parse classification fields from request.form.
+def get_classification(data=None):
+    """Parse classification fields from a form-shaped mapping.
+
+    Args:
+        data: Mapping to read from. Defaults to ``request.form`` so existing
+            server-rendered views keep working without changes.
 
     Returns:
         Dict mapping classification keys to integer scores.
-        Keys come from form fields prefixed with 'class-'.
+        Keys come from fields prefixed with 'class-'.
     """
+    source = request.form if data is None else data
     prefix = "class-"
     classification = {}
-    for key in request.form:
+    for key in source:
         if key.startswith(prefix):
             clean_key = key[len(prefix) :]
             try:
-                classification[clean_key] = int(request.form[key])
+                classification[clean_key] = int(source[key])
             except ValueError, TypeError:
                 classification[clean_key] = 0
     return classification

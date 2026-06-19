@@ -12,7 +12,7 @@ automatically returns JSON for any request whose path starts with
 from flask import Blueprint
 
 from website.api.auth import auth_bp, exchange_token, refresh_token
-from website.api.games import games_bp
+from website.api.games import create_game, delete_game, games_bp, update_game
 from website.api.health import health_bp
 from website.api.leaderboards import leaderboards_bp
 from website.api.reference_data import reference_data_bp
@@ -43,5 +43,8 @@ def create_api_blueprint() -> Blueprint:
     # so we exempt each view function individually.
     csrf.exempt(exchange_token)
     csrf.exempt(refresh_token)
+    csrf.exempt(create_game)
+    csrf.exempt(update_game)
+    csrf.exempt(delete_game)
 
     return api_bp
