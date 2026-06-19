@@ -303,7 +303,7 @@ class GameService:
                 session_length=data["session_length"],
                 frequency=data.get("frequency") or None,
                 characters=data["characters"],
-                classification=get_classification(),
+                classification=get_classification(data),
                 ambience=get_ambience(data),
                 complement=data.get("complement"),
                 status=status,
@@ -451,7 +451,7 @@ class GameService:
             game.session_length = data["session_length"]
             game.frequency = data.get("frequency") or None
             game.characters = data["characters"]
-            game.classification = get_classification()
+            game.classification = get_classification(data)
             game.ambience = get_ambience(data)
             game.complement = data.get("complement")
             game.img = data.get("img")
