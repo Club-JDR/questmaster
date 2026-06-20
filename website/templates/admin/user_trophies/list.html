@@ -62,8 +62,9 @@
           <form method="post" id="ut-{{ ut.trophy_id }}"
                 action="{{ url_for('admin.edit_user_trophy', user_id=user.id, trophy_id=ut.trophy_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="number" name="quantity" value="{{ ut.quantity }}" min="1"
-                   class="input input-bordered input-sm w-24">
+            <label for="quantity-{{ ut.trophy_id }}" class="sr-only">Quantité de {{ ut.trophy.name }}</label>
+            <input type="number" id="quantity-{{ ut.trophy_id }}" name="quantity" value="{{ ut.quantity }}"
+                   min="1" class="input input-bordered input-sm w-24">
           </form>
           {% endif %}
         </td>

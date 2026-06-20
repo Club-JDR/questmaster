@@ -13,6 +13,21 @@ class RequestLoggerAdapter(logging.LoggerAdapter):
         return f"[trace_id={trace_id}] {msg}", kwargs
 
 
+def sanitize_log_value(value: object) -> str:
+    """Sanitize a user-controlled value for safe logging.
+
+    Strips characters that could forge or break log lines (CR, LF and other
+    control characters), mitigating log injection from user-supplied data.
+
+    Args:
+        value: Value to sanitize (coerced to ``str``).
+
+    Returns:
+        A single-line string safe to embed in a log message.
+    """
+    return "".join(c for c in str(value) if c.isprintable())
+
+
 def configure_logging(level=logging.INFO):
     """Configure the root logger with a stream handler.
 
