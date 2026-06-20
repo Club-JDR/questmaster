@@ -14,7 +14,8 @@
     <div class="flex flex-col gap-1">
       <label for="id" class="{{ lbl }}">Discord ID</label>
       {% if channel %}
-      <input type="text" class="input input-bordered w-full font-mono" value="{{ channel.id }}" disabled>
+      <input type="text" id="id" class="input input-bordered w-full font-mono" value="{{ channel.id }}"
+             disabled>
       {% else %}
       <input type="text" id="id" name="id" class="input input-bordered w-full font-mono" required
              autocomplete="off" placeholder="123456789012345678">

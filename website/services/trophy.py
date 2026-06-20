@@ -8,6 +8,7 @@ from website.models.trophy import Trophy, UserTrophy
 from website.models.user import User
 from website.repositories.base import Pagination
 from website.repositories.trophy import TrophyRepository
+from website.utils.logger import sanitize_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -277,13 +278,22 @@ class TrophyService:
             # Unique trophies: only award once
             if user_trophy is None:
                 user_trophy = self.repo.award_trophy(user_id, trophy_id, amount=1)
-                logger.info(f"User {user_id} got a trophy: {trophy.name}")
+                logger.info("User %s got a trophy: %s", user_id, sanitize_log_value(trophy.name))
             else:
-                logger.debug(f"User {user_id} already has unique trophy {trophy.name}, skipping")
+                logger.debug(
+                    "User %s already has unique trophy %s, skipping",
+                    user_id,
+                    sanitize_log_value(trophy.name),
+                )
         else:
             # Non-unique trophies: increment quantity
             user_trophy = self.repo.award_trophy(user_id, trophy_id, amount)
-            logger.info(f"User {user_id} got a trophy: {trophy.name} (x{amount})")
+            logger.info(
+                "User %s got a trophy: %s (x%s)",
+                user_id,
+                sanitize_log_value(trophy.name),
+                amount,
+            )
 
         db.session.commit()
         return user_trophy

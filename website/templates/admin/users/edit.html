@@ -10,8 +10,9 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <div class="flex flex-col gap-1">
-      <label class="{{ lbl }}">Discord ID</label>
-      <input type="text" class="input input-bordered w-full font-mono" value="{{ user.id }}" disabled>
+      <label for="discord_id" class="{{ lbl }}">Discord ID</label>
+      <input type="text" id="discord_id" class="input input-bordered w-full font-mono"
+             value="{{ user.id }}" disabled>
     </div>
 
     <div class="flex flex-col gap-1">
