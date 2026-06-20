@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.6.0](https://github.com/Club-JDR/questmaster/compare/v1.5.1...v1.6.0) (2026-06-20)
+
+
+### Features
+
+* **a11y:** WCAG 2.2 AA pass over the public UI ([9cc2615](https://github.com/Club-JDR/questmaster/commit/9cc2615f68382322fb739a838a0c793a2142da05))
+* **admin:** add one-click trophy increment/decrement ([ce54c34](https://github.com/Club-JDR/questmaster/commit/ce54c3499b9ea12cdd5a92feffeb991e1732691e))
+* **admin:** add search and pagination to admin list views ([01ba5b9](https://github.com/Club-JDR/questmaster/commit/01ba5b94f70be858b5d2670fe2b864c141ce220b))
+* **admin:** link GM name in games list to user games page ([ec64858](https://github.com/Club-JDR/questmaster/commit/ec6485827e62026a1fd28d43e3218b7f83579778))
+* **admin:** list games for a specific special event ([d2b7877](https://github.com/Club-JDR/questmaster/commit/d2b7877e4bb526cb8d647c4e5911075ea41e9327))
+* **admin:** list games per user (as GM and as player) ([efe457f](https://github.com/Club-JDR/questmaster/commit/efe457fc3dcb33064ca876f3636bef7a3fe36838))
+* **admin:** manage messages and channels in admin ([8b58285](https://github.com/Club-JDR/questmaster/commit/8b58285edee56c728c4bd01ad9b5d8dfea486a28))
+* **admin:** manage user trophies from the user page ([5c19a4e](https://github.com/Club-JDR/questmaster/commit/5c19a4e29e67c7c3116ae9135493956ef2b77219))
+* **admin:** replace Flask-Admin with custom DaisyUI admin blueprint ([bbdb981](https://github.com/Club-JDR/questmaster/commit/bbdb981d774e1120e651a9b70b1421830b4b9ff3))
+* **api:** add game CRUD endpoints with Marshmallow validation ([b02a36e](https://github.com/Club-JDR/questmaster/commit/b02a36e35b77a2e694913b9c51331a35bce5a10f))
+* **config:** allow DB overrides for operational Discord settings ([af56068](https://github.com/Club-JDR/questmaster/commit/af560687c7addcbb3042ffc1ee764aa1e627e725))
+* **ui:** add image URL validation with error feedback in game form ([3ba7542](https://github.com/Club-JDR/questmaster/commit/3ba75425ba70bd583cb08630620b110ab4af93ef))
+* **ui:** display sessions in reverse chronological order on game details page ([91fd9cb](https://github.com/Club-JDR/questmaster/commit/91fd9cb15eaefd359a37180725ef6d7c4ca24dbf))
+* **ui:** show next upcoming session date on game card, falling back to most recent past or game date ([f7c187f](https://github.com/Club-JDR/questmaster/commit/f7c187f0d6d7cfcde2acc83244afd7eebc234605))
+
+
+### Bug Fixes
+
+* **demo:** use ISO-string dates in fake games to match serialized shape ([7e8ef70](https://github.com/Club-JDR/questmaster/commit/7e8ef70ef8622b7ca7963aafa5aeae5e06cab33c))
+* **deps:** update dependency beautifulsoup4 to v4.15.0 ([6ae044f](https://github.com/Club-JDR/questmaster/commit/6ae044f36715fe1318ea79b82b99d22100a17ddd))
+* **deps:** update dependency marshmallow to v4.3.0 ([#174](https://github.com/Club-JDR/questmaster/issues/174)) ([1f2cebf](https://github.com/Club-JDR/questmaster/commit/1f2cebfe4f3027e78653d6cd76a139ebe089b473))
+* **deps:** update dependency pydoclint to v0.8.6 ([#142](https://github.com/Club-JDR/questmaster/issues/142)) ([879deec](https://github.com/Club-JDR/questmaster/commit/879deec2f0f62a1e634aa26bda11204266f02cbf))
+* **deps:** update dependency pytest to v9.1.1 ([fc40af7](https://github.com/Club-JDR/questmaster/commit/fc40af7d8ea36787d02ba871b571c32497b470ca))
+* **deps:** update dependency theme-change to v3 ([#168](https://github.com/Club-JDR/questmaster/issues/168)) ([b9f4bef](https://github.com/Club-JDR/questmaster/commit/b9f4befeb3a68cdce16b56a0e8e794f5a5bfc5fd))
+* **sonar:** sanitize logged trophy names and associate form inputs with labels ([#176](https://github.com/Club-JDR/questmaster/issues/176)) ([794d69f](https://github.com/Club-JDR/questmaster/commit/794d69f0b7a89c489312f6d6283f559b6a4371f4))
+* **templates:** return datetime from now() global so session sort works ([7e8ef70](https://github.com/Club-JDR/questmaster/commit/7e8ef70ef8622b7ca7963aafa5aeae5e06cab33c))
+
 ## [1.5.1](https://github.com/Club-JDR/questmaster/compare/v1.5.0...v1.5.1) (2026-05-30)
 
 
