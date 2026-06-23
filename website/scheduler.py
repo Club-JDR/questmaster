@@ -11,6 +11,7 @@ from website.services.user import UserService
 BATCH_SIZE = 50
 FREQUENCY = 5
 INACTIVE_CHECK_BATCH_SIZE = 10
+ROLE_MONITOR_FREQUENCY_HOURS = 12
 
 
 def refresh_user_profiles(app, batch_size=BATCH_SIZE):
@@ -97,6 +98,44 @@ def check_inactive_users(app, batch_size=INACTIVE_CHECK_BATCH_SIZE):
         )
 
 
+def monitor_role_count(app):
+    """Auto-enable direct channel permissions when the guild nears its role limit.
+
+    A Discord guild is hard-capped at 250 roles. When the current role count reaches
+    the admin-configured threshold, this switches new games to direct per-player
+    channel permissions so no further roles are consumed. It never disables the
+    setting automatically; an admin can turn it back off manually.
+
+    Args:
+        app: Flask application instance for context.
+    """
+    from website.services.discord import DiscordService
+    from website.services.setting import SettingsService
+
+    with app.app_context():
+        settings = SettingsService()
+        if settings.is_direct_permissions_enabled():
+            return
+
+        try:
+            count = DiscordService().count_roles()
+        except Exception as e:
+            app.logger.warning(f"[Scheduler] Could not fetch role count: {e}")
+            return
+
+        threshold = settings.get_role_auto_threshold()
+        if count >= threshold:
+            settings.set_direct_permissions(True)
+            app.logger.info(
+                f"[Scheduler] Role count {count} >= threshold {threshold}; "
+                "direct channel permissions auto-enabled."
+            )
+        else:
+            app.logger.info(
+                f"[Scheduler] Role count {count} below threshold {threshold}; no change."
+            )
+
+
 def start_scheduler(app):
     """Initialize and start the APScheduler background scheduler.
 
@@ -116,6 +155,13 @@ def start_scheduler(app):
         trigger="interval",
         hours=24,
         id="check_inactive_users",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        func=lambda: monitor_role_count(app),
+        trigger="interval",
+        hours=ROLE_MONITOR_FREQUENCY_HOURS,
+        id="monitor_role_count",
         replace_existing=True,
     )
     scheduler.start()

@@ -5,6 +5,43 @@
 {% block admin_content %}
 {{ ui.header('Paramètres', 'ph-sliders') }}
 
+{# ── Discord roles / direct permissions (safe operational toggle) ── #}
+<form method="post" action="{{ url_for('admin.update_permissions_settings') }}"
+      class="rounded-box border border-base-300 p-4 space-y-4 mb-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <h2 class="font-semibold text-base">Permissions des salons de partie</h2>
+  <p class="text-sm text-base-content/70">
+    Un serveur Discord est limité à {{ role_limit }} rôles. Lorsque cette option est activée, les
+    nouvelles parties n'utilisent plus de rôle dédié&nbsp;: les joueur·euses reçoivent un accès
+    individuel au salon. Les parties existantes ne sont pas modifiées.
+    {% if role_count is not none %}
+    <br>Nombre de rôles actuel&nbsp;: <span class="font-mono">{{ role_count }} / {{ role_limit }}</span>.
+    {% endif %}
+  </p>
+
+  <div class="form-control">
+    <label class="label cursor-pointer justify-start gap-3" for="direct_permissions">
+      <input type="checkbox" id="direct_permissions" name="direct_permissions"
+             class="toggle toggle-primary" {% if direct_permissions_enabled %}checked{% endif %}>
+      <span class="label-text">Utiliser les permissions directes (sans rôle) pour les nouvelles parties</span>
+    </label>
+  </div>
+
+  <div class="flex flex-col gap-1 max-w-xs">
+    <label for="role_auto_threshold" class="{{ lbl }}">Seuil d'activation automatique</label>
+    <input type="number" id="role_auto_threshold" name="role_auto_threshold" min="1"
+           class="input input-bordered w-full font-mono" value="{{ role_auto_threshold }}">
+    <span class="text-xs text-base-content/50">
+      Au-delà de ce nombre de rôles, l'option est activée automatiquement.
+    </span>
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </div>
+</form>
+
 {# ── Environment-backed overrides (dangerous) — fenced in a red box ── #}
 <form method="post" action="{{ url_for('admin.edit_settings') }}"
       class="rounded-box border-2 border-error p-4 space-y-4">

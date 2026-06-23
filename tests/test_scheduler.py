@@ -4,7 +4,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from config.constants import DEFAULT_AVATAR
-from website.scheduler import check_inactive_users, refresh_user_profiles
+from website.scheduler import check_inactive_users, monitor_role_count, refresh_user_profiles
 
 
 def _make_user(user_id="12345678901234567", name="TestUser", not_player_as_of=None):
@@ -156,3 +156,45 @@ class TestCheckInactiveUsers:
         check_inactive_users(test_app, batch_size=100)
 
         mock_service.get_user_profile.assert_not_called()
+
+
+class TestMonitorRoleCount:
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.setting.SettingsService")
+    def test_enables_direct_permissions_past_threshold(
+        self, mock_settings_cls, mock_discord_cls, test_app
+    ):
+        """When the role count reaches the threshold, direct permissions are enabled."""
+        settings = mock_settings_cls.return_value
+        settings.is_direct_permissions_enabled.return_value = False
+        settings.get_role_auto_threshold.return_value = 230
+        mock_discord_cls.return_value.count_roles.return_value = 240
+
+        monitor_role_count(test_app)
+
+        settings.set_direct_permissions.assert_called_once_with(True)
+
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.setting.SettingsService")
+    def test_no_change_below_threshold(self, mock_settings_cls, mock_discord_cls, test_app):
+        """Below the threshold, the setting is left untouched."""
+        settings = mock_settings_cls.return_value
+        settings.is_direct_permissions_enabled.return_value = False
+        settings.get_role_auto_threshold.return_value = 230
+        mock_discord_cls.return_value.count_roles.return_value = 100
+
+        monitor_role_count(test_app)
+
+        settings.set_direct_permissions.assert_not_called()
+
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.setting.SettingsService")
+    def test_no_op_when_already_enabled(self, mock_settings_cls, mock_discord_cls, test_app):
+        """When already enabled, no role count is fetched and nothing changes."""
+        settings = mock_settings_cls.return_value
+        settings.is_direct_permissions_enabled.return_value = True
+
+        monitor_role_count(test_app)
+
+        mock_discord_cls.return_value.count_roles.assert_not_called()
+        settings.set_direct_permissions.assert_not_called()

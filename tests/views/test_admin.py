@@ -355,6 +355,36 @@ def test_settings_save_empty_clears_override(
     assert db_session.get(AppSetting, "POSTS_CHANNEL_ID") is None
 
 
+def test_settings_page_shows_direct_permissions_toggle(admin_client, db_session):
+    response = admin_client.get("/admin/settings/")
+    assert response.status_code == 200
+    assert 'name="direct_permissions"' in response.data.decode()
+
+
+def test_permissions_save_enables_direct_mode(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    response = admin_client.post(
+        "/admin/settings/permissions/",
+        data={"direct_permissions": "on", "role_auto_threshold": "200"},
+    )
+    assert response.status_code == 302
+    assert db_session.get(AppSetting, "discord_use_direct_permissions").value == "true"
+    assert db_session.get(AppSetting, "discord_role_auto_threshold").value == "200"
+
+
+def test_permissions_save_unchecked_disables_direct_mode(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    db_session.add(AppSetting(key="discord_use_direct_permissions", value="true"))
+    db_session.commit()
+    admin_client.post(
+        "/admin/settings/permissions/",
+        data={"role_auto_threshold": "230"},
+    )
+    assert db_session.get(AppSetting, "discord_use_direct_permissions").value == "false"
+
+
 # -- Users -------------------------------------------------------------------
 
 

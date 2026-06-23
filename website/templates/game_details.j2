@@ -571,6 +571,14 @@
       </div>
       {% endif %}
 
+      {# Notify players in the game channel #}
+      {% if game.channel and game.status not in ['archived', 'draft'] %}
+      <button id="notifyButton" type="button" class="btn btn-primary btn-sm btn-block gap-1"
+        onclick="document.getElementById('notifyModal').showModal()">
+        <i class="ph ph-megaphone"></i> Notifier les joueur·euses
+      </button>
+      {% endif %}
+
       {# Add session #}
       <button id="addSessionButton" type="button"
         class="btn btn-primary btn-sm btn-block gap-1 {% if game.status == 'draft' %}btn-disabled{% endif %}"
@@ -841,6 +849,31 @@
       <div class="modal-action">
         <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
         <button type="submit" class="btn btn-warning">Signaler</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
+</dialog>
+{% endif %}
+
+{# ── Notify players ── #}
+{% if (payload.get('user_id') == game.gm.id or payload.get('is_admin'))
+and game.channel and game.status not in ['archived', 'draft'] %}
+<dialog id="notifyModal" class="modal" aria-modal="true">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold"><i class="ph ph-megaphone text-primary"></i> Notifier les joueur·euses</h3>
+    <form method="POST" action="/annonces/{{ game.slug }}/notifier/" class="mt-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-control" for="notifyMessage">
+        <div class="label"><span class="label-text">Votre message :</span></div>
+        <textarea id="notifyMessage" class="textarea textarea-bordered w-full h-28" name="notifyMessage"
+          placeholder="Écrivez le message à envoyer aux joueur·euses..." required></textarea>
+      </label>
+      <p class="text-xs text-base-content/70 mt-2">Publié dans le salon de la partie en mentionnant
+        l'ensemble des joueur·euses inscrit·es.</p>
+      <div class="modal-action">
+        <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
+        <button type="submit" class="btn btn-primary">Notifier</button>
       </div>
     </form>
   </div>

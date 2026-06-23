@@ -14,6 +14,7 @@ import json
 from flask import current_app, g, has_app_context
 from sqlalchemy.exc import SQLAlchemyError
 
+from config.constants import DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT
 from website.exceptions import ValidationError
 from website.extensions import db
 from website.repositories.setting import SettingRepository
@@ -23,6 +24,13 @@ from website.utils.logger import logger
 # Distinct from OVERRIDABLE_SETTINGS (env-backed overrides): this is a fully
 # DB-managed JSON list of ``{"label": ..., "id": ...}`` entries.
 POST_CHANNELS_KEY = "discord_post_channels"
+
+# Fully DB-managed operational settings (not env-backed). When direct permissions
+# are enabled, new games grant players access via per-channel permission overwrites
+# instead of a dedicated role. The auto-threshold is the guild role count at which
+# the scheduler turns the toggle on automatically.
+DIRECT_PERMISSIONS_KEY = "discord_use_direct_permissions"
+ROLE_AUTO_THRESHOLD_KEY = "discord_role_auto_threshold"
 
 # Setting groups, used only to organise the admin settings page.
 _GROUP_SERVER = "Serveur Discord"
@@ -273,5 +281,64 @@ class SettingsService:
                 self.repo.upsert(key, cleaned, updated_by_id)
             else:
                 self.repo.delete_by_key(key)
+        db.session.commit()
+        self._invalidate()
+
+    def is_direct_permissions_enabled(self) -> bool:
+        """Return whether new games should use direct per-player channel permissions.
+
+        When enabled, games are created without a dedicated Discord role; players are
+        granted channel access via individual permission overwrites instead.
+
+        Returns:
+            True if the direct-permission mode is enabled.
+        """
+        setting = self.repo.get_by_key(DIRECT_PERMISSIONS_KEY)
+        return bool(setting and setting.value == "true")
+
+    def set_direct_permissions(self, enabled: bool, updated_by_id: str | None = None) -> None:
+        """Enable or disable direct per-player channel permissions for new games.
+
+        Args:
+            enabled: Whether direct-permission mode should be on.
+            updated_by_id: Discord ID of the admin performing the change (or None when
+                set automatically by the role-count monitor).
+        """
+        self.repo.upsert(DIRECT_PERMISSIONS_KEY, "true" if enabled else "false", updated_by_id)
+        db.session.commit()
+        self._invalidate()
+
+    def get_role_auto_threshold(self) -> int:
+        """Return the guild role count at which direct permissions auto-enable.
+
+        Returns:
+            The configured threshold, or :data:`DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT`
+            when unset or invalid.
+        """
+        setting = self.repo.get_by_key(ROLE_AUTO_THRESHOLD_KEY)
+        if setting and setting.value:
+            try:
+                return int(setting.value)
+            except ValueError:
+                logger.warning("Stored role auto-threshold is not an integer; using default.")
+        return DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT
+
+    def set_role_auto_threshold(self, threshold: int, updated_by_id: str | None = None) -> None:
+        """Set the guild role count at which direct permissions auto-enable.
+
+        Args:
+            threshold: Role count threshold (must be a positive integer).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the threshold is not a positive integer.
+        """
+        try:
+            value = int(threshold)
+        except TypeError, ValueError:
+            raise ValidationError("Threshold must be an integer.", field="threshold")
+        if value <= 0:
+            raise ValidationError("Threshold must be a positive integer.", field="threshold")
+        self.repo.upsert(ROLE_AUTO_THRESHOLD_KEY, str(value), updated_by_id)
         db.session.commit()
         self._invalidate()

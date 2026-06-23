@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from config.constants import PLAYER_ROLE_PERMISSION
 from tests.factories import GameFactory
 from website.exceptions import (
     DiscordAPIError,
@@ -665,3 +666,153 @@ class TestGameServicePrivateHelpers:
 
         mock_discord.delete_channel.assert_called_once_with("channel_123")
         mock_discord.delete_role.assert_called_once_with("role_456")
+
+
+class TestGameServiceDirectPermissions:
+    """Tests for direct per-player channel permission mode (no per-game role)."""
+
+    @pytest.fixture
+    def direct_settings(self):
+        """Settings service stub with direct-permission mode enabled."""
+        settings = Mock()
+        settings.is_direct_permissions_enabled.return_value = True
+        return settings
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_setup_resources_skips_role_in_direct_mode(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        admin_user,
+        default_system,
+        oneshot_channel,
+        mock_discord,
+        direct_settings,
+    ):
+        """Direct mode creates no role and a channel without a role overwrite."""
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+
+        service = GameService(discord_service=mock_discord, settings_service=direct_settings)
+        data = {
+            "name": "Direct Mode Game",
+            "type": "oneshot",
+            "length": "3h",
+            "system": default_system.id,
+            "description": "Test",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = service.create(data, admin_user.id, status="open", create_resources=True)
+
+        assert game.role is None
+        assert game.channel == "mock_channel_id"
+        mock_discord.create_role.assert_not_called()
+        # Channel is created with role_id=None (no player-role overwrite).
+        _, kwargs = mock_discord.create_channel.call_args
+        assert kwargs["role_id"] is None
+
+    def test_register_player_grants_channel_permission(
+        self, db_session, sample_game, regular_user, mock_discord, game_service
+    ):
+        """A roleless game grants access via a per-member channel overwrite."""
+        sample_game.status = "open"
+        sample_game.role = None
+        sample_game.channel = "channel_123"
+        db_session.commit()
+
+        game_service.register_player(sample_game.slug, regular_user.id, force=False)
+
+        mock_discord.set_channel_permission.assert_called_once_with(
+            "channel_123", regular_user.id, PLAYER_ROLE_PERMISSION
+        )
+        mock_discord.add_role_to_user.assert_not_called()
+
+    def test_unregister_player_revokes_channel_permission(
+        self, db_session, sample_game, regular_user, mock_discord, game_service
+    ):
+        """A roleless game revokes the per-member channel overwrite on unregister."""
+        sample_game.status = "open"
+        sample_game.role = None
+        sample_game.channel = "channel_123"
+        sample_game.players.append(regular_user)
+        db_session.commit()
+
+        game_service.unregister_player(sample_game.slug, regular_user.id)
+
+        mock_discord.delete_channel_permission.assert_called_once_with(
+            "channel_123", regular_user.id
+        )
+        mock_discord.remove_role_from_user.assert_not_called()
+
+    def test_cleanup_skips_role_deletion_when_no_role(self, db_session, sample_game, mock_discord):
+        """Cleanup deletes the channel but no role for direct-permission games."""
+        mock_channel_service = Mock()
+        service = GameService(
+            discord_service=mock_discord,
+            channel_service=mock_channel_service,
+        )
+        sample_game.channel = "channel_123"
+        sample_game.role = None
+
+        service._cleanup_discord_resources(sample_game)
+
+        mock_discord.delete_channel.assert_called_once_with("channel_123")
+        mock_discord.delete_role.assert_not_called()
+
+    def test_notify_players_role_mode(self, db_session, sample_game, mock_discord, game_service):
+        """Notify in role mode mentions the dedicated role in the channel message."""
+        sample_game.status = "open"
+        sample_game.role = "role_123"
+        sample_game.channel = "channel_123"
+        db_session.commit()
+
+        game_service.notify_players(
+            sample_game.slug, "Rendez-vous ce soir", user_id=sample_game.gm_id
+        )
+
+        mock_discord.send_message.assert_called_once()
+        args, kwargs = mock_discord.send_message.call_args
+        content, channel = args[0], args[1]
+        assert "<@&role_123>" in content
+        assert "Rendez-vous ce soir" in content
+        assert channel == "channel_123"
+        assert kwargs["allowed_mentions"] == {"parse": ["users", "roles"]}
+
+    def test_notify_players_direct_mode_mentions_each_player(
+        self, db_session, sample_game, regular_user, mock_discord, game_service
+    ):
+        """Notify without a role mentions every registered player individually."""
+        sample_game.status = "open"
+        sample_game.role = None
+        sample_game.channel = "channel_123"
+        sample_game.players.append(regular_user)
+        db_session.commit()
+
+        game_service.notify_players(sample_game.slug, "Coucou", user_id=sample_game.gm_id)
+
+        content = mock_discord.send_message.call_args[0][0]
+        assert f"<@{regular_user.id}>" in content
+        assert "<@&" not in content
+
+    def test_notify_players_empty_message_raises(
+        self, db_session, sample_game, mock_discord, game_service
+    ):
+        """An empty notification message is rejected before any Discord call."""
+        sample_game.channel = "channel_123"
+        db_session.commit()
+
+        with pytest.raises(ValidationError):
+            game_service.notify_players(sample_game.slug, "   ", user_id=sample_game.gm_id)
+
+        mock_discord.send_message.assert_not_called()

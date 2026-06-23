@@ -26,6 +26,24 @@ from website.models import Game
 # -----------------------------------------------------------------------------
 
 
+def player_mentions(game) -> str:
+    """Return the mention string used to notify a game's players.
+
+    Returns the dedicated role mention in role mode, otherwise mentions every
+    registered player individually (direct-permission mode, where the game has no
+    role).
+
+    Args:
+        game: Game instance.
+
+    Returns:
+        A Discord mention string (role mention or space-joined member mentions).
+    """
+    if game.role:
+        return f"<@&{game.role}>"
+    return " ".join(f"<@{player.id}>" for player in game.players)
+
+
 def _build_restriction_message(game) -> str:
     """Return the formatted restriction message with tags."""
     restriction_icons = {
@@ -143,15 +161,17 @@ def build_annonce_details_embed(game, **_) -> tuple[dict, str]:
     """
     game_url = f"{SITE_BASE_URL}/annonces/{game.slug}"
 
+    role_line = f"Le rôle associé est <@&{game.role}>.\n\n" if game.role else "\n"
+
     embed = {
         "title": "Tout est prêt.",
         "color": EMBED_COLOR_BLUE,
         "description": (
             f"<@{game.gm_id}> voici le salon pour ta partie {game.name} et voici le lien [vers l'annonce]({game_url}).\n"
-            f"Le rôle associé est <@&{game.role}>.\n\n"
+            f"{role_line}"
             f"Quelques petits rappels :\n"
             f"- La partie doit être **organisée et jouée sur le serveur du Club JDR** (Cf. règlement).\n"
-            f"- Notifie tes joueur·euses **uniquement avec le rôle @PJ** mentionné plus haut, et non pas `@everyone`, `@here` ou `@Joueur·euses`.\n"
+            f"- Notifie tes joueur·euses avec le bouton **Notifier** sur QuestMaster, et non pas avec `@everyone`, `@here` ou `@Joueur·euses`.\n"
             f"- Toutes les sessions **jouées** doivent être ajoutées dans QuestMaster au fur et à mesure.\n"
             f"- Le bouton **Signaler** sur QuestMaster te permet de contacter les admins en cas de problème concernant la partie."
         ),
@@ -176,7 +196,7 @@ def build_add_session_embed(game, start=None, end=None, **_) -> tuple[dict, str]
         "title": "Nouvelle session prévue",
         "color": EMBED_COLOR_GREEN,
         "description": (
-            f"<@&{game.role}>\nVotre MJ a ajouté une nouvelle session : du **{start}** au **{end}**\n\n"
+            f"{player_mentions(game)}\nVotre MJ a ajouté une nouvelle session : du **{start}** au **{end}**\n\n"
             f"Pour ne pas l'oublier, pensez à l'ajouter à votre calendrier depuis "
             f"[l'annonce sur QuestMaster]({game_url}).\n"
             f"Si vous avez un empêchement, prévenez votre MJ en avance."
@@ -200,7 +220,7 @@ def build_edit_session_embed(game, start=None, old_start=None, **_) -> tuple[dic
         "title": "Session modifiée",
         "color": EMBED_COLOR_YELLOW,
         "description": (
-            f"<@&{game.role}>\nVotre MJ a modifié la session ~~du {old_start}~~\n"
+            f"{player_mentions(game)}\nVotre MJ a modifié la session ~~du {old_start}~~\n"
             f"La session a été décalée au **{start}**\n"
             f"Pensez à mettre à jour votre calendrier."
         ),
@@ -223,7 +243,7 @@ def build_delete_session_embed(game, start=None, end=None, **_) -> tuple[dict, s
         "title": "Session annulée",
         "color": EMBED_COLOR_RED,
         "description": (
-            f"<@&{game.role}>\nVotre MJ a annulé la session du **{start}** au **{end}**\n"
+            f"{player_mentions(game)}\nVotre MJ a annulé la session du **{start}** au **{end}**\n"
             f"Pensez à l'enlever de votre calendrier."
         ),
     }

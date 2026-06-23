@@ -97,12 +97,17 @@ class Discord:
         """
         return self._request(endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET")
 
-    def send_message(self, content: str, channel_id: str) -> dict:
+    def send_message(
+        self, content: str, channel_id: str, allowed_mentions: dict | None = None
+    ) -> dict:
         """Send a text message to a Discord channel.
 
         Args:
             content: Message content string.
             channel_id: Target channel ID.
+            allowed_mentions: Optional Discord ``allowed_mentions`` object controlling
+                which mentions in ``content`` actually ping (e.g.
+                ``{"parse": ["users", "roles"]}``).
 
         Returns:
             Dict with the created message data.
@@ -110,6 +115,8 @@ class Discord:
         payload = {
             "content": content,
         }
+        if allowed_mentions is not None:
+            payload["allowed_mentions"] = allowed_mentions
         return self._request(
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
@@ -186,27 +193,35 @@ class Discord:
             method="PUT",
         )
 
-    def create_channel(self, channel_name: str, parent_id: str, role_id: str, gm_id: str) -> dict:
-        """Create a text channel in the guild with role-based permissions.
+    def create_channel(
+        self, channel_name: str, parent_id: str, role_id: str | None, gm_id: str
+    ) -> dict:
+        """Create a text channel in the guild with permission overwrites.
 
         Args:
             channel_name: Display name for the channel.
             parent_id: Parent category ID.
-            role_id: Role ID for player permissions.
+            role_id: Player role ID for permission overwrites, or None to create
+                the channel without a player-role overwrite (direct-permission mode,
+                where players are granted access individually).
             gm_id: GM user ID for elevated permissions.
 
         Returns:
             Dict with the created channel data.
         """
+        permission_overwrites = [
+            {"id": self.guild_id, "type": 0, "deny": "1024"},
+            {"id": gm_id, "type": 1, "allow": GM_ROLE_PERMISSION},
+        ]
+        if role_id:
+            permission_overwrites.insert(
+                0, {"id": role_id, "type": 0, "allow": PLAYER_ROLE_PERMISSION}
+            )
         payload = {
             "name": "-".join(unidecode(channel_name).split()),
             "type": 0,
             "parent_id": parent_id,
-            "permission_overwrites": [
-                {"id": role_id, "type": 0, "allow": PLAYER_ROLE_PERMISSION},
-                {"id": self.get_role(self.guild_id)["id"], "type": 0, "deny": "1024"},
-                {"id": gm_id, "type": 1, "allow": GM_ROLE_PERMISSION},
-            ],
+            "permission_overwrites": permission_overwrites,
         }
         return self._request(
             endpoint=f"/guilds/{self.guild_id}/channels", method="POST", json=payload
@@ -252,6 +267,14 @@ class Discord:
             endpoint=f"/guilds/{self.guild_id}/roles", method="POST", json=payload
         )
 
+    def list_roles(self) -> list:
+        """Fetch all roles defined in the guild.
+
+        Returns:
+            List of role dicts as returned by the Discord API.
+        """
+        return self._request(endpoint=f"/guilds/{self.guild_id}/roles", method="GET")
+
     def get_role(self, role_id: str) -> dict:
         """Fetch a guild role by ID.
 
@@ -261,8 +284,7 @@ class Discord:
         Returns:
             Dict with role data, or a fallback dict if not found.
         """
-        roles = self._request(endpoint=f"/guilds/{self.guild_id}/roles", method="GET")
-        for role in roles:
+        for role in self.list_roles():
             if role["id"] == role_id:
                 return role
         return {"message": "Unknown Role"}
@@ -296,5 +318,38 @@ class Discord:
         """
         return self._request(
             endpoint=f"/guilds/{self.guild_id}/members/{user_id}/roles/{role_id}",
+            method="DELETE",
+        )
+
+    def set_channel_permission(
+        self, channel_id: str, target_id: str, allow: str, type_: int = 1
+    ) -> dict:
+        """Create or edit a permission overwrite on a channel.
+
+        Used in direct-permission mode to grant a single player access to a game
+        channel without consuming a guild role.
+
+        Args:
+            channel_id: Channel to set the overwrite on.
+            target_id: Member or role ID the overwrite applies to.
+            allow: Allowed permission bitfield string.
+            type_: Overwrite type (1 = member, 0 = role).
+        """
+        payload = {"allow": allow, "type": type_}
+        return self._request(
+            endpoint=f"/channels/{channel_id}/permissions/{target_id}",
+            method="PUT",
+            json=payload,
+        )
+
+    def delete_channel_permission(self, channel_id: str, target_id: str) -> dict:
+        """Delete a permission overwrite from a channel.
+
+        Args:
+            channel_id: Channel to remove the overwrite from.
+            target_id: Member or role ID whose overwrite is removed.
+        """
+        return self._request(
+            endpoint=f"/channels/{channel_id}/permissions/{target_id}",
             method="DELETE",
         )

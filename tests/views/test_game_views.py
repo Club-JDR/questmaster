@@ -198,6 +198,52 @@ class TestGameStatus:
         assert "Complet" in body
         assert f"Annonce {open_game.name} fermée." in body
 
+    def test_gm_notifies_players(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """The game's GM can post a notification to the channel."""
+        open_game.role = "role_123"
+        open_game.channel = "channel_123"
+        db_session.commit()
+
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/notifier/",
+            data={"notifyMessage": "Rendez-vous ce soir !"},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert "Joueur·euses notifié·es." in response.data.decode()
+        mock_discord_service.send_message.assert_called_once()
+
+    def test_non_owner_cannot_notify(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A GM who does not own the game cannot notify its players."""
+        open_game.channel = "channel_123"
+        db_session.commit()
+
+        response = logged_in_gm.post(
+            f"/annonces/{open_game.slug}/notifier/",
+            data={"notifyMessage": "Coucou"},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        mock_discord_service.send_message.assert_not_called()
+
     def test_reopen_game(
         self,
         logged_in_admin,

@@ -12,6 +12,7 @@ from config.constants import (
     BADGE_OS_GM_ID,
     BADGE_OS_ID,
     PLAYER_ROLE_PERMISSION,
+    SITE_BASE_URL,
 )
 from website.exceptions import (
     DiscordAPIError,
@@ -365,15 +366,20 @@ class GameService:
         )
         logger.info("Initial game session created.")
 
-        # Create Discord role
-        game.role = self.discord.create_role(
-            name="PJ_" + game.slug,
-            permissions=PLAYER_ROLE_PERMISSION,
-            color=Game.COLORS[game.type],
-        )["id"]
-        logger.info(f"Role created with ID: {game.role}")
+        # In direct-permission mode, skip role creation: players are granted channel
+        # access via per-member permission overwrites instead of a dedicated role.
+        direct_permissions = self.settings_service.is_direct_permissions_enabled()
+        if direct_permissions:
+            logger.info("Direct-permission mode: skipping role creation for game.")
+        else:
+            game.role = self.discord.create_role(
+                name="PJ_" + game.slug,
+                permissions=PLAYER_ROLE_PERMISSION,
+                color=Game.COLORS[game.type],
+            )["id"]
+            logger.info(f"Role created with ID: {game.role}")
 
-        # Create Discord channel
+        # Create Discord channel (without a player-role overwrite in direct mode)
         category = self.channel_service.get_category(game.type)
         game.channel = self.discord.create_channel(
             name=game.slug.lower(),
@@ -678,11 +684,14 @@ class GameService:
         except DiscordAPIError as e:
             logger.warning(f"Failed to delete channel for game {game.id}: {e}")
 
-        try:
-            self.discord.delete_role(game.role)
-            logger.info(f"Game {game.id} role {game.role} has been deleted")
-        except DiscordAPIError as e:
-            logger.warning(f"Failed to delete role for game {game.id}: {e}")
+        # Direct-permission games have no role (per-member overwrites are removed
+        # with the channel), so only delete a role when one exists.
+        if game.role:
+            try:
+                self.discord.delete_role(game.role)
+                logger.info(f"Game {game.id} role {game.role} has been deleted")
+            except DiscordAPIError as e:
+                logger.warning(f"Failed to delete role for game {game.id}: {e}")
 
     def _auto_close_if_full(self, game: Game) -> None:
         """Close the game and update the Discord embed if it has reached capacity.
@@ -818,9 +827,18 @@ class GameService:
 
             logger.info(f"User {user.id} registered to Game {locked_game.id}")
 
-            # Add Discord role
-            self.discord.add_role_to_user(user.id, locked_game.role)
-            logger.info(f"Role {locked_game.role} added to user {user.id}")
+            # Grant channel access: dedicated role, or a per-member permission
+            # overwrite when the game runs in direct-permission mode (no role).
+            if locked_game.role:
+                self.discord.add_role_to_user(user.id, locked_game.role)
+                logger.info(f"Role {locked_game.role} added to user {user.id}")
+            elif locked_game.channel:
+                self.discord.set_channel_permission(
+                    locked_game.channel, user.id, PLAYER_ROLE_PERMISSION
+                )
+                logger.info(
+                    f"Channel permission granted to user {user.id} on {locked_game.channel}"
+                )
 
             # Send registration embed
             self.discord.send_game_embed(locked_game, embed_type="register", player=user.id)
@@ -876,15 +894,74 @@ class GameService:
         db.session.commit()
         logger.info(f"User {user.id} removed from Game {game.id}")
 
-        # Remove Discord role
-        self.discord.remove_role_from_user(user.id, game.role)
-        logger.info(f"Role {game.role} removed from Player {user.id}")
+        # Revoke channel access: dedicated role, or the per-member permission
+        # overwrite when the game runs in direct-permission mode (no role).
+        if game.role:
+            self.discord.remove_role_from_user(user.id, game.role)
+            logger.info(f"Role {game.role} removed from Player {user.id}")
+        elif game.channel:
+            self.discord.delete_channel_permission(game.channel, user.id)
+            logger.info(f"Channel permission removed from user {user.id} on {game.channel}")
 
         log_game_event(
             "unregister",
             game.id,
             "Le·a joueur·euse a été désinscrit·e de l'annonce.",
             user_id=user.id,
+        )
+
+        return game
+
+    def notify_players(self, slug: str, message: str, user_id: str | None = None) -> Game:
+        """Notify a game's players by posting a message in its Discord channel.
+
+        Replaces the GM's manual role mention: the message is posted in the game
+        channel and pings the dedicated player role (role mode) or every registered
+        player individually (direct-permission mode).
+
+        Args:
+            slug: Game slug.
+            message: Free-text message written by the GM.
+            user_id: ID of the user sending the notification.
+
+        Returns:
+            The Game instance.
+
+        Raises:
+            NotFoundError: If the game doesn't exist.
+            ValidationError: If the message is empty or the game has no channel.
+            DiscordAPIError: If the Discord request fails.
+        """
+        from website.utils.game_embeds import player_mentions
+
+        game = self.get_by_slug(slug)
+
+        cleaned = (message or "").strip()
+        if not cleaned:
+            raise ValidationError("Notification message is required.", field="message")
+        if not game.channel:
+            raise ValidationError("Game has no Discord channel.", field="channel")
+
+        mentions = player_mentions(game)
+        game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
+        content = (
+            f"{mentions}\n"
+            f"📣 **{game.name}** — un message de votre MJ :\n\n"
+            f"{cleaned}\n\n"
+            f"🔗 L'annonce sur QuestMaster : {game_url}"
+        ).strip()
+
+        self.discord.send_message(
+            content,
+            game.channel,
+            allowed_mentions={"parse": ["users", "roles"]},
+        )
+        logger.info(f"Notification posted in channel {game.channel} for game {game.id}")
+        log_game_event(
+            "edit",
+            game.id,
+            "Le MJ a notifié les joueur·euses dans le salon.",
+            user_id=user_id,
         )
 
         return game

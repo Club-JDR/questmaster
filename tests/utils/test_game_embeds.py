@@ -31,6 +31,7 @@ from website.utils.game_embeds import (
     build_delete_session_embed,
     build_edit_session_embed,
     build_register_embed,
+    player_mentions,
 )
 
 # ---------------------------------------------------------------------------
@@ -364,10 +365,39 @@ class TestBuildAnnonceDetailsEmbed:
         embed, _ = build_annonce_details_embed(game)
         assert "<@&role_abc>" in embed["description"]
 
+    def test_direct_mode_omits_role_line(self):
+        """Without a role, the details embed shows no role mention."""
+        game = _make_game(role=None)
+        embed, _ = build_annonce_details_embed(game)
+        assert "<@&" not in embed["description"]
+        assert "rôle associé" not in embed["description"]
+
     def test_description_contains_game_url(self):
         game = _make_game(slug="my-slug")
         embed, _ = build_annonce_details_embed(game)
         assert f"{SITE_BASE_URL}/annonces/my-slug" in embed["description"]
+
+
+# ---------------------------------------------------------------------------
+# player_mentions
+# ---------------------------------------------------------------------------
+
+
+class TestPlayerMentions:
+    def test_role_mode_returns_role_mention(self):
+        game = _make_game(role="role_42")
+        assert player_mentions(game) == "<@&role_42>"
+
+    def test_direct_mode_mentions_each_player(self):
+        game = _make_game(
+            role=None,
+            players=[SimpleNamespace(id="u1"), SimpleNamespace(id="u2")],
+        )
+        assert player_mentions(game) == "<@u1> <@u2>"
+
+    def test_direct_mode_no_players_returns_empty(self):
+        game = _make_game(role=None, players=[])
+        assert player_mentions(game) == ""
 
 
 # ---------------------------------------------------------------------------

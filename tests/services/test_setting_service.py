@@ -71,6 +71,40 @@ class TestSettingsService:
         # Empty value was not stored.
         assert db_session.get(AppSetting, "DISCORD_PLAYER_ROLE_ID") is None
 
+    def test_direct_permissions_default_disabled(self, db_session):
+        """With no stored value, direct-permission mode is off."""
+        service = SettingsService()
+        assert service.is_direct_permissions_enabled() is False
+
+    def test_direct_permissions_round_trip(self, db_session):
+        """Enabling then disabling direct-permission mode round-trips."""
+        service = SettingsService()
+        service.set_direct_permissions(True, updated_by_id="admin-1")
+        assert service.is_direct_permissions_enabled() is True
+        service.set_direct_permissions(False)
+        assert service.is_direct_permissions_enabled() is False
+
+    def test_role_auto_threshold_default(self, db_session):
+        """Unset threshold falls back to the constant default."""
+        from config.constants import DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT
+
+        service = SettingsService()
+        assert service.get_role_auto_threshold() == DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT
+
+    def test_role_auto_threshold_round_trip(self, db_session):
+        """A stored threshold is read back as an integer."""
+        service = SettingsService()
+        service.set_role_auto_threshold(200, updated_by_id="admin-1")
+        assert service.get_role_auto_threshold() == 200
+
+    def test_role_auto_threshold_rejects_invalid(self, db_session):
+        """Non-positive or non-integer thresholds are rejected."""
+        service = SettingsService()
+        with pytest.raises(ValidationError):
+            service.set_role_auto_threshold("nope")
+        with pytest.raises(ValidationError):
+            service.set_role_auto_threshold(0)
+
     def test_get_effective_describes_all_keys(self, db_session):
         """get_effective() exposes env, override and effective values per key."""
         service = SettingsService()

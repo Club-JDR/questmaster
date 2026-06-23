@@ -97,6 +97,16 @@ DISCORD_API_BASE_URL = "https://discord.com/api/v10"
 PLAYER_ROLE_PERMISSION = "563362270661696"
 GM_ROLE_PERMISSION = "2815265163693120"
 
+# Discord role limits
+# A Discord guild is hard-capped at 250 roles. When the count nears this limit,
+# the scheduler auto-enables direct per-player channel permissions for new games
+# so that no further roles are consumed. The threshold at which this kicks in is
+# admin-configurable (DB-backed); this constant is only its default value.
+DISCORD_ROLE_LIMIT = 250
+DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT = 230
+# How long (seconds) to cache the guild role count shown on the admin settings page.
+DISCORD_ROLE_COUNT_CACHE_TIMEOUT = 3600
+
 # Site
 SITE_BASE_URL = "https://questmaster.club-jdr.fr"
 

@@ -73,6 +73,29 @@ class TestDiscordService:
         mock_bot.delete_role.assert_called_once_with("role123")
         assert result == {}
 
+    def test_count_roles(self, discord_service, mock_bot):
+        """count_roles returns the number of guild roles."""
+        mock_bot.list_roles.return_value = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
+
+        assert discord_service.count_roles() == 3
+        mock_bot.list_roles.assert_called_once_with()
+
+    def test_set_channel_permission(self, discord_service, mock_bot):
+        """set_channel_permission forwards to the client with member type."""
+        mock_bot.set_channel_permission.return_value = {}
+
+        discord_service.set_channel_permission("chan1", "user1", "123")
+
+        mock_bot.set_channel_permission.assert_called_once_with("chan1", "user1", "123", 1)
+
+    def test_delete_channel_permission(self, discord_service, mock_bot):
+        """delete_channel_permission forwards to the client."""
+        mock_bot.delete_channel_permission.return_value = {}
+
+        discord_service.delete_channel_permission("chan1", "user1")
+
+        mock_bot.delete_channel_permission.assert_called_once_with("chan1", "user1")
+
     # -------------------------------------------------------------------------
     # Channel operations
     # -------------------------------------------------------------------------
@@ -121,8 +144,21 @@ class TestDiscordService:
 
         result = discord_service.send_message("Hello!", "channel123")
 
-        mock_bot.send_message.assert_called_once_with("Hello!", "channel123")
+        mock_bot.send_message.assert_called_once_with(
+            "Hello!", "channel123", allowed_mentions=None
+        )
         assert result["id"] == "msg123"
+
+    def test_send_message_with_allowed_mentions(self, discord_service, mock_bot):
+        """allowed_mentions is forwarded to the client."""
+        mock_bot.send_message.return_value = {"id": "msg123"}
+        allowed = {"parse": ["users", "roles"]}
+
+        discord_service.send_message("Hi <@1>", "channel123", allowed_mentions=allowed)
+
+        mock_bot.send_message.assert_called_once_with(
+            "Hi <@1>", "channel123", allowed_mentions=allowed
+        )
 
     def test_delete_message(self, discord_service, mock_bot):
         """Test deleting a message."""

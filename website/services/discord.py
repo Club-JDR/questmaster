@@ -9,8 +9,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from config.constants import PLAYER_ROLE_PERMISSION
+from config.constants import DISCORD_ROLE_COUNT_CACHE_TIMEOUT, PLAYER_ROLE_PERMISSION
 from website.client.discord import Discord
+from website.extensions import cache
 
 if TYPE_CHECKING:
     from website.models import Game
@@ -136,6 +137,32 @@ class DiscordService:
         """
         return self.bot.get_role(role_id)
 
+    def count_roles(self) -> int:
+        """Count the roles currently defined in the guild.
+
+        Returns:
+            Number of guild roles (including the ``@everyone`` role).
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return len(self.bot.list_roles())
+
+    @cache.memoize(timeout=DISCORD_ROLE_COUNT_CACHE_TIMEOUT)
+    def count_roles_cached(self) -> int:
+        """Return the guild role count, cached to avoid frequent API calls.
+
+        The admin settings page reads this on every load, so the value is cached
+        rather than hitting the Discord API each time.
+
+        Returns:
+            Number of guild roles.
+
+        Raises:
+            DiscordAPIError: If the API request fails on a cache miss.
+        """
+        return self.count_roles()
+
     def delete_role(self, role_id: str) -> dict:
         """Delete a Discord role.
 
@@ -158,7 +185,7 @@ class DiscordService:
         self,
         name: str,
         parent_id: str,
-        role_id: str,
+        role_id: str | None,
         gm_id: str,
     ) -> dict:
         """Create a Discord text channel with permissions.
@@ -166,7 +193,8 @@ class DiscordService:
         Args:
             name: Channel name (will be sanitized).
             parent_id: Parent category ID.
-            role_id: Player role ID for permission overwrites.
+            role_id: Player role ID for permission overwrites, or None to create
+                the channel without a player-role overwrite (direct-permission mode).
             gm_id: GM user ID for permission overwrites.
 
         Returns:
@@ -176,6 +204,40 @@ class DiscordService:
             DiscordAPIError: If the API request fails.
         """
         return self.bot.create_channel(name, parent_id, role_id, gm_id)
+
+    def set_channel_permission(
+        self, channel_id: str, target_id: str, allow: str, type_: int = 1
+    ) -> dict:
+        """Grant a member (or role) access to a channel via a permission overwrite.
+
+        Args:
+            channel_id: Channel to set the overwrite on.
+            target_id: Member or role ID the overwrite applies to.
+            allow: Allowed permission bitfield string.
+            type_: Overwrite type (1 = member, 0 = role).
+
+        Returns:
+            API response (usually empty on success).
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.set_channel_permission(channel_id, target_id, allow, type_)
+
+    def delete_channel_permission(self, channel_id: str, target_id: str) -> dict:
+        """Remove a permission overwrite from a channel.
+
+        Args:
+            channel_id: Channel to remove the overwrite from.
+            target_id: Member or role ID whose overwrite is removed.
+
+        Returns:
+            API response (usually empty on success).
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.delete_channel_permission(channel_id, target_id)
 
     def get_channel(self, channel_id: str) -> dict:
         """Get a channel by ID.
@@ -209,12 +271,16 @@ class DiscordService:
     # Message operations
     # -------------------------------------------------------------------------
 
-    def send_message(self, content: str, channel_id: str) -> dict:
+    def send_message(
+        self, content: str, channel_id: str, allowed_mentions: dict | None = None
+    ) -> dict:
         """Send a plain text message to a channel.
 
         Args:
             content: Message content.
             channel_id: Target channel ID.
+            allowed_mentions: Optional Discord ``allowed_mentions`` object controlling
+                which mentions in ``content`` actually ping.
 
         Returns:
             Created message data including 'id'.
@@ -222,7 +288,7 @@ class DiscordService:
         Raises:
             DiscordAPIError: If the API request fails.
         """
-        return self.bot.send_message(content, channel_id)
+        return self.bot.send_message(content, channel_id, allowed_mentions=allowed_mentions)
 
     def delete_message(self, message_id: str, channel_id: str) -> dict:
         """Delete a message.

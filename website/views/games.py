@@ -299,6 +299,28 @@ def send_alert(slug):
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
 
+@game_bp.route("/annonces/<slug>/notifier/", methods=["POST"])
+@login_required
+def notify_players(slug):
+    """Notify a game's players by posting a message in its Discord channel."""
+    payload = who()
+    game = _get_game_if_authorized(payload, slug)
+    if isinstance(game, Response):
+        return game
+
+    message = request.form.get("notifyMessage")
+    try:
+        game_service.notify_players(slug, message, user_id=payload["user_id"])
+        flash("Joueur·euses notifié·es.", "success")
+    except ValidationError:
+        flash("Le message de notification est vide.", "danger")
+    except DiscordAPIError as e:
+        flash("Une erreur est survenue lors de la notification.", "danger")
+        logger.error(f"Failed to notify players for game {slug}: {e}", exc_info=True)
+
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+
 @game_bp.route("/annonces/<slug>/sessions/ajouter/", methods=["POST"])
 @login_required
 def add_game_session(slug):
