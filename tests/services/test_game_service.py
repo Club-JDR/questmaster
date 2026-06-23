@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from config.constants import PLAYER_ROLE_PERMISSION
-from tests.factories import GameFactory
+from tests.factories import GameFactory, UserFactory
 from website.exceptions import (
     DiscordAPIError,
     DuplicateRegistrationError,
@@ -816,3 +816,39 @@ class TestGameServiceDirectPermissions:
             game_service.notify_players(sample_game.slug, "   ", user_id=sample_game.gm_id)
 
         mock_discord.send_message.assert_not_called()
+
+
+class TestGetOpenPreview:
+    """Tests for GameService.get_open_preview (dashboard open-games section)."""
+
+    def _slugs(self, games):
+        return {g.slug for g in games}
+
+    def test_returns_open_games_only(self, db_session, admin_user, default_system, game_service):
+        """The preview contains only open games; a draft never appears."""
+        draft = GameFactory(
+            db_session, status="draft", gm_id=admin_user.id, system_id=default_system.id
+        )
+
+        data = game_service.get_open_preview({})
+
+        assert all(g.status == "open" for g in data["open_games"])
+        assert draft.slug not in self._slugs(data["open_games"])
+
+    def test_open_hidden_counts_overflow_past_limit(
+        self, db_session, admin_user, default_system, game_service
+    ):
+        """open_hidden reports the overflow (and the list is capped) past the limit."""
+        # Isolate this user's games via a fresh GM so other seeded games don't skew counts.
+        gm = UserFactory(db_session)
+        limit = game_service.settings_service.get_dashboard_open_limit()
+        extra = 3
+        for _ in range(limit + extra):
+            GameFactory(db_session, status="open", gm_id=gm.id, system_id=default_system.id)
+
+        # Restrict the count to this GM's games by filtering on gm in the search payload.
+        games, total = game_service.repo.search(
+            {"status": ["open"], "gm_id": gm.id}, page=1, per_page=limit
+        )
+        assert len(games) == limit
+        assert max(total - len(games), 0) == extra

@@ -20,7 +20,9 @@ const INTRO_DEFAULTS = {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (path === '/demo/') {
+  if (path === '/demo/tableau-de-bord/') {
+    runDashboardIntro();
+  } else if (path === '/demo/') {
     runHomepageIntro();
   } else if (path === '/demo/inscription/') {
     runRegistrationIntro();
@@ -47,14 +49,45 @@ function showOutroMessage() {
         title: "Revoir l'aide"
       },
       {
-        intro: 'Je vous redirige maintenant vers la liste des annonces ouvertes.',
-        title: "Retour à l'accueil"
+        intro: 'Je vous redirige maintenant vers votre tableau de bord.',
+        title: "Retour au tableau de bord"
       }
     ],
   });
   outro.oncomplete(() => globalThis.location.href = redirectUrl);
   outro.onexit(() => globalThis.location.href = redirectUrl);
   outro.start();
+}
+
+function runDashboardIntro() {
+  const steps = [
+    {
+      title: "Votre tableau de bord",
+      intro: "Bienvenue sur votre <strong>tableau de bord</strong> : votre point de départ sur QuestMaster. Il réunit votre agenda, vos statistiques et les annonces ouvertes du moment."
+    },
+    {
+      element: '#agenda-heading',
+      intro: "Votre <strong>agenda</strong> : vos prochaines sessions, du plus proche au plus lointain. Les sessions passées récentes apparaissent en grisé pour le contexte." +
+        infoNote("Le badge indique votre rôle : <strong>MJ</strong> ou <strong>joueur·euse</strong>."),
+      title: "Mon agenda"
+    },
+    {
+      element: '#stats-heading',
+      intro: "Vos <strong>statistiques</strong> depuis le début : temps de jeu, badges, répartition par rôle et par type, rythme mensuel, systèmes favoris et réseau de joueur·euses. Le bouton <em>Par session / Par annonce</em> change la base de calcul.",
+      title: "Mes statistiques"
+    },
+    {
+      element: '#open-heading',
+      intro: "Les <strong>annonces ouvertes</strong> du moment. Utilisez « Voir toutes les annonces » pour toutes les parcourir et les filtrer.",
+      title: "Annonces ouvertes"
+    }
+  ];
+
+  const intro = introJs.tour();
+  intro.setOptions({ ...INTRO_DEFAULTS, steps });
+  intro.oncomplete(() => globalThis.location.href = "/demo/");
+  intro.onexit(() => showOutroMessage());
+  intro.start();
 }
 
 function runHomepageIntro() {
@@ -69,7 +102,13 @@ function runHomepageIntro() {
   let steps = [
     {
       title: "Bienvenue",
-      intro: "Bienvenue sur <strong>QuestMaster</strong>, l'application de gestion des annonces du Club JDR.<br>Tout commence sur cette page d'accueil !"
+      intro: "Bienvenue sur <strong>QuestMaster</strong>, l'application de gestion des annonces du Club JDR.<br>Voici la page des <strong>annonces ouvertes</strong>, accessible depuis votre tableau de bord ou le menu."
+    },
+    {
+      element: '#brand',
+      intro: "Le logo vous ramène à tout moment à votre <strong>tableau de bord</strong> : votre agenda de sessions et vos statistiques personnelles." +
+        infoNote("Une visite guidée dédiée est disponible dans le menu <strong>Aide → Tableau de bord</strong>."),
+      title: "Votre tableau de bord"
     },
     {
       element: '#annoncesMenu',

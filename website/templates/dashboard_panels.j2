@@ -1,0 +1,252 @@
+{# Agenda + stats panels. Rendered inline (demo) or fetched as a fragment
+   (real dashboard, lazy-loaded by dashboard.js). Self-contained: defines its
+   own chart macros so the fragment endpoint can render it standalone. #}
+
+{# Same blue/green as the calendar: blue = campaign/MJ, green = one shot/joueur·euse. #}
+{% set C_BLUE = 'oklch(61.302% 0.202 261.294)' %}
+{% set C_GREEN = 'oklch(64.8% 0.15 160)' %}
+
+{% macro rythme(mode, hidden, months, values) %}
+{% set maxv = (values | max) or 1 %}
+<div data-statpane="{{ mode }}" class="{{ 'hidden' if hidden }}" role="img"
+  aria-label="Activité des 12 derniers mois ({{ mode }})">
+  <div class="flex items-end gap-1 h-16">
+    {% for v in values %}
+    <div class="flex-1 flex flex-col items-center justify-end h-full" title="{{ months[loop.index0] }} : {{ v }}">
+      <span class="text-[0.55rem] font-mono text-base-content/60 leading-none mb-0.5">{{ v }}</span>
+      <div class="w-full bg-primary/70 rounded-t" style="height: {{ (v / maxv * 100) | round }}%"></div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="flex gap-1 mt-1">
+    {% for m in months %}<div class="flex-1 text-center text-[0.5rem] leading-none tracking-tighter text-base-content/50">{{ m }}</div>{% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro session_row(s, muted=False) %}
+<a href="/annonces/{{ s.slug }}/"
+  class="group flex items-center gap-2 px-2 py-1.5 transition-colors {{ 'opacity-50' if muted else 'hover:bg-base-200' }}
+          focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+  aria-label="{{ s.name }}, {{ s.dow }} {{ s.day }} {{ s.month }} à {{ s.time }}, rôle {{ s.role }}{{ ' (passée)' if muted }}">
+  <div class="flex flex-col items-center justify-center w-11 shrink-0 rounded-box py-1 leading-none
+              {{ 'bg-base-200 text-base-content/70' if muted
+                 else ('bg-primary/10 text-primary' if s.type == 'campaign' else 'bg-success/10 text-success') }}">
+    <span class="text-[0.55rem] uppercase font-semibold opacity-80">{{ s.dow }}</span>
+    <span class="text-base font-black">{{ s.day }}</span>
+    <span class="text-[0.55rem] opacity-80">{{ s.month }}</span>
+  </div>
+  <div class="min-w-0 flex-1">
+    <div class="font-bold text-sm truncate flex items-center gap-1">
+      <i class="ph {{ 'ph-books' if s.type == 'campaign' else 'ph-scroll' }} shrink-0
+                {{ '' if muted else ('text-primary' if s.type == 'campaign' else 'text-success') }}"
+        aria-hidden="true"></i>
+      <span class="truncate">{{ s.name }}</span>
+    </div>
+    <div class="text-xs text-base-content/60 truncate">
+      <i class="ph ph-clock align-middle"></i> {{ s.time }} · {{ s.meta }}
+    </div>
+  </div>
+  <span
+    class="badge badge-xs shrink-0 {{ 'badge-ghost' if muted else ('badge-primary' if s.role == 'MJ' else 'badge-success') }}">
+    {% if s.role == 'MJ' %}<i class="ph ph-crown"></i>{% else %}<i class="ph ph-user"></i>{% endif %}
+    {{ s.role }}
+  </span>
+</a>
+{% endmacro %}
+
+{% macro donut(title, a_label, b_label, sessions_pct, parties_pct, a_color, b_color) %}
+<figure class="flex flex-col items-center gap-1" data-donut data-sessions="{{ sessions_pct }}"
+  data-parties="{{ parties_pct }}" data-a="{{ a_label }}" data-b="{{ b_label }}" data-acolor="{{ a_color }}"
+  data-bcolor="{{ b_color }}">
+  <div class="relative size-16">
+    <div data-ring class="size-16 rounded-full"></div>
+    <div class="absolute inset-0 m-auto size-8 rounded-full bg-base-100"></div>
+  </div>
+  <figcaption class="text-xs font-semibold text-center">{{ title }}</figcaption>
+  <div class="flex flex-wrap justify-center gap-x-2 gap-y-0.5 text-[0.7rem]">
+    <span><span class="inline-block size-2 rounded-full align-middle" style="background: {{ a_color }}"></span>
+      {{ a_label }} <span data-apct class="font-mono"></span></span>
+    <span><span class="inline-block size-2 rounded-full align-middle" style="background: {{ b_color }}"></span>
+      {{ b_label }} <span data-bpct class="font-mono"></span></span>
+  </div>
+</figure>
+{% endmacro %}
+
+{% macro _ranked(rows, mode, hidden) %}
+<ol data-statpane="{{ mode }}" class="space-y-0.5 max-w-44 mx-auto {{ 'hidden' if hidden }}">
+  {% for r in rows %}
+  <li class="flex items-center gap-2 text-xs">
+    <span class="w-3 text-center font-black text-base-content/40">{{ loop.index }}</span>
+    <span class="flex-1 truncate">{{ r.name }}</span>
+    <span class="font-mono text-[0.7rem] text-base-content/60">{{ r.n }}</span>
+  </li>
+  {% else %}
+  <li class="text-xs text-base-content/40 text-center italic">—</li>
+  {% endfor %}
+</ol>
+{% endmacro %}
+
+{% macro top_list(title, sessions_rows, parties_rows) %}
+<div>
+  <h3 class="text-sm font-bold mb-1 text-center">{{ title }}</h3>
+  {{ _ranked(sessions_rows, "sessions", False) }}
+  {{ _ranked(parties_rows, "parties", True) }}
+</div>
+{% endmacro %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-stretch">
+
+  {# ---------- Agenda ---------- #}
+  <section aria-labelledby="agenda-heading" class="flex flex-col">
+    <h2 id="agenda-heading" class="font-black text-lg mb-0.5 flex items-center justify-center gap-2 text-center">
+      <i class="ph ph-calendar-dots"></i> Mon agenda
+    </h2>
+    <p class="text-center text-xs text-base-content/60 mb-2">Les sessions à venir</p>
+
+    <div class="rounded-box border border-base-300 bg-base-100 flex-1 divide-y divide-base-300">
+      {% for s in agenda.past %}{{ session_row(s, muted=True) }}{% endfor %}
+
+      {% if agenda.upcoming %}
+      <div class="flex items-center gap-2 px-3 py-1.5 text-xs uppercase font-semibold text-primary bg-base-200/50">
+        <i class="ph ph-arrow-fat-line-down"></i> À venir
+      </div>
+      {% for s in agenda.upcoming %}{{ session_row(s) }}{% endfor %}
+      {% else %}
+      <div class="p-6 text-center text-base-content/60">
+        <i class="ph ph-confetti text-2xl"></i>
+        <p class="mt-1">Pas de session à venir.<br>Parcourez les annonces ouvertes ci-dessous&nbsp;!</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ---------- Stats ---------- #}
+  <section aria-labelledby="stats-heading" class="flex flex-col">
+    <h2 id="stats-heading" class="font-black text-lg mb-0.5 flex items-center justify-center gap-2 text-center">
+      <i class="ph ph-chart-pie-slice"></i> Mes statistiques
+    </h2>
+    <p class="text-center text-xs text-base-content/60 mb-2">Sur l'ensemble de votre activité (depuis le début)</p>
+
+    <div class="rounded-box border border-base-300 bg-base-100 p-3 space-y-2 flex-1">
+      <div>
+        <h3 class="text-sm font-bold mb-1 text-center">Vue d'ensemble</h3>
+        <div class="grid grid-cols-2 gap-1.5 text-center">
+          <div class="rounded-box p-1.5">
+            <i class="ph ph-hourglass text-lg text-base-content/40" aria-hidden="true"></i>
+            <div class="text-xl font-black leading-tight">~{{ stats.play_hours_total }} h</div>
+            <div class="text-xs text-base-content/60">Temps de jeu</div>
+            <div class="text-[0.65rem] text-base-content/50">~{{ stats.play_hours_player }} h joueur·euse · ~{{ stats.play_hours_gm }} h MJ</div>
+          </div>
+          <div class="rounded-box p-1.5">
+            <i class="ph ph-trophy text-lg text-warning" aria-hidden="true"></i>
+            <div class="text-xl font-black text-warning leading-tight">{{ stats.badges }}</div>
+            <div class="text-xs text-base-content/60">Badges</div>
+          </div>
+          <div class="rounded-box p-1.5">
+            <i class="ph ph-dice-five text-lg text-base-content/40" aria-hidden="true"></i>
+            <div class="text-xl font-black leading-tight">{{ stats.games_count }}</div>
+            <div class="text-xs text-base-content/60">Annonces</div>
+          </div>
+          <div class="rounded-box p-1.5">
+            <i class="ph ph-calendar-check text-lg text-base-content/40" aria-hidden="true"></i>
+            <div class="text-xl font-black leading-tight">{{ stats.sessions_count }}</div>
+            <div class="text-xs text-base-content/60">Sessions</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-center">
+        <div class="join" role="group" aria-label="Base de calcul des ratios">
+          <button type="button" class="join-item btn btn-xs" data-stat-toggle="sessions">Par session</button>
+          <button type="button" class="join-item btn btn-xs" data-stat-toggle="parties">Par annonce</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        {{ donut("Rôle", "MJ", "Joueur", stats.role.sessions, stats.role.parties, C_BLUE, C_GREEN) }}
+        {{ donut("Type", "OS", "Campagne", stats.type.sessions, stats.type.parties, C_GREEN, C_BLUE) }}
+      </div>
+
+      <div class="divider my-0"></div>
+
+      <div>
+        <h3 class="text-sm font-bold mb-1 text-center">Rythme (12 derniers mois)</h3>
+        {{ rythme("sessions", False, stats.rythme.labels, stats.rythme.sessions) }}
+        {{ rythme("parties", True, stats.rythme.labels, stats.rythme.parties) }}
+      </div>
+
+      <div class="divider my-0"></div>
+
+      <div class="grid grid-cols-2 gap-x-8 gap-y-2">
+        {{ top_list("Top systèmes (joueur)", stats.top_systems.player.sessions, stats.top_systems.player.parties) }}
+        {{ top_list("Top systèmes (MJ)", stats.top_systems.gm.sessions, stats.top_systems.gm.parties) }}
+      </div>
+
+      <div class="divider my-0"></div>
+
+      <div>
+        <h3 class="text-sm font-bold mb-1 text-center">Réseau</h3>
+        <div class="grid grid-cols-2 gap-2 text-center">
+          <button type="button" class="flex items-center justify-center gap-2 rounded-box p-1.5 hover:bg-base-200 transition-colors"
+            onclick="document.getElementById('gmModal').showModal()" aria-haspopup="dialog"
+            {{ 'disabled' if not stats.network.gm_count }}>
+            <i class="ph ph-crown text-lg text-primary" aria-hidden="true"></i>
+            <div class="text-left">
+              <div class="text-lg font-black leading-none">{{ stats.network.gm_count }}</div>
+              <div class="text-xs text-base-content/60">MJ différents</div>
+            </div>
+          </button>
+          <button type="button" class="flex items-center justify-center gap-2 rounded-box p-1.5 hover:bg-base-200 transition-colors"
+            onclick="document.getElementById('playerModal').showModal()" aria-haspopup="dialog"
+            {{ 'disabled' if not stats.network.player_count }}>
+            <i class="ph ph-users-three text-lg text-success" aria-hidden="true"></i>
+            <div class="text-left">
+              <div class="text-lg font-black leading-none">{{ stats.network.player_count }}</div>
+              <div class="text-xs text-base-content/60">joueur·euses croisé·es</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+{# Réseau modals #}
+<dialog id="gmModal" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg flex items-center gap-2"><i class="ph ph-crown text-primary"></i> MJ avec qui j'ai joué</h3>
+    <ul class="py-3 space-y-2 max-h-80 overflow-y-auto">
+      {% for p in stats.network.gms %}
+      <li class="flex items-center gap-3">
+        <div class="avatar"><div class="w-8 rounded-full"><img src="{{ p.avatar }}" alt=""></div></div>
+        <span class="flex-1 truncate">{{ p.name }}</span>
+        <span class="badge badge-sm badge-ghost">{{ p.n }} annonces</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="modal-action">
+      <form method="dialog"><button class="btn">Fermer</button></form>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer">close</button></form>
+</dialog>
+
+<dialog id="playerModal" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg flex items-center gap-2"><i class="ph ph-users-three text-success"></i> Joueur·euses croisé·es</h3>
+    <ul class="py-3 space-y-2 max-h-80 overflow-y-auto">
+      {% for p in stats.network.players %}
+      <li class="flex items-center gap-3">
+        <div class="avatar"><div class="w-8 rounded-full"><img src="{{ p.avatar }}" alt=""></div></div>
+        <span class="flex-1 truncate">{{ p.name }}</span>
+        <span class="badge badge-sm badge-ghost">{{ p.n }} annonces</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="modal-action">
+      <form method="dialog"><button class="btn">Fermer</button></form>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer">close</button></form>
+</dialog>

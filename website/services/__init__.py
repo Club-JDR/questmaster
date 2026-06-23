@@ -8,6 +8,7 @@ from website.services.game_event import GameEventService
 from website.services.game_session import GameSessionService
 from website.services.setting import SettingsService
 from website.services.special_event import SpecialEventService
+from website.services.stats import StatsService
 from website.services.system import SystemService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
@@ -22,6 +23,7 @@ __all__ = [
     "GameSessionService",
     "SettingsService",
     "SpecialEventService",
+    "StatsService",
     "TrophyService",
     "GameService",
     "DiscordService",

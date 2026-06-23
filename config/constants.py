@@ -134,6 +134,15 @@ API_DEFAULT_PER_PAGE = 20
 API_MAX_PER_PAGE = 100
 ADMIN_PAGE_SIZE = 25
 
+# Dashboard (admin-configurable limits use the *_DEFAULT values as fallbacks).
+DASHBOARD_AGENDA_LIMIT_DEFAULT = 10  # Upcoming sessions listed in the agenda.
+DASHBOARD_OPEN_LIMIT_DEFAULT = 8  # Latest open announcements shown on the dashboard.
+DASHBOARD_LIMIT_MAX = 30  # Upper bound for the admin-configurable dashboard limits.
+DASHBOARD_AGENDA_PAST = 3  # Recent past sessions shown before the upcoming ones (context).
+DASHBOARD_RYTHME_MONTHS = 12  # Months of activity shown in the "Rythme" chart.
+DASHBOARD_TOP_SYSTEMS = 3  # Number of systems listed in each "Top systèmes" ranking.
+DASHBOARD_STATS_CACHE_TIMEOUT = 300  # Seconds to cache a user's computed dashboard stats.
+
 # Routes
 GAME_DETAILS_ROUTE = "annonces.get_game_details"
 SEARCH_GAMES_ROUTE = "annonces.search_games"

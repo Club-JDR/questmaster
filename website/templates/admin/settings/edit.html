@@ -5,10 +5,34 @@
 {% block admin_content %}
 {{ ui.header('Paramètres', 'ph-sliders') }}
 
-{# ── Discord roles / direct permissions (safe operational toggle) ── #}
+{# ── Operational settings (safe): dashboard sizes + Discord permissions ── #}
 <form method="post" action="{{ url_for('admin.update_permissions_settings') }}"
       class="rounded-box border border-base-300 p-4 space-y-4 mb-6">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {# ── Dashboard preview sizes (least critical, shown first) ── #}
+  <h2 class="font-semibold text-base">Tableau de bord</h2>
+  <p class="text-sm text-base-content/70">
+    Nombre de cartes de partie affichées dans chaque section du tableau de bord
+    (maximum {{ dashboard_limit_max }}).
+  </p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md sm:items-end">
+    <div class="flex flex-col gap-1">
+      <label for="dashboard_agenda_limit" class="{{ lbl }}">Sessions à venir (agenda)</label>
+      <input type="number" id="dashboard_agenda_limit" name="dashboard_agenda_limit"
+             min="1" max="{{ dashboard_limit_max }}"
+             class="input input-bordered w-full font-mono" value="{{ dashboard_agenda_limit }}">
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="dashboard_open_limit" class="{{ lbl }}">Annonces ouvertes</label>
+      <input type="number" id="dashboard_open_limit" name="dashboard_open_limit"
+             min="1" max="{{ dashboard_limit_max }}"
+             class="input input-bordered w-full font-mono" value="{{ dashboard_open_limit }}">
+    </div>
+  </div>
+
+  <div class="divider"></div>
 
   <h2 class="font-semibold text-base">Permissions des salons de partie</h2>
   <p class="text-sm text-base-content/70">

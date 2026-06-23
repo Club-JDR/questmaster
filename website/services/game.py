@@ -70,6 +70,40 @@ class GameService:
         """
         return self.repo.get_all_ordered()
 
+    def get_open_preview(self, user_payload: dict) -> dict:
+        """Return the dashboard's "Annonces ouvertes" preview.
+
+        Previews the latest open announcements, capped at the admin-configurable
+        ``dashboard_open_limit`` setting. ``open_hidden`` is how many further open
+        games exist beyond the preview (drives the "Voir tout" link).
+
+        Args:
+            user_payload: Auth payload (used only for draft visibility rules; the
+                open-status query never exposes drafts). May be anonymous.
+
+        Returns:
+            Dict with ``open_games`` (a list of Game models) and ``open_hidden``
+            (int count of open games beyond the preview).
+        """
+        open_limit = self.settings_service.get_dashboard_open_limit()
+        open_games, open_total = self.repo.search(
+            {"status": ["open"]}, page=1, per_page=open_limit, user_payload=user_payload
+        )
+        return {
+            "open_games": open_games,
+            "open_hidden": max(open_total - len(open_games), 0),
+        }
+
+    @staticmethod
+    def _invalidate_dashboard_stats(*user_ids: str) -> None:
+        """Drop cached dashboard stats for the given users (ignoring falsy IDs)."""
+        from website.services.stats import StatsService
+
+        stats_service = StatsService()
+        for user_id in user_ids:
+            if user_id:
+                stats_service.invalidate(user_id)
+
     def list_paginated(self, page: int = 1, per_page: int = 25, search: str | None = None):
         """List games (all statuses) paginated, for the admin panel.
 
@@ -336,6 +370,7 @@ class GameService:
             )
             logger.info(f"Game saved in DB with ID: {game.id}")
 
+            self._invalidate_dashboard_stats(game.gm_id)
             return game
 
         except ValidationError:
@@ -651,6 +686,9 @@ class GameService:
 
         log_game_event("delete", game.id, msg, user_id=user_id)
 
+        # Awarded badges + a now-archived game change everyone's stats.
+        self._invalidate_dashboard_stats(game.gm_id, *(p.id for p in game.players))
+
     def _award_game_trophies(self, game: Game) -> None:
         """Award trophies to GM and players.
 
@@ -744,9 +782,11 @@ class GameService:
             NotFoundError: If game doesn't exist.
         """
         game = self.get_by_slug(slug)
+        affected = [game.gm_id, *(p.id for p in game.players)]
         self.repo.delete_by_id(game.id)
         db.session.commit()
         logger.info(f"Game {game.id} has been deleted.")
+        self._invalidate_dashboard_stats(*affected)
 
     def register_player(self, slug: str, user_id: str, force: bool = False) -> Game:
         """Register a player to a game (concurrent-safe).
@@ -843,6 +883,7 @@ class GameService:
             # Send registration embed
             self.discord.send_game_embed(locked_game, embed_type="register", player=user.id)
 
+            self._invalidate_dashboard_stats(user.id, locked_game.gm_id)
             return locked_game
 
         except DuplicateRegistrationError, GameFullError, GameClosedError:
@@ -910,6 +951,7 @@ class GameService:
             user_id=user.id,
         )
 
+        self._invalidate_dashboard_stats(user.id, game.gm_id)
         return game
 
     def notify_players(self, slug: str, message: str, user_id: str | None = None) -> Game:

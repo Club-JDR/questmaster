@@ -14,7 +14,12 @@ import json
 from flask import current_app, g, has_app_context
 from sqlalchemy.exc import SQLAlchemyError
 
-from config.constants import DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT
+from config.constants import (
+    DASHBOARD_AGENDA_LIMIT_DEFAULT,
+    DASHBOARD_LIMIT_MAX,
+    DASHBOARD_OPEN_LIMIT_DEFAULT,
+    DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT,
+)
 from website.exceptions import ValidationError
 from website.extensions import db
 from website.repositories.setting import SettingRepository
@@ -31,6 +36,10 @@ POST_CHANNELS_KEY = "discord_post_channels"
 # the scheduler turns the toggle on automatically.
 DIRECT_PERMISSIONS_KEY = "discord_use_direct_permissions"
 ROLE_AUTO_THRESHOLD_KEY = "discord_role_auto_threshold"
+
+# Fully DB-managed dashboard sizes.
+DASHBOARD_AGENDA_LIMIT_KEY = "dashboard_agenda_limit"
+DASHBOARD_OPEN_LIMIT_KEY = "dashboard_open_limit"
 
 # Setting groups, used only to organise the admin settings page.
 _GROUP_SERVER = "Serveur Discord"
@@ -342,3 +351,102 @@ class SettingsService:
         self.repo.upsert(ROLE_AUTO_THRESHOLD_KEY, str(value), updated_by_id)
         db.session.commit()
         self._invalidate()
+
+    def _get_positive_int(self, key: str, default: int) -> int:
+        """Return a stored positive-integer setting, falling back to a default.
+
+        Args:
+            key: Setting key to read.
+            default: Value returned when the setting is unset or not an integer.
+
+        Returns:
+            The stored integer, or ``default`` when unset or invalid.
+        """
+        setting = self.repo.get_by_key(key)
+        if setting and setting.value:
+            try:
+                return int(setting.value)
+            except ValueError:
+                logger.warning("Stored %s is not an integer; using default.", key)
+        return default
+
+    def _set_bounded_int(
+        self, key: str, value, maximum: int, field: str, updated_by_id: str | None
+    ) -> None:
+        """Validate and persist a bounded positive-integer setting.
+
+        Args:
+            key: Setting key to write.
+            value: Raw value to parse and store.
+            maximum: Inclusive upper bound for the value.
+            field: Field name attached to a raised ``ValidationError``.
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within ``1..maximum``.
+        """
+        try:
+            parsed = int(value)
+        except TypeError, ValueError:
+            raise ValidationError("La valeur doit être un entier.", field=field)
+        if parsed <= 0 or parsed > maximum:
+            raise ValidationError(
+                f"La valeur doit être comprise entre 1 et {maximum}.", field=field
+            )
+        self.repo.upsert(key, str(parsed), updated_by_id)
+        db.session.commit()
+        self._invalidate()
+
+    def get_dashboard_agenda_limit(self) -> int:
+        """Return the number of upcoming sessions listed in the dashboard agenda.
+
+        Returns:
+            The stored value, or :data:`DASHBOARD_AGENDA_LIMIT_DEFAULT` when unset
+            or invalid.
+        """
+        return self._get_positive_int(DASHBOARD_AGENDA_LIMIT_KEY, DASHBOARD_AGENDA_LIMIT_DEFAULT)
+
+    def set_dashboard_agenda_limit(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of upcoming sessions listed in the dashboard agenda.
+
+        Args:
+            value: Session count (1..:data:`DASHBOARD_LIMIT_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            DASHBOARD_AGENDA_LIMIT_KEY,
+            value,
+            DASHBOARD_LIMIT_MAX,
+            "dashboard_agenda_limit",
+            updated_by_id,
+        )
+
+    def get_dashboard_open_limit(self) -> int:
+        """Return the number of open announcements previewed on the dashboard.
+
+        Returns:
+            The stored value, or :data:`DASHBOARD_OPEN_LIMIT_DEFAULT` when unset
+            or invalid.
+        """
+        return self._get_positive_int(DASHBOARD_OPEN_LIMIT_KEY, DASHBOARD_OPEN_LIMIT_DEFAULT)
+
+    def set_dashboard_open_limit(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of open announcements previewed on the dashboard.
+
+        Args:
+            value: Card count (1..:data:`DASHBOARD_LIMIT_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            DASHBOARD_OPEN_LIMIT_KEY,
+            value,
+            DASHBOARD_LIMIT_MAX,
+            "dashboard_open_limit",
+            updated_by_id,
+        )

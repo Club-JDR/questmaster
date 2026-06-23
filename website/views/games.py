@@ -24,7 +24,9 @@ from website.exceptions import (
 from website.services import DiscordService
 from website.services.game import GameService
 from website.services.game_session import GameSessionService
+from website.services.setting import SettingsService
 from website.services.special_event import SpecialEventService
+from website.services.stats import StatsService
 from website.services.system import SystemService
 from website.services.user import UserService
 from website.services.vtt import VttService
@@ -47,6 +49,8 @@ discord_service = DiscordService()
 special_event_service = SpecialEventService()
 system_service = SystemService()
 vtt_service = VttService()
+stats_service = StatsService()
+settings_service = SettingsService()
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +77,38 @@ def _serialize_ref_data():
 
 
 @game_bp.route("/", methods=["GET"])
+def dashboard():
+    """Personalised landing dashboard.
+
+    Renders fast: only the open-games preview is computed here. For members, the
+    agenda + stats panels (heavier, cached queries) are lazy-loaded client-side
+    from :func:`dashboard_panels`. Anonymous visitors see the open games only.
+    """
+    preview = game_service.get_open_preview(who())
+    return render_template(
+        "dashboard.j2",
+        open_games=_serialize_games(preview["open_games"]),
+        open_hidden=preview["open_hidden"],
+        agenda=None,
+        stats=None,
+    )
+
+
+@game_bp.route("/tableau-de-bord/panneaux/", methods=["GET"])
+@login_required
+def dashboard_panels():
+    """Lazy-loaded fragment: the member's agenda + statistics panels.
+
+    Computes the per-user dashboard data (memoised by ``StatsService`` for a few
+    minutes) and renders just the panels markup for client-side injection.
+    """
+    payload = who()
+    data = stats_service.get_dashboard_stats(
+        payload["user_id"], settings_service.get_dashboard_agenda_limit()
+    )
+    return render_template("dashboard_panels.j2", agenda=data["agenda"], stats=data["stats"])
+
+
 @game_bp.route("/annonces/", methods=["GET"])
 def search_games():
     """Search and list game announcements with filtering and pagination."""
