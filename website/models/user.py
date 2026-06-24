@@ -71,7 +71,13 @@ def get_user_profile(user_id, force_refresh=False):
 
     except DiscordAPIError as e:
         current_app.logger.warning(f"[get_user_profile] Discord API error for user {user_id}: {e}")
-        fallback = {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "username": None, "raw": None}
+        fallback = {
+            "name": "Inconnu",
+            "avatar": DEFAULT_AVATAR,
+            "username": None,
+            "raw": None,
+            "error": True,
+        }
         if e.status_code == 404:
             fallback["not_found"] = True
             cache.set(cache_key, fallback, timeout=CACHE_USER_PROFILE_404_TIMEOUT)
@@ -79,7 +85,13 @@ def get_user_profile(user_id, force_refresh=False):
 
     except Exception as e:
         current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
-        return {"name": "Inconnu", "avatar": DEFAULT_AVATAR, "username": None, "raw": None}
+        return {
+            "name": "Inconnu",
+            "avatar": DEFAULT_AVATAR,
+            "username": None,
+            "raw": None,
+            "error": True,
+        }
 
 
 def get_user_roles(user_id):

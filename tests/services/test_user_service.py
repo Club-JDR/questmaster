@@ -94,3 +94,33 @@ class TestUserService:
         service = UserService()
         result = service.clear_inactive(user.id)
         assert result.not_player_as_of is None
+
+    def test_persist_profile_writes_name_to_db(self, db_session):
+        """persist_profile must actually update the stored name (not a no-op).
+
+        Reads the raw column to bypass User.init_on_load, which resolves the
+        display name at load time and previously masked the missing write.
+        """
+        user = UserFactory(db_session, name="Inconnu")
+        service = UserService()
+
+        service.persist_profile(
+            user.id, {"name": "RealName", "avatar": "/a.png", "username": "realname"}
+        )
+
+        stored = db_session.query(User.name, User.username).filter(User.id == user.id).one()
+        assert stored.name == "RealName"
+        assert stored.username == "realname"
+
+    def test_persist_profile_reactivate_clears_flag(self, db_session):
+        """persist_profile(reactivate=True) clears the inactive flag and sets name."""
+        user = UserFactory(db_session, name="Inconnu", not_player_as_of=datetime(2025, 1, 1))
+        service = UserService()
+
+        service.persist_profile(user.id, {"name": "Back", "avatar": "/a.png"}, reactivate=True)
+
+        stored = (
+            db_session.query(User.name, User.not_player_as_of).filter(User.id == user.id).one()
+        )
+        assert stored.name == "Back"
+        assert stored.not_player_as_of is None

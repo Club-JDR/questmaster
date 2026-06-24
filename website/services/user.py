@@ -145,6 +145,28 @@ class UserService:
         """
         return _get_user_profile(user_id, force_refresh=force_refresh)
 
+    def persist_profile(self, user_id: str, profile: dict, reactivate: bool = False) -> None:
+        """Persist a freshly fetched Discord profile to the database.
+
+        Writes ``name`` (and ``username`` when present) via a direct column
+        update so the change is not silently dropped by the load-time name
+        resolution in ``User.init_on_load``.
+
+        Args:
+            user_id: Discord user ID.
+            profile: Profile dict from ``get_user_profile`` (a successful one,
+                i.e. without ``not_found``/``error``).
+            reactivate: When True, also clears the inactive flag
+                (``not_player_as_of``) — used when an inactive user reappears.
+        """
+        values: dict = {"name": profile["name"]}
+        if profile.get("username"):
+            values["username"] = profile["username"]
+        if reactivate:
+            values["not_player_as_of"] = None
+        self.repo.update_fields(user_id, values)
+        db.session.commit()
+
     def update(self, user_id: str, data: dict) -> User:
         """Update an existing user's editable fields.
 

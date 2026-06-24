@@ -1,11 +1,10 @@
 """Background job scheduler for periodic tasks."""
 
 import random
-from datetime import datetime, timezone
+from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from website.extensions import db
 from website.services.user import UserService
 
 BATCH_SIZE = 50
@@ -34,23 +33,26 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
             return
 
         sample_ids = random.sample(user_ids, min(batch_size, len(user_ids)))
-        to_refresh = service.get_by_ids(sample_ids)
-        for user in to_refresh:
+        refreshed = 0
+        for user_id in sample_ids:
             try:
-                profile = service.get_user_profile(user.id, force_refresh=True)
+                profile = service.get_user_profile(user_id, force_refresh=True)
                 if profile.get("not_found"):
-                    user.not_player_as_of = datetime.now(timezone.utc)
-                    app.logger.info(f"[Scheduler] Marked user {user.id} as inactive (404)")
+                    service.mark_inactive(user_id)
+                    app.logger.info(f"[Scheduler] Marked user {user_id} as inactive (404)")
+                elif profile.get("error"):
+                    # Transient Discord failure (5xx, rate limit, network): leave the
+                    # existing profile untouched rather than clobbering it with "Inconnu".
+                    app.logger.warning(
+                        f"[Scheduler] Skipping {user_id}: transient profile fetch error"
+                    )
                 else:
-                    user.name = profile["name"]
-                    user.avatar = profile["avatar"]
-                    if profile.get("username"):
-                        user.username = profile["username"]
+                    service.persist_profile(user_id, profile)
+                    refreshed += 1
             except Exception as e:
-                app.logger.warning(f"[{datetime.now()}] Failed to refresh {user.id}: {e}")
+                app.logger.warning(f"[{datetime.now()}] Failed to refresh {user_id}: {e}")
 
-        db.session.commit()
-        app.logger.info(f"[Scheduler] Refreshed {len(to_refresh)} users at {datetime.now()}")
+        app.logger.info(f"[Scheduler] Refreshed {refreshed} users at {datetime.now()}")
 
 
 def check_inactive_users(app, batch_size=INACTIVE_CHECK_BATCH_SIZE):
@@ -73,27 +75,24 @@ def check_inactive_users(app, batch_size=INACTIVE_CHECK_BATCH_SIZE):
             return
 
         sample_ids = random.sample(inactive_ids, min(batch_size, len(inactive_ids)))
-        to_check = service.get_by_ids(sample_ids)
         reactivated = 0
-        for user in to_check:
+        for user_id in sample_ids:
             try:
-                profile = service.get_user_profile(user.id, force_refresh=True)
+                profile = service.get_user_profile(user_id, force_refresh=True)
+                if profile.get("error"):
+                    # Transient failure (not a 404): cannot conclude the user rejoined.
+                    continue
                 if not profile.get("not_found"):
-                    user.not_player_as_of = None
-                    user.name = profile["name"]
-                    user.avatar = profile["avatar"]
-                    if profile.get("username"):
-                        user.username = profile["username"]
+                    service.persist_profile(user_id, profile, reactivate=True)
                     reactivated += 1
                     app.logger.info(
-                        f"[Scheduler] User {user.id} has rejoined, clearing inactive flag"
+                        f"[Scheduler] User {user_id} has rejoined, clearing inactive flag"
                     )
             except Exception as e:
-                app.logger.warning(f"[Scheduler] Failed to re-check inactive user {user.id}: {e}")
+                app.logger.warning(f"[Scheduler] Failed to re-check inactive user {user_id}: {e}")
 
-        db.session.commit()
         app.logger.info(
-            f"[Scheduler] Checked {len(to_check)} inactive users, "
+            f"[Scheduler] Checked {len(sample_ids)} inactive users, "
             f"reactivated {reactivated} at {datetime.now()}"
         )
 
