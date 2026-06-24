@@ -1,0 +1,105 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+{% set lbl = "text-sm font-semibold text-base-content/60 mb-0.5 block" %}
+
+{% block admin_content %}
+{{ ui.header('Permissions', 'ph-shield-check') }}
+
+<p class="text-base-content/70 mb-4">
+  Accordez une capacité d'administration à un rôle Discord ou à un utilisateur
+  précis. Les administrateurs disposent de toutes les capacités.
+</p>
+
+{# ── Add a grant ── #}
+<div class="card bg-base-100 shadow-md mb-6">
+  <form method="post" action="{{ url_for('admin.grant_permission') }}"
+        class="card-body grid gap-3 sm:grid-cols-4 sm:items-end">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="flex flex-col gap-1 sm:col-span-1">
+      <label for="permission_key" class="{{ lbl }}">Capacité</label>
+      <select id="permission_key" name="permission_key" class="select select-bordered w-full">
+        {% for perm in catalog %}
+        <option value="{{ perm.key }}">{{ perm.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <fieldset class="flex flex-col gap-1 sm:col-span-1">
+      <legend class="{{ lbl }}">Type de sujet</legend>
+      <div class="flex gap-4 items-center h-12">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="subject_type" value="{{ subject_role }}"
+                 class="radio radio-sm" checked>
+          <span>Rôle</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="subject_type" value="{{ subject_user }}"
+                 class="radio radio-sm">
+          <span>Utilisateur</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="flex flex-col gap-1 sm:col-span-1">
+      <label for="subject_id" class="{{ lbl }}">ID Discord (rôle ou utilisateur)</label>
+      <input type="text" id="subject_id" name="subject_id"
+             class="input input-bordered w-full font-mono"
+             placeholder="123456789012345678" autocomplete="off" required>
+    </div>
+
+    <div class="sm:col-span-1">
+      <button type="submit" class="btn btn-primary w-full gap-1">
+        <i class="ph ph-plus" aria-hidden="true"></i> Accorder
+      </button>
+    </div>
+  </form>
+</div>
+
+{# ── Catalog + current grants ── #}
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Capacité</th>
+        <th>Clé</th>
+        <th>Bénéficiaires</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for perm in catalog %}
+      <tr>
+        <td class="font-semibold">{{ perm.label }}</td>
+        <td class="text-xs font-mono text-base-content/60">{{ perm.key }}</td>
+        <td>
+          {% set grants = grants_by_key[perm.key] %}
+          {% if grants %}
+          <div class="flex flex-wrap gap-2">
+            {% for grant in grants %}
+            <span class="badge badge-outline gap-1 py-3" title="{{ grant.subject_id }}">
+              <i class="ph {{ 'ph-users-three' if grant.subject_type == subject_role else 'ph-user' }}"
+                 aria-hidden="true"></i>
+              <span class="text-xs">{{ subject_labels[grant.id] }}</span>
+              <form method="post"
+                    action="{{ url_for('admin.revoke_permission', grant_id=grant.id) }}"
+                    class="inline"
+                    onsubmit="return confirm('Révoquer cette permission ?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="text-error align-middle"
+                        aria-label="Révoquer la permission">
+                  <i class="ph ph-x" aria-hidden="true"></i>
+                </button>
+              </form>
+            </span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <span class="text-base-content/40 text-sm">Aucun</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

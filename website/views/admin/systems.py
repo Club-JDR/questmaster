@@ -8,11 +8,13 @@ from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
 from website.services.system import SystemService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 system_service = SystemService()
 
 
 @admin_bp.route("/systems/", methods=["GET"])
+@require_permission("system.manage")
 def list_systems():
     """List game systems with search and pagination."""
     page, search = get_list_params()
@@ -21,6 +23,7 @@ def list_systems():
 
 
 @admin_bp.route("/systems/new", methods=["GET", "POST"])
+@require_permission("system.manage")
 def create_system():
     """Create a new game system."""
     if request.method == "POST":
@@ -38,6 +41,7 @@ def create_system():
 
 
 @admin_bp.route("/systems/<int:system_id>/edit", methods=["GET", "POST"])
+@require_permission("system.manage")
 def edit_system(system_id):
     """Edit an existing game system."""
     try:
@@ -61,6 +65,7 @@ def edit_system(system_id):
 
 
 @admin_bp.route("/systems/<int:system_id>/delete", methods=["POST"])
+@require_permission("system.manage")
 def delete_system(system_id):
     """Delete a game system."""
     system_service.delete(system_id)

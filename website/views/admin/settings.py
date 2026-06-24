@@ -10,6 +10,7 @@ from website.services.discord import DiscordService
 from website.services.setting import OVERRIDABLE_KEYS, SettingsService
 from website.utils.logger import logger
 from website.views.admin import admin_bp
+from website.views.auth import admin_only
 
 settings_service = SettingsService()
 discord_service = DiscordService()
@@ -25,6 +26,7 @@ def _current_role_count() -> int | None:
 
 
 @admin_bp.route("/settings/", methods=["GET", "POST"])
+@admin_only
 def edit_settings():
     """Display and update database-backed configuration overrides.
 
@@ -56,6 +58,7 @@ def edit_settings():
 
 
 @admin_bp.route("/settings/permissions/", methods=["POST"])
+@admin_only
 def update_permissions_settings():
     """Update operational settings: direct-permission mode, dashboard sizes and page size."""
     enabled = "direct_permissions" in request.form

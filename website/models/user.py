@@ -177,6 +177,7 @@ class User(db.Model, SerializableMixin):
         self.is_gm = False
         self.is_admin = False
         self.is_player = False
+        self.permissions = set()
 
         if not has_request_context():
             profile = get_user_profile(self.id)
@@ -203,7 +204,12 @@ class User(db.Model, SerializableMixin):
             self.avatar = DEFAULT_AVATAR
 
     def refresh_roles(self):
-        """Refresh role info from Discord (cached for 5 minutes)."""
+        """Refresh role info from Discord (cached for 5 minutes).
+
+        Also resolves the user's granular RBAC permission set (admins
+        implicitly hold every capability).
+        """
+        from website.services.permission import PermissionService
         from website.services.setting import SettingsService
 
         settings = SettingsService()
@@ -216,6 +222,25 @@ class User(db.Model, SerializableMixin):
             self.is_gm = False
             self.is_admin = False
             self.is_player = False
+            roles = []
+
+        try:
+            self.permissions = PermissionService().resolve_for(self.id, roles, self.is_admin)
+        except Exception:
+            from website.permissions import PERMISSION_KEYS
+
+            self.permissions = set(PERMISSION_KEYS) if self.is_admin else set()
+
+    def has_permission(self, key: str) -> bool:
+        """Return whether the user holds a capability (admins hold all).
+
+        Args:
+            key: Permission key to check.
+
+        Returns:
+            True if the user is an admin or has been granted the capability.
+        """
+        return self.is_admin or key in getattr(self, "permissions", set())
 
     def _serialize_relationship(self, rel_value):
         """Helper to serialize a relationship value (single object or list)."""
@@ -251,6 +276,7 @@ class User(db.Model, SerializableMixin):
             "is_gm": getattr(self, "is_gm", False),
             "is_admin": getattr(self, "is_admin", False),
             "is_player": getattr(self, "is_player", False),
+            "permissions": sorted(getattr(self, "permissions", set())),
         }
 
         if include_relationships:

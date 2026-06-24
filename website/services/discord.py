@@ -137,6 +137,17 @@ class DiscordService:
         """
         return self.bot.get_role(role_id)
 
+    def list_roles(self) -> list:
+        """Return all roles defined in the guild.
+
+        Returns:
+            List of role dicts (each with at least ``id`` and ``name``).
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.list_roles()
+
     def count_roles(self) -> int:
         """Count the roles currently defined in the guild.
 

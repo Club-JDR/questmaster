@@ -7,6 +7,7 @@ from website.models import DiscordMessage
 from website.services.discord_message import DiscordMessageService
 from website.services.setting import SettingsService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 discord_message_service = DiscordMessageService()
 settings_service = SettingsService()
@@ -91,6 +92,7 @@ def _form_from_message(message: DiscordMessage) -> dict:
 
 
 @admin_bp.route("/discord/", methods=["GET"])
+@require_permission("discord.send")
 def list_discord_messages():
     """List Discord messages sent through the admin panel."""
     page, search = get_list_params()
@@ -104,6 +106,7 @@ def list_discord_messages():
 
 
 @admin_bp.route("/discord/<int:message_id>/delete", methods=["POST"])
+@require_permission("discord.send")
 def delete_discord_message(message_id):
     """Delete a sent message from Discord and remove its stored record."""
     try:
@@ -115,6 +118,7 @@ def delete_discord_message(message_id):
 
 
 @admin_bp.route("/discord/channels/new", methods=["GET", "POST"])
+@require_permission("discord.send")
 def new_discord_channel():
     """Add a channel to the list of channels messages can be sent to."""
     if request.method == "POST":
@@ -133,6 +137,7 @@ def new_discord_channel():
 
 
 @admin_bp.route("/discord/channels/<channel_id>/delete", methods=["POST"])
+@require_permission("discord.send")
 def delete_discord_channel(channel_id):
     """Remove a channel from the list of channels messages can be sent to."""
     settings_service.remove_post_channel(channel_id, updated_by_id=session.get("user_id"))
@@ -141,6 +146,7 @@ def delete_discord_channel(channel_id):
 
 
 @admin_bp.route("/discord/compose", methods=["GET", "POST"])
+@require_permission("discord.send")
 def compose_discord_message():
     """Compose and send a new Discord message (plain or embed)."""
     channels = discord_message_service.get_post_channels()
@@ -173,6 +179,7 @@ def compose_discord_message():
 
 
 @admin_bp.route("/discord/<int:message_id>/edit", methods=["GET", "POST"])
+@require_permission("discord.send")
 def edit_discord_message(message_id):
     """Edit a previously-sent Discord message (channel and type are fixed)."""
     try:

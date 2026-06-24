@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlparse
 import requests as http_requests
 from flask import Blueprint, current_app, redirect, request, session, url_for
 
-from config.constants import SEARCH_GAMES_ROUTE
+from config.constants import MSG_ADMIN_ACCESS_REQUIRED, SEARCH_GAMES_ROUTE
 from website.exceptions import UnauthorizedError
 from website.extensions import oauth
 from website.services.user import UserService
@@ -25,6 +25,7 @@ def who():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
+        session["permissions"] = sorted(user.permissions)
     return session
 
 
@@ -38,6 +39,58 @@ def login_required(view):
         return view(**kwargs)
 
     return wrapped_view
+
+
+def admin_only(view):
+    """View decorator restricting access to superuser admins.
+
+    Used for admin sections that have no delegated capability (e.g. games,
+    settings); delegated users that pass the blueprint guard via another
+    capability are still rejected here.
+
+    Args:
+        view: The view function to protect.
+
+    Returns:
+        The wrapped view.
+    """
+
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("auth.login"))
+        if session.get("is_admin"):
+            return view(**kwargs)
+        raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action="admin")
+
+    return wrapped_view
+
+
+def require_permission(key):
+    """View decorator requiring a specific RBAC capability (admins bypass).
+
+    Redirects anonymous users to login; raises ``UnauthorizedError`` for an
+    authenticated user lacking the capability.
+
+    Args:
+        key: Permission key the view requires.
+
+    Returns:
+        The view decorator.
+    """
+
+    def decorator(view):
+        @functools.wraps(view)
+        def wrapped_view(**kwargs):
+            if "user_id" not in session:
+                return redirect(url_for("auth.login"))
+            if session.get("is_admin") or key in session.get("permissions", []):
+                return view(**kwargs)
+            raise UnauthorizedError(MSG_ADMIN_ACCESS_REQUIRED, action=key)
+
+        return wrapped_view
+
+    return decorator
 
 
 @auth_bp.route("/login/", methods=["GET"])
@@ -121,6 +174,7 @@ def callback():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
+        session["permissions"] = sorted(user.permissions)
         session["_discord_token"] = dict(token)
     redirect_url = session.pop("next_url", url_for(SEARCH_GAMES_ROUTE))
     if not is_safe_url(redirect_url):

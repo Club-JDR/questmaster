@@ -94,7 +94,7 @@
             </ul>
           </details>
         </li>
-        {% if payload['is_admin'] %}
+        {% if payload['is_admin'] or payload['permissions'] %}
         <li>
           <details>
             <summary id="adminMenu" class="font-bold text-error">Admin</summary>
@@ -196,7 +196,7 @@
               </ul>
             </details>
           </li>
-          {% if payload['is_admin'] %}
+          {% if payload['is_admin'] or payload['permissions'] %}
           <li>
             <details>
               <summary class="font-bold text-error-accent">Admin</summary>

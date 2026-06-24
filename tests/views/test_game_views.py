@@ -12,6 +12,46 @@ from tests.factories import GameFactory, GameSessionFactory
 pytestmark = pytest.mark.integration
 
 
+@pytest.fixture(autouse=True)
+def _purge_leaked_games(test_app):
+    """Remove only the games that escaped this test's savepoint rollback.
+
+    Some view actions (publishing, status changes) commit through a path the
+    per-test ``db_session`` savepoint does not capture, leaking committed game
+    rows that would skew later search/pagination tests (``open_game`` gets
+    pushed off page 1). We snapshot the committed game ids before the test and,
+    afterwards, delete only the rows that appeared during it — leaving any
+    pre-existing persistent data intact, so this is safe whether or not
+    ``--drop-db`` is used. Runs on a fresh connection, after the savepoint
+    rollback, to avoid lock contention.
+    """
+    from sqlalchemy import bindparam, text
+
+    from website.extensions import db
+
+    def _committed_game_ids() -> set[int]:
+        with db.engine.connect() as conn:
+            return {row[0] for row in conn.execute(text("SELECT id FROM game"))}
+
+    before = _committed_game_ids()
+    yield
+    leaked = sorted(_committed_game_ids() - before)
+    if not leaked:
+        return
+    # game_event cascades on delete; game_session/game_players do not, so clear
+    # the leaked games' children explicitly before removing the games themselves.
+    with db.engine.begin() as conn:
+        for table, column in (
+            ("game_session", "game_id"),
+            ("game_players", "game_id"),
+            ("game", "id"),
+        ):
+            stmt = text(f"DELETE FROM {table} WHERE {column} IN :ids").bindparams(
+                bindparam("ids", expanding=True)
+            )
+            conn.execute(stmt, {"ids": leaked})
+
+
 def _game_form_data(system_id, vtt_id, **overrides):
     """Build form data dict for game creation/edit POST."""
     data = {

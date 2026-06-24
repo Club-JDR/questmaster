@@ -12,12 +12,14 @@ from website.exceptions import NotFoundError
 from website.services.game import GameService
 from website.services.user import UserService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 user_service = UserService()
 game_service = GameService()
 
 
 @admin_bp.route("/users/", methods=["GET"])
+@require_permission("users.view")
 def list_users():
     """List users with search and pagination."""
     page, search = get_list_params()
@@ -26,6 +28,7 @@ def list_users():
 
 
 @admin_bp.route("/users/<user_id>/edit", methods=["GET", "POST"])
+@require_permission("users.view")
 def edit_user(user_id):
     """Edit an existing user (display name and activity status)."""
     try:
@@ -48,6 +51,7 @@ def edit_user(user_id):
 
 
 @admin_bp.route("/users/<user_id>/games", methods=["GET"])
+@require_permission("users.view")
 def user_games(user_id):
     """List all games for a user, split by GM role and player role."""
     try:

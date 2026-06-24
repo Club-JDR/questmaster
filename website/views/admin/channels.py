@@ -8,11 +8,13 @@ from config.constants import ADMIN_PAGE_SIZE, GAME_TYPES
 from website.exceptions import NotFoundError, ValidationError
 from website.services.channel import ChannelService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 channel_service = ChannelService()
 
 
 @admin_bp.route("/channels/", methods=["GET"])
+@require_permission("channel.manage")
 def list_channels():
     """List Discord channel categories with search and pagination."""
     page, search = get_list_params()
@@ -21,6 +23,7 @@ def list_channels():
 
 
 @admin_bp.route("/channels/new", methods=["GET", "POST"])
+@require_permission("channel.manage")
 def create_channel():
     """Create a new channel category."""
     if request.method == "POST":
@@ -39,6 +42,7 @@ def create_channel():
 
 
 @admin_bp.route("/channels/<channel_id>/edit", methods=["GET", "POST"])
+@require_permission("channel.manage")
 def edit_channel(channel_id):
     """Edit an existing channel category."""
     try:
@@ -62,6 +66,7 @@ def edit_channel(channel_id):
 
 
 @admin_bp.route("/channels/<channel_id>/delete", methods=["POST"])
+@require_permission("channel.manage")
 def delete_channel(channel_id):
     """Delete a channel category."""
     channel_service.delete(channel_id)

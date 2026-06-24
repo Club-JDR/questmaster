@@ -58,6 +58,7 @@ def create_app():
             "is_gm": session.get("is_gm"),
             "is_admin": session.get("is_admin"),
             "is_player": session.get("is_player"),
+            "permissions": session.get("permissions", []),
             "active_events": active_events,
         }
         return {"payload": payload}

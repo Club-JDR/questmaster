@@ -26,6 +26,7 @@ from website.models import (
     Channel,
     DiscordMessage,
     Game,
+    PermissionGrant,
     SpecialEvent,
     System,
     Trophy,
@@ -746,3 +747,108 @@ def test_user_trophies_page_lists_user_badges(admin_client, db_session, mock_csr
     response = admin_client.get(f"/admin/users/{user.id}/trophies")
     assert response.status_code == 200
     assert trophy.name in response.data.decode()
+
+
+# -- Granular permissions (RBAC) ---------------------------------------------
+
+
+@pytest.fixture
+def clean_grants(db_session):
+    """Empty the permission_grant table and cache around a permissions test."""
+    from website.extensions import cache
+
+    cache.clear()
+    db_session.query(PermissionGrant).delete()
+    db_session.commit()
+    yield
+    db_session.query(PermissionGrant).delete()
+    db_session.commit()
+    cache.clear()
+
+
+def _delegated_client(test_app, permissions):
+    """Return a client whose session is a non-admin holding ``permissions``."""
+    client = test_app.test_client()
+    with client.session_transaction() as sess:
+        sess["user_id"] = "delegate"
+        sess["is_admin"] = False
+        sess["permissions"] = list(permissions)
+    return client
+
+
+def test_delegated_user_reaches_granted_section(test_app, db_session):
+    """A non-admin with vtt.manage can open the VTTs section."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    assert client.get("/admin/vtts/").status_code == 200
+
+
+def test_delegated_user_blocked_from_other_section(test_app, db_session):
+    """A non-admin with only vtt.manage is blocked from systems."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    assert client.get("/admin/systems/").status_code == 403
+
+
+def test_delegated_user_blocked_from_admin_only_section(test_app, db_session):
+    """A delegated user cannot reach admin-only sections (settings)."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    assert client.get("/admin/settings/").status_code == 403
+
+
+def test_user_without_grants_bounced_from_admin(test_app, db_session):
+    """A logged-in user with no grants cannot reach the admin panel at all."""
+    client = _delegated_client(test_app, [])
+    assert client.get("/admin/").status_code == 403
+
+
+def test_delegated_sidebar_lists_only_granted_sections(test_app, db_session):
+    """The admin sidebar for a delegated user shows only their sections."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    body = client.get("/admin/").data.decode()
+    assert "/admin/vtts/" in body
+    assert "/admin/systems/" not in body
+    assert "/admin/settings/" not in body
+
+
+def test_admin_sees_permissions_section(admin_client, db_session):
+    """An admin reaches the new permissions management section."""
+    assert admin_client.get("/admin/permissions/").status_code == 200
+
+
+def test_grant_permission_persists(admin_client, db_session, mock_csrf, clean_grants):
+    """Granting a capability to a role persists a grant row."""
+    response = admin_client.post(
+        "/admin/permissions/grant",
+        data={
+            "permission_key": "vtt.manage",
+            "subject_type": "role",
+            "subject_id": "role-123",
+        },
+    )
+    assert response.status_code == 302
+    grant = (
+        db_session.query(PermissionGrant)
+        .filter_by(permission_key="vtt.manage", subject_id="role-123")
+        .one_or_none()
+    )
+    assert grant is not None
+    assert grant.subject_type == "role"
+
+
+def test_grant_permission_invalid_flashes_error(admin_client, db_session, mock_csrf, clean_grants):
+    """An unknown capability key is rejected and nothing is persisted."""
+    response = admin_client.post(
+        "/admin/permissions/grant",
+        data={"permission_key": "bogus.key", "subject_type": "role", "subject_id": "r-1"},
+    )
+    assert response.status_code == 302
+    assert db_session.query(PermissionGrant).count() == 0
+
+
+def test_revoke_permission_removes_grant(admin_client, db_session, mock_csrf, clean_grants):
+    """Revoking removes the grant row."""
+    grant = PermissionGrant(permission_key="vtt.manage", subject_type="user", subject_id="u-9")
+    db_session.add(grant)
+    db_session.commit()
+    response = admin_client.post(f"/admin/permissions/{grant.id}/revoke")
+    assert response.status_code == 302
+    assert db_session.get(PermissionGrant, grant.id) is None
