@@ -4,7 +4,7 @@
 from flask import flash, redirect, render_template, request, session, url_for
 
 # Local imports
-from config.constants import DASHBOARD_LIMIT_MAX, DISCORD_ROLE_LIMIT
+from config.constants import DASHBOARD_LIMIT_MAX, DISCORD_ROLE_LIMIT, GAMES_PER_PAGE_MAX
 from website.exceptions import DiscordAPIError, ValidationError
 from website.services.discord import DiscordService
 from website.services.setting import OVERRIDABLE_KEYS, SettingsService
@@ -50,12 +50,14 @@ def edit_settings():
         dashboard_agenda_limit=settings_service.get_dashboard_agenda_limit(),
         dashboard_open_limit=settings_service.get_dashboard_open_limit(),
         dashboard_limit_max=DASHBOARD_LIMIT_MAX,
+        games_per_page=settings_service.get_games_per_page(),
+        games_per_page_max=GAMES_PER_PAGE_MAX,
     )
 
 
 @admin_bp.route("/settings/permissions/", methods=["POST"])
 def update_permissions_settings():
-    """Update operational settings: direct-permission mode and dashboard sizes."""
+    """Update operational settings: direct-permission mode, dashboard sizes and page size."""
     enabled = "direct_permissions" in request.form
     updated_by = session.get("user_id")
     try:
@@ -68,6 +70,9 @@ def update_permissions_settings():
         )
         settings_service.set_dashboard_open_limit(
             request.form.get("dashboard_open_limit", ""), updated_by_id=updated_by
+        )
+        settings_service.set_games_per_page(
+            request.form.get("games_per_page", ""), updated_by_id=updated_by
         )
         flash("Paramètres mis à jour.", "success")
     except ValidationError as e:

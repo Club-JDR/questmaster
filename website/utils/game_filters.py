@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from sqlalchemy import case
 from sqlalchemy.sql import and_, func, or_
 
-from config.constants import GAMES_PER_PAGE
 from website.exceptions import ValidationError
 from website.models import Game
 
@@ -176,12 +175,15 @@ def get_filtered_games(
     is_future = case((Game.date >= now, 0), else_=1)
     time_distance = func.abs(func.extract("epoch", Game.date - now))
 
+    from website.services.setting import SettingsService
+
+    per_page = SettingsService().get_games_per_page()
     page = request_args_source.get("page", 1, type=int)
     query = base_query or Game.query
     games = (
         query.filter(*queries)
         .order_by(status_order, is_future, time_distance)
-        .paginate(page=page, per_page=GAMES_PER_PAGE, error_out=False)
+        .paginate(page=page, per_page=per_page, error_out=False)
     )
 
     return games, request_args

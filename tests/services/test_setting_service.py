@@ -105,6 +105,40 @@ class TestSettingsService:
         with pytest.raises(ValidationError):
             service.set_role_auto_threshold(0)
 
+    def test_games_per_page_default(self, db_session):
+        """Unset page size falls back to the constant default."""
+        from config.constants import GAMES_PER_PAGE
+
+        service = SettingsService()
+        assert service.get_games_per_page() == GAMES_PER_PAGE
+
+    def test_games_per_page_round_trip(self, db_session):
+        """A stored page size is read back as an integer."""
+        service = SettingsService()
+        service.set_games_per_page(24, updated_by_id="admin-1")
+        assert service.get_games_per_page() == 24
+
+    def test_games_per_page_rejects_invalid(self, db_session):
+        """Non-integer, non-positive and over-bound page sizes are rejected."""
+        from config.constants import GAMES_PER_PAGE_MAX
+
+        service = SettingsService()
+        with pytest.raises(ValidationError):
+            service.set_games_per_page("nope")
+        with pytest.raises(ValidationError):
+            service.set_games_per_page(0)
+        with pytest.raises(ValidationError):
+            service.set_games_per_page(GAMES_PER_PAGE_MAX + 1)
+
+    def test_games_per_page_invalid_stored_falls_back(self, db_session):
+        """A corrupted stored value falls back to the default."""
+        from config.constants import GAMES_PER_PAGE
+        from website.services.setting import GAMES_PER_PAGE_KEY
+
+        db_session.add(AppSetting(key=GAMES_PER_PAGE_KEY, value="not-an-int"))
+        db_session.commit()
+        assert SettingsService().get_games_per_page() == GAMES_PER_PAGE
+
     def test_get_effective_describes_all_keys(self, db_session):
         """get_effective() exposes env, override and effective values per key."""
         service = SettingsService()

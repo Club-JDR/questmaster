@@ -385,6 +385,40 @@ def test_permissions_save_unchecked_disables_direct_mode(
     assert db_session.get(AppSetting, "discord_use_direct_permissions").value == "false"
 
 
+def test_permissions_save_persists_games_per_page(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    response = admin_client.post(
+        "/admin/settings/permissions/",
+        data={
+            "role_auto_threshold": "200",
+            "dashboard_agenda_limit": "10",
+            "dashboard_open_limit": "8",
+            "games_per_page": "24",
+        },
+    )
+    assert response.status_code == 302
+    assert db_session.get(AppSetting, "games_per_page").value == "24"
+
+
+def test_permissions_save_rejects_out_of_bounds_games_per_page(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    db_session.add(AppSetting(key="games_per_page", value="12"))
+    db_session.commit()
+    admin_client.post(
+        "/admin/settings/permissions/",
+        data={
+            "role_auto_threshold": "200",
+            "dashboard_agenda_limit": "10",
+            "dashboard_open_limit": "8",
+            "games_per_page": "999",
+        },
+    )
+    # Out-of-bounds value is rejected; the stored value is left unchanged.
+    assert db_session.get(AppSetting, "games_per_page").value == "12"
+
+
 # -- Users -------------------------------------------------------------------
 
 

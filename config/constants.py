@@ -128,7 +128,8 @@ DEFAULT_AVATAR = "/static/img/avatar.webp"
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 # Pagination
-GAMES_PER_PAGE = 12
+GAMES_PER_PAGE = 12  # Default card-grid page size; admin-overridable at runtime.
+GAMES_PER_PAGE_MAX = 60  # Upper bound for the admin-configurable card-grid page size.
 API_DEFAULT_PAGE = 1
 API_DEFAULT_PER_PAGE = 20
 API_MAX_PER_PAGE = 100

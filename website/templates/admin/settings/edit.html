@@ -10,25 +10,48 @@
       class="rounded-box border border-base-300 p-4 space-y-4 mb-6">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  {# ── Dashboard preview sizes (least critical, shown first) ── #}
-  <h2 class="font-semibold text-base">Tableau de bord</h2>
-  <p class="text-sm text-base-content/70">
-    Nombre de cartes de partie affichées dans chaque section du tableau de bord
-    (maximum {{ dashboard_limit_max }}).
-  </p>
+  {# ── Display sizes (least critical, shown first): annonces + dashboard ── #}
+  <h2 class="font-semibold text-base">Affichage</h2>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md sm:items-end">
-    <div class="flex flex-col gap-1">
-      <label for="dashboard_agenda_limit" class="{{ lbl }}">Sessions à venir (agenda)</label>
-      <input type="number" id="dashboard_agenda_limit" name="dashboard_agenda_limit"
-             min="1" max="{{ dashboard_limit_max }}"
-             class="input input-bordered w-full font-mono" value="{{ dashboard_agenda_limit }}">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {# ── Public card-grid page size ── #}
+    <div class="space-y-3">
+      <h3 class="font-semibold text-sm text-base-content/70">Annonces</h3>
+      <div class="flex flex-col gap-1 max-w-xs">
+        <label for="games_per_page" class="{{ lbl }}">Cartes par page</label>
+        <input type="number" id="games_per_page" name="games_per_page" min="1"
+               max="{{ games_per_page_max }}"
+               class="input input-bordered w-full font-mono" value="{{ games_per_page }}">
+        <span class="text-xs text-base-content/50">
+          Nombre d'annonces affichées par page sur les annonces et les listes
+          personnelles (maximum {{ games_per_page_max }}).
+        </span>
+      </div>
     </div>
-    <div class="flex flex-col gap-1">
-      <label for="dashboard_open_limit" class="{{ lbl }}">Annonces ouvertes</label>
-      <input type="number" id="dashboard_open_limit" name="dashboard_open_limit"
-             min="1" max="{{ dashboard_limit_max }}"
-             class="input input-bordered w-full font-mono" value="{{ dashboard_open_limit }}">
+
+    {# ── Dashboard preview sizes ── #}
+    <div class="space-y-3">
+      <h3 class="font-semibold text-sm text-base-content/70">Tableau de bord</h3>
+      <div class="flex flex-col gap-1">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:items-end">
+          <div class="flex flex-col gap-1">
+            <label for="dashboard_agenda_limit" class="{{ lbl }}">Sessions à venir (agenda)</label>
+            <input type="number" id="dashboard_agenda_limit" name="dashboard_agenda_limit"
+                   min="1" max="{{ dashboard_limit_max }}"
+                   class="input input-bordered w-full font-mono" value="{{ dashboard_agenda_limit }}">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="dashboard_open_limit" class="{{ lbl }}">Annonces ouvertes</label>
+            <input type="number" id="dashboard_open_limit" name="dashboard_open_limit"
+                   min="1" max="{{ dashboard_limit_max }}"
+                   class="input input-bordered w-full font-mono" value="{{ dashboard_open_limit }}">
+          </div>
+        </div>
+        <span class="text-xs text-base-content/50">
+          Nombre de cartes affichées dans chaque section du tableau de bord
+          (maximum {{ dashboard_limit_max }}).
+        </span>
+      </div>
     </div>
   </div>
 

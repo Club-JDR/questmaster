@@ -19,6 +19,8 @@ from config.constants import (
     DASHBOARD_LIMIT_MAX,
     DASHBOARD_OPEN_LIMIT_DEFAULT,
     DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT,
+    GAMES_PER_PAGE,
+    GAMES_PER_PAGE_MAX,
 )
 from website.exceptions import ValidationError
 from website.extensions import db
@@ -40,6 +42,9 @@ ROLE_AUTO_THRESHOLD_KEY = "discord_role_auto_threshold"
 # Fully DB-managed dashboard sizes.
 DASHBOARD_AGENDA_LIMIT_KEY = "dashboard_agenda_limit"
 DASHBOARD_OPEN_LIMIT_KEY = "dashboard_open_limit"
+
+# Fully DB-managed: number of game cards shown per page on the public card grid.
+GAMES_PER_PAGE_KEY = "games_per_page"
 
 # Setting groups, used only to organise the admin settings page.
 _GROUP_SERVER = "Serveur Discord"
@@ -448,5 +453,31 @@ class SettingsService:
             value,
             DASHBOARD_LIMIT_MAX,
             "dashboard_open_limit",
+            updated_by_id,
+        )
+
+    def get_games_per_page(self) -> int:
+        """Return the configured card-grid page size.
+
+        Returns:
+            The stored page size, or :data:`GAMES_PER_PAGE` when unset or invalid.
+        """
+        return self._get_positive_int(GAMES_PER_PAGE_KEY, GAMES_PER_PAGE)
+
+    def set_games_per_page(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of game cards shown per page on the public card grid.
+
+        Args:
+            value: Page size (1..:data:`GAMES_PER_PAGE_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            GAMES_PER_PAGE_KEY,
+            value,
+            GAMES_PER_PAGE_MAX,
+            "games_per_page",
             updated_by_id,
         )
