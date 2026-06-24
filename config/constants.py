@@ -107,6 +107,20 @@ DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT = 230
 # How long (seconds) to cache the guild role count shown on the admin settings page.
 DISCORD_ROLE_COUNT_CACHE_TIMEOUT = 3600
 
+# Discord channel categories
+DISCORD_CATEGORY_CHANNEL_LIMIT = 50  # Discord hard cap: channels per category.
+# Fill level at which a fresh category is auto-provisioned (90% of the limit by
+# default). Admin-configurable (DB-backed); this constant is only the fallback.
+DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT = 45
+DISCORD_CHANNEL_TYPE_TEXT = 0  # Discord channel type: GUILD_TEXT.
+DISCORD_CHANNEL_TYPE_CATEGORY = 4  # Discord channel type: GUILD_CATEGORY.
+
+# Category name templates, keyed by game type. ``{n}`` is the per-type sequence number.
+CATEGORY_NAME_TEMPLATES = {
+    GAME_TYPE_CAMPAIGN: "🎲 CAMPAGNES {n} 📖",
+    GAME_TYPE_ONESHOT: "🎲 ONE SHOTS {n} 📖",
+}
+
 # Site
 SITE_BASE_URL = "https://questmaster.club-jdr.fr"
 

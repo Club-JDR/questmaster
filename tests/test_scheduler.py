@@ -3,7 +3,12 @@
 from unittest.mock import patch
 
 from config.constants import DEFAULT_AVATAR
-from website.scheduler import check_inactive_users, monitor_role_count, refresh_user_profiles
+from website.scheduler import (
+    check_inactive_users,
+    monitor_category_capacity,
+    monitor_role_count,
+    refresh_user_profiles,
+)
 
 USER_ID = "11111111111111111"
 
@@ -177,3 +182,35 @@ class TestMonitorRoleCount:
 
         mock_discord_cls.return_value.count_roles.assert_not_called()
         settings.set_direct_permissions.assert_not_called()
+
+
+class TestMonitorCategoryCapacity:
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.channel.ChannelService")
+    def test_reconciles_then_provisions_each_type(
+        self, mock_channels_cls, mock_discord_cls, test_app
+    ):
+        """Sizes are reconciled first, then each game type is checked for provisioning."""
+        from config.constants import GAME_TYPES
+
+        channels = mock_channels_cls.return_value
+        channels.auto_provision_if_full.return_value = None
+
+        monitor_category_capacity(test_app)
+
+        channels.reconcile_sizes.assert_called_once()
+        assert channels.auto_provision_if_full.call_count == len(GAME_TYPES)
+
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.channel.ChannelService")
+    def test_swallows_discord_errors(self, mock_channels_cls, mock_discord_cls, test_app):
+        """A Discord failure is logged and swallowed, never raised."""
+        from website.exceptions import DiscordAPIError
+
+        channels = mock_channels_cls.return_value
+        channels.reconcile_sizes.side_effect = DiscordAPIError("boom", status_code=500)
+
+        # Should not raise.
+        monitor_category_capacity(test_app)
+
+        channels.auto_provision_if_full.assert_not_called()

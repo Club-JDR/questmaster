@@ -9,7 +9,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from config.constants import DISCORD_ROLE_COUNT_CACHE_TIMEOUT, PLAYER_ROLE_PERMISSION
+from config.constants import (
+    DISCORD_CHANNEL_TYPE_TEXT,
+    DISCORD_ROLE_COUNT_CACHE_TIMEOUT,
+    PLAYER_ROLE_PERMISSION,
+)
 from website.client.discord import Discord
 from website.extensions import cache
 
@@ -215,6 +219,49 @@ class DiscordService:
             DiscordAPIError: If the API request fails.
         """
         return self.bot.create_channel(name, parent_id, role_id, gm_id)
+
+    def create_category(self, name: str) -> dict:
+        """Create a Discord category channel (name kept verbatim).
+
+        Args:
+            name: Display name for the category (emojis preserved).
+
+        Returns:
+            Created category data including 'id'.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.create_category(name)
+
+    def list_guild_channels(self) -> list:
+        """Return every channel in the guild.
+
+        Returns:
+            List of channel dicts as returned by the Discord API.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.list_guild_channels()
+
+    def count_category_children(self, category_id: str) -> int:
+        """Count the text channels currently parented to a category.
+
+        Args:
+            category_id: Discord category (parent) ID.
+
+        Returns:
+            Number of GUILD_TEXT channels whose ``parent_id`` is ``category_id``.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return sum(
+            1
+            for c in self.list_guild_channels()
+            if c.get("parent_id") == category_id and c.get("type") == DISCORD_CHANNEL_TYPE_TEXT
+        )
 
     def set_channel_permission(
         self, channel_id: str, target_id: str, allow: str, type_: int = 1

@@ -141,16 +141,93 @@ def test_delete_vtt(admin_client, db_session, mock_csrf):
 # -- Channels ----------------------------------------------------------------
 
 
-def test_create_channel(admin_client, db_session, mock_csrf):
-    response = admin_client.post(
-        "/admin/channels/new",
-        data={"id": "999888777666555444", "type": "campaign", "size": "3"},
-    )
+def test_create_channel(admin_client, db_session, mock_csrf, monkeypatch):
+    from unittest.mock import MagicMock
+
+    import website.views.admin.channels as ch
+
+    new_id = "999888777666555444"
+    # The local test DB is not wiped between runs; ensure a clean slate.
+    existing = db_session.get(Channel, new_id)
+    if existing:
+        db_session.delete(existing)
+        db_session.commit()
+
+    mock_discord = MagicMock()
+    mock_discord.create_category.return_value = {"id": new_id}
+    monkeypatch.setattr(ch, "discord_service", mock_discord)
+
+    response = admin_client.post("/admin/channels/new", data={"type": "campaign"})
     assert response.status_code == 302
-    channel = db_session.get(Channel, "999888777666555444")
+    mock_discord.create_category.assert_called_once()
+    channel = db_session.get(Channel, new_id)
     assert channel is not None
     assert channel.type == "campaign"
-    assert channel.size == 3
+    assert channel.size == 0
+
+    # Clean up so the row does not leak into other tests / runs.
+    db_session.delete(channel)
+    db_session.commit()
+
+
+def test_create_channel_discord_failure_flashes(admin_client, db_session, mock_csrf, monkeypatch):
+    from unittest.mock import MagicMock
+
+    import website.views.admin.channels as ch
+    from website.exceptions import DiscordAPIError
+
+    mock_discord = MagicMock()
+    mock_discord.create_category.side_effect = DiscordAPIError("boom", status_code=500)
+    monkeypatch.setattr(ch, "discord_service", mock_discord)
+
+    before = db_session.query(Channel).count()
+    response = admin_client.post(
+        "/admin/channels/new", data={"type": "campaign"}, follow_redirects=False
+    )
+    # Re-renders the form (200), no new row persisted.
+    assert response.status_code == 200
+    assert db_session.query(Channel).count() == before
+
+
+def test_reconcile_channels(admin_client, db_session, mock_csrf, monkeypatch):
+    from unittest.mock import MagicMock
+
+    import website.views.admin.channels as ch
+
+    mock_discord = MagicMock()
+    mock_discord.list_guild_channels.return_value = []
+    monkeypatch.setattr(ch, "discord_service", mock_discord)
+
+    response = admin_client.post("/admin/channels/reconcile")
+    assert response.status_code == 302
+    mock_discord.list_guild_channels.assert_called_once()
+
+
+def test_update_channel_settings(admin_client, db_session, mock_csrf):
+    from website.services.setting import (
+        CATEGORY_AUTO_THRESHOLD_KEY,
+        CATEGORY_NAME_TEMPLATES_KEY,
+        SettingsService,
+    )
+
+    response = admin_client.post(
+        "/admin/channels/settings",
+        data={
+            "auto_threshold": "40",
+            "template_campaign": "CAMP {n}",
+            "template_oneshot": "OS {n}",
+        },
+    )
+    assert response.status_code == 302
+    service = SettingsService()
+    assert service.get_category_auto_threshold() == 40
+    assert service.get_category_name_templates()["campaign"] == "CAMP {n}"
+
+    # Clean up so these DB-managed settings do not leak into other tests / runs.
+    db_session.query(AppSetting).filter(
+        AppSetting.key.in_([CATEGORY_AUTO_THRESHOLD_KEY, CATEGORY_NAME_TEMPLATES_KEY])
+    ).delete(synchronize_session=False)
+    db_session.commit()
 
 
 def test_edit_channel(admin_client, db_session, mock_csrf):

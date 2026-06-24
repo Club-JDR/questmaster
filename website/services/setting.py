@@ -15,9 +15,12 @@ from flask import current_app, g, has_app_context
 from sqlalchemy.exc import SQLAlchemyError
 
 from config.constants import (
+    CATEGORY_NAME_TEMPLATES,
     DASHBOARD_AGENDA_LIMIT_DEFAULT,
     DASHBOARD_LIMIT_MAX,
     DASHBOARD_OPEN_LIMIT_DEFAULT,
+    DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT,
+    DISCORD_CATEGORY_CHANNEL_LIMIT,
     DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT,
     GAMES_PER_PAGE,
     GAMES_PER_PAGE_MAX,
@@ -45,6 +48,11 @@ DASHBOARD_OPEN_LIMIT_KEY = "dashboard_open_limit"
 
 # Fully DB-managed: number of game cards shown per page on the public card grid.
 GAMES_PER_PAGE_KEY = "games_per_page"
+
+# Fully DB-managed Discord category settings: the fill level at which a fresh
+# category is auto-provisioned, and the per-type category name templates.
+CATEGORY_AUTO_THRESHOLD_KEY = "discord_category_auto_threshold"
+CATEGORY_NAME_TEMPLATES_KEY = "discord_category_name_templates"
 
 # Setting groups, used only to organise the admin settings page.
 _GROUP_SERVER = "Serveur Discord"
@@ -481,3 +489,87 @@ class SettingsService:
             "games_per_page",
             updated_by_id,
         )
+
+    def get_category_auto_threshold(self) -> int:
+        """Return the fill level at which a fresh Discord category is auto-provisioned.
+
+        Returns:
+            The stored threshold, or :data:`DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT`
+            when unset or invalid.
+        """
+        return self._get_positive_int(
+            CATEGORY_AUTO_THRESHOLD_KEY, DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT
+        )
+
+    def set_category_auto_threshold(self, value, updated_by_id: str | None = None) -> None:
+        """Set the fill level at which a fresh Discord category is auto-provisioned.
+
+        Args:
+            value: Channel count (1..:data:`DISCORD_CATEGORY_CHANNEL_LIMIT`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            CATEGORY_AUTO_THRESHOLD_KEY,
+            value,
+            DISCORD_CATEGORY_CHANNEL_LIMIT,
+            "category_auto_threshold",
+            updated_by_id,
+        )
+
+    def get_category_name_templates(self) -> dict[str, str]:
+        """Return the per-type Discord category name templates.
+
+        Stored overrides are merged over the code defaults, so any game type the
+        admin has not customised keeps its default template.
+
+        Returns:
+            Mapping of game type to its name template (each containing ``{n}``).
+        """
+        stored: dict[str, str] = {}
+        setting = self.repo.get_by_key(CATEGORY_NAME_TEMPLATES_KEY)
+        if setting and setting.value:
+            try:
+                data = json.loads(setting.value)
+            except ValueError, TypeError:
+                logger.warning(
+                    "Stored category name templates are not valid JSON; using defaults."
+                )
+                data = {}
+            if isinstance(data, dict):
+                stored = {
+                    str(key): str(value)
+                    for key, value in data.items()
+                    if key in CATEGORY_NAME_TEMPLATES and value
+                }
+        return {**CATEGORY_NAME_TEMPLATES, **stored}
+
+    def set_category_name_templates(
+        self, templates: dict[str, str], updated_by_id: str | None = None
+    ) -> None:
+        """Set the per-type Discord category name templates.
+
+        Args:
+            templates: Mapping of game type to a name template; each template must
+                contain the ``{n}`` sequence placeholder.
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If a game type is unknown, or a template is empty or
+                missing the ``{n}`` placeholder.
+        """
+        cleaned: dict[str, str] = {}
+        for game_type, template in templates.items():
+            if game_type not in CATEGORY_NAME_TEMPLATES:
+                raise ValidationError(f"Unknown game type '{game_type}'.", field="type")
+            template = (template or "").strip()
+            if not template:
+                raise ValidationError("Le modèle de nom ne peut pas être vide.", field=game_type)
+            if "{n}" not in template:
+                raise ValidationError("Le modèle de nom doit contenir « {n} ».", field=game_type)
+            cleaned[game_type] = template
+        self.repo.upsert(CATEGORY_NAME_TEMPLATES_KEY, json.dumps(cleaned), updated_by_id)
+        db.session.commit()
+        self._invalidate()

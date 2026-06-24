@@ -1,8 +1,9 @@
 """Background job scheduler for periodic tasks."""
 
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
+from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from website.services.user import UserService
@@ -11,6 +12,12 @@ BATCH_SIZE = 50
 FREQUENCY = 5
 INACTIVE_CHECK_BATCH_SIZE = 10
 ROLE_MONITOR_FREQUENCY_HOURS = 12
+# Per-fire random drift (seconds) applied to the long-running jobs so repeated
+# runs do not realign on the same instant. ±1h.
+DAILY_JOB_JITTER = 3600
+# Largest random delay (minutes) before a long job's *first* run, so the daily
+# jobs do not all fire together ~24h after startup.
+DAILY_JOB_START_SPREAD = 30
 
 
 def refresh_user_profiles(app, batch_size=BATCH_SIZE):
@@ -135,34 +142,83 @@ def monitor_role_count(app):
             )
 
 
+def monitor_category_capacity(app):
+    """Daily: reconcile category sizes and auto-provision near-full categories.
+
+    Corrects each tracked category's channel count from Discord, then, for every
+    game type, creates a fresh category when all of that type's categories are at
+    or above the admin-configured auto-provision threshold.
+
+    Args:
+        app: Flask application instance for context.
+    """
+    from config.constants import GAME_TYPES
+    from website.services.channel import ChannelService
+    from website.services.discord import DiscordService
+
+    with app.app_context():
+        discord = DiscordService()
+        channels = ChannelService()
+        try:
+            channels.reconcile_sizes(discord)
+            for game_type in GAME_TYPES:
+                created = channels.auto_provision_if_full(discord, game_type)
+                if created:
+                    app.logger.info(
+                        f"[Scheduler] Auto-provisioned category {created.id} "
+                        f"for type '{game_type}'."
+                    )
+        except Exception as e:
+            app.logger.warning(f"[Scheduler] Category capacity check failed: {e}")
+
+
 def start_scheduler(app):
     """Initialize and start the APScheduler background scheduler.
 
     Args:
         app: Flask application instance.
     """
-    scheduler = BackgroundScheduler()
+    # A single worker serialises every job, so no two jobs ever run in parallel;
+    # coalesce + max_instances=1 also stop a job from stacking up on itself if a
+    # run is delayed.
+    scheduler = BackgroundScheduler(
+        executors={"default": ThreadPoolExecutor(max_workers=1)},
+        job_defaults={"coalesce": True, "max_instances": 1},
+    )
+
+    # Passing the function and ``args`` (instead of a ``lambda``) keeps the job's
+    # real name in APScheduler's logs rather than "<lambda>".
     scheduler.add_job(
-        func=lambda: refresh_user_profiles(app),
+        func=refresh_user_profiles,
+        args=[app],
         trigger="interval",
         minutes=FREQUENCY,
         id="refresh_user_profiles",
+        name="refresh_user_profiles",
         replace_existing=True,
     )
-    scheduler.add_job(
-        func=lambda: check_inactive_users(app),
-        trigger="interval",
-        hours=24,
-        id="check_inactive_users",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        func=lambda: monitor_role_count(app),
-        trigger="interval",
-        hours=ROLE_MONITOR_FREQUENCY_HOURS,
-        id="monitor_role_count",
-        replace_existing=True,
-    )
+
+    # Long-running jobs: stagger the first run by a random offset and add per-fire
+    # jitter so the daily ones never realign on the same instant.
+    now = datetime.now(timezone.utc)
+    long_jobs = [
+        ("check_inactive_users", check_inactive_users, 24),
+        ("monitor_role_count", monitor_role_count, ROLE_MONITOR_FREQUENCY_HOURS),
+        ("monitor_category_capacity", monitor_category_capacity, 24),
+    ]
+    for job_id, func, hours in long_jobs:
+        scheduler.add_job(
+            func=func,
+            args=[app],
+            trigger="interval",
+            hours=hours,
+            jitter=DAILY_JOB_JITTER,
+            next_run_time=now + timedelta(minutes=random.randint(1, DAILY_JOB_START_SPREAD)),
+            id=job_id,
+            name=job_id,
+            replace_existing=True,
+        )
+
     scheduler.start()
 
     # Shut down the scheduler when Flask stops

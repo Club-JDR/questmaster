@@ -9,7 +9,12 @@ import time
 import requests
 from unidecode import unidecode
 
-from config.constants import DISCORD_API_BASE_URL, GM_ROLE_PERMISSION, PLAYER_ROLE_PERMISSION
+from config.constants import (
+    DISCORD_API_BASE_URL,
+    DISCORD_CHANNEL_TYPE_CATEGORY,
+    GM_ROLE_PERMISSION,
+    PLAYER_ROLE_PERMISSION,
+)
 from website.exceptions import DiscordAPIError
 from website.utils.logger import logger
 
@@ -226,6 +231,31 @@ class Discord:
         return self._request(
             endpoint=f"/guilds/{self.guild_id}/channels", method="POST", json=payload
         )
+
+    def create_category(self, name: str) -> dict:
+        """Create a category channel (type 4) in the guild.
+
+        Unlike :meth:`create_channel`, the name is sent verbatim (no unidecode /
+        hyphen-join) so emoji category names are preserved.
+
+        Args:
+            name: Display name for the category (kept as-is, emojis included).
+
+        Returns:
+            Dict with the created category data (including ``id``).
+        """
+        payload = {"name": name, "type": DISCORD_CHANNEL_TYPE_CATEGORY}
+        return self._request(
+            endpoint=f"/guilds/{self.guild_id}/channels", method="POST", json=payload
+        )
+
+    def list_guild_channels(self) -> list:
+        """Fetch every channel in the guild.
+
+        Returns:
+            List of channel dicts as returned by the Discord API.
+        """
+        return self._request(endpoint=f"/guilds/{self.guild_id}/channels", method="GET")
 
     def get_channel(self, channel_id: str) -> dict:
         """Fetch channel data from Discord.

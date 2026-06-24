@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from config.constants import DISCORD_CHANNEL_TYPE_TEXT
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import Channel
@@ -142,6 +143,91 @@ class ChannelService:
             channel: Channel category to increment.
         """
         self.repo.increment_size(channel)
+
+    def reconcile_sizes(self, discord_service: DiscordService) -> list[dict]:
+        """Correct every tracked category's ``size`` from its real Discord channel count.
+
+        Fetches the guild channel list once, counts GUILD_TEXT children per category,
+        and updates any ``Channel.size`` that has drifted. Commits once when at least
+        one size changed.
+
+        Args:
+            discord_service: DiscordService used to read the guild's channels.
+
+        Returns:
+            List of ``{"id", "old", "new"}`` dicts for each corrected category
+            (empty if everything already matched).
+        """
+        channels = discord_service.list_guild_channels()
+        counts: dict[str, int] = {}
+        for c in channels:
+            if c.get("type") == DISCORD_CHANNEL_TYPE_TEXT and c.get("parent_id"):
+                counts[c["parent_id"]] = counts.get(c["parent_id"], 0) + 1
+
+        corrections = []
+        for category in self.repo.get_all():
+            real = counts.get(category.id, 0)
+            if category.size != real:
+                corrections.append({"id": category.id, "old": category.size, "new": real})
+                category.size = real
+        if corrections:
+            db.session.commit()
+            logger.info(f"Reconciled {len(corrections)} category size(s): {corrections}")
+        return corrections
+
+    def create_category(self, discord_service: DiscordService, type: str) -> Channel:
+        """Create a Discord category for a game type and register it.
+
+        The category is named per the admin-configured templates with the next
+        per-type sequence number, created on Discord, then stored locally with
+        ``size=0``.
+
+        Args:
+            discord_service: DiscordService used to create the Discord category.
+            type: Game type the category serves (``oneshot`` or ``campaign``).
+
+        Returns:
+            The created Channel (Discord category) record.
+
+        Raises:
+            ValidationError: If ``type`` is not a known game type.
+        """
+        from website.services.setting import SettingsService
+
+        templates = SettingsService().get_category_name_templates()
+        if type not in templates:
+            raise ValidationError("Unknown game type.", field="type")
+        next_n = self.repo.count_by_type(type) + 1
+        name = templates[type].format(n=next_n)
+        discord_id = discord_service.create_category(name)["id"]
+        channel = Channel(id=discord_id, type=type, size=0)
+        self.repo.add(channel)
+        db.session.commit()
+        logger.info(f"Created Discord category '{name}' (id={discord_id}, type={type})")
+        return channel
+
+    def auto_provision_if_full(self, discord_service: DiscordService, type: str) -> Channel | None:
+        """Create a new category for ``type`` when its least-full category is near the cap.
+
+        Reads the smallest category for the type; if even that one is at/above the
+        admin-configured auto-provision threshold (so every category of the type is
+        near full), provisions a fresh one. Also bootstraps a category for a type
+        that has none yet. A no-op otherwise.
+
+        Args:
+            discord_service: DiscordService used to create the category.
+            type: Game type to check.
+
+        Returns:
+            The newly created Channel, or ``None`` when no provisioning was needed.
+        """
+        from website.services.setting import SettingsService
+
+        threshold = SettingsService().get_category_auto_threshold()
+        smallest = self.repo.get_smallest_by_type(type)
+        if smallest is None or smallest.size >= threshold:
+            return self.create_category(discord_service, type)
+        return None
 
     def adjust_category_size(self, discord_service: DiscordService, game: Game) -> None:
         """Decrement category size when a game channel is deleted.

@@ -139,6 +139,66 @@ class TestSettingsService:
         db_session.commit()
         assert SettingsService().get_games_per_page() == GAMES_PER_PAGE
 
+    def test_category_auto_threshold_default(self, db_session):
+        """Unset category threshold falls back to the constant default."""
+        from config.constants import DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT
+
+        service = SettingsService()
+        assert service.get_category_auto_threshold() == DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT
+
+    def test_category_auto_threshold_round_trip(self, db_session):
+        """A stored category threshold is read back as an integer."""
+        service = SettingsService()
+        service.set_category_auto_threshold(40, updated_by_id="admin-1")
+        assert service.get_category_auto_threshold() == 40
+
+    def test_category_auto_threshold_rejects_invalid(self, db_session):
+        """Non-integer, non-positive and over-cap thresholds are rejected."""
+        from config.constants import DISCORD_CATEGORY_CHANNEL_LIMIT
+
+        service = SettingsService()
+        with pytest.raises(ValidationError):
+            service.set_category_auto_threshold("nope")
+        with pytest.raises(ValidationError):
+            service.set_category_auto_threshold(0)
+        with pytest.raises(ValidationError):
+            service.set_category_auto_threshold(DISCORD_CATEGORY_CHANNEL_LIMIT + 1)
+
+    def test_category_name_templates_default(self, db_session):
+        """Unset templates fall back to the code defaults."""
+        from config.constants import CATEGORY_NAME_TEMPLATES
+
+        service = SettingsService()
+        assert service.get_category_name_templates() == CATEGORY_NAME_TEMPLATES
+
+    def test_category_name_templates_round_trip(self, db_session):
+        """Stored templates are merged over the defaults, per type."""
+        from config.constants import GAME_TYPE_CAMPAIGN, GAME_TYPE_ONESHOT
+
+        service = SettingsService()
+        service.set_category_name_templates(
+            {
+                GAME_TYPE_CAMPAIGN: "CAMP {n}",
+                GAME_TYPE_ONESHOT: "OS {n}",
+            },
+            updated_by_id="admin-1",
+        )
+        templates = service.get_category_name_templates()
+        assert templates[GAME_TYPE_CAMPAIGN] == "CAMP {n}"
+        assert templates[GAME_TYPE_ONESHOT] == "OS {n}"
+
+    def test_category_name_templates_reject_invalid(self, db_session):
+        """Empty templates, missing {n}, and unknown types are rejected."""
+        from config.constants import GAME_TYPE_CAMPAIGN, GAME_TYPE_ONESHOT
+
+        service = SettingsService()
+        with pytest.raises(ValidationError):
+            service.set_category_name_templates({GAME_TYPE_CAMPAIGN: "   "})
+        with pytest.raises(ValidationError):
+            service.set_category_name_templates({GAME_TYPE_ONESHOT: "no placeholder"})
+        with pytest.raises(ValidationError):
+            service.set_category_name_templates({"unknown": "X {n}"})
+
     def test_get_effective_describes_all_keys(self, db_session):
         """get_effective() exposes env, override and effective values per key."""
         service = SettingsService()

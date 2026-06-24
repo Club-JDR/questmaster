@@ -25,6 +25,17 @@ class ChannelRepository(BaseRepository[Channel]):
         """
         return self.session.query(Channel).filter_by(type=type).order_by(Channel.size).first()
 
+    def count_by_type(self, type: str) -> int:
+        """Return how many categories exist for a game type.
+
+        Args:
+            type: Game type (oneshot or campaign).
+
+        Returns:
+            Number of categories registered for the type.
+        """
+        return self.session.query(Channel).filter_by(type=type).count()
+
     def increment_size(self, channel: Channel) -> None:
         """Increment the channel count of a category.
 

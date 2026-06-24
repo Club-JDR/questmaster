@@ -116,6 +116,35 @@ class TestDiscordService:
         )
         assert result["id"] == "channel123"
 
+    def test_create_category(self, discord_service, mock_bot):
+        """create_category forwards the verbatim name to the client."""
+        mock_bot.create_category.return_value = {"id": "cat123"}
+
+        result = discord_service.create_category("🎲 CAMPAGNES 1 📖")
+
+        mock_bot.create_category.assert_called_once_with("🎲 CAMPAGNES 1 📖")
+        assert result["id"] == "cat123"
+
+    def test_list_guild_channels(self, discord_service, mock_bot):
+        """list_guild_channels forwards to the client."""
+        mock_bot.list_guild_channels.return_value = [{"id": "1"}, {"id": "2"}]
+
+        result = discord_service.list_guild_channels()
+
+        mock_bot.list_guild_channels.assert_called_once_with()
+        assert len(result) == 2
+
+    def test_count_category_children(self, discord_service, mock_bot):
+        """count_category_children counts only text children of the category."""
+        mock_bot.list_guild_channels.return_value = [
+            {"type": 0, "parent_id": "cat"},
+            {"type": 0, "parent_id": "cat"},
+            {"type": 2, "parent_id": "cat"},  # voice — ignored
+            {"type": 0, "parent_id": "other"},  # other parent — ignored
+        ]
+
+        assert discord_service.count_category_children("cat") == 2
+
     def test_get_channel(self, discord_service, mock_bot):
         """Test getting channel data."""
         mock_bot.get_channel.return_value = {"id": "channel123", "parent_id": "cat456"}
