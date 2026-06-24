@@ -9,6 +9,7 @@ It lets Game Masters create games with all the details — name, system, number 
 - **Discord authentication** — users log in with their Discord account.
 - **Game management** — GMs create and manage one-shots or campaigns.
 - **Session tracking** — schedule sessions with calendar events.
+- **Personal dashboard** — an agenda-first landing page with each user's upcoming sessions and play statistics.
 - **Achievements** — trophy system for players and GMs.
 - **Discord integration** — automatic role and channel management on the server.
 

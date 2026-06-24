@@ -25,6 +25,7 @@ Repositories:
 | `VttRepository` | [`Vtt`](models.md#website.models.Vtt) | Virtual tabletop platform lookups |
 | `SettingRepository` | [`AppSetting`](models.md#website.models.AppSetting) | Runtime config override storage and lookups |
 | `DiscordMessageRepository` | [`DiscordMessage`](models.md#website.models.DiscordMessage) | Admin-sent Discord message queries (search + pagination) |
+| `PermissionGrantRepository` | [`PermissionGrant`](models.md#website.models.PermissionGrant) | RBAC grant lookups and subject (role/user) resolution |
 
 ## API Reference
 

@@ -8,13 +8,20 @@ views.
 
 ## Access
 
-The panel is restricted to **administrators**. A `before_request` guard on the admin
-blueprint rejects any request whose session is not an authenticated admin
-(`session["is_admin"]`), raising an `UnauthorizedError` (HTTP 403). The admin role is
-derived from Discord at login (the `DISCORD_ADMIN_ROLE_ID` role).
+The panel is open to **administrators** and to **delegated users** who hold at least one
+granted capability (see [Permissions](#permissions-rbac)). A `before_request` guard on the
+admin blueprint rejects any session that is neither an admin (`session["is_admin"]`) nor
+holds any permission, raising an `UnauthorizedError` (HTTP 403). The admin role is derived
+from Discord at login (the `DISCORD_ADMIN_ROLE_ID` role).
 
-Admins reach the panel from the **Admin** dropdown in the main navbar, which lists every
-sub-section. The same list is shown in the sidebar inside the panel.
+- **Admins** are superusers: they implicitly hold the full capability catalog and see
+  every sub-section.
+- **Delegated users** see — and can reach — only the sub-sections their granted
+  capabilities unlock. Each route is additionally fenced by a `require_permission`
+  decorator, so the panel guard alone is not enough to act on a section.
+
+The navbar **Admin** dropdown and the in-panel sidebar are filtered to the sections the
+current session may use.
 
 ## Sections
 
@@ -27,10 +34,11 @@ sub-section. The same list is shown in the sidebar inside the panel.
 | Badges | `/admin/trophies/` | CRUD for trophy **definitions** |
 | Systèmes | `/admin/systems/` | CRUD for RPG systems |
 | VTTs | `/admin/vtts/` | CRUD for virtual tabletops |
-| Catégories (salons) | `/admin/channels/` | CRUD for Discord channel categories |
+| Catégories (salons) | `/admin/channels/` | Manage Discord channel categories — create, auto-provision, reconcile sizes (see below) |
 | Journaux | `/admin/game-events/` | Read-only game audit trail (most recent events) |
 | Messages Discord | `/admin/discord/` | Manage postable channels; compose, send, edit and delete Discord messages (see below) |
-| Paramètres | `/admin/settings/` | Runtime configuration overrides (see below) |
+| Permissions | `/admin/permissions/` | Grant/revoke granular admin capabilities to Discord roles or users (RBAC, see below) |
+| Paramètres | `/admin/settings/` | Runtime configuration overrides and operational settings (see below) |
 
 List views support a search box (`?q=`) and pagination where relevant.
 
@@ -47,6 +55,39 @@ Trophy management is split in two:
       0** (quantity never drops below 1).
     - For trophies marked `unique=True`, the +1/−1 buttons are hidden and the row shows a
       *Unique* badge instead — a unique trophy cannot be awarded more than once.
+
+## Channel Categories
+
+The **Catégories (salons)** section (`/admin/channels/`) manages the Discord **categories**
+that game channels are grouped under. Each [`Channel`](architecture/models.md#website.models.Channel)
+row tracks a category's Discord ID, its game `type` (one-shot or campaign), and its current
+`size` (number of game channels inside it). Discord caps a category at **50 channels**, so
+the app spreads games across several categories per type.
+
+- **Create** (`/admin/channels/new`) — provisions a **real Discord category** (not just a
+  registered ID). It is named from the per-type template with the next sequence number
+  (e.g. `🎲 CAMPAGNES 2 📖`), created on Discord, then stored locally with `size = 0`.
+- **Recompter les salons** (`POST /admin/channels/reconcile`) — re-counts each category's
+  text channels on Discord and corrects any drifted `size`. Categories at or above the
+  auto-create threshold are flagged **« Presque pleine »** in the list.
+- **Edit / Delete** — adjust or remove a tracked category row.
+
+### Category settings & auto-provisioning
+
+The bottom of the page has a **Paramètres des catégories** form
+(`POST /admin/channels/settings`) with two DB-managed settings owned by
+[`SettingsService`](architecture/services.md#website.services.SettingsService):
+
+- **Seuil d'auto-création** — the per-category fill level (1…50) at which the type is
+  considered full.
+- **Modèles de nom** — one name template per game type; each must contain the `{n}`
+  sequence placeholder.
+
+A daily scheduler job (`monitor_category_capacity`) reconciles sizes and then, for each game
+type, **auto-provisions a fresh category** when every existing category of that type is at
+or above the threshold (it also bootstraps a first category for a type that has none yet).
+The category creation/auto-provision logic lives in
+[`ChannelService`](architecture/services.md#website.services.ChannelService).
 
 ## Discord Messages
 
@@ -94,14 +135,45 @@ Behaviour and guarantees (implemented in `DiscordMessageService`, which wraps
 - **Channels are validated.** The target must be one of the configured postable channels;
   a free-typed or unknown channel ID is rejected.
 
+## Permissions (RBAC)
+
+The **Permissions** section (`/admin/permissions/`) delegates slices of the admin panel to
+non-admin users without making them full administrators.
+
+- **Capabilities are a fixed catalog defined in code** (`website/permissions.py`) — stable
+  keys such as `vtt.manage`, `trophy.manage`, `discord.send` or `permissions.manage` that
+  the route decorators reference at compile time. Each capability unlocks one admin
+  sub-section.
+- **Grants — who holds what — live in the database** ([`PermissionGrant`](architecture/models.md#website.models.PermissionGrant)).
+  A grant ties one capability to a **subject**: either a Discord **role** (every member of
+  that role inherits it) or an individual **user**.
+
+The page lists every catalog capability with its current grants; admins can **grant** a
+capability to a role or user and **revoke** any grant. Granting an existing (capability,
+subject) pair is idempotent.
+
+Enforcement lives in
+[`PermissionService`](architecture/services.md#website.services.PermissionService):
+
+- **Admins implicitly hold the whole catalog.** For everyone else the effective set is the
+  union of grants matching the user's Discord role IDs and their own user ID.
+- A user's resolved permission set is **cached for 5 minutes** (mirroring Discord role
+  resolution). A *user*-subject grant change invalidates that user immediately; a *role*-
+  subject change propagates with the cache TTL.
+- The session's permissions filter the navbar/sidebar, and each route is fenced by a
+  `require_permission(<key>)` decorator — the panel guard alone never authorises an action.
+
 ## Settings
 
-The **Paramètres** section (`/admin/settings/`) manages runtime configuration overrides.
+The **Paramètres** section (`/admin/settings/`) manages runtime configuration overrides and
+fully DB-managed operational settings.
 
 !!! warning
     Changing these settings can break the application — the form is fenced in a red box.
     The currently effective value is shown under each field; leave a field empty to fall
     back to the environment value.
+
+### Configuration overrides (DB → env)
 
 A subset of operational Discord identifiers (guild, role and channel IDs) can be overridden
 at runtime and stored in the `app_setting` table, taking precedence over the
@@ -109,3 +181,19 @@ environment-backed `app.config`. Secrets (bot token, client secret, JWT key, dat
 are **never** overridable and always come from the environment. Resolution and the
 overridable allowlist live in
 [`SettingsService`](architecture/services.md#website.services.SettingsService).
+
+### Operational settings (fully DB-managed)
+
+These keys live only in the database (no environment fallback) and fall back to a code
+default when unset:
+
+| Setting | What it controls |
+| --- | --- |
+| Direct-permissions mode | When enabled, new games grant players access via per-channel permission overwrites instead of a dedicated Discord role |
+| Role auto-threshold | Guild role count at which the scheduler turns direct-permissions mode on automatically |
+| Dashboard agenda / open limits | Number of agenda and open-game items shown on the personalised landing dashboard |
+| Cards per page | Number of game cards shown per page on the public card grid |
+
+The Discord **category** auto-provisioning settings (auto-create threshold and per-type name
+templates) are also DB-managed by `SettingsService`, but their admin form lives on the
+[Channel Categories](#channel-categories) page rather than here.
