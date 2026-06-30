@@ -920,11 +920,12 @@ class GameService:
         game.players.remove(user)
 
         # Reopen if it was full
-        if (
+        reopened = (
             game.status == "closed"
             and len(game.players) < game.party_size
             and not game.party_selection
-        ):
+        )
+        if reopened:
             game.status = "open"
             log_game_event(
                 "edit",
@@ -934,6 +935,14 @@ class GameService:
 
         db.session.commit()
         logger.info(f"User {user.id} removed from Game {game.id}")
+
+        # Refresh the announcement embed so its title and register button reflect
+        # the reopened status.
+        if reopened and game.msg_id:
+            try:
+                self.discord.send_game_embed(game, embed_type="annonce")
+            except DiscordAPIError as e:
+                logger.warning(f"Failed to update embed on status change for game {game.id}: {e}")
 
         # Revoke channel access: dedicated role, or the per-member permission
         # overwrite when the game runs in direct-permission mode (no role).

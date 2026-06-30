@@ -103,7 +103,11 @@ class Discord:
         return self._request(endpoint=f"/guilds/{self.guild_id}/members/{user_id}", method="GET")
 
     def send_message(
-        self, content: str, channel_id: str, allowed_mentions: dict | None = None
+        self,
+        content: str,
+        channel_id: str,
+        allowed_mentions: dict | None = None,
+        components: list | None = None,
     ) -> dict:
         """Send a text message to a Discord channel.
 
@@ -113,6 +117,7 @@ class Discord:
             allowed_mentions: Optional Discord ``allowed_mentions`` object controlling
                 which mentions in ``content`` actually ping (e.g.
                 ``{"parse": ["users", "roles"]}``).
+            components: Optional Discord ``components`` list (action rows of buttons).
 
         Returns:
             Dict with the created message data.
@@ -122,6 +127,8 @@ class Discord:
         }
         if allowed_mentions is not None:
             payload["allowed_mentions"] = allowed_mentions
+        if components is not None:
+            payload["components"] = components
         return self._request(
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
@@ -135,56 +142,121 @@ class Discord:
         """
         return self._request(endpoint=f"/channels/{channel_id}/messages/{msg_id}", method="DELETE")
 
-    def send_embed_message(self, embed: dict, channel_id: str) -> dict:
-        """Send an embed message to a Discord channel.
+    def create_message(
+        self,
+        channel_id: str,
+        *,
+        content: str | None = None,
+        embeds: list | None = None,
+        components: list | None = None,
+    ) -> dict:
+        """Create a message with any combination of content, embeds and buttons.
 
         Args:
-            embed: Embed dict following Discord embed structure.
             channel_id: Target channel ID.
+            content: Plain-text body, or None to omit.
+            embeds: List of embed dicts (Discord caps a message at 10), or None.
+            components: Discord ``components`` list (action rows of buttons), or None.
 
         Returns:
             Dict with the created message data.
         """
-        payload = {"embeds": [embed]}
+        payload: dict = {}
+        if content is not None:
+            payload["content"] = content
+        if embeds is not None:
+            payload["embeds"] = embeds
+        if components is not None:
+            payload["components"] = components
         return self._request(
             endpoint=f"/channels/{channel_id}/messages", method="POST", json=payload
         )
 
-    def edit_message(self, msg_id: str, content: str, channel_id: str) -> dict:
+    def update_message(
+        self,
+        msg_id: str,
+        channel_id: str,
+        *,
+        content: str | None = None,
+        embeds: list | None = None,
+        components: list | None = None,
+    ) -> dict:
+        """Edit a message's content, embeds and/or buttons.
+
+        Any argument left as None is omitted from the payload (unchanged); pass an
+        empty string/list to clear a field.
+
+        Args:
+            msg_id: Message ID to edit.
+            channel_id: Channel containing the message.
+            content: New plain-text body (``""`` to clear), or None to leave as-is.
+            embeds: New list of embed dicts (``[]`` to clear), or None.
+            components: New ``components`` list (``[]`` to clear), or None.
+
+        Returns:
+            Dict with the updated message data.
+        """
+        payload: dict = {}
+        if content is not None:
+            payload["content"] = content
+        if embeds is not None:
+            payload["embeds"] = embeds
+        if components is not None:
+            payload["components"] = components
+        return self._request(
+            endpoint=f"/channels/{channel_id}/messages/{msg_id}",
+            method="PATCH",
+            json=payload,
+        )
+
+    def send_embed_message(
+        self, embed: dict, channel_id: str, components: list | None = None
+    ) -> dict:
+        """Send a single-embed message to a Discord channel.
+
+        Args:
+            embed: Embed dict following Discord embed structure.
+            channel_id: Target channel ID.
+            components: Optional Discord ``components`` list (action rows of buttons).
+
+        Returns:
+            Dict with the created message data.
+        """
+        return self.create_message(channel_id, embeds=[embed], components=components)
+
+    def edit_message(
+        self, msg_id: str, content: str, channel_id: str, components: list | None = None
+    ) -> dict:
         """Edit the text content of an existing message.
 
         Args:
             msg_id: Message ID to edit.
             content: New message content string.
             channel_id: Channel containing the message.
+            components: Optional Discord ``components`` list. Pass ``[]`` to clear
+                any existing buttons.
 
         Returns:
             Dict with the updated message data.
         """
-        payload = {"content": content}
-        return self._request(
-            endpoint=f"/channels/{channel_id}/messages/{msg_id}",
-            method="PATCH",
-            json=payload,
-        )
+        return self.update_message(msg_id, channel_id, content=content, components=components)
 
-    def edit_embed_message(self, msg_id: str, embed: dict, channel_id: str) -> dict:
-        """Edit an existing embed message.
+    def edit_embed_message(
+        self, msg_id: str, embed: dict, channel_id: str, components: list | None = None
+    ) -> dict:
+        """Edit an existing message to a single embed.
 
         Args:
             msg_id: Message ID to edit.
             embed: Updated embed dict.
             channel_id: Channel containing the message.
+            components: Optional Discord ``components`` list. Pass ``[]`` to clear
+                any existing buttons.
 
         Returns:
             Dict with the updated message data.
         """
-        payload = {"embeds": [embed]}
-        return self._request(
-            endpoint=f"/channels/{channel_id}/messages/{msg_id}",
-            method="PATCH",
-            json=payload,
-        )
+        return self.update_message(msg_id, channel_id, embeds=[embed], components=components)
 
     def pin_message(self, msg_id: str, channel_id: str) -> dict:
         """Pin an existing message.

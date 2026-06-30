@@ -91,13 +91,14 @@ The category creation/auto-provision logic lives in
 
 ## Discord Messages
 
-The **Messages Discord** section lets admins send, edit and delete Discord messages —
-plain text or rich embeds — to a configured channel, without leaving the app. It also
-manages the list of channels that can be posted into.
+The **Messages Discord** section lets admins send, edit and delete Discord messages to a
+configured channel, without leaving the app. A message combines, in any mix, plain
+**content**, one or more **embeds** and a row of link **buttons**. It also manages the list
+of channels that can be posted into.
 
 The list page (`/admin/discord/`) has two actions in its header — **Ajouter un salon** and
 **Composer un message** — and shows the **postable channels** first, then the **sent
-messages**.
+messages grouped by channel**.
 
 ### Postable channels
 
@@ -115,14 +116,33 @@ by [`SettingsService`](architecture/services.md#website.services.SettingsService
 - **List** (`/admin/discord/`) — every message sent through the panel is recorded as a
   [`DiscordMessage`](architecture/models.md#website.models.DiscordMessage) so it can be
   found, edited or deleted later, without anyone needing to remember Discord message IDs.
-  The list is searchable and paginated.
-- **Compose** (`/admin/discord/compose`) — pick a target channel, choose **Texte** (plain
-  `content`) or **Embed** (title, description, color, footer, image URL), and send.
+  The list is searchable and paginated, and messages are **grouped by channel**.
+- **Compose** (`/admin/discord/compose`) — a two-pane editor (form + **live preview**):
+  pick a target channel, optionally type **content**, add up to **10 embeds** (title,
+  description, color, footer, image URL) and up to **5 link buttons** (label + URL). A
+  message must have at least content or one embed.
 - **Edit** (`/admin/discord/<id>/edit`) — change the message and push the update to
-  Discord. The **channel and message type are fixed** once sent (Discord messages cannot
-  move channels or change kind).
+  Discord. The **channel can be changed**: because Discord cannot move a message, doing so
+  re-sends it to the new channel and deletes the original.
 - **Delete** (`POST /admin/discord/<id>/delete`) — removes the message from Discord and
   deletes the stored record.
+
+There is **no message "type"**: a message is simply the combination of content, embeds and
+buttons it carries (`is_embed` is derived from whether it has any embeds). Embeds and
+buttons are stored as JSON lists on the `DiscordMessage` row.
+
+### Link buttons
+
+Buttons are **link buttons** (Discord button style 5): a label plus an http(s) URL that
+opens when clicked. They need no interaction handling, so they work over the REST API
+without a gateway connection. Button helpers live in
+[`website/utils/discord_components.py`](architecture/utils.md) (`clean_link_buttons`
+validates the rows; `build_link_button_rows` builds the Discord `components` payload).
+
+Game announcement embeds also carry a link button: the former inline "Pour s'inscrire" URL
+field is now an **S'inscrire** button to the game page. It is omitted while the game is
+**closed** (complet) and restored when the game reopens, kept in sync whenever the
+announcement embed is refreshed.
 
 Behaviour and guarantees (implemented in `DiscordMessageService`, which wraps
 [`DiscordService`](architecture/services.md#website.services.DiscordService)):

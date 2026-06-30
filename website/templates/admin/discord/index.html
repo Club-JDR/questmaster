@@ -48,22 +48,24 @@
 <h2 class="font-semibold text-base mb-2">Messages envoyés</h2>
 {{ ui.search_bar(search, 'Rechercher par titre ou contenu…') }}
 
-<div class="card bg-base-100 shadow-md overflow-x-auto">
+{% for channel_label, messages in pagination.items|groupby('channel_label') %}
+<div class="card bg-base-100 shadow-md overflow-x-auto mb-4">
   <table class="table table-zebra">
+    <caption class="text-left font-semibold text-sm px-4 pt-3 flex items-center gap-2">
+      <i class="ph ph-hash" aria-hidden="true"></i> {{ channel_label or 'Salon inconnu' }}
+    </caption>
     <thead>
       <tr>
         <th>Envoyé le</th>
-        <th>Salon</th>
         <th>Type</th>
         <th>Aperçu</th>
         <th class="text-right">Actions</th>
       </tr>
     </thead>
     <tbody>
-      {% for message in pagination.items %}
+      {% for message in messages %}
       <tr>
         <td class="whitespace-nowrap text-sm">{{ message.sent_at|format_datetime('%Y-%m-%d %H:%M') }}</td>
-        <td class="text-xs">{{ message.channel_label or message.channel_id }}</td>
         <td>
           {% if message.is_embed %}
           <span class="badge badge-info badge-sm">Embed</span>
@@ -72,7 +74,7 @@
           {% endif %}
         </td>
         <td class="max-w-xs truncate">
-          {{ (message.title or message.content or '')|truncate(80) }}
+          {{ (message.preview or '')|truncate(80) }}
         </td>
         <td class="text-right whitespace-nowrap">
           {{ ui.edit_link(url_for('admin.edit_discord_message', message_id=message.id)) }}
@@ -80,12 +82,13 @@
              'Supprimer ce message (aussi sur Discord) ?') }}
         </td>
       </tr>
-      {% else %}
-      {{ ui.empty_row(5, 'Aucun message envoyé.') }}
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% else %}
+<div class="card bg-base-100 shadow-md p-4 text-sm text-base-content/60">Aucun message envoyé.</div>
+{% endfor %}
 
 {{ ui.pager(pagination, search) }}
 {% endblock %}

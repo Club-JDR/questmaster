@@ -81,8 +81,6 @@ def _get_session_type(game) -> str:
 
 def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
     """Return list of embed fields, applying strikethrough if closed."""
-    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
-
     fields = [
         {"name": "MJ", "value": game.gm.name, "inline": True},
         {"name": "Système", "value": game.system.name, "inline": True},
@@ -90,7 +88,6 @@ def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
         {"name": "Date", "value": game.date.strftime(HUMAN_TIMEFORMAT), "inline": True},
         {"name": "Durée", "value": game.length, "inline": True},
         {"name": "Avertissement", "value": restriction_msg},
-        {"name": "Pour s'inscrire :", "value": game_url},
     ]
 
     if game.status == "closed":
@@ -98,6 +95,30 @@ def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
             field["value"] = f"~~{field['value']}~~"
 
     return fields
+
+
+def build_annonce_components(game) -> list[dict]:
+    """Build the link-button row shown below a game announcement embed.
+
+    Replaces the former inline "Pour s'inscrire" URL field with a Discord link
+    button pointing to the game's announcement page. A closed game shows no button
+    (returning an empty list, which clears it on edit); reopening the game restores
+    it.
+
+    Args:
+        game: Game instance.
+
+    Returns:
+        A Discord ``components`` list with a single "S'inscrire" link button, or an
+        empty list when the game is closed.
+    """
+    from website.utils.discord_components import build_link_button_rows
+
+    if game.status == "closed":
+        return []
+
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
+    return build_link_button_rows([{"label": "S'inscrire", "url": game_url}])
 
 
 def _get_embed_color(game) -> int:

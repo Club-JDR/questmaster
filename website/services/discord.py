@@ -330,7 +330,11 @@ class DiscordService:
     # -------------------------------------------------------------------------
 
     def send_message(
-        self, content: str, channel_id: str, allowed_mentions: dict | None = None
+        self,
+        content: str,
+        channel_id: str,
+        allowed_mentions: dict | None = None,
+        components: list | None = None,
     ) -> dict:
         """Send a plain text message to a channel.
 
@@ -339,6 +343,7 @@ class DiscordService:
             channel_id: Target channel ID.
             allowed_mentions: Optional Discord ``allowed_mentions`` object controlling
                 which mentions in ``content`` actually ping.
+            components: Optional Discord ``components`` list (action rows of buttons).
 
         Returns:
             Created message data including 'id'.
@@ -346,7 +351,9 @@ class DiscordService:
         Raises:
             DiscordAPIError: If the API request fails.
         """
-        return self.bot.send_message(content, channel_id, allowed_mentions=allowed_mentions)
+        return self.bot.send_message(
+            content, channel_id, allowed_mentions=allowed_mentions, components=components
+        )
 
     def delete_message(self, message_id: str, channel_id: str) -> dict:
         """Delete a message.
@@ -363,12 +370,13 @@ class DiscordService:
         """
         return self.bot.delete_message(message_id, channel_id)
 
-    def send_embed(self, embed: dict, channel_id: str) -> dict:
+    def send_embed(self, embed: dict, channel_id: str, components: list | None = None) -> dict:
         """Send an embed message to a channel.
 
         Args:
             embed: Embed data dictionary.
             channel_id: Target channel ID.
+            components: Optional Discord ``components`` list (action rows of buttons).
 
         Returns:
             Created message data including 'id'.
@@ -376,15 +384,45 @@ class DiscordService:
         Raises:
             DiscordAPIError: If the API request fails.
         """
-        return self.bot.send_embed_message(embed, channel_id)
+        return self.bot.send_embed_message(embed, channel_id, components=components)
 
-    def edit_message(self, message_id: str, content: str, channel_id: str) -> dict:
+    def create_message(
+        self,
+        channel_id: str,
+        *,
+        content: str | None = None,
+        embeds: list | None = None,
+        components: list | None = None,
+    ) -> dict:
+        """Create a message combining content, embeds and/or buttons.
+
+        Args:
+            channel_id: Target channel ID.
+            content: Plain-text body, or None to omit.
+            embeds: List of embed dicts (Discord caps a message at 10), or None.
+            components: Discord ``components`` list (action rows of buttons), or None.
+
+        Returns:
+            Created message data including 'id'.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.create_message(
+            channel_id, content=content, embeds=embeds, components=components
+        )
+
+    def edit_message(
+        self, message_id: str, content: str, channel_id: str, components: list | None = None
+    ) -> dict:
         """Edit the text content of an existing plain message.
 
         Args:
             message_id: Message ID to edit.
             content: New message content.
             channel_id: Channel containing the message.
+            components: Optional Discord ``components`` list. Pass ``[]`` to clear
+                any existing buttons.
 
         Returns:
             Updated message data.
@@ -392,15 +430,19 @@ class DiscordService:
         Raises:
             DiscordAPIError: If the API request fails.
         """
-        return self.bot.edit_message(message_id, content, channel_id)
+        return self.bot.edit_message(message_id, content, channel_id, components=components)
 
-    def edit_embed(self, message_id: str, embed: dict, channel_id: str) -> dict:
+    def edit_embed(
+        self, message_id: str, embed: dict, channel_id: str, components: list | None = None
+    ) -> dict:
         """Edit an existing embed message.
 
         Args:
             message_id: Message ID to edit.
             embed: New embed data dictionary.
             channel_id: Channel containing the message.
+            components: Optional Discord ``components`` list. Pass ``[]`` to clear
+                any existing buttons.
 
         Returns:
             Updated message data.
@@ -408,7 +450,38 @@ class DiscordService:
         Raises:
             DiscordAPIError: If the API request fails.
         """
-        return self.bot.edit_embed_message(message_id, embed, channel_id)
+        return self.bot.edit_embed_message(message_id, embed, channel_id, components=components)
+
+    def update_message(
+        self,
+        message_id: str,
+        channel_id: str,
+        *,
+        content: str | None = None,
+        embeds: list | None = None,
+        components: list | None = None,
+    ) -> dict:
+        """Edit a message's content, embeds and/or buttons.
+
+        Any argument left as None is omitted (unchanged); pass an empty
+        string/list to clear a field.
+
+        Args:
+            message_id: Message ID to edit.
+            channel_id: Channel containing the message.
+            content: New plain-text body (``""`` to clear), or None to leave as-is.
+            embeds: New list of embed dicts (``[]`` to clear), or None.
+            components: New ``components`` list (``[]`` to clear), or None.
+
+        Returns:
+            Updated message data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.update_message(
+            message_id, channel_id, content=content, embeds=embeds, components=components
+        )
 
     def pin_message(self, message_id: str, channel_id: str) -> dict:
         """Pin a message to a channel.
@@ -466,6 +539,7 @@ class DiscordService:
         from website.utils.game_embeds import (
             build_add_session_embed,
             build_alert_embed,
+            build_annonce_components,
             build_annonce_details_embed,
             build_annonce_embed,
             build_delete_session_embed,
@@ -496,9 +570,13 @@ class DiscordService:
             alert_message=alert_message,
         )
 
+        # The announcement embed carries a link button to the game page (replacing
+        # the old inline "Pour s'inscrire" URL field); other embeds have no buttons.
+        components = build_annonce_components(game) if embed_type == "annonce" else None
+
         if embed_type == "annonce" and game.msg_id:
-            response = self.edit_embed(game.msg_id, embed, target)
+            response = self.edit_embed(game.msg_id, embed, target, components=components)
         else:
-            response = self.send_embed(embed, target)
+            response = self.send_embed(embed, target, components=components)
 
         return response["id"]

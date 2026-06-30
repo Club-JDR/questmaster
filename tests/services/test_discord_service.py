@@ -174,7 +174,7 @@ class TestDiscordService:
         result = discord_service.send_message("Hello!", "channel123")
 
         mock_bot.send_message.assert_called_once_with(
-            "Hello!", "channel123", allowed_mentions=None
+            "Hello!", "channel123", allowed_mentions=None, components=None
         )
         assert result["id"] == "msg123"
 
@@ -186,7 +186,7 @@ class TestDiscordService:
         discord_service.send_message("Hi <@1>", "channel123", allowed_mentions=allowed)
 
         mock_bot.send_message.assert_called_once_with(
-            "Hi <@1>", "channel123", allowed_mentions=allowed
+            "Hi <@1>", "channel123", allowed_mentions=allowed, components=None
         )
 
     def test_delete_message(self, discord_service, mock_bot):
@@ -205,7 +205,7 @@ class TestDiscordService:
 
         result = discord_service.send_embed(embed, "channel123")
 
-        mock_bot.send_embed_message.assert_called_once_with(embed, "channel123")
+        mock_bot.send_embed_message.assert_called_once_with(embed, "channel123", components=None)
         assert result["id"] == "msg123"
 
     def test_edit_embed(self, discord_service, mock_bot):
@@ -215,7 +215,9 @@ class TestDiscordService:
 
         result = discord_service.edit_embed("msg123", embed, "channel456")
 
-        mock_bot.edit_embed_message.assert_called_once_with("msg123", embed, "channel456")
+        mock_bot.edit_embed_message.assert_called_once_with(
+            "msg123", embed, "channel456", components=None
+        )
         assert result["id"] == "msg123"
 
     def test_pin_message(self, discord_service, mock_bot):

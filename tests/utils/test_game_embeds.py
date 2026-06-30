@@ -26,6 +26,7 @@ from website.utils.game_embeds import (
     _get_session_type,
     build_add_session_embed,
     build_alert_embed,
+    build_annonce_components,
     build_annonce_details_embed,
     build_annonce_embed,
     build_delete_session_embed,
@@ -215,10 +216,10 @@ class TestGetEmbedColor:
 
 
 class TestBuildEmbedFields:
-    def test_returns_seven_fields(self):
+    def test_returns_six_fields(self):
         game = _make_game()
         fields = _build_embed_fields(game, "OS", ":green_circle: Tout public")
-        assert len(fields) == 7
+        assert len(fields) == 6
 
     def test_field_names(self):
         game = _make_game()
@@ -231,8 +232,13 @@ class TestBuildEmbedFields:
             "Date",
             "Durée",
             "Avertissement",
-            "Pour s'inscrire :",
         ]
+
+    def test_no_inline_registration_link(self):
+        """The registration link moved to a button, not an inline field."""
+        game = _make_game(slug="my-game")
+        fields = _build_embed_fields(game, "OS", "restriction")
+        assert all("inscrire" not in f["name"].lower() for f in fields)
 
     def test_gm_name_in_fields(self):
         game = _make_game(gm=SimpleNamespace(name="Alice"))
@@ -248,11 +254,6 @@ class TestBuildEmbedFields:
         game = _make_game()
         fields = _build_embed_fields(game, "Campagne", "restriction")
         assert fields[2]["value"] == "Campagne"
-
-    def test_game_url_in_fields(self):
-        game = _make_game(slug="my-game")
-        fields = _build_embed_fields(game, "OS", "restriction")
-        assert f"{SITE_BASE_URL}/annonces/my-game/" in fields[6]["value"]
 
     def test_closed_game_strikethrough(self):
         game = _make_game(status="closed")
@@ -332,6 +333,35 @@ class TestBuildAnnonceEmbed:
             game = _make_game(img="ftp://example.com/image.png")
             embed, _ = build_annonce_embed(game)
             assert "image" not in embed
+
+
+# ---------------------------------------------------------------------------
+# build_annonce_components
+# ---------------------------------------------------------------------------
+
+
+class TestBuildAnnonceComponents:
+    def test_returns_single_link_button(self):
+        game = _make_game(slug="my-game")
+        components = build_annonce_components(game)
+        assert len(components) == 1
+        buttons = components[0]["components"]
+        assert len(buttons) == 1
+        assert buttons[0]["style"] == 5  # link button
+        assert buttons[0]["label"] == "S'inscrire"
+
+    def test_button_points_to_game_url(self):
+        game = _make_game(slug="my-game")
+        components = build_annonce_components(game)
+        assert components[0]["components"][0]["url"] == f"{SITE_BASE_URL}/annonces/my-game/"
+
+    def test_closed_game_has_no_button(self):
+        game = _make_game(status="closed")
+        assert build_annonce_components(game) == []
+
+    def test_open_game_has_button(self):
+        game = _make_game(status="open")
+        assert build_annonce_components(game) != []
 
 
 # ---------------------------------------------------------------------------

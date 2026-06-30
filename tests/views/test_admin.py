@@ -648,10 +648,8 @@ def mock_discord_msg_api(monkeypatch):
     import website.views.admin.discord_messages as dm
 
     mock = MagicMock()
-    mock.send_message.return_value = {"id": "msg-plain-1"}
-    mock.send_embed.return_value = {"id": "msg-embed-1"}
-    mock.edit_message.return_value = {}
-    mock.edit_embed.return_value = {}
+    mock.create_message.return_value = {"id": "msg-new-1"}
+    mock.update_message.return_value = {}
     mock.delete_message.return_value = {}
     monkeypatch.setattr(dm.discord_message_service, "discord", mock)
     return mock
@@ -660,16 +658,19 @@ def mock_discord_msg_api(monkeypatch):
 def test_compose_plain_message(
     admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
 ):
+    mock_discord_msg_api.create_message.return_value = {"id": "msg-plain-1"}
     response = admin_client.post(
         "/admin/discord/compose",
-        data={"channel": post_channel, "type": "plain", "content": "Hello world"},
+        data={"channel": post_channel, "content": "Hello world"},
     )
     assert response.status_code == 302
-    mock_discord_msg_api.send_message.assert_called_once_with("Hello world", post_channel)
+    mock_discord_msg_api.create_message.assert_called_once_with(
+        post_channel, content="Hello world", embeds=None, components=[]
+    )
     message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-plain-1").first()
     assert message is not None
-    assert message.type == "plain"
     assert message.content == "Hello world"
+    assert message.embeds is None
     assert message.channel_id == post_channel
     assert message.channel_label == "Annonces"
 
@@ -677,23 +678,83 @@ def test_compose_plain_message(
 def test_compose_embed_message(
     admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
 ):
+    mock_discord_msg_api.create_message.return_value = {"id": "msg-embed-1"}
     response = admin_client.post(
         "/admin/discord/compose",
         data={
             "channel": post_channel,
-            "type": "embed",
-            "title": "Embed title",
-            "description": "Embed body",
-            "color": "#00ff00",
+            "embed_title": "Embed title",
+            "embed_description": "Embed body",
+            "embed_color": "#00ff00",
         },
     )
     assert response.status_code == 302
-    mock_discord_msg_api.send_embed.assert_called_once()
+    sent_embeds = mock_discord_msg_api.create_message.call_args.kwargs["embeds"]
+    assert sent_embeds[0]["title"] == "Embed title"
+    assert sent_embeds[0]["color"] == 0x00FF00
     message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-embed-1").first()
     assert message is not None
-    assert message.type == "embed"
-    assert message.title == "Embed title"
-    assert message.color == 0x00FF00
+    assert message.is_embed
+    assert message.embeds[0]["title"] == "Embed title"
+    assert message.embeds[0]["color"] == 0x00FF00
+
+
+def test_compose_content_and_multi_embed_with_buttons(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    mock_discord_msg_api.create_message.return_value = {"id": "msg-multi-1"}
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={
+            "channel": post_channel,
+            "content": "Heads up",
+            "embed_title": ["First", "Second"],
+            "embed_description": ["", "Body"],
+            "embed_color": ["#00ff00", "#0000ff"],
+            "button_label": ["Site", ""],
+            "button_url": ["https://example.com", ""],
+        },
+    )
+    assert response.status_code == 302
+    call = mock_discord_msg_api.create_message.call_args
+    assert call.kwargs["content"] == "Heads up"
+    assert len(call.kwargs["embeds"]) == 2
+    assert call.kwargs["components"][0]["components"][0]["url"] == "https://example.com"
+    message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-multi-1").first()
+    assert message.content == "Heads up"
+    assert len(message.embeds) == 2
+    assert message.buttons == [{"label": "Site", "url": "https://example.com"}]
+
+
+def test_compose_empty_message_rejected(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    before = db_session.query(DiscordMessage).count()
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={"channel": post_channel, "content": ""},
+    )
+    assert response.status_code == 200
+    mock_discord_msg_api.create_message.assert_not_called()
+    assert db_session.query(DiscordMessage).count() == before
+
+
+def test_compose_invalid_button_url_rejected(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    before = db_session.query(DiscordMessage).count()
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={
+            "channel": post_channel,
+            "content": "Hi",
+            "button_label": "Bad",
+            "button_url": "not-a-url",
+        },
+    )
+    assert response.status_code == 200
+    mock_discord_msg_api.create_message.assert_not_called()
+    assert db_session.query(DiscordMessage).count() == before
 
 
 def test_compose_unknown_channel_rejected(
@@ -702,11 +763,11 @@ def test_compose_unknown_channel_rejected(
     before = db_session.query(DiscordMessage).count()
     response = admin_client.post(
         "/admin/discord/compose",
-        data={"channel": "NOT_A_CHANNEL", "type": "plain", "content": "x"},
+        data={"channel": "NOT_A_CHANNEL", "content": "x"},
     )
     # Validation error -> form re-rendered, nothing sent or persisted.
     assert response.status_code == 200
-    mock_discord_msg_api.send_message.assert_not_called()
+    mock_discord_msg_api.create_message.assert_not_called()
     assert db_session.query(DiscordMessage).count() == before
 
 
@@ -715,31 +776,63 @@ def test_compose_discord_error_not_persisted(
 ):
     from website.exceptions import DiscordAPIError
 
-    mock_discord_msg_api.send_message.side_effect = DiscordAPIError("boom", status_code=500)
+    mock_discord_msg_api.create_message.side_effect = DiscordAPIError("boom", status_code=500)
     before = db_session.query(DiscordMessage).count()
     response = admin_client.post(
         "/admin/discord/compose",
-        data={"channel": post_channel, "type": "plain", "content": "Hello"},
+        data={"channel": post_channel, "content": "Hello"},
     )
     assert response.status_code == 200
     assert db_session.query(DiscordMessage).count() == before
 
 
-def test_edit_embed_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
-    message = DiscordMessageFactory(db_session, type="embed", title="Old title")
+def test_edit_embed_message(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    message = DiscordMessageFactory(
+        db_session, channel_id=post_channel, embeds=[{"title": "Old title"}]
+    )
     response = admin_client.post(
         f"/admin/discord/{message.id}/edit",
-        data={"type": "embed", "title": "New title", "description": "Updated"},
+        data={"channel": post_channel, "embed_title": "New title", "embed_description": "Updated"},
     )
     assert response.status_code == 302
-    mock_discord_msg_api.edit_embed.assert_called_once()
+    mock_discord_msg_api.update_message.assert_called_once()
     db_session.refresh(message)
-    assert message.title == "New title"
-    assert message.description == "Updated"
+    assert message.embeds[0]["title"] == "New title"
+    assert message.embeds[0]["description"] == "Updated"
+
+
+def test_edit_change_channel_resends_and_deletes(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    from website.services.setting import SettingsService
+
+    settings = SettingsService()
+    settings.add_post_channel("Autre", "999000111222333444")
+    message = DiscordMessageFactory(
+        db_session,
+        channel_id=post_channel,
+        discord_msg_id="old-msg",
+        embeds=[{"title": "Hi"}],
+    )
+    mock_discord_msg_api.create_message.return_value = {"id": "moved-msg"}
+
+    response = admin_client.post(
+        f"/admin/discord/{message.id}/edit",
+        data={"channel": "999000111222333444", "embed_title": "Hi"},
+    )
+    assert response.status_code == 302
+    mock_discord_msg_api.create_message.assert_called_once()
+    mock_discord_msg_api.delete_message.assert_called_once_with("old-msg", post_channel)
+    db_session.refresh(message)
+    assert message.channel_id == "999000111222333444"
+    assert message.discord_msg_id == "moved-msg"
+    settings.remove_post_channel("999000111222333444")
 
 
 def test_delete_discord_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
-    message = DiscordMessageFactory(db_session, type="embed")
+    message = DiscordMessageFactory(db_session)
     message_id = message.id
     response = admin_client.post(f"/admin/discord/{message_id}/delete")
     assert response.status_code == 302

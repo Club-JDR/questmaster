@@ -121,6 +121,14 @@ CATEGORY_NAME_TEMPLATES = {
     GAME_TYPE_ONESHOT: "🎲 ONE SHOTS {n} 📖",
 }
 
+# Discord message components (buttons)
+DISCORD_COMPONENT_ACTION_ROW = 1  # Component type: action row (button container).
+DISCORD_COMPONENT_BUTTON = 2  # Component type: button.
+DISCORD_BUTTON_STYLE_LINK = 5  # Button style: link (opens a URL, no interaction).
+DISCORD_MAX_BUTTONS_PER_ROW = 5  # Discord cap: buttons per action row.
+DISCORD_BUTTON_LABEL_MAX = 80  # Discord cap: characters in a button label.
+DISCORD_EMBED_LIMIT = 10  # Discord cap: embeds per message.
+
 # Site
 SITE_BASE_URL = "https://questmaster.club-jdr.fr"
 

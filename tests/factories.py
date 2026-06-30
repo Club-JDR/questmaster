@@ -275,9 +275,7 @@ def DiscordMessageFactory(session, **overrides):
         "discord_msg_id": _unique_discord_id(),
         "channel_id": "555000111222333444",
         "channel_label": "Annonces",
-        "type": "embed",
-        "title": "Test title",
-        "description": "Test description",
+        "embeds": [{"title": "Test title", "description": "Test description"}],
     }
     defaults.update(overrides)
     message = DiscordMessage(**defaults)
