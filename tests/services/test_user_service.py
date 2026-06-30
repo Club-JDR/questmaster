@@ -112,6 +112,68 @@ class TestUserService:
         assert stored.name == "RealName"
         assert stored.username == "realname"
 
+    def test_search_matches_username(self, db_session):
+        user = UserFactory(db_session, name="Display", username="zsearch-handle")
+        service = UserService()
+        results = service.search("zsearch-handle")
+        assert user.id in [u.id for u in results]
+
+    def test_search_matches_name(self, db_session):
+        user = UserFactory(db_session, name="ZsearchDisplayName", username="other")
+        service = UserService()
+        results = service.search("ZsearchDisplayName")
+        assert user.id in [u.id for u in results]
+
+    def test_search_matches_id(self, db_session):
+        user = UserFactory(db_session)
+        service = UserService()
+        results = service.search(user.id)
+        assert user.id in [u.id for u in results]
+
+    def test_search_blank_returns_empty(self, db_session):
+        service = UserService()
+        assert service.search("") == []
+        assert service.search("   ") == []
+
+    def test_search_respects_limit(self, db_session):
+        for _ in range(5):
+            UserFactory(db_session, name="ZlimitUser", username=f"zlimit-{random.random()}")
+        service = UserService()
+        results = service.search("ZlimitUser", limit=3)
+        assert len(results) <= 3
+
+    def test_resolve_input_numeric_id(self, db_session):
+        user_id = str(random.randint(10**17, 10**18 - 1))
+        service = UserService()
+        resolved = service.resolve_input(user_id)
+        assert resolved is not None
+        assert resolved.id == user_id
+
+    def test_resolve_input_unique_username(self, db_session):
+        user = UserFactory(db_session, name="Whoever", username="zresolve-unique")
+        service = UserService()
+        resolved = service.resolve_input("zresolve-unique")
+        assert resolved is not None
+        assert resolved.id == user.id
+
+    def test_resolve_input_ambiguous_returns_none(self, db_session):
+        UserFactory(db_session, name="ZambiguousName", username="zamb-1")
+        UserFactory(db_session, name="ZambiguousName", username="zamb-2")
+        service = UserService()
+        assert service.resolve_input("ZambiguousName") is None
+
+    def test_resolve_input_strips_at_and_whitespace(self, db_session):
+        user = UserFactory(db_session, name="Atuser", username="zatuser-handle")
+        service = UserService()
+        resolved = service.resolve_input("  @zatuser-handle  ")
+        assert resolved is not None
+        assert resolved.id == user.id
+
+    def test_resolve_input_empty_returns_none(self, db_session):
+        service = UserService()
+        assert service.resolve_input("") is None
+        assert service.resolve_input("   @ ") is None
+
     def test_persist_profile_reactivate_clears_flag(self, db_session):
         """persist_profile(reactivate=True) clears the inactive flag and sets name."""
         user = UserFactory(db_session, name="Inconnu", not_player_as_of=datetime(2025, 1, 1))

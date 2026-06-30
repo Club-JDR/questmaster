@@ -7,10 +7,21 @@
 </h1>
 
 <form method="GET" action="{{ url_for('misc.list_user_badges') }}" class="mb-6">
-  <div class="join flex max-w-md mx-auto">
-    <input type="text" id="userIdInput" class="input input-bordered join-item flex-1" name="user_id"
-      placeholder="Entrez l'ID de l'utilisateur" aria-label="ID de l'utilisateur" required>
-    <button class="btn btn-primary join-item" type="submit">Rechercher</button>
+  <div data-user-typeahead class="max-w-md mx-auto">
+    <div class="flex gap-2 items-start">
+      <div class="relative flex-1">
+        <label for="badgeUserSearch" class="sr-only">Rechercher un·e utilisateur·rice</label>
+        <input type="text" id="badgeUserSearch" class="input input-bordered w-full"
+          placeholder="Nom d'utilisateur·rice ou ID Discord"
+          role="combobox" aria-expanded="false" aria-autocomplete="list"
+          aria-controls="badgeUserSearchList" autocomplete="off">
+        <ul id="badgeUserSearchList" role="listbox" aria-label="Suggestions"
+          class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden"></ul>
+      </div>
+      <button class="btn btn-primary" type="submit">Rechercher</button>
+    </div>
+    <input type="hidden" name="user_id">
+    <p class="text-error text-xs mt-2 hidden" data-typeahead-error role="alert"></p>
   </div>
 </form>
 
@@ -33,4 +44,9 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="/static/js/user-typeahead.js" defer></script>
 {% endblock %}

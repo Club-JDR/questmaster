@@ -28,6 +28,24 @@ def get_current_user():
     return jsonify(user.to_dict())
 
 
+@users_bp.route("/users/search/", methods=["GET"])
+@api_login_required
+def search_users():
+    """Search users by id, name, or Discord username for typeahead.
+
+    Query parameters:
+        q: Search term (matched case-insensitively).
+
+    Returns:
+        JSON array of minimal user objects (id, name, username, avatar).
+    """
+    term = request.args.get("q", "")
+    users = user_service.search(term, limit=10)
+    return jsonify(
+        [{"id": u.id, "name": u.name, "username": u.username, "avatar": u.avatar} for u in users]
+    )
+
+
 @users_bp.route("/users/<user_id>/", methods=["GET"])
 @api_login_required
 def get_user(user_id):

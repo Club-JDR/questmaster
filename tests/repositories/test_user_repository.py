@@ -1,10 +1,7 @@
 from datetime import datetime
 
-import pytest
-
 from tests.constants import TEST_ADMIN_USER_ID
 from tests.factories import UserFactory
-from website.models import User
 from website.repositories.user import UserRepository
 
 
@@ -90,3 +87,10 @@ class TestUserRepository:
     def test_get_by_ids_empty(self, db_session):
         repo = UserRepository()
         assert repo.get_by_ids([]) == []
+
+    def test_paginate_matches_by_username(self, db_session):
+        """paginate(search=...) finds a user by username alone (search_columns)."""
+        repo = UserRepository()
+        user = UserFactory(db_session, name="Display Name", username="zzunique-handle")
+        result = repo.paginate(page=1, per_page=10, search="zzunique-handle")
+        assert user.id in [u.id for u in result.items]

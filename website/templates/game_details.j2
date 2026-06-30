@@ -696,14 +696,27 @@
         <input type="radio" name="player_tabs" role="tab" class="tab" aria-label="Ajouter" />
         <div role="tabpanel" class="tab-content py-4">
           <p class="text-sm text-base-content/70 mb-4">
-            Ajoutez via <a href="https://support.discord.com/hc/fr/articles/206346498" target="_blank"
+            Recherchez par nom d'utilisateur·rice, ou collez un
+            <a href="https://support.discord.com/hc/fr/articles/206346498" target="_blank"
               rel="noopener noreferrer" class="link link-primary">ID Discord</a>.
           </p>
-          <div class="flex gap-2">
-            <input type="text" class="input input-bordered flex-1" placeholder="ID Discord" aria-label="ID Discord" name="discord_id">
-            <button type="submit" class="btn btn-primary gap-1" name="action" value="add">
-              <i class="ph ph-user-plus"></i> Ajouter
-            </button>
+          <div data-user-typeahead>
+            <div class="flex gap-2 items-start">
+              <div class="relative flex-1">
+                <label for="user-search" class="sr-only">Rechercher un·e joueur·euse</label>
+                <input type="text" id="user-search" class="input input-bordered w-full"
+                  placeholder="Nom d'utilisateur·rice ou ID Discord"
+                  role="combobox" aria-expanded="false" aria-autocomplete="list"
+                  aria-controls="user-search-list" autocomplete="off">
+                <ul id="user-search-list" role="listbox" aria-label="Suggestions"
+                  class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden"></ul>
+              </div>
+              <button type="submit" class="btn btn-primary gap-1" name="action" value="add">
+                <i class="ph ph-user-plus"></i> Ajouter
+              </button>
+            </div>
+            <input type="hidden" name="discord_id">
+            <p class="text-error text-xs mt-2 hidden" data-typeahead-error role="alert"></p>
           </div>
         </div>
       </div>
@@ -887,6 +900,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
 {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button@2.6.16/dist/atcb.min.js"></script>
 <script src="/static/js/game-events.js"></script>
+<script src="/static/js/user-typeahead.js" defer></script>
 <script>
   function openCalendar(btn) {
     atcb_action({

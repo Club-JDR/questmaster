@@ -8,7 +8,7 @@ class UserRepository(BaseRepository[User]):
     """Repository for User entities."""
 
     model_class = User
-    search_columns = [User.id, User.name]
+    search_columns = [User.id, User.name, User.username]
 
     def base_query(self):
         """Return all users ordered by display name."""

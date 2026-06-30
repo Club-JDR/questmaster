@@ -67,6 +67,38 @@ class TestGetUser:
         assert response.status_code == 404
 
 
+class TestSearchUsers:
+    """Tests for GET /api/v1/users/search/."""
+
+    def test_requires_auth(self, api_client):
+        """Endpoint requires authentication."""
+        response = api_client.get("/api/v1/users/search/?q=foo")
+        assert response.status_code == 403
+
+    @patch("website.api.users.user_service")
+    def test_returns_matches(self, mock_service, api_client, auth_headers_user):
+        """Returns minimal user objects matching the query."""
+        user = MagicMock()
+        user.id = "123456789012345678"
+        user.name = "Some User"
+        user.username = "someuser"
+        user.avatar = "/static/img/avatar.webp"
+        mock_service.search.return_value = [user]
+
+        response = api_client.get("/api/v1/users/search/?q=some", headers=auth_headers_user)
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data == [
+            {
+                "id": "123456789012345678",
+                "name": "Some User",
+                "username": "someuser",
+                "avatar": "/static/img/avatar.webp",
+            }
+        ]
+        mock_service.search.assert_called_once_with("some", limit=10)
+
+
 class TestGetUserBadges:
     """Tests for GET /api/v1/users/<user_id>/badges/."""
 

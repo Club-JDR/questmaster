@@ -1,5 +1,6 @@
 """User service for user-related business logic."""
 
+import re
 from datetime import datetime, timezone
 
 from website.exceptions import NotFoundError
@@ -84,6 +85,43 @@ class UserService:
             Pagination result of User instances.
         """
         return self.repo.paginate(page=page, per_page=per_page, search=search)
+
+    def search(self, term: str, limit: int = 10) -> list[User]:
+        """Return users matching a search term (id, name, or username).
+
+        Args:
+            term: Free-text search term (matched case-insensitively).
+            limit: Maximum number of results to return.
+
+        Returns:
+            List of matching User instances (possibly empty).
+        """
+        if not term or not term.strip():
+            return []
+        return self.repo.paginate(page=1, per_page=limit, search=term.strip()).items
+
+    def resolve_input(self, value: str) -> User | None:
+        """Resolve a Discord ID or a username/display name to a known user.
+
+        A purely numeric value is treated as a Discord ID (created on the fly
+        via :meth:`get_or_create`, preserving the existing behaviour). Any other
+        value is matched against existing users; it resolves only when exactly
+        one user matches.
+
+        Args:
+            value: Raw form input (Discord ID, username, or display name).
+
+        Returns:
+            The resolved User, or None when no unambiguous match exists.
+        """
+        value = (value or "").strip().lstrip("@")
+        if not value:
+            return None
+        if re.fullmatch(r"\d{17,21}", value):
+            user, _ = self.get_or_create(value)
+            return user
+        matches = self.repo.paginate(page=1, per_page=2, search=value).items
+        return matches[0] if len(matches) == 1 else None
 
     def get_active_users(self) -> list[User]:
         """Get all users not marked as inactive.
