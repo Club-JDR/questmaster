@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 
 from website.exceptions import ValidationError
-from website.models.game import CLASSIFICATION_SCHEMA, Game
+from website.models.game import Game
 
 
 @pytest.fixture

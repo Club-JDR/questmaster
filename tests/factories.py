@@ -17,7 +17,6 @@ from decimal import Decimal
 from uuid import uuid4
 
 from tests.constants import TEST_ADMIN_USER_ID
-from website import db
 from website.models import (
     Channel,
     DiscordMessage,

@@ -15,7 +15,6 @@ from website.exceptions import (
     NotFoundError,
     ValidationError,
 )
-from website.models import Game
 from website.services.game import GameService
 
 

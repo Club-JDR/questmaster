@@ -8,8 +8,6 @@ formatting functions that only read attributes.
 from datetime import datetime
 from types import SimpleNamespace
 
-import pytest
-
 from config.constants import (
     EMBED_COLOR_BLUE,
     EMBED_COLOR_DEFAULT,

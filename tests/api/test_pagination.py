@@ -1,7 +1,5 @@
 """Tests for pagination utilities."""
 
-import pytest
-
 from config.constants import API_DEFAULT_PAGE, API_DEFAULT_PER_PAGE, API_MAX_PER_PAGE
 from website.api.pagination import paginated_response, parse_pagination_args
 

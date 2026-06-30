@@ -1,7 +1,6 @@
 """Tests for TrophyRepository."""
 
 from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
-from website.models.trophy import UserTrophy
 from website.repositories.trophy import TrophyRepository
 
 

@@ -9,7 +9,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from tests.api.conftest import make_jwt_token
-from tests.constants import TEST_GM_USER_ID, TEST_REGULAR_USER_ID
+from tests.constants import TEST_GM_USER_ID
 
 
 class TestSessionFallbackAuth:

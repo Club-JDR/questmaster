@@ -1,8 +1,5 @@
 """Tests for GameEventRepository."""
 
-import pytest
-
-from website.models import GameEvent
 from website.repositories.game_event import GameEventRepository
 
 

@@ -42,9 +42,7 @@ test = [
     "blinker==1.9.0",
 ]
 lint = [
-    "black==26.5.1",
-    "isort==8.0.1",
-    "flake8==7.3.0",
+    "ruff==0.14.5",
     "pydoclint==0.8.6",
 ]
 docs = [
@@ -59,14 +57,18 @@ markers = [
     "integration: tests requiring live external services (Discord API)",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 99
-target-version = ["py314"]
+target-version = "py314"
 
-[tool.isort]
-profile = "black"
-line_length = 99
-known_first_party = ["website", "config", "tests"]
+[tool.ruff.lint]
+select = ["F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["website", "config", "tests"]
 
 [tool.pydoclint]
 style = "google"

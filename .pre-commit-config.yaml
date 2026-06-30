@@ -1,27 +1,16 @@
 repos:
-  - repo: https://github.com/pycqa/isort
-    rev: 8.0.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.5
     hooks:
-      - id: isort
-        args: ["--check", "website/", "config/", "tests/"]
+      - id: ruff
+        args: ["--fix", "website/", "config/", "tests/"]
         pass_filenames: false
-
-  - repo: https://github.com/psf/black
-    rev: 26.5.1
-    hooks:
-      - id: black
-        args: ["--line-length", "99", "website/", "config/", "tests/"]
+      - id: ruff-format
+        args: ["website/", "config/", "tests/"]
         pass_filenames: false
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-        pass_filenames: false
-        args: ["website/", "--config", ".flake8"]
 
   - repo: https://github.com/jsh9/pydoclint
-    rev: 0.8.3
+    rev: 0.8.6
     hooks:
       - id: pydoclint
         args: ["--style=google", "website/"]

@@ -47,4 +47,4 @@ class PermissionGrant(db.Model, SerializableMixin):
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     def __repr__(self):
-        return f"<PermissionGrant {self.permission_key} " f"{self.subject_type}:{self.subject_id}>"
+        return f"<PermissionGrant {self.permission_key} {self.subject_type}:{self.subject_id}>"

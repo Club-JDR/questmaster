@@ -8,7 +8,6 @@ keeps the full open-games browser.
 from datetime import datetime
 
 from tests.factories import GameFactory, GameSessionFactory
-from website.extensions import cache
 
 
 class TestDashboard:

@@ -4,8 +4,6 @@ Tests filter-building functions in isolation (pure logic and SQLAlchemy
 filter construction) and integration tests for the paginated query helpers.
 """
 
-from decimal import Decimal
-
 import pytest
 from werkzeug.datastructures import MultiDict
 
@@ -15,7 +13,6 @@ from config.constants import (
     GAME_STATUS_DRAFT,
     GAME_STATUS_OPEN,
     GAME_TYPE_CAMPAIGN,
-    GAME_TYPE_ONESHOT,
 )
 from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
 from tests.factories import GameFactory

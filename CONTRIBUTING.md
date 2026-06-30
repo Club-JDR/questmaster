@@ -21,9 +21,8 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 
 ## Code style
 
-- Format with [Black](https://github.com/psf/black): `black .`
-- Sort imports with [isort](https://pycqa.github.io/isort/): `isort .`
-- Lint with [flake8](https://flake8.pycqa.org/): `flake8 website/`
+- Format with [Ruff](https://docs.astral.sh/ruff/): `ruff format .`
+- Lint and sort imports with [Ruff](https://docs.astral.sh/ruff/): `ruff check .`
 - Lint docstrings (google-style) with [pydoclint](https://github.com/jsh9/pydoclint): `pydoclint website/`
 
 A [pre-commit](https://pre-commit.com/) configuration is provided. Install the hooks to run these checks automatically before each commit:
@@ -90,7 +89,7 @@ Setting the `CI` environment variable has the same effect as `--drop-db`.
 Every pull request is checked by the CI pipeline which runs:
 
 - **Conventional commit check** — all commits must follow the [conventional commits](https://www.conventionalcommits.org/) format.
-- **Linting** — import ordering with [isort](https://pycqa.github.io/isort/), formatting with [Black](https://github.com/psf/black), static analysis with [flake8](https://flake8.pycqa.org/) and docstring lint with [pydoclint](https://github.com/jsh9/pydoclint).
+- **Linting** — formatting, import ordering, and static analysis with [Ruff](https://docs.astral.sh/ruff/) and docstring lint with [pydoclint](https://github.com/jsh9/pydoclint).
 - **Frontend build** — `npm ci && npm run build` runs in a dedicated Docker stage; built assets are copied into the app image. No Node.js setup is needed in CI.
 - **Tests and coverage** — pytest runs with coverage reported to [SonarCloud](https://sonarcloud.io/dashboard?id=Club-JDR_questmaster) for code quality analysis.
 

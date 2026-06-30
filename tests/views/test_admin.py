@@ -513,7 +513,7 @@ def test_edit_user(admin_client, db_session, mock_csrf):
 
 def test_user_games_lists_gm_and_player_games(admin_client, db_session, default_system):
     user = UserFactory(db_session)
-    gm_game = GameFactory(db_session, name="GMed Game", gm_id=user.id, system_id=default_system.id)
+    GameFactory(db_session, name="GMed Game", gm_id=user.id, system_id=default_system.id)
     played_game = GameFactory(db_session, name="Played Game", system_id=default_system.id)
     played_game.players.append(user)
     db_session.flush()
