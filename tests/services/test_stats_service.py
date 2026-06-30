@@ -2,12 +2,14 @@
 
 from datetime import datetime
 
-from config.constants import BADGE_OS_ID
+from config.constants import BADGE_OS_ID, RESTRICTION_LABELS
 from tests.factories import (
     GameFactory,
     GameSessionFactory,
+    SystemFactory,
     UserFactory,
     UserTrophyFactory,
+    VttFactory,
 )
 from website.services.stats import ROLE_GM, ROLE_PLAYER, StatsService
 
@@ -106,3 +108,105 @@ class TestStatsService:
         assert data["agenda"]["upcoming"] == []
         assert data["stats"]["games_count"] == 0
         assert data["stats"]["role"]["sessions"] == 0
+
+
+def _game_with(
+    db_session, system, *, type="oneshot", restriction="all", vtt=None, players=0, sessions=0
+):
+    """Build a game with N players and N sessions, returning the flushed game."""
+    gm = UserFactory(db_session)
+    game = GameFactory(
+        db_session,
+        type=type,
+        restriction=restriction,
+        gm_id=gm.id,
+        system_id=system.id,
+        vtt_id=vtt.id if vtt else None,
+    )
+    for _ in range(players):
+        game.players.append(UserFactory(db_session))
+    for _ in range(sessions):
+        GameSessionFactory(db_session, game_id=game.id, start=PAST[0], end=PAST[1])
+    db_session.flush()
+    db_session.refresh(game)
+    return game
+
+
+class TestGlobalStats:
+    """Pure aggregation helpers run on a controlled game list (DB-independent)."""
+
+    def test_role_ratios_count_engagements(self, db_session, default_system):
+        # 1 GM slot + 2 player slots -> GM share 33%; sessions 2 GM vs 2*2 player -> 33%.
+        game = _game_with(db_session, default_system, players=2, sessions=2)
+        role = StatsService()._global_role_ratios([game])
+        assert role["parties"] == 33
+        assert role["sessions"] == 33
+
+    def test_global_top_ranks_by_games_split_by_type(self, db_session, default_system):
+        popular = SystemFactory(db_session)
+        niche = SystemFactory(db_session)
+        games = [
+            _game_with(db_session, popular, type="oneshot"),
+            _game_with(db_session, popular, type="oneshot"),
+            _game_with(db_session, popular, type="campaign"),
+            _game_with(db_session, niche, type="oneshot"),
+        ]
+        top = StatsService()._global_top(games, lambda g: g.system.name)
+
+        assert top["all"][0] == {"name": popular.name, "n": 3}
+        assert {r["name"]: r["n"] for r in top["all"]} == {popular.name: 3, niche.name: 1}
+        assert {r["name"]: r["n"] for r in top["oneshot"]} == {popular.name: 2, niche.name: 1}
+        assert top["campaign"] == [{"name": popular.name, "n": 1}]
+
+    def test_global_top_skips_missing_key(self, db_session, default_system):
+        vtt = VttFactory(db_session)
+        games = [
+            _game_with(db_session, default_system, vtt=vtt),
+            _game_with(db_session, default_system, vtt=None),  # no VTT
+        ]
+        top = StatsService()._global_top(games, lambda g: g.vtt.name if g.vtt else None)
+        assert top["all"] == [{"name": vtt.name, "n": 1}]
+
+    def test_play_hours_sum_ended_sessions(self, db_session, default_system):
+        game = _game_with(db_session, default_system, sessions=2)  # two ended 3h sessions
+        play = StatsService()._global_play_hours([game], datetime(2027, 1, 1))
+        assert play == {"hours": 6, "sessions": 2}
+
+    def test_restriction_split(self, db_session, default_system):
+        games = [
+            _game_with(db_session, default_system, restriction="all"),
+            _game_with(db_session, default_system, restriction="all"),
+            _game_with(db_session, default_system, restriction="18+"),
+        ]
+        split = StatsService()._restriction_split(games)
+        rows = {r["label"]: r for r in split["rows"]}
+
+        assert split["total"] == 3
+        assert len(split["rows"]) == len(RESTRICTION_LABELS)
+        assert rows["Tout public"]["n"] == 2
+        assert rows["Tout public"]["pct"] == 67
+        assert rows["18 ans et +"]["n"] == 1
+
+    def test_get_global_stats_shape(self, db_session, default_system):
+        _game_with(db_session, default_system, players=2, sessions=2)
+        data = StatsService().get_global_stats()
+
+        assert set(data) == {
+            "catalogue",
+            "play",
+            "type",
+            "role",
+            "top_systems",
+            "top_vtts",
+            "rythme",
+            "restriction",
+        }
+        assert len(data["rythme"]["labels"]) == 12
+        assert len(data["restriction"]["rows"]) == len(RESTRICTION_LABELS)
+        assert set(data["top_systems"]) == {"all", "oneshot", "campaign"}
+        assert len(data["top_systems"]["all"]) <= 10
+        assert set(data["play"]) == {"hours", "sessions"}
+        # Catalogue values are integers reflecting at least the rows we created.
+        assert data["catalogue"]["games"] >= 1
+        assert data["catalogue"]["systems"] >= 1
+        assert all(isinstance(v, int) for v in data["catalogue"].values())

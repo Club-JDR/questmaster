@@ -1,130 +1,279 @@
 {% extends 'base.j2' %}
-{% block title %}Statistiques mensuelles{% endblock %}
+{% from '_stats_charts.j2' import donut, rythme, ranked_list, C_BLUE, C_GREEN, C_YELLOW, C_RED with context %}
+{% block title %}Statistiques{% endblock %}
 {% block content %}
 
 <h1 class="text-center font-black text-2xl my-4">
-  <i class="ph ph-chart-line"></i> Statistiques — {{ month }}/{{ year }}
+  <i class="ph ph-chart-line"></i> Statistiques
 </h1>
 
-<div class="flex justify-between mb-6">
-  <a class="btn btn-primary btn-sm gap-1" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
-    <i class="ph ph-caret-left"></i> Mois précédent
-  </a>
-  <a class="btn btn-primary btn-sm gap-1" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
-    Mois suivant <i class="ph ph-caret-right"></i>
-  </a>
-</div>
+{# Two views (app-wide overview / monthly detail) split into tabs so the page
+shows one at a time instead of one long stacked column. CSS-only radio tabs:
+keyboard-operable and accessible (role=tab / role=tabpanel). #}
+<div role="tablist" class="tabs tabs-border justify-center mb-2">
 
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-  <div class="card bg-base-100 shadow-md text-center">
-    <div class="card-body">
-      <h2 class="card-title justify-center text-oneshot-accent"><i class="ph ph-scroll"></i> Sessions OS</h2>
-      <p class="text-5xl font-black text-oneshot-accent">{{ num_os }}</p>
-    </div>
-  </div>
-  <div class="card bg-base-100 shadow-md text-center">
-    <div class="card-body">
-      <h2 class="card-title justify-center text-campaign-accent"><i class="ph ph-books"></i> Sessions de Campagnes</h2>
-      <p class="text-5xl font-black text-campaign-accent">{{ num_campaign }}</p>
-    </div>
-  </div>
-  <div class="card bg-base-100 shadow-md text-center">
-    <div class="card-body">
-      <h2 class="card-title justify-center"><i class="ph ph-chart-bar"></i> Total</h2>
-      <p class="text-5xl font-black">{{ num_os + num_campaign }}</p>
-    </div>
-  </div>
-</div>
+  {# ====================== Tab 1 — app-wide overview ====================== #}
+  <input type="radio" name="stats_tabs" role="tab" class="tab" aria-label="Vue d'ensemble" checked>
+  <section role="tabpanel" data-stats-root class="tab-content pt-6">
+    <p class="text-center text-sm text-base-content/60 mb-4">Sur l'ensemble des annonces, depuis le début</p>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
-  <div class="card bg-base-100 shadow-md">
-    <div class="card-body">
-      <h2 class="card-title text-oneshot-accent"><i class="ph ph-scroll"></i> Liste des OS</h2>
-      {% for system, games in os.items() %}
-      <div class="mt-3">
-        <h3 class="font-semibold text-oneshot-accent text-sm mb-1">{{ system }}
-          <span class="text-base-content/70 font-normal">({{ games|length }} scénario{% if games|length > 1 %}s{% endif %})</span>
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="table table-sm table-zebra w-full">
-            <thead>
-              <tr><th>#</th><th>Nom de la session</th><th>MJ</th><th>Sessions</th></tr>
-            </thead>
-            <tbody>
-              {% for slug, info in os[system].items() | sort(attribute='1.count', reverse=true) %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ info.name }}</td>
-                <td>{{ info.gm }}</td>
-                <td>{{ info.count }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+    {# ---------- Catalogue tiles (centered flex so the odd 7th tile stays symmetric) ---------- #}
+    <div class="flex flex-wrap justify-center gap-3 mb-6">
+      {% set tiles = [
+      ('ph-dice-six', overview.catalogue.games, 'Annonces'),
+      ('ph-calendar-check', overview.catalogue.sessions, 'Sessions'),
+      ('ph-hourglass', '~' ~ overview.play.hours ~ ' h', 'Temps de jeu'),
+      ('ph-users', overview.catalogue.users, 'Membres'),
+      ('ph-cube', overview.catalogue.systems, 'Systèmes'),
+      ('ph-desktop', overview.catalogue.vtts, 'VTTs'),
+      ('ph-trophy', overview.catalogue.trophies, 'Badges'),
+      ] %}
+      {% for icon, value, label in tiles %}
+      <div class="card bg-base-100 shadow-md text-center w-32">
+        <div class="card-body p-3">
+          <i class="ph {{ icon }} text-2xl text-base-content/40" aria-hidden="true"></i>
+          <p class="text-3xl font-black">{{ value }}</p>
+          <p class="text-xs text-base-content/60">{{ label }}</p>
         </div>
       </div>
       {% endfor %}
     </div>
-  </div>
 
-  <div class="card bg-base-100 shadow-md">
-    <div class="card-body">
-      <h2 class="card-title text-campaign-accent"><i class="ph ph-books"></i> Liste des campagnes</h2>
-      {% for system, games in campaign.items() %}
-      <div class="mt-3">
-        <h3 class="font-semibold text-campaign-accent text-sm mb-1">{{ system }}
-          <span class="text-base-content/70 font-normal">({{ games|length }} campagne{% if games|length > 1 %}s{% endif %})</span>
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="table table-sm table-zebra w-full">
-            <thead>
-              <tr><th>#</th><th>Nom de la session</th><th>MJ</th><th>Sessions</th></tr>
-            </thead>
-            <tbody>
-              {% for slug, info in campaign[system].items() | sort(attribute='1.count', reverse=true) %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ info.name }}</td>
-                <td>{{ info.gm }}</td>
-                <td>{{ info.count }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+    {# ---------- Sessions / Annonces toggle ---------- #}
+    <div class="flex justify-center mb-4">
+      <div class="join" role="group" aria-label="Base de calcul des ratios">
+        <button type="button" class="join-item btn btn-sm" data-stat-toggle="parties">Par annonce</button>
+        <button type="button" class="join-item btn btn-sm" data-stat-toggle="sessions">Par session</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+      {# ---------- Repartition donuts ---------- #}
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+          <h2 class="card-title justify-center text-base"><i class="ph ph-chart-pie-slice"></i> Répartition</h2>
+          <div class="grid grid-cols-2 gap-4 mt-2">
+            {{ donut("Type d'annonce", "OS", "Campagne", overview.type.sessions, overview.type.parties, C_GREEN, C_BLUE)
+            }}
+            {{ donut("Rôle", "MJ", "Joueur·euse", overview.role.sessions, overview.role.parties, C_BLUE, C_GREEN) }}
+          </div>
         </div>
       </div>
+
+      {# ---------- Activity rhythm ---------- #}
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+          <h2 class="card-title justify-center text-base"><i class="ph ph-wave-sine"></i> Activité (12 mois)</h2>
+          <div class="mt-2">
+            {{ rythme("sessions", False, overview.rythme.labels, overview.rythme.sessions) }}
+            {{ rythme("parties", True, overview.rythme.labels, overview.rythme.parties) }}
+          </div>
+        </div>
+      </div>
+
+      {# ---------- Restriction split (pie: green=all, yellow=16+, red=18+) ---------- #}
+      {% set rcolors = {'all': C_GREEN, '16+': C_YELLOW, '18+': C_RED} %}
+      {% set total = overview.restriction.total %}
+      {% set pie = namespace(acc=0, stops=[]) %}
+      {% for r in overview.restriction.rows %}
+      {% set start = (pie.acc / (total or 1) * 100) %}
+      {% set pie.acc = pie.acc + r.n %}
+      {% set _ = pie.stops.append(rcolors[r.value] ~ ' ' ~ start | round(2) ~ '% ' ~ (pie.acc / (total or 1) * 100) |
+      round(2) ~ '%') %}
       {% endfor %}
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body items-center">
+          <h2 class="card-title justify-center text-base"><i class="ph ph-shield-check"></i> Avertissements</h2>
+          <div class="size-28 rounded-full mt-1" role="img"
+            aria-label="Répartition par avertissement : {% for r in overview.restriction.rows %}{{ r.label }} {{ r.pct }}%{{ ', ' if not loop.last }}{% endfor %}"
+            style="background: {% if total %}conic-gradient({{ pie.stops | join(', ') }}){% else %}var(--fallback-b2, oklch(0.9 0 0)){% endif %}">
+          </div>
+          <ul class="space-y-1 mt-2 w-full text-xs">
+            {% for r in overview.restriction.rows %}
+            <li class="flex items-center gap-2">
+              <span class="inline-block size-2.5 rounded-full shrink-0"
+                style="background: {{ rcolors[r.value] }}"></span>
+              <span class="flex-1">{{ r.label }}</span>
+              <span class="font-mono text-base-content/60">{{ r.n }} · {{ r.pct }}%</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
 
-</div>
+    {# ---------- Top 10 systems & VTTs (by number of games, type-filtered) ---------- #}
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body">
+        <div class="flex flex-col items-center gap-1 mb-3">
+          <h2 class="card-title text-base"><i class="ph ph-ranking"></i> Top 10</h2>
+          <select data-top-type-select class="select select-sm select-bordered"
+            aria-label="Filtrer le classement par type de partie">
+            <option value="all" selected>Toutes les annonces</option>
+            <option value="oneshot">One shots</option>
+            <option value="campaign">Campagnes</option>
+          </select>
+          <span class="text-xs text-base-content/50">par nombre d'annonces</span>
+        </div>
+        {% for t in ['all', 'oneshot', 'campaign'] %}
+        <div data-topgroup="{{ t }}" class="{{ 'hidden' if t != 'all' }}">
+          <div class="grid grid-cols-2 gap-x-8 gap-y-2">
+            {{ ranked_list("Systèmes", overview.top_systems[t]) }}
+            {{ ranked_list("VTTs", overview.top_vtts[t]) }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
 
-<div class="card bg-base-100 shadow-md">
-  <div class="card-body">
-    <h2 class="card-title justify-center"><i class="ph ph-trophy"></i> Classement des MJs</h2>
-    <div class="overflow-x-auto">
-      <table class="table table-zebra text-center">
-        <thead>
-          <tr><th>#</th><th>MJ</th><th>Sessions</th></tr>
-        </thead>
-        <tbody>
-          {% for mj, count in mjs %}
-          <tr>
-            <td>
-              {% if loop.index == 1 %}🥇
-              {% elif loop.index == 2 %}🥈
-              {% elif loop.index == 3 %}🥉
-              {% else %}{{ loop.index }}{% endif %}
-            </td>
-            <td>{{ mj }}</td>
-            <td>{{ count }}</td>
-          </tr>
+  {# ====================== Tab 2 — monthly breakdown ====================== #}
+  <input type="radio" name="stats_tabs" role="tab" class="tab" aria-label="Détail mensuel">
+  <section role="tabpanel" class="tab-content pt-6">
+    <h2 class="font-bold text-lg mb-4 text-center">{{ month }}/{{ year }}</h2>
+
+    <div class="flex justify-between mb-6">
+      <a class="btn btn-primary btn-sm gap-1" href="{{ url_for('stats.get_stats', year=prev_year, month=prev_month) }}">
+        <i class="ph ph-caret-left"></i> Mois précédent
+      </a>
+      <a class="btn btn-primary btn-sm gap-1" href="{{ url_for('stats.get_stats', year=next_year, month=next_month) }}">
+        Mois suivant <i class="ph ph-caret-right"></i>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="card bg-base-100 shadow-md text-center">
+        <div class="card-body">
+          <h3 class="card-title justify-center text-oneshot-accent"><i class="ph ph-scroll"></i> Sessions OS</h3>
+          <p class="text-5xl font-black text-oneshot-accent">{{ num_os }}</p>
+        </div>
+      </div>
+      <div class="card bg-base-100 shadow-md text-center">
+        <div class="card-body">
+          <h3 class="card-title justify-center text-campaign-accent"><i class="ph ph-books"></i> Sessions de Campagnes
+          </h3>
+          <p class="text-5xl font-black text-campaign-accent">{{ num_campaign }}</p>
+        </div>
+      </div>
+      <div class="card bg-base-100 shadow-md text-center">
+        <div class="card-body">
+          <h3 class="card-title justify-center"><i class="ph ph-chart-bar"></i> Total</h3>
+          <p class="text-5xl font-black">{{ num_os + num_campaign }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+          <h3 class="card-title text-oneshot-accent"><i class="ph ph-scroll"></i> Liste des OS</h3>
+          {% for system, games in os.items() %}
+          <div class="mt-3">
+            <h4 class="font-semibold text-oneshot-accent text-sm mb-1">{{ system }}
+              <span class="text-base-content/70 font-normal">({{ games|length }} scénario{% if games|length > 1 %}s{%
+                endif %})</span>
+            </h4>
+            <div class="overflow-x-auto">
+              <table class="table table-sm table-zebra w-full">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nom de la session</th>
+                    <th>MJ</th>
+                    <th>Sessions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for slug, info in os[system].items() | sort(attribute='1.count', reverse=true) %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ info.name }}</td>
+                    <td>{{ info.gm }}</td>
+                    <td>{{ info.count }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+      </div>
+
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+          <h3 class="card-title text-campaign-accent"><i class="ph ph-books"></i> Liste des campagnes</h3>
+          {% for system, games in campaign.items() %}
+          <div class="mt-3">
+            <h4 class="font-semibold text-campaign-accent text-sm mb-1">{{ system }}
+              <span class="text-base-content/70 font-normal">({{ games|length }} campagne{% if games|length > 1 %}s{%
+                endif %})</span>
+            </h4>
+            <div class="overflow-x-auto">
+              <table class="table table-sm table-zebra w-full">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nom de la session</th>
+                    <th>MJ</th>
+                    <th>Sessions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for slug, info in campaign[system].items() | sort(attribute='1.count', reverse=true) %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ info.name }}</td>
+                    <td>{{ info.gm }}</td>
+                    <td>{{ info.count }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
     </div>
-  </div>
+
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body">
+        <h3 class="card-title justify-center"><i class="ph ph-trophy"></i> Classement des MJs</h3>
+        <div class="overflow-x-auto">
+          <table class="table table-zebra text-center">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>MJ</th>
+                <th>Sessions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for mj, count in mjs %}
+              <tr>
+                <td>
+                  {% if loop.index == 1 %}🥇
+                  {% elif loop.index == 2 %}🥈
+                  {% elif loop.index == 3 %}🥉
+                  {% else %}{{ loop.index }}{% endif %}
+                </td>
+                <td>{{ mj }}</td>
+                <td>{{ count }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
+{% endblock %}
+{% block scripts %}{{ super() }}
+<script src="/static/js/stats.js"></script>
 {% endblock %}

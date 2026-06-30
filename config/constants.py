@@ -166,6 +166,14 @@ DASHBOARD_RYTHME_MONTHS = 12  # Months of activity shown in the "Rythme" chart.
 DASHBOARD_TOP_SYSTEMS = 3  # Number of systems listed in each "Top systèmes" ranking.
 DASHBOARD_STATS_CACHE_TIMEOUT = 300  # Seconds to cache a user's computed dashboard stats.
 
+# Global statistics (app-wide /stats page).
+STATS_TOP_GLOBAL = 10  # Items listed in each global "Top systèmes / VTTs" ranking.
+RESTRICTION_LABELS = {
+    RESTRICTION_ALL: "Tout public",
+    RESTRICTION_16_PLUS: "16 ans et +",
+    RESTRICTION_18_PLUS: "18 ans et +",
+}
+
 # Routes
 GAME_DETAILS_ROUTE = "annonces.get_game_details"
 SEARCH_GAMES_ROUTE = "annonces.search_games"

@@ -195,7 +195,7 @@ class SettingsService:
             return []
         try:
             items = json.loads(setting.value)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             logger.warning("Stored post channels are not valid JSON; ignoring.")
             return []
         return [
@@ -357,7 +357,7 @@ class SettingsService:
         """
         try:
             value = int(threshold)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             raise ValidationError("Threshold must be an integer.", field="threshold")
         if value <= 0:
             raise ValidationError("Threshold must be a positive integer.", field="threshold")
@@ -400,7 +400,7 @@ class SettingsService:
         """
         try:
             parsed = int(value)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             raise ValidationError("La valeur doit être un entier.", field=field)
         if parsed <= 0 or parsed > maximum:
             raise ValidationError(
@@ -533,7 +533,7 @@ class SettingsService:
         if setting and setting.value:
             try:
                 data = json.loads(setting.value)
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 logger.warning(
                     "Stored category name templates are not valid JSON; using defaults."
                 )

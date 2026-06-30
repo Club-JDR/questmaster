@@ -19,10 +19,18 @@ from config.constants import (
     DASHBOARD_STATS_CACHE_TIMEOUT,
     DASHBOARD_TOP_SYSTEMS,
     DEFAULT_AVATAR,
+    GAME_TYPE_CAMPAIGN,
+    GAME_TYPE_ONESHOT,
+    RESTRICTION_LABELS,
+    STATS_TOP_GLOBAL,
 )
 from website.extensions import cache, db
 from website.models import User
 from website.repositories.game import GameRepository
+from website.repositories.system import SystemRepository
+from website.repositories.trophy import TrophyRepository
+from website.repositories.user import UserRepository
+from website.repositories.vtt import VttRepository
 from website.utils.logger import logger
 
 ROLE_GM = "MJ"
@@ -59,6 +67,33 @@ class StatsService:
         return {
             "agenda": {"past": agenda["past"], "upcoming": agenda["upcoming"][:agenda_limit]},
             "stats": data["stats"],
+        }
+
+    def get_global_stats(self) -> dict:
+        """Return app-wide platform statistics for the public ``/stats`` page.
+
+        Aggregates catalogue sizes, the game-type and role repartition, the top
+        systems and VTTs, the 12-month activity rhythm and the age-restriction
+        split across **all** games. Mirrors :meth:`get_dashboard_stats` but
+        without the per-user filter, returning plain serialisable dicts (no ORM)
+        so the result can render directly in the template.
+
+        Returns:
+            Dict with ``catalogue``, ``type``, ``role``, ``top_systems``,
+            ``top_vtts``, ``rythme`` and ``restriction`` entries.
+        """
+        now = datetime.now()
+        games = self.repo.find_all_with_relations()
+        tagged = [(g, None) for g in games]
+        return {
+            "catalogue": self._catalogue(games),
+            "play": self._global_play_hours(games, now),
+            "type": self._type_ratios(tagged),
+            "role": self._global_role_ratios(games),
+            "top_systems": self._global_top(games, lambda g: g.system.name if g.system else None),
+            "top_vtts": self._global_top(games, lambda g: g.vtt.name if g.vtt else None),
+            "rythme": self._rythme(tagged, now),
+            "restriction": self._restriction_split(games),
         }
 
     def invalidate(self, user_id: str) -> None:
@@ -246,6 +281,116 @@ class StatsService:
                 {"name": n, "n": c} for n, c in by_games.most_common(DASHBOARD_TOP_SYSTEMS)
             ],
         }
+
+    # ------------------------------------------------------------ global stats
+
+    @staticmethod
+    def _catalogue(games) -> dict:
+        """Headline catalogue sizes across the whole platform."""
+        return {
+            "systems": SystemRepository().count(),
+            "vtts": VttRepository().count(),
+            "trophies": TrophyRepository().count(),
+            "users": UserRepository().count(),
+            "games": len(games),
+            "sessions": sum(len(g.sessions) for g in games),
+        }
+
+    @staticmethod
+    def _global_play_hours(games, now) -> dict:
+        """Total elapsed game time across the platform (ended sessions only).
+
+        Sums the real duration of every session that has already happened — the
+        actual hours of play that took place at the tables. Counted once per
+        session (not per participant), so the figure is wall-clock game time.
+
+        Args:
+            games: Games to aggregate (sessions eager-loaded).
+            now: Current time; only sessions that have already ended count.
+
+        Returns:
+            Dict with the rounded total ``hours`` and the number of ended
+            ``sessions`` that contributed to it.
+        """
+        hours = 0.0
+        sessions = 0
+        for g in games:
+            for s in g.sessions:
+                if s.end and s.end <= now:
+                    hours += (s.end - s.start).total_seconds() / 3600
+                    sessions += 1
+        return {"hours": round(hours), "sessions": sessions}
+
+    def _global_role_ratios(self, games) -> dict:
+        """GM vs player engagement share across the platform.
+
+        Each game has one GM and several player registrations; the share counts
+        engagements (not distinct people): GM slots vs player slots, by sessions
+        and by games.
+        """
+        gm_games = len(games)
+        player_games = sum(len(g.players) for g in games)
+        gm_sessions = sum(len(g.sessions) for g in games)
+        player_sessions = sum(len(g.sessions) * len(g.players) for g in games)
+        return {
+            "sessions": self._pct(gm_sessions, player_sessions),
+            "parties": self._pct(gm_games, player_games),
+        }
+
+    def _global_top(self, games, key) -> dict:
+        """Top ``STATS_TOP_GLOBAL`` entries by game count, split by game type.
+
+        The ranking is independent of the sessions/annonces toggle (it always
+        ranks by number of games); the breakdown lets the UI switch between all
+        games, one-shots only and campaigns only.
+
+        Args:
+            games: Games to rank.
+            key: Callable mapping a game to its grouping name (``None`` skips it).
+
+        Returns:
+            Dict with ``all``, ``oneshot`` and ``campaign`` ranked-list values,
+            each a list of ``{"name", "n"}`` dicts.
+        """
+        return {
+            "all": self._top_ranked(games, key),
+            "oneshot": self._top_ranked([g for g in games if g.type == GAME_TYPE_ONESHOT], key),
+            "campaign": self._top_ranked([g for g in games if g.type == GAME_TYPE_CAMPAIGN], key),
+        }
+
+    @staticmethod
+    def _top_ranked(games, key) -> list[dict]:
+        """Return the top ``STATS_TOP_GLOBAL`` groups by game count.
+
+        Args:
+            games: Games to rank.
+            key: Callable mapping a game to its grouping name (``None`` skips it).
+
+        Returns:
+            Ranked list of ``{"name", "n"}`` dicts (most games first).
+        """
+        by_games: Counter = Counter()
+        for g in games:
+            name = key(g)
+            if name:
+                by_games[name] += 1
+        return [{"name": n, "n": c} for n, c in by_games.most_common(STATS_TOP_GLOBAL)]
+
+    @staticmethod
+    def _restriction_split(games) -> dict:
+        """Age-restriction repartition (Tout public / 16+ / 18+) over all games."""
+        counter = Counter(g.restriction for g in games)
+        total = len(games)
+        rows = [
+            {
+                "value": value,
+                "label": label,
+                "n": counter.get(value, 0),
+                "pct": round(counter.get(value, 0) / total * 100) if total else 0,
+            }
+            for value, label in RESTRICTION_LABELS.items()
+        ]
+        return {"rows": rows, "total": total}
 
     def _network(self, user_id, gm_games, player_games) -> dict:
         """Distinct GMs played with and distinct table-mates met."""

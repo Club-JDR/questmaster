@@ -24,14 +24,14 @@ trophy_service = TrophyService()
 def list_vtts():
     """List all VTTs."""
     vtts = [v.to_dict() for v in vtt_service.get_all()]
-    return render_template("list.j2", items=vtts, title="Virtual TableTops")
+    return render_template("list.j2", items=vtts, title="Virtual TableTops", icon="ph-desktop")
 
 
 @misc_bp.route("/systemes/", methods=["GET"])
 def list_systems():
     """List all game systems."""
     systems = [s.to_dict() for s in system_service.get_all()]
-    return render_template("list.j2", items=systems, title="Systèmes")
+    return render_template("list.j2", items=systems, title="Systèmes", icon="ph-cube")
 
 
 @misc_bp.route("/badges/", methods=["GET"])

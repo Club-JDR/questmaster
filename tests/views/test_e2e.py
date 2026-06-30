@@ -115,6 +115,10 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     response = logged_in_user.get("/stats/?year=2025&month=7")
     assert response.status_code == 200
     assert "Statistiques" in response.data.decode()
+    # App-wide overview tab (Feature 6) renders alongside the monthly detail tab.
+    assert "Vue d'ensemble" in response.data.decode()
+    assert "Temps de jeu" in response.data.decode()
+    assert "Détail mensuel" in response.data.decode()
     assert "Les Masques de Nyarlathotep" in response.data.decode()
     assert "Appel de Cthulhu v7" in response.data.decode()
     assert "(1 campagne)" in response.data.decode()

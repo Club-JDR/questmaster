@@ -137,6 +137,26 @@ class GameRepository(BaseRepository[Game]):
             .all()
         )
 
+    def find_all_with_relations(self) -> list[Game]:
+        """Return every game with stats relations eager-loaded.
+
+        Loads system, vtt, sessions and players to avoid N+1 queries when
+        aggregating app-wide statistics.
+
+        Returns:
+            List of all games.
+        """
+        return (
+            self.session.query(Game)
+            .options(
+                joinedload(Game.system),
+                joinedload(Game.vtt),
+                subqueryload(Game.sessions),
+                subqueryload(Game.players),
+            )
+            .all()
+        )
+
     def find_by_special_event(self, event_id: int) -> list[Game]:
         """Find all games for a special event.
 

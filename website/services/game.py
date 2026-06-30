@@ -280,7 +280,7 @@ class GameService:
         if type_value and type_value.startswith("specialevent-"):
             try:
                 special_event_id = int(type_value.split("-", 1)[1])
-            except ValueError, IndexError:
+            except (ValueError, IndexError):
                 special_event_id = None
             game_type = "oneshot"  # all special events are treated as oneshots
 
@@ -886,7 +886,7 @@ class GameService:
             self._invalidate_dashboard_stats(user.id, locked_game.gm_id)
             return locked_game
 
-        except DuplicateRegistrationError, GameFullError, GameClosedError:
+        except (DuplicateRegistrationError, GameFullError, GameClosedError):
             db.session.rollback()
             raise
         except SQLAlchemyError:

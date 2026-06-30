@@ -98,3 +98,39 @@ class TestOpenGamesBrowser:
 
         assert response.status_code == 200
         assert 'id="searchBar"' in body
+
+
+class TestStatsPage:
+    """GET /stats/ — public stats page (app-wide overview + monthly detail)."""
+
+    def test_renders_overview_and_monthly_tabs(
+        self, client, db_session, admin_user, default_system
+    ):
+        """The page renders both tabs and the global overview widgets."""
+        game = GameFactory(
+            db_session,
+            status="open",
+            type="oneshot",
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=game.id,
+            start=datetime(2025, 6, 10, 20, 0),
+            end=datetime(2025, 6, 10, 23, 0),
+        )
+        db_session.flush()
+
+        response = client.get("/stats/")
+        body = response.data.decode()
+
+        assert response.status_code == 200
+        # Both tabs are present.
+        assert "Vue d'ensemble" in body
+        assert "Détail mensuel" in body
+        # Global overview widgets render (catches Jinja errors in the partial/pie).
+        assert "data-stats-root" in body
+        assert "Temps de jeu" in body
+        assert "Avertissements" in body
+        assert "data-top-type-select" in body

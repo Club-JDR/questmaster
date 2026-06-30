@@ -33,14 +33,16 @@
         el.querySelector("[data-bpct]").textContent = 100 - pct + "%";
       });
       toggles.forEach(function (t) {
-        t.classList.toggle("btn-active", t.dataset.statToggle === mode);
+        const on = t.dataset.statToggle === mode;
+        t.classList.toggle("btn-primary", on); // filled = active, plain = inactive
+        t.classList.toggle("btn-active", on);
       });
     }
 
     toggles.forEach(function (t) {
       t.addEventListener("click", function () { apply(t.dataset.statToggle); });
     });
-    apply("sessions");
+    apply("parties");
   }
 
   const panels = document.getElementById("dashboard-panels");
