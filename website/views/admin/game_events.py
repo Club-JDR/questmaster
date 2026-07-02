@@ -7,11 +7,13 @@ from flask import render_template
 from config.constants import ADMIN_PAGE_SIZE
 from website.services.game_event import GameEventService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 game_event_service = GameEventService()
 
 
 @admin_bp.route("/game-events/", methods=["GET"])
+@require_permission("game_event.view")
 def list_game_events():
     """List the game event audit trail with search and pagination."""
     page, search = get_list_params()

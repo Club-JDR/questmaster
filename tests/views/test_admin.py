@@ -26,6 +26,7 @@ from website.models import (
     Channel,
     DiscordMessage,
     Game,
+    PermissionGrant,
     SpecialEvent,
     System,
     Trophy,
@@ -140,16 +141,93 @@ def test_delete_vtt(admin_client, db_session, mock_csrf):
 # -- Channels ----------------------------------------------------------------
 
 
-def test_create_channel(admin_client, db_session, mock_csrf):
-    response = admin_client.post(
-        "/admin/channels/new",
-        data={"id": "999888777666555444", "type": "campaign", "size": "3"},
-    )
+def test_create_channel(admin_client, db_session, mock_csrf, monkeypatch):
+    from unittest.mock import MagicMock
+
+    import website.views.admin.channels as ch
+
+    new_id = "999888777666555444"
+    # The local test DB is not wiped between runs; ensure a clean slate.
+    existing = db_session.get(Channel, new_id)
+    if existing:
+        db_session.delete(existing)
+        db_session.commit()
+
+    mock_discord = MagicMock()
+    mock_discord.create_category.return_value = {"id": new_id}
+    monkeypatch.setattr(ch, "discord_service", mock_discord)
+
+    response = admin_client.post("/admin/channels/new", data={"type": "campaign"})
     assert response.status_code == 302
-    channel = db_session.get(Channel, "999888777666555444")
+    mock_discord.create_category.assert_called_once()
+    channel = db_session.get(Channel, new_id)
     assert channel is not None
     assert channel.type == "campaign"
-    assert channel.size == 3
+    assert channel.size == 0
+
+    # Clean up so the row does not leak into other tests / runs.
+    db_session.delete(channel)
+    db_session.commit()
+
+
+def test_create_channel_discord_failure_flashes(admin_client, db_session, mock_csrf, monkeypatch):
+    from unittest.mock import MagicMock
+
+    import website.views.admin.channels as ch
+    from website.exceptions import DiscordAPIError
+
+    mock_discord = MagicMock()
+    mock_discord.create_category.side_effect = DiscordAPIError("boom", status_code=500)
+    monkeypatch.setattr(ch, "discord_service", mock_discord)
+
+    before = db_session.query(Channel).count()
+    response = admin_client.post(
+        "/admin/channels/new", data={"type": "campaign"}, follow_redirects=False
+    )
+    # Re-renders the form (200), no new row persisted.
+    assert response.status_code == 200
+    assert db_session.query(Channel).count() == before
+
+
+def test_reconcile_channels(admin_client, db_session, mock_csrf, monkeypatch):
+    from unittest.mock import MagicMock
+
+    import website.views.admin.channels as ch
+
+    mock_discord = MagicMock()
+    mock_discord.list_guild_channels.return_value = []
+    monkeypatch.setattr(ch, "discord_service", mock_discord)
+
+    response = admin_client.post("/admin/channels/reconcile")
+    assert response.status_code == 302
+    mock_discord.list_guild_channels.assert_called_once()
+
+
+def test_update_channel_settings(admin_client, db_session, mock_csrf):
+    from website.services.setting import (
+        CATEGORY_AUTO_THRESHOLD_KEY,
+        CATEGORY_NAME_TEMPLATES_KEY,
+        SettingsService,
+    )
+
+    response = admin_client.post(
+        "/admin/channels/settings",
+        data={
+            "auto_threshold": "40",
+            "template_campaign": "CAMP {n}",
+            "template_oneshot": "OS {n}",
+        },
+    )
+    assert response.status_code == 302
+    service = SettingsService()
+    assert service.get_category_auto_threshold() == 40
+    assert service.get_category_name_templates()["campaign"] == "CAMP {n}"
+
+    # Clean up so these DB-managed settings do not leak into other tests / runs.
+    db_session.query(AppSetting).filter(
+        AppSetting.key.in_([CATEGORY_AUTO_THRESHOLD_KEY, CATEGORY_NAME_TEMPLATES_KEY])
+    ).delete(synchronize_session=False)
+    db_session.commit()
 
 
 def test_edit_channel(admin_client, db_session, mock_csrf):
@@ -355,6 +433,70 @@ def test_settings_save_empty_clears_override(
     assert db_session.get(AppSetting, "POSTS_CHANNEL_ID") is None
 
 
+def test_settings_page_shows_direct_permissions_toggle(admin_client, db_session):
+    response = admin_client.get("/admin/settings/")
+    assert response.status_code == 200
+    assert 'name="direct_permissions"' in response.data.decode()
+
+
+def test_permissions_save_enables_direct_mode(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    response = admin_client.post(
+        "/admin/settings/permissions/",
+        data={"direct_permissions": "on", "role_auto_threshold": "200"},
+    )
+    assert response.status_code == 302
+    assert db_session.get(AppSetting, "discord_use_direct_permissions").value == "true"
+    assert db_session.get(AppSetting, "discord_role_auto_threshold").value == "200"
+
+
+def test_permissions_save_unchecked_disables_direct_mode(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    db_session.add(AppSetting(key="discord_use_direct_permissions", value="true"))
+    db_session.commit()
+    admin_client.post(
+        "/admin/settings/permissions/",
+        data={"role_auto_threshold": "230"},
+    )
+    assert db_session.get(AppSetting, "discord_use_direct_permissions").value == "false"
+
+
+def test_permissions_save_persists_games_per_page(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    response = admin_client.post(
+        "/admin/settings/permissions/",
+        data={
+            "role_auto_threshold": "200",
+            "dashboard_agenda_limit": "10",
+            "dashboard_open_limit": "8",
+            "games_per_page": "24",
+        },
+    )
+    assert response.status_code == 302
+    assert db_session.get(AppSetting, "games_per_page").value == "24"
+
+
+def test_permissions_save_rejects_out_of_bounds_games_per_page(
+    admin_client, db_session, mock_csrf, clean_app_settings
+):
+    db_session.add(AppSetting(key="games_per_page", value="12"))
+    db_session.commit()
+    admin_client.post(
+        "/admin/settings/permissions/",
+        data={
+            "role_auto_threshold": "200",
+            "dashboard_agenda_limit": "10",
+            "dashboard_open_limit": "8",
+            "games_per_page": "999",
+        },
+    )
+    # Out-of-bounds value is rejected; the stored value is left unchanged.
+    assert db_session.get(AppSetting, "games_per_page").value == "12"
+
+
 # -- Users -------------------------------------------------------------------
 
 
@@ -371,7 +513,7 @@ def test_edit_user(admin_client, db_session, mock_csrf):
 
 def test_user_games_lists_gm_and_player_games(admin_client, db_session, default_system):
     user = UserFactory(db_session)
-    gm_game = GameFactory(db_session, name="GMed Game", gm_id=user.id, system_id=default_system.id)
+    GameFactory(db_session, name="GMed Game", gm_id=user.id, system_id=default_system.id)
     played_game = GameFactory(db_session, name="Played Game", system_id=default_system.id)
     played_game.players.append(user)
     db_session.flush()
@@ -506,10 +648,8 @@ def mock_discord_msg_api(monkeypatch):
     import website.views.admin.discord_messages as dm
 
     mock = MagicMock()
-    mock.send_message.return_value = {"id": "msg-plain-1"}
-    mock.send_embed.return_value = {"id": "msg-embed-1"}
-    mock.edit_message.return_value = {}
-    mock.edit_embed.return_value = {}
+    mock.create_message.return_value = {"id": "msg-new-1"}
+    mock.update_message.return_value = {}
     mock.delete_message.return_value = {}
     monkeypatch.setattr(dm.discord_message_service, "discord", mock)
     return mock
@@ -518,16 +658,19 @@ def mock_discord_msg_api(monkeypatch):
 def test_compose_plain_message(
     admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
 ):
+    mock_discord_msg_api.create_message.return_value = {"id": "msg-plain-1"}
     response = admin_client.post(
         "/admin/discord/compose",
-        data={"channel": post_channel, "type": "plain", "content": "Hello world"},
+        data={"channel": post_channel, "content": "Hello world"},
     )
     assert response.status_code == 302
-    mock_discord_msg_api.send_message.assert_called_once_with("Hello world", post_channel)
+    mock_discord_msg_api.create_message.assert_called_once_with(
+        post_channel, content="Hello world", embeds=None, components=[]
+    )
     message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-plain-1").first()
     assert message is not None
-    assert message.type == "plain"
     assert message.content == "Hello world"
+    assert message.embeds is None
     assert message.channel_id == post_channel
     assert message.channel_label == "Annonces"
 
@@ -535,23 +678,83 @@ def test_compose_plain_message(
 def test_compose_embed_message(
     admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
 ):
+    mock_discord_msg_api.create_message.return_value = {"id": "msg-embed-1"}
     response = admin_client.post(
         "/admin/discord/compose",
         data={
             "channel": post_channel,
-            "type": "embed",
-            "title": "Embed title",
-            "description": "Embed body",
-            "color": "#00ff00",
+            "embed_title": "Embed title",
+            "embed_description": "Embed body",
+            "embed_color": "#00ff00",
         },
     )
     assert response.status_code == 302
-    mock_discord_msg_api.send_embed.assert_called_once()
+    sent_embeds = mock_discord_msg_api.create_message.call_args.kwargs["embeds"]
+    assert sent_embeds[0]["title"] == "Embed title"
+    assert sent_embeds[0]["color"] == 0x00FF00
     message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-embed-1").first()
     assert message is not None
-    assert message.type == "embed"
-    assert message.title == "Embed title"
-    assert message.color == 0x00FF00
+    assert message.is_embed
+    assert message.embeds[0]["title"] == "Embed title"
+    assert message.embeds[0]["color"] == 0x00FF00
+
+
+def test_compose_content_and_multi_embed_with_buttons(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    mock_discord_msg_api.create_message.return_value = {"id": "msg-multi-1"}
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={
+            "channel": post_channel,
+            "content": "Heads up",
+            "embed_title": ["First", "Second"],
+            "embed_description": ["", "Body"],
+            "embed_color": ["#00ff00", "#0000ff"],
+            "button_label": ["Site", ""],
+            "button_url": ["https://example.com", ""],
+        },
+    )
+    assert response.status_code == 302
+    call = mock_discord_msg_api.create_message.call_args
+    assert call.kwargs["content"] == "Heads up"
+    assert len(call.kwargs["embeds"]) == 2
+    assert call.kwargs["components"][0]["components"][0]["url"] == "https://example.com"
+    message = db_session.query(DiscordMessage).filter_by(discord_msg_id="msg-multi-1").first()
+    assert message.content == "Heads up"
+    assert len(message.embeds) == 2
+    assert message.buttons == [{"label": "Site", "url": "https://example.com"}]
+
+
+def test_compose_empty_message_rejected(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    before = db_session.query(DiscordMessage).count()
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={"channel": post_channel, "content": ""},
+    )
+    assert response.status_code == 200
+    mock_discord_msg_api.create_message.assert_not_called()
+    assert db_session.query(DiscordMessage).count() == before
+
+
+def test_compose_invalid_button_url_rejected(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    before = db_session.query(DiscordMessage).count()
+    response = admin_client.post(
+        "/admin/discord/compose",
+        data={
+            "channel": post_channel,
+            "content": "Hi",
+            "button_label": "Bad",
+            "button_url": "not-a-url",
+        },
+    )
+    assert response.status_code == 200
+    mock_discord_msg_api.create_message.assert_not_called()
+    assert db_session.query(DiscordMessage).count() == before
 
 
 def test_compose_unknown_channel_rejected(
@@ -560,11 +763,11 @@ def test_compose_unknown_channel_rejected(
     before = db_session.query(DiscordMessage).count()
     response = admin_client.post(
         "/admin/discord/compose",
-        data={"channel": "NOT_A_CHANNEL", "type": "plain", "content": "x"},
+        data={"channel": "NOT_A_CHANNEL", "content": "x"},
     )
     # Validation error -> form re-rendered, nothing sent or persisted.
     assert response.status_code == 200
-    mock_discord_msg_api.send_message.assert_not_called()
+    mock_discord_msg_api.create_message.assert_not_called()
     assert db_session.query(DiscordMessage).count() == before
 
 
@@ -573,31 +776,63 @@ def test_compose_discord_error_not_persisted(
 ):
     from website.exceptions import DiscordAPIError
 
-    mock_discord_msg_api.send_message.side_effect = DiscordAPIError("boom", status_code=500)
+    mock_discord_msg_api.create_message.side_effect = DiscordAPIError("boom", status_code=500)
     before = db_session.query(DiscordMessage).count()
     response = admin_client.post(
         "/admin/discord/compose",
-        data={"channel": post_channel, "type": "plain", "content": "Hello"},
+        data={"channel": post_channel, "content": "Hello"},
     )
     assert response.status_code == 200
     assert db_session.query(DiscordMessage).count() == before
 
 
-def test_edit_embed_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
-    message = DiscordMessageFactory(db_session, type="embed", title="Old title")
+def test_edit_embed_message(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    message = DiscordMessageFactory(
+        db_session, channel_id=post_channel, embeds=[{"title": "Old title"}]
+    )
     response = admin_client.post(
         f"/admin/discord/{message.id}/edit",
-        data={"type": "embed", "title": "New title", "description": "Updated"},
+        data={"channel": post_channel, "embed_title": "New title", "embed_description": "Updated"},
     )
     assert response.status_code == 302
-    mock_discord_msg_api.edit_embed.assert_called_once()
+    mock_discord_msg_api.update_message.assert_called_once()
     db_session.refresh(message)
-    assert message.title == "New title"
-    assert message.description == "Updated"
+    assert message.embeds[0]["title"] == "New title"
+    assert message.embeds[0]["description"] == "Updated"
+
+
+def test_edit_change_channel_resends_and_deletes(
+    admin_client, db_session, mock_csrf, mock_discord_msg_api, post_channel
+):
+    from website.services.setting import SettingsService
+
+    settings = SettingsService()
+    settings.add_post_channel("Autre", "999000111222333444")
+    message = DiscordMessageFactory(
+        db_session,
+        channel_id=post_channel,
+        discord_msg_id="old-msg",
+        embeds=[{"title": "Hi"}],
+    )
+    mock_discord_msg_api.create_message.return_value = {"id": "moved-msg"}
+
+    response = admin_client.post(
+        f"/admin/discord/{message.id}/edit",
+        data={"channel": "999000111222333444", "embed_title": "Hi"},
+    )
+    assert response.status_code == 302
+    mock_discord_msg_api.create_message.assert_called_once()
+    mock_discord_msg_api.delete_message.assert_called_once_with("old-msg", post_channel)
+    db_session.refresh(message)
+    assert message.channel_id == "999000111222333444"
+    assert message.discord_msg_id == "moved-msg"
+    settings.remove_post_channel("999000111222333444")
 
 
 def test_delete_discord_message(admin_client, db_session, mock_csrf, mock_discord_msg_api):
-    message = DiscordMessageFactory(db_session, type="embed")
+    message = DiscordMessageFactory(db_session)
     message_id = message.id
     response = admin_client.post(f"/admin/discord/{message_id}/delete")
     assert response.status_code == 302
@@ -682,3 +917,108 @@ def test_user_trophies_page_lists_user_badges(admin_client, db_session, mock_csr
     response = admin_client.get(f"/admin/users/{user.id}/trophies")
     assert response.status_code == 200
     assert trophy.name in response.data.decode()
+
+
+# -- Granular permissions (RBAC) ---------------------------------------------
+
+
+@pytest.fixture
+def clean_grants(db_session):
+    """Empty the permission_grant table and cache around a permissions test."""
+    from website.extensions import cache
+
+    cache.clear()
+    db_session.query(PermissionGrant).delete()
+    db_session.commit()
+    yield
+    db_session.query(PermissionGrant).delete()
+    db_session.commit()
+    cache.clear()
+
+
+def _delegated_client(test_app, permissions):
+    """Return a client whose session is a non-admin holding ``permissions``."""
+    client = test_app.test_client()
+    with client.session_transaction() as sess:
+        sess["user_id"] = "delegate"
+        sess["is_admin"] = False
+        sess["permissions"] = list(permissions)
+    return client
+
+
+def test_delegated_user_reaches_granted_section(test_app, db_session):
+    """A non-admin with vtt.manage can open the VTTs section."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    assert client.get("/admin/vtts/").status_code == 200
+
+
+def test_delegated_user_blocked_from_other_section(test_app, db_session):
+    """A non-admin with only vtt.manage is blocked from systems."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    assert client.get("/admin/systems/").status_code == 403
+
+
+def test_delegated_user_blocked_from_admin_only_section(test_app, db_session):
+    """A delegated user cannot reach admin-only sections (settings)."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    assert client.get("/admin/settings/").status_code == 403
+
+
+def test_user_without_grants_bounced_from_admin(test_app, db_session):
+    """A logged-in user with no grants cannot reach the admin panel at all."""
+    client = _delegated_client(test_app, [])
+    assert client.get("/admin/").status_code == 403
+
+
+def test_delegated_sidebar_lists_only_granted_sections(test_app, db_session):
+    """The admin sidebar for a delegated user shows only their sections."""
+    client = _delegated_client(test_app, ["vtt.manage"])
+    body = client.get("/admin/").data.decode()
+    assert "/admin/vtts/" in body
+    assert "/admin/systems/" not in body
+    assert "/admin/settings/" not in body
+
+
+def test_admin_sees_permissions_section(admin_client, db_session):
+    """An admin reaches the new permissions management section."""
+    assert admin_client.get("/admin/permissions/").status_code == 200
+
+
+def test_grant_permission_persists(admin_client, db_session, mock_csrf, clean_grants):
+    """Granting a capability to a role persists a grant row."""
+    response = admin_client.post(
+        "/admin/permissions/grant",
+        data={
+            "permission_key": "vtt.manage",
+            "subject_type": "role",
+            "subject_id": "role-123",
+        },
+    )
+    assert response.status_code == 302
+    grant = (
+        db_session.query(PermissionGrant)
+        .filter_by(permission_key="vtt.manage", subject_id="role-123")
+        .one_or_none()
+    )
+    assert grant is not None
+    assert grant.subject_type == "role"
+
+
+def test_grant_permission_invalid_flashes_error(admin_client, db_session, mock_csrf, clean_grants):
+    """An unknown capability key is rejected and nothing is persisted."""
+    response = admin_client.post(
+        "/admin/permissions/grant",
+        data={"permission_key": "bogus.key", "subject_type": "role", "subject_id": "r-1"},
+    )
+    assert response.status_code == 302
+    assert db_session.query(PermissionGrant).count() == 0
+
+
+def test_revoke_permission_removes_grant(admin_client, db_session, mock_csrf, clean_grants):
+    """Revoking removes the grant row."""
+    grant = PermissionGrant(permission_key="vtt.manage", subject_type="user", subject_id="u-9")
+    db_session.add(grant)
+    db_session.commit()
+    response = admin_client.post(f"/admin/permissions/{grant.id}/revoke")
+    assert response.status_code == 302
+    assert db_session.get(PermissionGrant, grant.id) is None

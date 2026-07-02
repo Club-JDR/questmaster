@@ -87,6 +87,76 @@ class GameRepository(BaseRepository[Game]):
         """
         return self.session.query(Game).join(Game.players).filter(User.id == player_id).all()
 
+    def find_by_gm_with_relations(self, gm_id: str) -> list[Game]:
+        """Return all games GMed by a user, with stats relations eager-loaded.
+
+        Loads system, vtt, sessions and players to avoid N+1 queries when
+        aggregating dashboard statistics.
+
+        Args:
+            gm_id: GM user ID.
+
+        Returns:
+            List of games GMed by this user.
+        """
+        return (
+            self.session.query(Game)
+            .options(
+                joinedload(Game.system),
+                joinedload(Game.vtt),
+                subqueryload(Game.sessions),
+                subqueryload(Game.players),
+            )
+            .filter(Game.gm_id == gm_id)
+            .all()
+        )
+
+    def find_by_player_with_relations(self, player_id: str) -> list[Game]:
+        """Return all games a user plays in, with stats relations eager-loaded.
+
+        Loads gm, system, vtt, sessions and players to avoid N+1 queries when
+        aggregating dashboard statistics.
+
+        Args:
+            player_id: Player user ID.
+
+        Returns:
+            List of games where the user is registered as a player.
+        """
+        return (
+            self.session.query(Game)
+            .join(Game.players)
+            .options(
+                joinedload(Game.gm),
+                joinedload(Game.system),
+                joinedload(Game.vtt),
+                subqueryload(Game.sessions),
+                subqueryload(Game.players),
+            )
+            .filter(User.id == player_id)
+            .all()
+        )
+
+    def find_all_with_relations(self) -> list[Game]:
+        """Return every game with stats relations eager-loaded.
+
+        Loads system, vtt, sessions and players to avoid N+1 queries when
+        aggregating app-wide statistics.
+
+        Returns:
+            List of all games.
+        """
+        return (
+            self.session.query(Game)
+            .options(
+                joinedload(Game.system),
+                joinedload(Game.vtt),
+                subqueryload(Game.sessions),
+                subqueryload(Game.players),
+            )
+            .all()
+        )
+
     def find_by_special_event(self, event_id: int) -> list[Game]:
         """Find all games for a special event.
 

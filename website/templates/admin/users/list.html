@@ -4,7 +4,26 @@
 {% block admin_content %}
 {{ ui.header('Utilisateurs', 'ph-users') }}
 
-{{ ui.search_bar(search, 'Rechercher par ID ou nom…') }}
+{# Search bar doubles as a typeahead: typing suggests users (pick → jump to
+   their edit page); submitting filters the table server-side via ?q=. #}
+<form method="get" data-user-typeahead
+      data-select-url="{{ url_for('admin.edit_user', user_id='__ID__')|replace('__ID__', '{id}') }}"
+      class="flex items-center gap-2 mb-4 flex-wrap">
+  <div class="relative grow max-w-xs">
+    <label for="adminUserSearch" class="sr-only">Rechercher par ID, nom ou pseudo</label>
+    <input type="search" name="q" id="adminUserSearch" value="{{ search or '' }}"
+      class="input input-bordered input-sm w-full"
+      placeholder="Rechercher par ID, nom ou pseudo…"
+      role="combobox" aria-expanded="false" aria-autocomplete="list"
+      aria-controls="adminUserSearchList" autocomplete="off">
+    <ul id="adminUserSearchList" role="listbox" aria-label="Suggestions"
+      class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden"></ul>
+  </div>
+  <button type="submit" class="btn btn-sm btn-primary">Rechercher</button>
+  {% if search %}
+  <a href="{{ url_for(request.endpoint) }}" class="btn btn-sm btn-ghost">Réinitialiser</a>
+  {% endif %}
+</form>
 
 <div class="card bg-base-100 shadow-md overflow-x-auto">
   <table class="table table-zebra">
@@ -48,4 +67,9 @@
 </div>
 
 {{ ui.pager(pagination, search) }}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="/static/js/user-typeahead.js" defer></script>
 {% endblock %}

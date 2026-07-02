@@ -4,7 +4,6 @@ import pytest
 
 from tests.factories import TrophyFactory, UserFactory, UserTrophyFactory
 from website.exceptions import NotFoundError
-from website.models.trophy import UserTrophy
 from website.services.trophy import TrophyService
 
 

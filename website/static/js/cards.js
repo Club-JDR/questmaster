@@ -134,7 +134,7 @@ function refreshCards() {
     });
 }
 
-if (["/" , "/annonces/"].includes(location.pathname)) {
+if (location.pathname === "/annonces/" || location.pathname === "/") {
   refreshCards(); // Replace skeleton cards as soon as the script loads
   setInterval(refreshCards, 10000);
 } else {

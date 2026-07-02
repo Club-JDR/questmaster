@@ -14,6 +14,17 @@ import json
 from flask import current_app, g, has_app_context
 from sqlalchemy.exc import SQLAlchemyError
 
+from config.constants import (
+    CATEGORY_NAME_TEMPLATES,
+    DASHBOARD_AGENDA_LIMIT_DEFAULT,
+    DASHBOARD_LIMIT_MAX,
+    DASHBOARD_OPEN_LIMIT_DEFAULT,
+    DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT,
+    DISCORD_CATEGORY_CHANNEL_LIMIT,
+    DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT,
+    GAMES_PER_PAGE,
+    GAMES_PER_PAGE_MAX,
+)
 from website.exceptions import ValidationError
 from website.extensions import db
 from website.repositories.setting import SettingRepository
@@ -23,6 +34,25 @@ from website.utils.logger import logger
 # Distinct from OVERRIDABLE_SETTINGS (env-backed overrides): this is a fully
 # DB-managed JSON list of ``{"label": ..., "id": ...}`` entries.
 POST_CHANNELS_KEY = "discord_post_channels"
+
+# Fully DB-managed operational settings (not env-backed). When direct permissions
+# are enabled, new games grant players access via per-channel permission overwrites
+# instead of a dedicated role. The auto-threshold is the guild role count at which
+# the scheduler turns the toggle on automatically.
+DIRECT_PERMISSIONS_KEY = "discord_use_direct_permissions"
+ROLE_AUTO_THRESHOLD_KEY = "discord_role_auto_threshold"
+
+# Fully DB-managed dashboard sizes.
+DASHBOARD_AGENDA_LIMIT_KEY = "dashboard_agenda_limit"
+DASHBOARD_OPEN_LIMIT_KEY = "dashboard_open_limit"
+
+# Fully DB-managed: number of game cards shown per page on the public card grid.
+GAMES_PER_PAGE_KEY = "games_per_page"
+
+# Fully DB-managed Discord category settings: the fill level at which a fresh
+# category is auto-provisioned, and the per-type category name templates.
+CATEGORY_AUTO_THRESHOLD_KEY = "discord_category_auto_threshold"
+CATEGORY_NAME_TEMPLATES_KEY = "discord_category_name_templates"
 
 # Setting groups, used only to organise the admin settings page.
 _GROUP_SERVER = "Serveur Discord"
@@ -165,7 +195,7 @@ class SettingsService:
             return []
         try:
             items = json.loads(setting.value)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             logger.warning("Stored post channels are not valid JSON; ignoring.")
             return []
         return [
@@ -273,5 +303,273 @@ class SettingsService:
                 self.repo.upsert(key, cleaned, updated_by_id)
             else:
                 self.repo.delete_by_key(key)
+        db.session.commit()
+        self._invalidate()
+
+    def is_direct_permissions_enabled(self) -> bool:
+        """Return whether new games should use direct per-player channel permissions.
+
+        When enabled, games are created without a dedicated Discord role; players are
+        granted channel access via individual permission overwrites instead.
+
+        Returns:
+            True if the direct-permission mode is enabled.
+        """
+        setting = self.repo.get_by_key(DIRECT_PERMISSIONS_KEY)
+        return bool(setting and setting.value == "true")
+
+    def set_direct_permissions(self, enabled: bool, updated_by_id: str | None = None) -> None:
+        """Enable or disable direct per-player channel permissions for new games.
+
+        Args:
+            enabled: Whether direct-permission mode should be on.
+            updated_by_id: Discord ID of the admin performing the change (or None when
+                set automatically by the role-count monitor).
+        """
+        self.repo.upsert(DIRECT_PERMISSIONS_KEY, "true" if enabled else "false", updated_by_id)
+        db.session.commit()
+        self._invalidate()
+
+    def get_role_auto_threshold(self) -> int:
+        """Return the guild role count at which direct permissions auto-enable.
+
+        Returns:
+            The configured threshold, or :data:`DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT`
+            when unset or invalid.
+        """
+        setting = self.repo.get_by_key(ROLE_AUTO_THRESHOLD_KEY)
+        if setting and setting.value:
+            try:
+                return int(setting.value)
+            except ValueError:
+                logger.warning("Stored role auto-threshold is not an integer; using default.")
+        return DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT
+
+    def set_role_auto_threshold(self, threshold: int, updated_by_id: str | None = None) -> None:
+        """Set the guild role count at which direct permissions auto-enable.
+
+        Args:
+            threshold: Role count threshold (must be a positive integer).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the threshold is not a positive integer.
+        """
+        try:
+            value = int(threshold)
+        except (TypeError, ValueError):
+            raise ValidationError("Threshold must be an integer.", field="threshold")
+        if value <= 0:
+            raise ValidationError("Threshold must be a positive integer.", field="threshold")
+        self.repo.upsert(ROLE_AUTO_THRESHOLD_KEY, str(value), updated_by_id)
+        db.session.commit()
+        self._invalidate()
+
+    def _get_positive_int(self, key: str, default: int) -> int:
+        """Return a stored positive-integer setting, falling back to a default.
+
+        Args:
+            key: Setting key to read.
+            default: Value returned when the setting is unset or not an integer.
+
+        Returns:
+            The stored integer, or ``default`` when unset or invalid.
+        """
+        setting = self.repo.get_by_key(key)
+        if setting and setting.value:
+            try:
+                return int(setting.value)
+            except ValueError:
+                logger.warning("Stored %s is not an integer; using default.", key)
+        return default
+
+    def _set_bounded_int(
+        self, key: str, value, maximum: int, field: str, updated_by_id: str | None
+    ) -> None:
+        """Validate and persist a bounded positive-integer setting.
+
+        Args:
+            key: Setting key to write.
+            value: Raw value to parse and store.
+            maximum: Inclusive upper bound for the value.
+            field: Field name attached to a raised ``ValidationError``.
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within ``1..maximum``.
+        """
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            raise ValidationError("La valeur doit être un entier.", field=field)
+        if parsed <= 0 or parsed > maximum:
+            raise ValidationError(
+                f"La valeur doit être comprise entre 1 et {maximum}.", field=field
+            )
+        self.repo.upsert(key, str(parsed), updated_by_id)
+        db.session.commit()
+        self._invalidate()
+
+    def get_dashboard_agenda_limit(self) -> int:
+        """Return the number of upcoming sessions listed in the dashboard agenda.
+
+        Returns:
+            The stored value, or :data:`DASHBOARD_AGENDA_LIMIT_DEFAULT` when unset
+            or invalid.
+        """
+        return self._get_positive_int(DASHBOARD_AGENDA_LIMIT_KEY, DASHBOARD_AGENDA_LIMIT_DEFAULT)
+
+    def set_dashboard_agenda_limit(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of upcoming sessions listed in the dashboard agenda.
+
+        Args:
+            value: Session count (1..:data:`DASHBOARD_LIMIT_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            DASHBOARD_AGENDA_LIMIT_KEY,
+            value,
+            DASHBOARD_LIMIT_MAX,
+            "dashboard_agenda_limit",
+            updated_by_id,
+        )
+
+    def get_dashboard_open_limit(self) -> int:
+        """Return the number of open announcements previewed on the dashboard.
+
+        Returns:
+            The stored value, or :data:`DASHBOARD_OPEN_LIMIT_DEFAULT` when unset
+            or invalid.
+        """
+        return self._get_positive_int(DASHBOARD_OPEN_LIMIT_KEY, DASHBOARD_OPEN_LIMIT_DEFAULT)
+
+    def set_dashboard_open_limit(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of open announcements previewed on the dashboard.
+
+        Args:
+            value: Card count (1..:data:`DASHBOARD_LIMIT_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            DASHBOARD_OPEN_LIMIT_KEY,
+            value,
+            DASHBOARD_LIMIT_MAX,
+            "dashboard_open_limit",
+            updated_by_id,
+        )
+
+    def get_games_per_page(self) -> int:
+        """Return the configured card-grid page size.
+
+        Returns:
+            The stored page size, or :data:`GAMES_PER_PAGE` when unset or invalid.
+        """
+        return self._get_positive_int(GAMES_PER_PAGE_KEY, GAMES_PER_PAGE)
+
+    def set_games_per_page(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of game cards shown per page on the public card grid.
+
+        Args:
+            value: Page size (1..:data:`GAMES_PER_PAGE_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            GAMES_PER_PAGE_KEY,
+            value,
+            GAMES_PER_PAGE_MAX,
+            "games_per_page",
+            updated_by_id,
+        )
+
+    def get_category_auto_threshold(self) -> int:
+        """Return the fill level at which a fresh Discord category is auto-provisioned.
+
+        Returns:
+            The stored threshold, or :data:`DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT`
+            when unset or invalid.
+        """
+        return self._get_positive_int(
+            CATEGORY_AUTO_THRESHOLD_KEY, DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT
+        )
+
+    def set_category_auto_threshold(self, value, updated_by_id: str | None = None) -> None:
+        """Set the fill level at which a fresh Discord category is auto-provisioned.
+
+        Args:
+            value: Channel count (1..:data:`DISCORD_CATEGORY_CHANNEL_LIMIT`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            CATEGORY_AUTO_THRESHOLD_KEY,
+            value,
+            DISCORD_CATEGORY_CHANNEL_LIMIT,
+            "category_auto_threshold",
+            updated_by_id,
+        )
+
+    def get_category_name_templates(self) -> dict[str, str]:
+        """Return the per-type Discord category name templates.
+
+        Stored overrides are merged over the code defaults, so any game type the
+        admin has not customised keeps its default template.
+
+        Returns:
+            Mapping of game type to its name template (each containing ``{n}``).
+        """
+        stored: dict[str, str] = {}
+        setting = self.repo.get_by_key(CATEGORY_NAME_TEMPLATES_KEY)
+        if setting and setting.value:
+            try:
+                data = json.loads(setting.value)
+            except (ValueError, TypeError):
+                logger.warning(
+                    "Stored category name templates are not valid JSON; using defaults."
+                )
+                data = {}
+            if isinstance(data, dict):
+                stored = {
+                    str(key): str(value)
+                    for key, value in data.items()
+                    if key in CATEGORY_NAME_TEMPLATES and value
+                }
+        return {**CATEGORY_NAME_TEMPLATES, **stored}
+
+    def set_category_name_templates(
+        self, templates: dict[str, str], updated_by_id: str | None = None
+    ) -> None:
+        """Set the per-type Discord category name templates.
+
+        Args:
+            templates: Mapping of game type to a name template; each template must
+                contain the ``{n}`` sequence placeholder.
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If a game type is unknown, or a template is empty or
+                missing the ``{n}`` placeholder.
+        """
+        cleaned: dict[str, str] = {}
+        for game_type, template in templates.items():
+            if game_type not in CATEGORY_NAME_TEMPLATES:
+                raise ValidationError(f"Unknown game type '{game_type}'.", field="type")
+            template = (template or "").strip()
+            if not template:
+                raise ValidationError("Le modèle de nom ne peut pas être vide.", field=game_type)
+            if "{n}" not in template:
+                raise ValidationError("Le modèle de nom doit contenir « {n} ».", field=game_type)
+            cleaned[game_type] = template
+        self.repo.upsert(CATEGORY_NAME_TEMPLATES_KEY, json.dumps(cleaned), updated_by_id)
         db.session.commit()
         self._invalidate()

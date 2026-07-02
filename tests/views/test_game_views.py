@@ -12,6 +12,46 @@ from tests.factories import GameFactory, GameSessionFactory
 pytestmark = pytest.mark.integration
 
 
+@pytest.fixture(autouse=True)
+def _purge_leaked_games(test_app):
+    """Remove only the games that escaped this test's savepoint rollback.
+
+    Some view actions (publishing, status changes) commit through a path the
+    per-test ``db_session`` savepoint does not capture, leaking committed game
+    rows that would skew later search/pagination tests (``open_game`` gets
+    pushed off page 1). We snapshot the committed game ids before the test and,
+    afterwards, delete only the rows that appeared during it — leaving any
+    pre-existing persistent data intact, so this is safe whether or not
+    ``--drop-db`` is used. Runs on a fresh connection, after the savepoint
+    rollback, to avoid lock contention.
+    """
+    from sqlalchemy import bindparam, text
+
+    from website.extensions import db
+
+    def _committed_game_ids() -> set[int]:
+        with db.engine.connect() as conn:
+            return {row[0] for row in conn.execute(text("SELECT id FROM game"))}
+
+    before = _committed_game_ids()
+    yield
+    leaked = sorted(_committed_game_ids() - before)
+    if not leaked:
+        return
+    # game_event cascades on delete; game_session/game_players do not, so clear
+    # the leaked games' children explicitly before removing the games themselves.
+    with db.engine.begin() as conn:
+        for table, column in (
+            ("game_session", "game_id"),
+            ("game_players", "game_id"),
+            ("game", "id"),
+        ):
+            stmt = text(f"DELETE FROM {table} WHERE {column} IN :ids").bindparams(
+                bindparam("ids", expanding=True)
+            )
+            conn.execute(stmt, {"ids": leaked})
+
+
 def _game_form_data(system_id, vtt_id, **overrides):
     """Build form data dict for game creation/edit POST."""
     data = {
@@ -197,6 +237,52 @@ class TestGameStatus:
         assert response.status_code == 200
         assert "Complet" in body
         assert f"Annonce {open_game.name} fermée." in body
+
+    def test_gm_notifies_players(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """The game's GM can post a notification to the channel."""
+        open_game.role = "role_123"
+        open_game.channel = "channel_123"
+        db_session.commit()
+
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/notifier/",
+            data={"notifyMessage": "Rendez-vous ce soir !"},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert "Joueur·euses notifié·es." in response.data.decode()
+        mock_discord_service.send_message.assert_called_once()
+
+    def test_non_owner_cannot_notify(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A GM who does not own the game cannot notify its players."""
+        open_game.channel = "channel_123"
+        db_session.commit()
+
+        response = logged_in_gm.post(
+            f"/annonces/{open_game.slug}/notifier/",
+            data={"notifyMessage": "Coucou"},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        mock_discord_service.send_message.assert_not_called()
 
     def test_reopen_game(
         self,

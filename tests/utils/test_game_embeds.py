@@ -8,8 +8,6 @@ formatting functions that only read attributes.
 from datetime import datetime
 from types import SimpleNamespace
 
-import pytest
-
 from config.constants import (
     EMBED_COLOR_BLUE,
     EMBED_COLOR_DEFAULT,
@@ -26,11 +24,13 @@ from website.utils.game_embeds import (
     _get_session_type,
     build_add_session_embed,
     build_alert_embed,
+    build_annonce_components,
     build_annonce_details_embed,
     build_annonce_embed,
     build_delete_session_embed,
     build_edit_session_embed,
     build_register_embed,
+    player_mentions,
 )
 
 # ---------------------------------------------------------------------------
@@ -214,10 +214,10 @@ class TestGetEmbedColor:
 
 
 class TestBuildEmbedFields:
-    def test_returns_seven_fields(self):
+    def test_returns_six_fields(self):
         game = _make_game()
         fields = _build_embed_fields(game, "OS", ":green_circle: Tout public")
-        assert len(fields) == 7
+        assert len(fields) == 6
 
     def test_field_names(self):
         game = _make_game()
@@ -230,8 +230,13 @@ class TestBuildEmbedFields:
             "Date",
             "Durée",
             "Avertissement",
-            "Pour s'inscrire :",
         ]
+
+    def test_no_inline_registration_link(self):
+        """The registration link moved to a button, not an inline field."""
+        game = _make_game(slug="my-game")
+        fields = _build_embed_fields(game, "OS", "restriction")
+        assert all("inscrire" not in f["name"].lower() for f in fields)
 
     def test_gm_name_in_fields(self):
         game = _make_game(gm=SimpleNamespace(name="Alice"))
@@ -247,11 +252,6 @@ class TestBuildEmbedFields:
         game = _make_game()
         fields = _build_embed_fields(game, "Campagne", "restriction")
         assert fields[2]["value"] == "Campagne"
-
-    def test_game_url_in_fields(self):
-        game = _make_game(slug="my-game")
-        fields = _build_embed_fields(game, "OS", "restriction")
-        assert f"{SITE_BASE_URL}/annonces/my-game/" in fields[6]["value"]
 
     def test_closed_game_strikethrough(self):
         game = _make_game(status="closed")
@@ -334,6 +334,35 @@ class TestBuildAnnonceEmbed:
 
 
 # ---------------------------------------------------------------------------
+# build_annonce_components
+# ---------------------------------------------------------------------------
+
+
+class TestBuildAnnonceComponents:
+    def test_returns_single_link_button(self):
+        game = _make_game(slug="my-game")
+        components = build_annonce_components(game)
+        assert len(components) == 1
+        buttons = components[0]["components"]
+        assert len(buttons) == 1
+        assert buttons[0]["style"] == 5  # link button
+        assert buttons[0]["label"] == "S'inscrire"
+
+    def test_button_points_to_game_url(self):
+        game = _make_game(slug="my-game")
+        components = build_annonce_components(game)
+        assert components[0]["components"][0]["url"] == f"{SITE_BASE_URL}/annonces/my-game/"
+
+    def test_closed_game_has_no_button(self):
+        game = _make_game(status="closed")
+        assert build_annonce_components(game) == []
+
+    def test_open_game_has_button(self):
+        game = _make_game(status="open")
+        assert build_annonce_components(game) != []
+
+
+# ---------------------------------------------------------------------------
 # build_annonce_details_embed
 # ---------------------------------------------------------------------------
 
@@ -364,10 +393,39 @@ class TestBuildAnnonceDetailsEmbed:
         embed, _ = build_annonce_details_embed(game)
         assert "<@&role_abc>" in embed["description"]
 
+    def test_direct_mode_omits_role_line(self):
+        """Without a role, the details embed shows no role mention."""
+        game = _make_game(role=None)
+        embed, _ = build_annonce_details_embed(game)
+        assert "<@&" not in embed["description"]
+        assert "rôle associé" not in embed["description"]
+
     def test_description_contains_game_url(self):
         game = _make_game(slug="my-slug")
         embed, _ = build_annonce_details_embed(game)
         assert f"{SITE_BASE_URL}/annonces/my-slug" in embed["description"]
+
+
+# ---------------------------------------------------------------------------
+# player_mentions
+# ---------------------------------------------------------------------------
+
+
+class TestPlayerMentions:
+    def test_role_mode_returns_role_mention(self):
+        game = _make_game(role="role_42")
+        assert player_mentions(game) == "<@&role_42>"
+
+    def test_direct_mode_mentions_each_player(self):
+        game = _make_game(
+            role=None,
+            players=[SimpleNamespace(id="u1"), SimpleNamespace(id="u2")],
+        )
+        assert player_mentions(game) == "<@u1> <@u2>"
+
+    def test_direct_mode_no_players_returns_empty(self):
+        game = _make_game(role=None, players=[])
+        assert player_mentions(game) == ""
 
 
 # ---------------------------------------------------------------------------

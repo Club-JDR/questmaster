@@ -22,7 +22,7 @@ def get_classification(data=None):
             clean_key = key[len(prefix) :]
             try:
                 classification[clean_key] = int(source[key])
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 classification[clean_key] = 0
     return classification
 

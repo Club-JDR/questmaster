@@ -5,6 +5,7 @@ from .discord_message import DiscordMessage
 from .game import Game
 from .game_event import GameEvent
 from .game_session import GameSession
+from .permission_grant import PermissionGrant
 from .setting import AppSetting
 from .special_event import SpecialEvent
 from .system import System
@@ -18,6 +19,7 @@ __all__ = [
     "Game",
     "GameEvent",
     "GameSession",
+    "PermissionGrant",
     "AppSetting",
     "SpecialEvent",
     "System",

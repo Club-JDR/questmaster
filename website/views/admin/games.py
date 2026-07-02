@@ -21,6 +21,7 @@ from website.services.user import UserService
 from website.services.vtt import VttService
 from website.utils.form_parsers import get_ambience, get_classification, parse_restriction_tags
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import admin_only
 
 game_service = GameService()
 system_service = SystemService()
@@ -88,6 +89,7 @@ def _form_context() -> dict:
 
 
 @admin_bp.route("/games/", methods=["GET"])
+@admin_only
 def list_games():
     """List games with search and pagination."""
     page, search = get_list_params()
@@ -96,6 +98,7 @@ def list_games():
 
 
 @admin_bp.route("/games/<int:game_id>/edit", methods=["GET", "POST"])
+@admin_only
 def edit_game(game_id):
     """Edit all fields of an existing game."""
     try:
@@ -116,6 +119,7 @@ def edit_game(game_id):
 
 
 @admin_bp.route("/games/<int:game_id>/delete", methods=["POST"])
+@admin_only
 def delete_game(game_id):
     """Delete a game permanently (database only)."""
     game = game_service.get_by_id(game_id)

@@ -45,6 +45,9 @@
               {% endfor %}
               <li></li>
               {% endif %}
+              {% if payload['username'] %}
+              <li><a id="dashboardLink" href="/">Tableau de bord</a></li>
+              {% endif %}
               <li class="menu-title">Joueur·euses</li>
               <li><a id="openGames" href="/annonces/">Annonces ouvertes</a></li>
               <li><a id="myPlayerGames" href="/mes_parties/"
@@ -79,6 +82,7 @@
             <summary id="demoMenu">Aide</summary>
             <ul class="bg-base-100 text-base-content rounded-box z-50 w-52 p-2 shadow-xl">
               <li><a id="playerDemo" href="/demo/">Générale</a></li>
+              <li><a id="dashboardDemo" href="/demo/tableau-de-bord/">Tableau de bord</a></li>
               <li><a href="/demo/inscription/">M'inscrire</a></li>
               <li class="menu-title">MJs</li>
               <li><a href="/demo/poster/"
@@ -90,7 +94,7 @@
             </ul>
           </details>
         </li>
-        {% if payload['is_admin'] %}
+        {% if payload['is_admin'] or payload['permissions'] %}
         <li>
           <details>
             <summary id="adminMenu" class="font-bold text-error">Admin</summary>
@@ -146,6 +150,9 @@
                 <li><a href="/annonces/evenement/{{ event.id }}/">{{ event.emoji }} {{ event.name }}</a></li>
                 {% endfor %}
                 {% endif %}
+                {% if payload['username'] %}
+                <li><a href="/">Tableau de bord</a></li>
+                {% endif %}
                 <li><a href="/annonces/">Annonces ouvertes</a></li>
                 <li><a href="/mes_parties/"
                     class="{% if not payload['username'] %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] %} aria-disabled="true" tabindex="-1"{% endif %}>Mes parties</a>
@@ -178,6 +185,7 @@
               <summary>Aide</summary>
               <ul>
                 <li><a href="/demo/">Générale</a></li>
+                <li><a href="/demo/tableau-de-bord/">Tableau de bord</a></li>
                 <li><a href="/demo/inscription/">M'inscrire</a></li>
                 <li><a href="/demo/poster/"
                     class="{% if not payload['username'] or not payload['is_gm'] %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] %} aria-disabled="true" tabindex="-1"{% endif %}>Poster
@@ -188,7 +196,7 @@
               </ul>
             </details>
           </li>
-          {% if payload['is_admin'] %}
+          {% if payload['is_admin'] or payload['permissions'] %}
           <li>
             <details>
               <summary class="font-bold text-error-accent">Admin</summary>

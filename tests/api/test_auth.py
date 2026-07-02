@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.api.conftest import make_jwt_token
-from tests.constants import TEST_GM_USER_ID, TEST_REGULAR_USER_ID
+from tests.constants import TEST_REGULAR_USER_ID
 
 
 class TestExchangeToken:

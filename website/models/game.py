@@ -30,7 +30,7 @@ CLASSIFICATION_SCHEMA = Schema(
 players_table = db.Table(
     "game_players",
     db.Column("game_id", db.ForeignKey("game.id"), primary_key=True),
-    db.Column("player_id", db.ForeignKey("user.id"), primary_key=True),
+    db.Column("player_id", db.ForeignKey("user.id"), primary_key=True, index=True),
     db.UniqueConstraint("game_id", "player_id", name="uix_game_user"),
 )
 
@@ -48,7 +48,7 @@ class Game(db.Model):
     name = db.Column(db.String(), nullable=False)
     type = db.Column("type", Enum(*GAME_TYPES, name="game_type_enum"), nullable=False)
     length = db.Column(db.String(), nullable=False)
-    gm_id = db.Column(db.String(), db.ForeignKey("user.id"), nullable=False)
+    gm_id = db.Column(db.String(), db.ForeignKey("user.id"), nullable=False, index=True)
     gm = db.relationship("User", back_populates="games_gm", foreign_keys=[gm_id])
     system_id = db.Column(db.Integer(), db.ForeignKey("system.id"), nullable=False)
     vtt_id = db.Column(db.Integer(), db.ForeignKey("vtt.id"), nullable=True)

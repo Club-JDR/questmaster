@@ -24,7 +24,8 @@ Models define:
 | `SpecialEvent` | A special community event (e.g. Halloween, Christmas) |
 | `Vtt` | A virtual tabletop tool (e.g. Foundry, Roll20) |
 | `AppSetting` | A runtime configuration override (and the managed postable-channel list) |
-| `DiscordMessage` | A plain or embed message sent to Discord from the admin panel |
+| `DiscordMessage` | A message (content, embeds and/or link buttons) sent to Discord from the admin panel |
+| `PermissionGrant` | An RBAC grant: one capability granted to a Discord role or an individual user |
 
 ## API Reference
 

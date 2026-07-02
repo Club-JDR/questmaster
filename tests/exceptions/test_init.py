@@ -1,7 +1,5 @@
 """Tests for the exceptions package public API."""
 
-import pytest
-
 from website import exceptions
 
 

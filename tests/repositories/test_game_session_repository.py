@@ -2,8 +2,6 @@
 
 from datetime import datetime
 
-import pytest
-
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
 

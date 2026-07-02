@@ -70,7 +70,7 @@ class TestSpecialEventService:
     def test_create_duplicate_name(self, db_session):
         """Test create raises ValidationError for duplicate name."""
         service = SpecialEventService()
-        event1 = service.create(name="Duplicate Event", emoji="1️⃣")
+        service.create(name="Duplicate Event", emoji="1️⃣")
         with pytest.raises(ValidationError) as exc_info:
             service.create(name="Duplicate Event", emoji="2️⃣")
         assert exc_info.value.field == "name"
@@ -91,7 +91,7 @@ class TestSpecialEventService:
     def test_update_duplicate_name(self, db_session):
         """Test update raises ValidationError when changing name to existing name."""
         service = SpecialEventService()
-        event1 = service.create(name="Event One", emoji="1️⃣")
+        service.create(name="Event One", emoji="1️⃣")
         event2 = service.create(name="Event Two", emoji="2️⃣")
 
         with pytest.raises(ValidationError) as exc_info:

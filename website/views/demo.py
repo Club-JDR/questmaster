@@ -92,6 +92,126 @@ fake_games = [
 ]
 
 
+def _demo_session(day, time, name, meta, role, gtype):
+    """Build one fake agenda row for the demo dashboard."""
+    return {
+        "dow": "sam.",
+        "day": day,
+        "month": "juil.",
+        "time": time,
+        "name": name,
+        "slug": "demo",
+        "meta": meta,
+        "role": role,
+        "type": gtype,
+    }
+
+
+_DEMO_AGENDA = {
+    "past": [
+        _demo_session(
+            "05", "20h00", "La Tombe de l'Annihilation", "D&D 5E · FoundryVTT", "MJ", "campaign"
+        ),
+        _demo_session(
+            "06", "21h00", "Le Pensionnaire", "Cthulhu v7 · Roll20", "Joueur·euse", "oneshot"
+        ),
+    ],
+    "upcoming": [
+        _demo_session(
+            "12", "20h00", "La Tombe de l'Annihilation", "D&D 5E · FoundryVTT", "MJ", "campaign"
+        ),
+        _demo_session(
+            "13", "21h00", "Le Pensionnaire", "Cthulhu v7 · Roll20", "Joueur·euse", "oneshot"
+        ),
+        _demo_session(
+            "16", "19h30", "La Nécropole", "Cthulhu v7 · FoundryVTT", "Joueur·euse", "oneshot"
+        ),
+    ],
+}
+
+_DEMO_STATS = {
+    "play_hours_total": 142,
+    "play_hours_gm": 44,
+    "play_hours_player": 98,
+    "badges": 12,
+    "games_count": 27,
+    "sessions_count": 41,
+    "role": {"sessions": 35, "parties": 22},
+    "type": {"sessions": 30, "parties": 55},
+    "rythme": {
+        "labels": [
+            "07/24",
+            "08/24",
+            "09/24",
+            "10/24",
+            "11/24",
+            "12/24",
+            "01/25",
+            "02/25",
+            "03/25",
+            "04/25",
+            "05/25",
+            "06/25",
+        ],
+        "sessions": [3, 5, 6, 4, 7, 10, 5, 3, 6, 9, 5, 8],
+        "parties": [1, 1, 2, 2, 3, 3, 2, 1, 2, 4, 2, 3],
+    },
+    "top_systems": {
+        "player": {
+            "sessions": [
+                {"name": "D&D 5E", "n": 18},
+                {"name": "Cthulhu v7", "n": 11},
+                {"name": "Pathfinder 2", "n": 4},
+            ],
+            "parties": [
+                {"name": "D&D 5E", "n": 9},
+                {"name": "Cthulhu v7", "n": 6},
+                {"name": "Pathfinder 2", "n": 3},
+            ],
+        },
+        "gm": {
+            "sessions": [
+                {"name": "Cthulhu v7", "n": 12},
+                {"name": "D&D 5E", "n": 7},
+                {"name": "Lasers & Feelings", "n": 2},
+            ],
+            "parties": [
+                {"name": "Cthulhu v7", "n": 5},
+                {"name": "D&D 5E", "n": 4},
+                {"name": "Lasers & Feelings", "n": 1},
+            ],
+        },
+    },
+    "network": {
+        "gm_count": 3,
+        "player_count": 4,
+        "gms": [
+            {"name": "Le Gob'", "avatar": "https://picsum.photos/id/237/64", "n": 6},
+            {"name": "Perceval", "avatar": "https://picsum.photos/id/40/64", "n": 4},
+            {"name": "Le Gentil MJ", "avatar": "https://picsum.photos/id/64/64", "n": 3},
+        ],
+        "players": [
+            {"name": "Riri", "avatar": "https://picsum.photos/id/1/64", "n": 5},
+            {"name": "Fifi", "avatar": "https://picsum.photos/id/2/64", "n": 5},
+            {"name": "Loulou", "avatar": "https://picsum.photos/id/3/64", "n": 4},
+            {"name": "Picsou", "avatar": "https://picsum.photos/id/4/64", "n": 2},
+        ],
+    },
+}
+
+
+@demo_bp.route("/demo/tableau-de-bord/", methods=["GET"])
+def demo_dashboard():
+    """Render the demo dashboard page (the personalised landing) with fake data."""
+    return render_template(
+        "dashboard.j2",
+        agenda=_DEMO_AGENDA,
+        stats=_DEMO_STATS,
+        open_games=fake_games,
+        open_hidden=5,
+    )
+
+
 @demo_bp.route("/demo/", methods=["GET"])
 def demo_general():
     """Render the demo game list page."""

@@ -11,22 +11,18 @@
         class="card-body space-y-3">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+    {% if channel %}
     <div class="flex flex-col gap-1">
       <label for="id" class="{{ lbl }}">Discord ID</label>
-      {% if channel %}
       <input type="text" id="id" class="input input-bordered w-full font-mono" value="{{ channel.id }}"
              disabled>
-      {% else %}
-      <input type="text" id="id" name="id" class="input input-bordered w-full font-mono" required
-             autocomplete="off" placeholder="123456789012345678">
-      {% endif %}
     </div>
 
     <div class="flex flex-col gap-1">
       <label for="type" class="{{ lbl }}">Type</label>
       <select id="type" name="type" class="select select-bordered w-full" required>
         {% for t in game_types %}
-        <option value="{{ t }}" {% if channel and channel.type == t %}selected{% endif %}>{{ t }}</option>
+        <option value="{{ t }}" {% if channel.type == t %}selected{% endif %}>{{ t }}</option>
         {% endfor %}
       </select>
     </div>
@@ -34,12 +30,28 @@
     <div class="flex flex-col gap-1">
       <label for="size" class="{{ lbl }}">Taille (nombre de salons)</label>
       <input type="number" id="size" name="size" class="input input-bordered w-full" min="0"
-             value="{{ channel.size if channel else 0 }}">
+             value="{{ channel.size }}">
     </div>
+    {% else %}
+    <div class="flex flex-col gap-1">
+      <label for="type" class="{{ lbl }}">Type</label>
+      <select id="type" name="type" class="select select-bordered w-full" required>
+        {% for t in game_types %}
+        <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+      <span class="text-xs text-base-content/60">
+        Une catégorie Discord sera créée automatiquement
+        (ex. <span class="font-mono">🎲 CAMPAGNES 3 📖</span>).
+      </span>
+    </div>
+    {% endif %}
 
     <div class="flex justify-end gap-2 pt-2">
       <a href="{{ url_for('admin.list_channels') }}" class="btn btn-ghost">Annuler</a>
-      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <button type="submit" class="btn btn-primary">
+        {{ 'Enregistrer' if channel else 'Créer la catégorie Discord' }}
+      </button>
     </div>
   </form>
 </div>

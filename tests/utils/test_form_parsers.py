@@ -4,7 +4,6 @@ Tests the form-parsing utilities that extract structured data from Flask
 request forms (classification, ambience, restriction tags).
 """
 
-import pytest
 from werkzeug.datastructures import MultiDict
 
 from website.utils.form_parsers import get_ambience, get_classification, parse_restriction_tags

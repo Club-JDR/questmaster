@@ -73,6 +73,29 @@ class TestDiscordService:
         mock_bot.delete_role.assert_called_once_with("role123")
         assert result == {}
 
+    def test_count_roles(self, discord_service, mock_bot):
+        """count_roles returns the number of guild roles."""
+        mock_bot.list_roles.return_value = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
+
+        assert discord_service.count_roles() == 3
+        mock_bot.list_roles.assert_called_once_with()
+
+    def test_set_channel_permission(self, discord_service, mock_bot):
+        """set_channel_permission forwards to the client with member type."""
+        mock_bot.set_channel_permission.return_value = {}
+
+        discord_service.set_channel_permission("chan1", "user1", "123")
+
+        mock_bot.set_channel_permission.assert_called_once_with("chan1", "user1", "123", 1)
+
+    def test_delete_channel_permission(self, discord_service, mock_bot):
+        """delete_channel_permission forwards to the client."""
+        mock_bot.delete_channel_permission.return_value = {}
+
+        discord_service.delete_channel_permission("chan1", "user1")
+
+        mock_bot.delete_channel_permission.assert_called_once_with("chan1", "user1")
+
     # -------------------------------------------------------------------------
     # Channel operations
     # -------------------------------------------------------------------------
@@ -92,6 +115,35 @@ class TestDiscordService:
             "test-channel", "category123", "role456", "gm789"
         )
         assert result["id"] == "channel123"
+
+    def test_create_category(self, discord_service, mock_bot):
+        """create_category forwards the verbatim name to the client."""
+        mock_bot.create_category.return_value = {"id": "cat123"}
+
+        result = discord_service.create_category("🎲 CAMPAGNES 1 📖")
+
+        mock_bot.create_category.assert_called_once_with("🎲 CAMPAGNES 1 📖")
+        assert result["id"] == "cat123"
+
+    def test_list_guild_channels(self, discord_service, mock_bot):
+        """list_guild_channels forwards to the client."""
+        mock_bot.list_guild_channels.return_value = [{"id": "1"}, {"id": "2"}]
+
+        result = discord_service.list_guild_channels()
+
+        mock_bot.list_guild_channels.assert_called_once_with()
+        assert len(result) == 2
+
+    def test_count_category_children(self, discord_service, mock_bot):
+        """count_category_children counts only text children of the category."""
+        mock_bot.list_guild_channels.return_value = [
+            {"type": 0, "parent_id": "cat"},
+            {"type": 0, "parent_id": "cat"},
+            {"type": 2, "parent_id": "cat"},  # voice — ignored
+            {"type": 0, "parent_id": "other"},  # other parent — ignored
+        ]
+
+        assert discord_service.count_category_children("cat") == 2
 
     def test_get_channel(self, discord_service, mock_bot):
         """Test getting channel data."""
@@ -121,8 +173,21 @@ class TestDiscordService:
 
         result = discord_service.send_message("Hello!", "channel123")
 
-        mock_bot.send_message.assert_called_once_with("Hello!", "channel123")
+        mock_bot.send_message.assert_called_once_with(
+            "Hello!", "channel123", allowed_mentions=None, components=None
+        )
         assert result["id"] == "msg123"
+
+    def test_send_message_with_allowed_mentions(self, discord_service, mock_bot):
+        """allowed_mentions is forwarded to the client."""
+        mock_bot.send_message.return_value = {"id": "msg123"}
+        allowed = {"parse": ["users", "roles"]}
+
+        discord_service.send_message("Hi <@1>", "channel123", allowed_mentions=allowed)
+
+        mock_bot.send_message.assert_called_once_with(
+            "Hi <@1>", "channel123", allowed_mentions=allowed, components=None
+        )
 
     def test_delete_message(self, discord_service, mock_bot):
         """Test deleting a message."""
@@ -140,7 +205,7 @@ class TestDiscordService:
 
         result = discord_service.send_embed(embed, "channel123")
 
-        mock_bot.send_embed_message.assert_called_once_with(embed, "channel123")
+        mock_bot.send_embed_message.assert_called_once_with(embed, "channel123", components=None)
         assert result["id"] == "msg123"
 
     def test_edit_embed(self, discord_service, mock_bot):
@@ -150,7 +215,9 @@ class TestDiscordService:
 
         result = discord_service.edit_embed("msg123", embed, "channel456")
 
-        mock_bot.edit_embed_message.assert_called_once_with("msg123", embed, "channel456")
+        mock_bot.edit_embed_message.assert_called_once_with(
+            "msg123", embed, "channel456", components=None
+        )
         assert result["id"] == "msg123"
 
     def test_pin_message(self, discord_service, mock_bot):

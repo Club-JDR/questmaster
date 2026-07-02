@@ -51,6 +51,18 @@ document.querySelectorAll("input[type=range].range").forEach(function (range) {
   var timeout = null;
   var PLACEHOLDER = "/static/img/placeholder.jpeg";
 
+  // Users often paste an imgur *page* URL (imgur.com/abc123) instead of the
+  // direct image URL — imgur's "grab a link" only offers the page link. imgur's
+  // CDN serves the image under any extension, so rewrite single-image page URLs
+  // to a direct .webp (transparency-safe, small). Albums/galleries (which have a
+  // second path segment), already-direct i.imgur.com links and non-imgur URLs
+  // are left untouched.
+  function normalizeImgur(url) {
+    var m = /^https?:\/\/(?:www\.|m\.)?imgur\.com\/([A-Za-z0-9]+)\/?$/.exec(url);
+    if (!m || ["a", "gallery", "t"].indexOf(m[1]) !== -1) return url;
+    return "https://i.imgur.com/" + m[1] + ".webp";
+  }
+
   function loadImage(url) {
     if (testImg) {
       testImg.onload = testImg.onerror = null;
@@ -86,6 +98,15 @@ document.querySelectorAll("input[type=range].range").forEach(function (range) {
   if (input) {
     input.addEventListener("input", function () {
       loadImage(this.value.trim());
+    });
+    // Rewrite an imgur page URL to its direct image URL when leaving the field.
+    input.addEventListener("blur", function () {
+      var trimmed = this.value.trim();
+      var normalized = normalizeImgur(trimmed);
+      if (normalized !== trimmed) {
+        this.value = normalized;
+        loadImage(normalized);
+      }
     });
     if (input.value) loadImage(input.value.trim());
   }

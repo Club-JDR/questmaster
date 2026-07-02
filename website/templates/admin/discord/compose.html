@@ -5,10 +5,73 @@
 {% set action = url_for('admin.edit_discord_message', message_id=message.id) if is_edit
                 else url_for('admin.compose_discord_message') %}
 
+{# ── Reusable embed block (also cloned client-side) ── #}
+{% macro embed_block(e) %}
+<fieldset class="embed-block rounded-box border border-base-300 p-3 space-y-2">
+  <legend class="flex items-center justify-between w-full font-semibold text-sm">
+    <span class="embed-legend">Embed</span>
+    <button type="button" class="removeEmbed btn btn-ghost btn-xs text-error gap-1"
+            aria-label="Supprimer cet embed">
+      <i class="ph ph-trash" aria-hidden="true"></i>
+    </button>
+  </legend>
+  <label class="flex flex-col gap-1">
+    <span class="{{ lbl }}">Titre</span>
+    <input type="text" name="embed_title" maxlength="256"
+           class="input input-bordered input-sm w-full" value="{{ e.title or '' }}">
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="{{ lbl }}">Description</span>
+    <textarea name="embed_description" rows="4" maxlength="4096"
+              class="textarea textarea-bordered textarea-sm w-full">{{ e.description or '' }}</textarea>
+  </label>
+  <div class="flex flex-wrap gap-4">
+    <label class="flex flex-col gap-1">
+      <span class="{{ lbl }}">Couleur</span>
+      <input type="color" name="embed_color"
+             class="h-9 w-16 p-0 border-none cursor-pointer bg-transparent"
+             value="{{ e.color or '#5865f2' }}">
+    </label>
+    <label class="flex flex-col gap-1 grow">
+      <span class="{{ lbl }}">Pied de page
+        <span class="font-normal text-xs text-base-content/40">(optionnel)</span></span>
+      <input type="text" name="embed_footer" maxlength="256"
+             class="input input-bordered input-sm w-full" value="{{ e.footer or '' }}">
+    </label>
+  </div>
+  <label class="flex flex-col gap-1">
+    <span class="{{ lbl }}">Image (URL)
+      <span class="font-normal text-xs text-base-content/40">(optionnel)</span></span>
+    <input type="url" name="embed_image_url"
+           class="input input-bordered input-sm w-full" value="{{ e.image_url or '' }}">
+  </label>
+</fieldset>
+{% endmacro %}
+
+{# ── Reusable link-button row (also cloned client-side) ── #}
+{% macro button_row(b) %}
+<div class="button-row flex items-end gap-2">
+  <label class="flex flex-col gap-1 grow">
+    <span class="{{ lbl }}">Libellé</span>
+    <input type="text" name="button_label" maxlength="80"
+           class="input input-bordered input-sm w-full" value="{{ b.label or '' }}">
+  </label>
+  <label class="flex flex-col gap-1 grow">
+    <span class="{{ lbl }}">URL</span>
+    <input type="url" name="button_url"
+           class="input input-bordered input-sm w-full" value="{{ b.url or '' }}">
+  </label>
+  <button type="button" class="removeButton btn btn-ghost btn-sm text-error"
+          aria-label="Supprimer ce bouton">
+    <i class="ph ph-trash" aria-hidden="true"></i>
+  </button>
+</div>
+{% endmacro %}
+
 {% block admin_content %}
 {{ ui.header('Éditer le message' if is_edit else 'Composer un message', 'ph-paper-plane-tilt') }}
 
-{% if not channels and not is_edit %}
+{% if not channels %}
 <div class="alert alert-warning mb-4">
   <i class="ph ph-warning" aria-hidden="true"></i>
   <span>
@@ -18,117 +81,219 @@
 </div>
 {% endif %}
 
-<div class="card bg-base-100 shadow-md max-w-2xl">
-  <form method="post" action="{{ action }}" class="card-body space-y-3">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="grid gap-4 lg:grid-cols-2 items-start">
+  {# ── Editor ── #}
+  <div class="card bg-base-100 shadow-md">
+    <form method="post" action="{{ action }}" id="composeForm" class="card-body space-y-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    {# ── Channel ── #}
-    <div class="flex flex-col gap-1">
-      <label for="channel" class="{{ lbl }}">Salon</label>
-      {% if is_edit %}
-      <input type="text" id="channel" class="input input-bordered w-full"
-             value="{{ message.channel_label or message.channel_id }}" disabled>
-      <span class="text-xs text-base-content/40">Le salon d'un message envoyé ne peut pas être modifié.</span>
-      {% else %}
-      <select id="channel" name="channel" class="select select-bordered w-full" required>
-        <option value=""></option>
-        {% for channel in channels %}
-        <option value="{{ channel.channel_id }}" {% if form.channel == channel.channel_id %}selected{% endif %}>
-          {{ channel.label }}
-        </option>
-        {% endfor %}
-      </select>
-      {% endif %}
-    </div>
-
-    {# ── Type ── #}
-    <fieldset>
-      <legend class="{{ lbl }}">Type de message</legend>
-      <div class="join">
-        <label class="join-item btn btn-sm has-[:checked]:btn-primary">
-          <input type="radio" name="type" value="plain" class="sr-only msg-type"
-                 {% if form.type != 'embed' %}checked{% endif %} {% if is_edit %}disabled{% endif %}>
-          <i class="ph ph-text-aa" aria-hidden="true"></i> Texte
-        </label>
-        <label class="join-item btn btn-sm has-[:checked]:btn-primary">
-          <input type="radio" name="type" value="embed" class="sr-only msg-type"
-                 {% if form.type == 'embed' %}checked{% endif %} {% if is_edit %}disabled{% endif %}>
-          <i class="ph ph-cards" aria-hidden="true"></i> Embed
-        </label>
-      </div>
-      {% if is_edit %}
-      {# Disabled radios don't submit; keep the type for the POST. #}
-      <input type="hidden" name="type" value="{{ message.type }}">
-      {% endif %}
-    </fieldset>
-
-    {# ── Plain text fields ── #}
-    <div id="plainFields" class="flex flex-col gap-1 {% if form.type == 'embed' %}hidden{% endif %}">
-      <label for="content" class="{{ lbl }}">Contenu</label>
-      <textarea id="content" name="content" rows="5"
-                class="textarea textarea-bordered w-full">{{ form.content }}</textarea>
-    </div>
-
-    {# ── Embed fields ── #}
-    <div id="embedFields" class="space-y-3 {% if form.type != 'embed' %}hidden{% endif %}">
+      {# ── Channel (editable, even when editing — moves the message) ── #}
       <div class="flex flex-col gap-1">
-        <label for="title" class="{{ lbl }}">Titre</label>
-        <input type="text" id="title" name="title" maxlength="256"
-               class="input input-bordered w-full" value="{{ form.title }}">
+        <label for="channel" class="{{ lbl }}">Salon</label>
+        <select id="channel" name="channel" class="select select-bordered w-full" required>
+          <option value=""></option>
+          {% for channel in channels %}
+          <option value="{{ channel.channel_id }}" {% if form.channel == channel.channel_id %}selected{% endif %}>
+            {{ channel.label }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if is_edit %}
+        <span class="text-xs text-base-content/40">
+          Changer de salon renvoie le message dans le nouveau salon et supprime l'ancien.
+        </span>
+        {% endif %}
       </div>
+
+      {# ── Content ── #}
       <div class="flex flex-col gap-1">
-        <label for="description" class="{{ lbl }}">Description</label>
-        <textarea id="description" name="description" rows="5" maxlength="4096"
-                  class="textarea textarea-bordered w-full">{{ form.description }}</textarea>
+        <label for="content" class="{{ lbl }}">Contenu
+          <span class="font-normal text-xs text-base-content/40">(optionnel si embed)</span></label>
+        <textarea id="content" name="content" rows="4"
+                  class="textarea textarea-bordered w-full">{{ form.content }}</textarea>
       </div>
-      <div class="flex flex-wrap gap-4">
-        <div class="flex flex-col gap-1">
-          <label for="color" class="{{ lbl }}">Couleur</label>
-          <input type="color" id="color" name="color"
-                 class="h-10 w-20 p-0 border-none cursor-pointer bg-transparent"
-                 value="{{ form.color or '#5865f2' }}">
+
+      {# ── Embeds ── #}
+      <div class="space-y-3 pt-2 border-t border-base-300">
+        <span class="{{ lbl }}">Embeds</span>
+        <div id="embedBlocks" class="space-y-3">
+          {% for e in form.embeds %}{{ embed_block(e) }}{% endfor %}
         </div>
-        <div class="flex flex-col gap-1 grow">
-          <label for="footer" class="{{ lbl }}">Pied de page
-            <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
-          <input type="text" id="footer" name="footer" maxlength="256"
-                 class="input input-bordered w-full" value="{{ form.footer }}">
-        </div>
+        <button type="button" id="addEmbed" class="btn btn-sm btn-outline gap-1">
+          <i class="ph ph-plus" aria-hidden="true"></i> Ajouter un embed
+        </button>
       </div>
-      <div class="flex flex-col gap-1">
-        <label for="image_url" class="{{ lbl }}">Image (URL)
-          <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
-        <input type="url" id="image_url" name="image_url"
-               class="input input-bordered w-full" value="{{ form.image_url }}">
-      </div>
-    </div>
 
-    <div class="flex justify-end gap-2 pt-2">
-      <a href="{{ url_for('admin.list_discord_messages') }}" class="btn btn-ghost">Annuler</a>
-      <button type="submit" class="btn btn-primary gap-1">
-        <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
-        {{ 'Enregistrer' if is_edit else 'Envoyer' }}
-      </button>
+      {# ── Link buttons ── #}
+      <div class="space-y-2 pt-2 border-t border-base-300">
+        <span class="{{ lbl }}">Boutons (liens)</span>
+        <div id="buttonRows" class="space-y-2">
+          {% for b in form.buttons %}{{ button_row(b) }}{% endfor %}
+        </div>
+        <button type="button" id="addButton" class="btn btn-sm btn-outline gap-1">
+          <i class="ph ph-plus" aria-hidden="true"></i> Ajouter un bouton
+        </button>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <a href="{{ url_for('admin.list_discord_messages') }}" class="btn btn-ghost">Annuler</a>
+        <button type="submit" class="btn btn-primary gap-1">
+          <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+          {{ 'Enregistrer' if is_edit else 'Envoyer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {# ── Live preview ── #}
+  <div class="card bg-base-100 shadow-md lg:sticky lg:top-4">
+    <div class="card-body">
+      <h2 class="font-semibold text-base mb-1">Aperçu</h2>
+      <div id="preview" class="rounded-box bg-base-200 p-4 space-y-2 text-sm" aria-hidden="true"></div>
     </div>
-  </form>
+  </div>
 </div>
+
+{# ── Clone templates ── #}
+<template id="embedBlockTpl">{{ embed_block({}) }}</template>
+<template id="buttonRowTpl">{{ button_row({}) }}</template>
 {% endblock %}
 
 {% block scripts %}{{ super() }}
 <script>
   (function () {
-    const plain = document.getElementById('plainFields');
-    const embed = document.getElementById('embedFields');
-    function sync() {
-      const checked = document.querySelector('input.msg-type:checked');
-      const isEmbed = checked && checked.value === 'embed';
-      plain.classList.toggle('hidden', isEmbed);
-      embed.classList.toggle('hidden', !isEmbed);
+    const MAX_EMBEDS = 10;
+    const MAX_BUTTONS = 5;
+    const form = document.getElementById('composeForm');
+    const embedBlocks = document.getElementById('embedBlocks');
+    const buttonRows = document.getElementById('buttonRows');
+    const addEmbedBtn = document.getElementById('addEmbed');
+    const addButtonBtn = document.getElementById('addButton');
+    const preview = document.getElementById('preview');
+
+    function renumberEmbeds() {
+      const blocks = embedBlocks.querySelectorAll('.embed-block');
+      blocks.forEach((block, i) => {
+        const legend = block.querySelector('.embed-legend');
+        if (legend) legend.textContent = 'Embed ' + (i + 1);
+      });
+      addEmbedBtn.disabled = blocks.length >= MAX_EMBEDS;
     }
-    document.querySelectorAll('input.msg-type').forEach(function (el) {
-      el.addEventListener('change', sync);
+
+    function updateButtonControls() {
+      addButtonBtn.disabled = buttonRows.querySelectorAll('.button-row').length >= MAX_BUTTONS;
+    }
+
+    // ── Preview rendering (DOM API only, never innerHTML, to avoid injection) ──
+    function el(tag, cls, text) {
+      const node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text != null) node.textContent = text;
+      return node;
+    }
+
+    function renderEmbedPreview(block) {
+      const get = (name) => {
+        const input = block.querySelector('[name="' + name + '"]');
+        return input ? input.value.trim() : '';
+      };
+      const title = get('embed_title');
+      const description = get('embed_description');
+      const footer = get('embed_footer');
+      const image = get('embed_image_url');
+      const color = get('embed_color') || '#5865f2';
+      if (!title && !description && !footer && !image) return null;
+
+      const card = el('div', 'rounded bg-base-100 p-3 border-l-4');
+      card.style.borderLeftColor = color;
+      if (title) card.appendChild(el('div', 'font-semibold', title));
+      if (description) {
+        card.appendChild(el('div', 'opacity-80 whitespace-pre-wrap', description));
+      }
+      if (image) {
+        const img = el('img', 'rounded mt-2 max-h-48');
+        img.src = image;
+        img.alt = '';
+        card.appendChild(img);
+      }
+      if (footer) card.appendChild(el('div', 'text-xs opacity-60 mt-2', footer));
+      return card;
+    }
+
+    function renderButtonsPreview() {
+      const rows = [];
+      buttonRows.querySelectorAll('.button-row').forEach((row) => {
+        const label = row.querySelector('[name="button_label"]').value.trim();
+        const url = row.querySelector('[name="button_url"]').value.trim();
+        if (label && url) rows.push({ label, url });
+      });
+      if (!rows.length) return null;
+      const wrap = el('div', 'flex flex-wrap gap-2 pt-1');
+      rows.forEach((b) => {
+        const a = el('a', 'btn btn-sm no-animation', b.label);
+        a.href = b.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        wrap.appendChild(a);
+      });
+      return wrap;
+    }
+
+    function render() {
+      preview.replaceChildren();
+      const content = document.getElementById('content').value;
+      if (content) preview.appendChild(el('div', 'whitespace-pre-wrap', content));
+      embedBlocks.querySelectorAll('.embed-block').forEach((block) => {
+        const card = renderEmbedPreview(block);
+        if (card) preview.appendChild(card);
+      });
+      const buttons = renderButtonsPreview();
+      if (buttons) preview.appendChild(buttons);
+      if (!preview.childNodes.length) {
+        preview.appendChild(el('div', 'opacity-50 italic', 'Rien à prévisualiser pour le moment.'));
+      }
+    }
+
+    // ── Events ──
+    addEmbedBtn.addEventListener('click', () => {
+      if (embedBlocks.querySelectorAll('.embed-block').length >= MAX_EMBEDS) return;
+      embedBlocks.appendChild(
+        document.getElementById('embedBlockTpl').content.cloneNode(true)
+      );
+      renumberEmbeds();
+      render();
     });
-    sync();
+
+    addButtonBtn.addEventListener('click', () => {
+      if (buttonRows.querySelectorAll('.button-row').length >= MAX_BUTTONS) return;
+      buttonRows.appendChild(
+        document.getElementById('buttonRowTpl').content.cloneNode(true)
+      );
+      updateButtonControls();
+      render();
+    });
+
+    form.addEventListener('click', (ev) => {
+      const rmEmbed = ev.target.closest('.removeEmbed');
+      if (rmEmbed) {
+        rmEmbed.closest('.embed-block').remove();
+        renumberEmbeds();
+        render();
+        return;
+      }
+      const rmButton = ev.target.closest('.removeButton');
+      if (rmButton) {
+        rmButton.closest('.button-row').remove();
+        updateButtonControls();
+        render();
+      }
+    });
+
+    form.addEventListener('input', render);
+
+    renumberEmbeds();
+    updateButtonControls();
+    render();
   })();
 </script>
 {% endblock %}

@@ -8,11 +8,13 @@ from config.constants import ADMIN_PAGE_SIZE
 from website.exceptions import NotFoundError, ValidationError
 from website.services.vtt import VttService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 vtt_service = VttService()
 
 
 @admin_bp.route("/vtts/", methods=["GET"])
+@require_permission("vtt.manage")
 def list_vtts():
     """List VTTs with search and pagination."""
     page, search = get_list_params()
@@ -21,6 +23,7 @@ def list_vtts():
 
 
 @admin_bp.route("/vtts/new", methods=["GET", "POST"])
+@require_permission("vtt.manage")
 def create_vtt():
     """Create a new VTT."""
     if request.method == "POST":
@@ -38,6 +41,7 @@ def create_vtt():
 
 
 @admin_bp.route("/vtts/<int:vtt_id>/edit", methods=["GET", "POST"])
+@require_permission("vtt.manage")
 def edit_vtt(vtt_id):
     """Edit an existing VTT."""
     try:
@@ -61,6 +65,7 @@ def edit_vtt(vtt_id):
 
 
 @admin_bp.route("/vtts/<int:vtt_id>/delete", methods=["POST"])
+@require_permission("vtt.manage")
 def delete_vtt(vtt_id):
     """Delete a VTT."""
     vtt_service.delete(vtt_id)

@@ -56,6 +56,7 @@ class GameSessionService:
         game.sessions.append(session)
         db.session.commit()
         logger.info(f"Session added for game {game.id} from {start} to {end}")
+        self._invalidate_stats(game)
         return session
 
     def delete(self, session: GameSession) -> None:
@@ -64,12 +65,14 @@ class GameSessionService:
         Args:
             session: GameSession instance to delete.
         """
+        game = session.game
         game_id = session.game_id
         start = session.start
         end = session.end
         self.repo.delete(session)
         db.session.commit()
         logger.info(f"Session removed for game {game_id} from {start} to {end}")
+        self._invalidate_stats(game)
 
     def update(self, session: GameSession, new_start: datetime, new_end: datetime) -> GameSession:
         """Update a session's start/end times.
@@ -99,6 +102,7 @@ class GameSessionService:
         session.end = new_end
         db.session.commit()
         logger.info(f"Session {session.id} updated to {new_start} - {new_end}")
+        self._invalidate_stats(game)
         return session
 
     def get_by_id_or_404(self, session_id: int) -> GameSession:
@@ -205,6 +209,17 @@ class GameSessionService:
             "campaign_games": campaign_games,
             "gm_names": gm_names,
         }
+
+    @staticmethod
+    def _invalidate_stats(game) -> None:
+        """Invalidate dashboard stats for everyone involved in the game.
+
+        A session change shifts the GM's and players' agendas, play hours,
+        session counts and rhythm, so their cached dashboard data is dropped.
+        """
+        from website.services.stats import StatsService
+
+        StatsService().invalidate_for_game(game)
 
     @staticmethod
     def _has_conflict(game, start_dt, end_dt, exclude_session_id=None):

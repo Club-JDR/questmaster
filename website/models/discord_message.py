@@ -7,33 +7,32 @@ from website.models.base import SerializableMixin
 
 
 class DiscordMessage(db.Model, SerializableMixin):
-    """A message (plain text or embed) sent to a Discord channel by an admin.
+    """A message sent to a Discord channel by an admin.
 
     Persisted so admins can find and edit previously-sent messages without
     needing to remember Discord message IDs. The target channel is resolved at
     send time from the settings allowlist; only the raw Discord channel ID is
-    stored (no foreign key), with the originating setting key kept for
-    display/audit.
+    stored (no foreign key), with a human label kept for display/audit.
+
+    A message is composed of any combination of plain ``content``, a list of
+    ``embeds`` and a row of link ``buttons`` — these are independent and may all
+    appear together. There is no separate "type": a message is considered an embed
+    message when it carries embeds. Embeds are stored as a JSON list (each item a
+    ``{"title", "description", "color", "footer", "image_url"}`` dict); buttons as
+    a JSON list of ``{"label", "url"}`` dicts.
 
     Attributes:
         id: Primary key.
         discord_msg_id: Discord's own ID for the sent message.
         channel_id: Discord channel ID the message was sent to.
         channel_label: Human label of the target channel (snapshot, for display).
-        type: Message kind, ``"plain"`` or ``"embed"``.
-        content: Plain-text body (None for embeds).
-        title: Embed title (None for plain messages).
-        description: Embed description (None for plain messages).
-        color: Embed color as an integer (None for plain messages).
-        footer: Embed footer text (None for plain messages).
-        image_url: Embed image URL (None for plain messages).
+        content: Plain-text body (optional; may accompany embeds).
+        embeds: List of embed dicts (None when there are no embeds).
+        buttons: List of ``{"label", "url"}`` link buttons (None if no buttons).
         sent_at: Timestamp of the original send (UTC).
     """
 
     __tablename__ = "discord_message"
-
-    TYPE_PLAIN = "plain"
-    TYPE_EMBED = "embed"
 
     _exclude_fields = []
     _relationship_fields = []
@@ -42,19 +41,37 @@ class DiscordMessage(db.Model, SerializableMixin):
     discord_msg_id = db.Column(db.String(32), nullable=False, unique=True)
     channel_id = db.Column(db.String(32), nullable=False)
     channel_label = db.Column(db.String(128), nullable=True)
-    type = db.Column(db.String(8), nullable=False)
     content = db.Column(db.Text, nullable=True)
-    title = db.Column(db.String(256), nullable=True)
-    description = db.Column(db.Text, nullable=True)
-    color = db.Column(db.Integer, nullable=True)
-    footer = db.Column(db.String(256), nullable=True)
-    image_url = db.Column(db.String(512), nullable=True)
+    embeds = db.Column(db.JSON, nullable=True)
+    buttons = db.Column(db.JSON, nullable=True)
     sent_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     @property
     def is_embed(self) -> bool:
-        """Whether this message is an embed."""
-        return self.type == self.TYPE_EMBED
+        """Whether this message carries at least one embed."""
+        return bool(self.embeds)
+
+    @property
+    def embed_list(self) -> list:
+        """Return the embeds as a list (empty when there are none)."""
+        return self.embeds or []
+
+    @property
+    def preview(self) -> str:
+        """Return a short text preview for list views.
+
+        Uses the plain content if present, otherwise the first embed's title or
+        description.
+
+        Returns:
+            A preview string (possibly empty).
+        """
+        if self.content:
+            return self.content
+        for embed in self.embed_list:
+            if embed.get("title") or embed.get("description"):
+                return embed.get("title") or embed.get("description") or ""
+        return ""
 
     @classmethod
     def from_dict(cls, data):
@@ -64,14 +81,10 @@ class DiscordMessage(db.Model, SerializableMixin):
             discord_msg_id=data.get("discord_msg_id"),
             channel_id=data.get("channel_id"),
             channel_label=data.get("channel_label"),
-            type=data.get("type"),
             content=data.get("content"),
-            title=data.get("title"),
-            description=data.get("description"),
-            color=data.get("color"),
-            footer=data.get("footer"),
-            image_url=data.get("image_url"),
+            embeds=data.get("embeds"),
+            buttons=data.get("buttons"),
         )
 
     def __repr__(self):
-        return f"<DiscordMessage id={self.id} type='{self.type}' channel='{self.channel_id}'>"
+        return f"<DiscordMessage id={self.id} channel='{self.channel_id}'>"

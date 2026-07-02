@@ -39,14 +39,11 @@ jobs:
       - name: Install lint dependencies from lockfile
         run: uv sync --frozen --no-build --no-install-project --extra lint
 
-      - name: Check import ordering with isort
-        run: uv run --no-sync --no-build isort --check website/ config/ tests/
+      - name: Lint with Ruff
+        run: uv run --no-sync --no-build ruff check website/ config/ tests/
 
-      - name: Check formatting with Black
-        run: uv run --no-sync --no-build black --check website/ config/ tests/
-
-      - name: Lint with flake8
-        run: uv run --no-sync --no-build flake8 website/
+      - name: Check formatting with Ruff
+        run: uv run --no-sync --no-build ruff format --check website/ config/ tests/
 
       - name: Lint with docstrings with pydoclint
         run: uv run --no-sync --no-build pydoclint website/

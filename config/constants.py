@@ -97,6 +97,38 @@ DISCORD_API_BASE_URL = "https://discord.com/api/v10"
 PLAYER_ROLE_PERMISSION = "563362270661696"
 GM_ROLE_PERMISSION = "2815265163693120"
 
+# Discord role limits
+# A Discord guild is hard-capped at 250 roles. When the count nears this limit,
+# the scheduler auto-enables direct per-player channel permissions for new games
+# so that no further roles are consumed. The threshold at which this kicks in is
+# admin-configurable (DB-backed); this constant is only its default value.
+DISCORD_ROLE_LIMIT = 250
+DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT = 230
+# How long (seconds) to cache the guild role count shown on the admin settings page.
+DISCORD_ROLE_COUNT_CACHE_TIMEOUT = 3600
+
+# Discord channel categories
+DISCORD_CATEGORY_CHANNEL_LIMIT = 50  # Discord hard cap: channels per category.
+# Fill level at which a fresh category is auto-provisioned (90% of the limit by
+# default). Admin-configurable (DB-backed); this constant is only the fallback.
+DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT = 45
+DISCORD_CHANNEL_TYPE_TEXT = 0  # Discord channel type: GUILD_TEXT.
+DISCORD_CHANNEL_TYPE_CATEGORY = 4  # Discord channel type: GUILD_CATEGORY.
+
+# Category name templates, keyed by game type. ``{n}`` is the per-type sequence number.
+CATEGORY_NAME_TEMPLATES = {
+    GAME_TYPE_CAMPAIGN: "🎲 CAMPAGNES {n} 📖",
+    GAME_TYPE_ONESHOT: "🎲 ONE SHOTS {n} 📖",
+}
+
+# Discord message components (buttons)
+DISCORD_COMPONENT_ACTION_ROW = 1  # Component type: action row (button container).
+DISCORD_COMPONENT_BUTTON = 2  # Component type: button.
+DISCORD_BUTTON_STYLE_LINK = 5  # Button style: link (opens a URL, no interaction).
+DISCORD_MAX_BUTTONS_PER_ROW = 5  # Discord cap: buttons per action row.
+DISCORD_BUTTON_LABEL_MAX = 80  # Discord cap: characters in a button label.
+DISCORD_EMBED_LIMIT = 10  # Discord cap: embeds per message.
+
 # Site
 SITE_BASE_URL = "https://questmaster.club-jdr.fr"
 
@@ -118,11 +150,29 @@ DEFAULT_AVATAR = "/static/img/avatar.webp"
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
 # Pagination
-GAMES_PER_PAGE = 12
+GAMES_PER_PAGE = 12  # Default card-grid page size; admin-overridable at runtime.
+GAMES_PER_PAGE_MAX = 60  # Upper bound for the admin-configurable card-grid page size.
 API_DEFAULT_PAGE = 1
 API_DEFAULT_PER_PAGE = 20
 API_MAX_PER_PAGE = 100
 ADMIN_PAGE_SIZE = 25
+
+# Dashboard (admin-configurable limits use the *_DEFAULT values as fallbacks).
+DASHBOARD_AGENDA_LIMIT_DEFAULT = 10  # Upcoming sessions listed in the agenda.
+DASHBOARD_OPEN_LIMIT_DEFAULT = 8  # Latest open announcements shown on the dashboard.
+DASHBOARD_LIMIT_MAX = 30  # Upper bound for the admin-configurable dashboard limits.
+DASHBOARD_AGENDA_PAST = 3  # Recent past sessions shown before the upcoming ones (context).
+DASHBOARD_RYTHME_MONTHS = 12  # Months of activity shown in the "Rythme" chart.
+DASHBOARD_TOP_SYSTEMS = 3  # Number of systems listed in each "Top systèmes" ranking.
+DASHBOARD_STATS_CACHE_TIMEOUT = 300  # Seconds to cache a user's computed dashboard stats.
+
+# Global statistics (app-wide /stats page).
+STATS_TOP_GLOBAL = 10  # Items listed in each global "Top systèmes / VTTs" ranking.
+RESTRICTION_LABELS = {
+    RESTRICTION_ALL: "Tout public",
+    RESTRICTION_16_PLUS: "16 ans et +",
+    RESTRICTION_18_PLUS: "18 ans et +",
+}
 
 # Routes
 GAME_DETAILS_ROUTE = "annonces.get_game_details"

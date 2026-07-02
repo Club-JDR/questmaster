@@ -20,7 +20,7 @@ class GameSession(db.Model, SerializableMixin):
     _relationship_fields = []
 
     id = db.Column(db.BigInteger, primary_key=True)
-    game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
+    game_id = db.Column(db.Integer, db.ForeignKey("game.id"), index=True)
     start = db.Column(db.DateTime, nullable=False)
     end = db.Column(db.DateTime, nullable=False)
 

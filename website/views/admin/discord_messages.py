@@ -7,6 +7,7 @@ from website.models import DiscordMessage
 from website.services.discord_message import DiscordMessageService
 from website.services.setting import SettingsService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 discord_message_service = DiscordMessageService()
 settings_service = SettingsService()
@@ -29,43 +30,98 @@ def _parse_color(raw: str | None) -> int | None:
         return None
 
 
+def _parse_buttons() -> list[dict]:
+    """Build the list of link buttons from the parallel form arrays.
+
+    Returns:
+        A list of ``{"label", "url"}`` dicts, one per submitted button row.
+    """
+    labels = request.form.getlist("button_label")
+    urls = request.form.getlist("button_url")
+    count = max(len(labels), len(urls))
+    return [
+        {
+            "label": (labels[i] if i < len(labels) else "").strip(),
+            "url": (urls[i] if i < len(urls) else "").strip(),
+        }
+        for i in range(count)
+    ]
+
+
+def _parse_embeds() -> list[dict]:
+    """Build the list of embeds from the parallel form arrays.
+
+    Returns:
+        A list of embed field dicts (``title``, ``description``, ``color`` as int,
+        ``footer``, ``image_url``), one per submitted embed block.
+    """
+    titles = request.form.getlist("embed_title")
+    descriptions = request.form.getlist("embed_description")
+    colors = request.form.getlist("embed_color")
+    footers = request.form.getlist("embed_footer")
+    images = request.form.getlist("embed_image_url")
+    count = max(len(titles), len(descriptions), len(colors), len(footers), len(images))
+
+    def at(values: list[str], i: int) -> str:
+        return values[i] if i < len(values) else ""
+
+    return [
+        {
+            "title": at(titles, i).strip() or None,
+            "description": at(descriptions, i).strip() or None,
+            "color": _parse_color(at(colors, i)),
+            "footer": at(footers, i).strip() or None,
+            "image_url": at(images, i).strip() or None,
+        }
+        for i in range(count)
+    ]
+
+
 def _parse_message_form() -> dict:
     """Build a message field dict from the submitted compose/edit form.
 
     Returns:
-        Dict with ``content``, ``title``, ``description``, ``color`` (int),
-        ``footer`` and ``image_url`` keys.
+        Dict with ``content`` (plain), an ``embeds`` list and a ``buttons`` list.
     """
     return {
         "content": request.form.get("content", ""),
-        "title": request.form.get("title", "").strip() or None,
-        "description": request.form.get("description", "").strip() or None,
-        "color": _parse_color(request.form.get("color")),
-        "footer": request.form.get("footer", "").strip() or None,
-        "image_url": request.form.get("image_url", "").strip() or None,
+        "embeds": _parse_embeds(),
+        "buttons": _parse_buttons(),
     }
 
 
-def _form_view(data: dict, channel: str | None, msg_type: str) -> dict:
+def _embed_to_form(embed: dict) -> dict:
+    """Shape one embed dict for the template (``color`` as a hex string)."""
+    return {
+        "title": embed.get("title") or "",
+        "description": embed.get("description") or "",
+        "color": f"#{embed['color']:06x}" if embed.get("color") is not None else "",
+        "footer": embed.get("footer") or "",
+        "image_url": embed.get("image_url") or "",
+    }
+
+
+def _embeds_to_form(embeds: list[dict]) -> list[dict]:
+    """Shape a list of embeds for the template, always yielding at least one block."""
+    blocks = [_embed_to_form(embed) for embed in embeds or []]
+    return blocks or [_embed_to_form({})]
+
+
+def _form_view(data: dict, channel: str | None) -> dict:
     """Shape parsed form data for re-rendering the template after a POST.
 
     Args:
-        data: Parsed message fields (``color`` as int).
+        data: Parsed message fields (``embeds`` colors as ints).
         channel: Selected channel ID.
-        msg_type: Selected message type.
 
     Returns:
-        Template-friendly form dict (``color`` rendered back to a hex string).
+        Template-friendly form dict (embed colors rendered back to hex strings).
     """
     return {
         "channel": channel,
-        "type": msg_type,
         "content": data.get("content") or "",
-        "title": data.get("title") or "",
-        "description": data.get("description") or "",
-        "color": f"#{data['color']:06x}" if data.get("color") is not None else "",
-        "footer": data.get("footer") or "",
-        "image_url": data.get("image_url") or "",
+        "embeds": _embeds_to_form(data.get("embeds")),
+        "buttons": data.get("buttons") or [],
     }
 
 
@@ -80,17 +136,14 @@ def _form_from_message(message: DiscordMessage) -> dict:
     """
     return {
         "channel": message.channel_id,
-        "type": message.type,
         "content": message.content or "",
-        "title": message.title or "",
-        "description": message.description or "",
-        "color": f"#{message.color:06x}" if message.color is not None else "",
-        "footer": message.footer or "",
-        "image_url": message.image_url or "",
+        "embeds": _embeds_to_form(message.embed_list),
+        "buttons": message.buttons or [],
     }
 
 
 @admin_bp.route("/discord/", methods=["GET"])
+@require_permission("discord.send")
 def list_discord_messages():
     """List Discord messages sent through the admin panel."""
     page, search = get_list_params()
@@ -104,6 +157,7 @@ def list_discord_messages():
 
 
 @admin_bp.route("/discord/<int:message_id>/delete", methods=["POST"])
+@require_permission("discord.send")
 def delete_discord_message(message_id):
     """Delete a sent message from Discord and remove its stored record."""
     try:
@@ -115,6 +169,7 @@ def delete_discord_message(message_id):
 
 
 @admin_bp.route("/discord/channels/new", methods=["GET", "POST"])
+@require_permission("discord.send")
 def new_discord_channel():
     """Add a channel to the list of channels messages can be sent to."""
     if request.method == "POST":
@@ -133,6 +188,7 @@ def new_discord_channel():
 
 
 @admin_bp.route("/discord/channels/<channel_id>/delete", methods=["POST"])
+@require_permission("discord.send")
 def delete_discord_channel(channel_id):
     """Remove a channel from the list of channels messages can be sent to."""
     settings_service.remove_post_channel(channel_id, updated_by_id=session.get("user_id"))
@@ -141,16 +197,16 @@ def delete_discord_channel(channel_id):
 
 
 @admin_bp.route("/discord/compose", methods=["GET", "POST"])
+@require_permission("discord.send")
 def compose_discord_message():
-    """Compose and send a new Discord message (plain or embed)."""
+    """Compose and send a new Discord message (content, embeds and/or buttons)."""
     channels = discord_message_service.get_post_channels()
 
     if request.method == "POST":
         channel_id = request.form.get("channel")
-        msg_type = request.form.get("type", DiscordMessage.TYPE_PLAIN)
         data = _parse_message_form()
         try:
-            discord_message_service.send(channel_id, msg_type, data)
+            discord_message_service.send(channel_id, data)
             flash("Message envoyé.", "success")
             return redirect(url_for("admin.list_discord_messages"))
         except ValidationError as e:
@@ -161,20 +217,21 @@ def compose_discord_message():
             "admin/discord/compose.html",
             channels=channels,
             message=None,
-            form=_form_view(data, channel_id, msg_type),
+            form=_form_view(data, channel_id),
         )
 
     return render_template(
         "admin/discord/compose.html",
         channels=channels,
         message=None,
-        form={"channel": None, "type": DiscordMessage.TYPE_PLAIN},
+        form=_form_view({}, None),
     )
 
 
 @admin_bp.route("/discord/<int:message_id>/edit", methods=["GET", "POST"])
+@require_permission("discord.send")
 def edit_discord_message(message_id):
-    """Edit a previously-sent Discord message (channel and type are fixed)."""
+    """Edit a previously-sent Discord message (its channel can be changed)."""
     try:
         message = discord_message_service.get_by_id(message_id)
     except NotFoundError:
@@ -182,9 +239,10 @@ def edit_discord_message(message_id):
         return redirect(url_for("admin.list_discord_messages"))
 
     if request.method == "POST":
+        channel_id = request.form.get("channel")
         data = _parse_message_form()
         try:
-            discord_message_service.edit(message_id, data)
+            discord_message_service.edit(message_id, channel_id, data)
             flash("Message mis à jour.", "success")
             return redirect(url_for("admin.list_discord_messages"))
         except ValidationError as e:
@@ -195,7 +253,7 @@ def edit_discord_message(message_id):
             "admin/discord/compose.html",
             channels=discord_message_service.get_post_channels(),
             message=message,
-            form=_form_view(data, message.channel_id, message.type),
+            form=_form_view(data, channel_id),
         )
 
     return render_template(

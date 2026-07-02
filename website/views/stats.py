@@ -6,21 +6,24 @@ from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template, request
 
 from website.services.game_session import GameSessionService
+from website.services.stats import StatsService
 from website.views.auth import who
 
 stats_bp = Blueprint("stats", __name__)
 
 # Service instances
 session_service = GameSessionService()
+stats_service = StatsService()
 
 
 @stats_bp.route("/stats/", methods=["GET"])
 def get_stats():
-    """Render monthly statistics page."""
+    """Render the statistics page (app-wide overview + monthly breakdown)."""
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
 
     stats = session_service.get_stats_for_period(year, month)
+    overview = stats_service.get_global_stats()
 
     base_day = stats["base_day"]
     last_day = stats["last_day"]
@@ -29,6 +32,7 @@ def get_stats():
 
     return render_template(
         "stats.j2",
+        overview=overview,
         base_day=base_day.strftime("%B %Y"),
         last_day=last_day.strftime("%a %d/%m"),
         num_os=stats["num_os"],

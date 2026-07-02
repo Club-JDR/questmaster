@@ -8,7 +8,7 @@ class UserRepository(BaseRepository[User]):
     """Repository for User entities."""
 
     model_class = User
-    search_columns = [User.id, User.name]
+    search_columns = [User.id, User.name, User.username]
 
     def base_query(self):
         """Return all users ordered by display name."""
@@ -45,6 +45,24 @@ class UserRepository(BaseRepository[User]):
         """
         rows = self.session.query(User.id).filter(User.not_player_as_of.isnot(None)).all()
         return [row[0] for row in rows]
+
+    def update_fields(self, user_id: str, values: dict) -> None:
+        """Apply a partial column update without loading the ORM object.
+
+        Uses a Core UPDATE so the write is not suppressed by the display-name
+        resolution performed in ``User.init_on_load`` (which, in background
+        contexts, sets ``name`` at load time and makes an identical ORM
+        assignment a no-op).
+
+        Args:
+            user_id: Discord user ID.
+            values: Mapping of column names to new values.
+        """
+        if not values:
+            return
+        self.session.query(User).filter(User.id == user_id).update(
+            values, synchronize_session=False
+        )
 
     def get_by_ids(self, ids: list[str]) -> list[User]:
         """Retrieve users by a list of IDs.

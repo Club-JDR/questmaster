@@ -293,6 +293,7 @@ def test_get_user_profile_does_not_cache_non_404_errors(mock_get_bot, test_app):
         result = get_user_profile("99999999999999998", force_refresh=True)
         assert result["name"] == "Inconnu"
         assert result.get("not_found") is None
+        assert result.get("error") is True
 
         cached = cache.get("user_profile_99999999999999998")
         assert cached is None

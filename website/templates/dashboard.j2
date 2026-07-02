@@ -1,0 +1,62 @@
+{% extends 'base.j2' %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+
+<h1 class="text-center font-black text-2xl mt-4 mb-1">
+  <i class="ph ph-gauge"></i> Tableau de bord
+</h1>
+{% if payload['username'] %}
+<p class="text-center text-base-content/60 mb-6">Bonjour {{ payload['username'] }} 👋</p>
+{% endif %}
+
+{# ============ Agenda + stats panels ============ #}
+{% if agenda is not none and stats is not none %}
+  {# Demo / inline render. #}
+  <div id="dashboard-panels">{% include "dashboard_panels.j2" %}</div>
+{% elif payload['username'] %}
+  {# Member: lazy-load the heavy agenda + stats queries via a fragment. #}
+  <div id="dashboard-panels" data-src="{{ url_for('annonces.dashboard_panels') }}">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div class="skeleton h-96 w-full" aria-hidden="true"></div>
+      <div class="skeleton h-96 w-full" aria-hidden="true"></div>
+    </div>
+    <p class="sr-only">Chargement de votre agenda et de vos statistiques…</p>
+  </div>
+{% endif %}
+
+{# ============ Open games (full width) ============ #}
+{% if open_games %}
+<section aria-labelledby="open-heading">
+  <h2 id="open-heading" class="font-black text-xl mb-3 flex items-center justify-center gap-2 text-center">
+    <i class="ph ph-megaphone"></i> Annonces ouvertes
+  </h2>
+  {# Mirrors the open-games browser: skeletons on the dashboard ("/") are swapped
+     and live-refreshed by cards.js; the demo renders real cards directly. #}
+  <div id="game-cards-container"
+    class="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-3 scrollbar-hide sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-3 xl:grid-cols-4">
+    {% if request.path == '/' %}
+      {% for i in range(open_games|length) %}{% include "game_card_skeleton.j2" %}{% endfor %}
+    {% else %}
+      {% with games=open_games %}{% include "game_cards_container.j2" %}{% endwith %}
+    {% endif %}
+  </div>
+  <div id="carousel-indicator" class="flex justify-center gap-1.5 mt-2 sm:hidden" aria-hidden="true"></div>
+  <div class="text-center mt-4">
+    <a href="{{ url_for('annonces.search_games') }}" class="btn btn-sm btn-ghost">
+      Voir toutes les annonces <i class="ph ph-arrow-right"></i>
+    </a>
+  </div>
+</section>
+{% elif agenda is none %}
+<div role="alert" class="alert alert-info mt-4">
+  <i class="ph ph-info"></i>
+  <span>Aucune annonce ouverte pour le moment.</span>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}{{ super() }}
+<script src="/static/js/cards.js"></script>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

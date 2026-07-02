@@ -9,6 +9,7 @@ from website.exceptions import NotFoundError, ValidationError
 from website.services.game import GameService
 from website.services.special_event import SpecialEventService
 from website.views.admin import admin_bp, get_list_params
+from website.views.auth import require_permission
 
 special_event_service = SpecialEventService()
 game_service = GameService()
@@ -29,6 +30,7 @@ def _parse_color(raw: str | None) -> int | None:
 
 
 @admin_bp.route("/special-events/", methods=["GET"])
+@require_permission("special_event.manage")
 def list_special_events():
     """List special events with search and pagination."""
     page, search = get_list_params()
@@ -39,6 +41,7 @@ def list_special_events():
 
 
 @admin_bp.route("/special-events/new", methods=["GET", "POST"])
+@require_permission("special_event.manage")
 def create_special_event():
     """Create a new special event."""
     if request.method == "POST":
@@ -58,6 +61,7 @@ def create_special_event():
 
 
 @admin_bp.route("/special-events/<int:event_id>/edit", methods=["GET", "POST"])
+@require_permission("special_event.manage")
 def edit_special_event(event_id):
     """Edit an existing special event."""
     try:
@@ -86,6 +90,7 @@ def edit_special_event(event_id):
 
 
 @admin_bp.route("/special-events/<int:event_id>/games", methods=["GET"])
+@require_permission("special_event.manage")
 def special_event_games(event_id):
     """List all games linked to a specific special event."""
     try:
@@ -102,6 +107,7 @@ def special_event_games(event_id):
 
 
 @admin_bp.route("/special-events/<int:event_id>/delete", methods=["POST"])
+@require_permission("special_event.manage")
 def delete_special_event(event_id):
     """Delete a special event."""
     special_event_service.delete(event_id)

@@ -8,6 +8,7 @@ Target channels are resolved from the settings allowlist (see
 
 from __future__ import annotations
 
+from config.constants import DISCORD_EMBED_LIMIT
 from website.exceptions import DiscordAPIError, NotFoundError, ValidationError
 from website.extensions import db
 from website.models import DiscordMessage
@@ -15,6 +16,7 @@ from website.repositories.base import Pagination
 from website.repositories.discord_message import DiscordMessageRepository
 from website.services.discord import DiscordService
 from website.services.setting import SettingsService
+from website.utils.discord_components import build_link_button_rows, clean_link_buttons
 from website.utils.logger import logger
 
 
@@ -97,7 +99,7 @@ class DiscordMessageService:
 
     @staticmethod
     def _build_embed(data: dict) -> dict:
-        """Build a Discord embed payload from compose-form fields.
+        """Build a Discord embed payload from a single embed's fields.
 
         Args:
             data: Dict with optional ``title``, ``description``, ``color``,
@@ -119,7 +121,84 @@ class DiscordMessageService:
             embed["image"] = {"url": data["image_url"]}
         return embed
 
-    def send(self, channel_id: str, msg_type: str, data: dict) -> DiscordMessage:
+    @staticmethod
+    def _clean_embeds(embeds_data: list[dict]) -> list[dict]:
+        """Normalise embed blocks, dropping the visually-empty ones.
+
+        A block counts as empty (and is dropped) when it has no title,
+        description, footer or image — a colour alone does not make an embed.
+
+        Args:
+            embeds_data: List of raw embed field dicts from the compose form.
+
+        Returns:
+            A list of cleaned embed dicts (at most ``EMBED_LIMIT`` items), each
+            keeping only the standard embed field keys.
+        """
+        cleaned: list[dict] = []
+        for embed in embeds_data or []:
+            block = {
+                "title": (embed.get("title") or "").strip() or None,
+                "description": (embed.get("description") or "").strip() or None,
+                "color": embed.get("color"),
+                "footer": (embed.get("footer") or "").strip() or None,
+                "image_url": (embed.get("image_url") or "").strip() or None,
+            }
+            if block["title"] or block["description"] or block["footer"] or block["image_url"]:
+                cleaned.append(block)
+        return cleaned
+
+    @classmethod
+    def _build_embeds(cls, embeds_data: list[dict]) -> list[dict]:
+        """Build Discord embed payloads from cleaned embed blocks.
+
+        Args:
+            embeds_data: Cleaned embed dicts (see :meth:`_clean_embeds`).
+
+        Returns:
+            A list of Discord embed dicts.
+        """
+        return [cls._build_embed(embed) for embed in embeds_data]
+
+    def _prepare(self, data: dict) -> dict:
+        """Validate compose-form data and shape it for sending and persistence.
+
+        A message must carry plain content, at least one embed, or both. Buttons
+        are optional on any message.
+
+        Args:
+            data: Field values (``content`` plain text, an ``embeds`` list and a
+                ``buttons`` list, all optional).
+
+        Returns:
+            Dict with ``content`` (str or None), ``embeds`` (cleaned list),
+            ``buttons`` (cleaned list) and ``components`` (Discord button rows).
+
+        Raises:
+            ValidationError: If the message has neither content nor an embed, has
+                too many embeds, or a button is malformed.
+        """
+        content = (data.get("content") or "").strip() or None
+        embeds = self._clean_embeds(data.get("embeds") or [])
+        buttons = clean_link_buttons(data.get("buttons") or [])
+
+        if not content and not embeds:
+            raise ValidationError(
+                "A message must have content or at least one embed.", field="content"
+            )
+        if len(embeds) > DISCORD_EMBED_LIMIT:
+            raise ValidationError(
+                f"A message can have at most {DISCORD_EMBED_LIMIT} embeds.", field="embed_title"
+            )
+
+        return {
+            "content": content,
+            "embeds": embeds,
+            "buttons": buttons,
+            "components": build_link_button_rows(buttons),
+        }
+
+    def send(self, channel_id: str, data: dict) -> DiscordMessage:
         """Send a new message to Discord and persist it.
 
         The Discord call happens first; the ``DiscordMessage`` row is only
@@ -128,60 +207,53 @@ class DiscordMessageService:
         Args:
             channel_id: Discord channel ID identifying the target channel; must
                 be one of the configured postable channels.
-            msg_type: ``"plain"`` or ``"embed"``.
-            data: Field values (``content`` for plain; ``title``, ``description``,
-                ``color``, ``footer``, ``image_url`` for embeds).
+            data: Field values — ``content``, an ``embeds`` list and a ``buttons``
+                list, all optional (but at least content or one embed is required).
 
         Returns:
             The persisted DiscordMessage instance.
 
         Raises:
-            ValidationError: If the channel or message type is invalid, or a
-                plain message has no content.
+            ValidationError: If the channel is invalid, the message has no
+                content/embed, or a button is malformed.
             DiscordAPIError: If the Discord API request fails (nothing persisted).
         """
         channel_id = self._resolve_channel(channel_id)
         channel_label = self.settings.get_post_channel_label(channel_id)
+        prepared = self._prepare(data)
 
-        if msg_type == DiscordMessage.TYPE_PLAIN:
-            content = (data.get("content") or "").strip()
-            if not content:
-                raise ValidationError("Message content is required.", field="content")
-            response = self.discord.send_message(content, channel_id)
-        elif msg_type == DiscordMessage.TYPE_EMBED:
-            embed = self._build_embed(data)
-            if not embed:
-                raise ValidationError("Embed must have at least one field.", field="title")
-            response = self.discord.send_embed(embed, channel_id)
-        else:
-            raise ValidationError("Invalid message type.", field="type")
+        response = self.discord.create_message(
+            channel_id,
+            content=prepared["content"],
+            embeds=self._build_embeds(prepared["embeds"]) or None,
+            components=prepared["components"],
+        )
 
         message = DiscordMessage(
             discord_msg_id=response["id"],
             channel_id=channel_id,
             channel_label=channel_label,
-            type=msg_type,
-            content=data.get("content") if msg_type == DiscordMessage.TYPE_PLAIN else None,
-            title=data.get("title") if msg_type == DiscordMessage.TYPE_EMBED else None,
-            description=data.get("description") if msg_type == DiscordMessage.TYPE_EMBED else None,
-            color=data.get("color") if msg_type == DiscordMessage.TYPE_EMBED else None,
-            footer=data.get("footer") if msg_type == DiscordMessage.TYPE_EMBED else None,
-            image_url=data.get("image_url") if msg_type == DiscordMessage.TYPE_EMBED else None,
+            content=prepared["content"],
+            embeds=prepared["embeds"] or None,
+            buttons=prepared["buttons"] or None,
         )
         self.repo.add(message)
         db.session.commit()
         logger.info(f"Admin Discord message {message.discord_msg_id} sent to {channel_id}")
         return message
 
-    def edit(self, message_id: int, data: dict) -> DiscordMessage:
+    def edit(self, message_id: int, channel_id: str, data: dict) -> DiscordMessage:
         """Edit a previously-sent message on Discord, then update the record.
 
-        The channel and type cannot change (Discord messages cannot move
-        channels). The Discord edit happens first; the stored row is only
-        updated once Discord confirms success.
+        The Discord edit happens first; the stored row is only updated once
+        Discord confirms success. Empty content/embeds/buttons clear those parts.
+        Changing the channel re-sends the message to the new channel and deletes
+        the old one (Discord cannot move a message between channels).
 
         Args:
             message_id: DiscordMessage primary key.
+            channel_id: Target channel ID (may differ from the original); must be
+                a configured postable channel.
             data: New field values (same shape as :meth:`send`).
 
         Returns:
@@ -189,28 +261,43 @@ class DiscordMessageService:
 
         Raises:
             NotFoundError: If the message does not exist.
-            ValidationError: If a plain message is edited to empty content.
+            ValidationError: If the channel is invalid, the edited message has no
+                content/embed, or a button is malformed.
             DiscordAPIError: If the Discord API request fails (nothing updated).
         """
         message = self.get_by_id(message_id)
+        new_channel = self._resolve_channel(channel_id)
+        prepared = self._prepare(data)
+        embeds = self._build_embeds(prepared["embeds"])
 
-        if message.type == DiscordMessage.TYPE_PLAIN:
-            content = (data.get("content") or "").strip()
-            if not content:
-                raise ValidationError("Message content is required.", field="content")
-            self.discord.edit_message(message.discord_msg_id, content, message.channel_id)
-            message.content = data.get("content")
+        if new_channel != message.channel_id:
+            response = self.discord.create_message(
+                new_channel,
+                content=prepared["content"],
+                embeds=embeds or None,
+                components=prepared["components"],
+            )
+            try:
+                self.discord.delete_message(message.discord_msg_id, message.channel_id)
+            except DiscordAPIError as e:
+                logger.warning(
+                    f"Failed to delete old message {message.discord_msg_id} after move: {e}"
+                )
+            message.discord_msg_id = response["id"]
+            message.channel_id = new_channel
+            message.channel_label = self.settings.get_post_channel_label(new_channel)
         else:
-            embed = self._build_embed(data)
-            if not embed:
-                raise ValidationError("Embed must have at least one field.", field="title")
-            self.discord.edit_embed(message.discord_msg_id, embed, message.channel_id)
-            message.title = data.get("title")
-            message.description = data.get("description")
-            message.color = data.get("color")
-            message.footer = data.get("footer")
-            message.image_url = data.get("image_url")
+            self.discord.update_message(
+                message.discord_msg_id,
+                message.channel_id,
+                content=prepared["content"] or "",
+                embeds=embeds,
+                components=prepared["components"],
+            )
 
+        message.content = prepared["content"]
+        message.embeds = prepared["embeds"] or None
+        message.buttons = prepared["buttons"] or None
         db.session.commit()
         logger.info(f"Admin Discord message {message.discord_msg_id} edited")
         return message

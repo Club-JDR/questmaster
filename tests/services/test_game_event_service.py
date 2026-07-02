@@ -1,7 +1,5 @@
 """Tests for GameEventService."""
 
-import pytest
-
 from website.models import GameEvent
 from website.services.game_event import GameEventService
 

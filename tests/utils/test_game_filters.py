@@ -4,8 +4,6 @@ Tests filter-building functions in isolation (pure logic and SQLAlchemy
 filter construction) and integration tests for the paginated query helpers.
 """
 
-from decimal import Decimal
-
 import pytest
 from werkzeug.datastructures import MultiDict
 
@@ -15,7 +13,6 @@ from config.constants import (
     GAME_STATUS_DRAFT,
     GAME_STATUS_OPEN,
     GAME_TYPE_CAMPAIGN,
-    GAME_TYPE_ONESHOT,
 )
 from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
 from tests.factories import GameFactory
@@ -261,6 +258,32 @@ class TestGetFilteredGames:
         user_payload = {"user_id": TEST_ADMIN_USER_ID, "is_admin": True}
         games, _ = get_filtered_games(source, user_payload)
         assert games.page == 1
+
+    def test_pagination_honours_configured_page_size(
+        self, db_session, admin_user, default_system, default_vtt
+    ):
+        from website.models import AppSetting
+        from website.services.setting import GAMES_PER_PAGE_KEY, SettingsService
+
+        for i in range(3):
+            GameFactory(
+                db_session,
+                gm_id=admin_user.id,
+                system_id=default_system.id,
+                vtt_id=default_vtt.id,
+                status=GAME_STATUS_OPEN,
+                name=f"Page Size Game {i}",
+            )
+        SettingsService().set_games_per_page(2)
+        try:
+            source = MultiDict({"open": "on"})
+            user_payload = {"user_id": TEST_ADMIN_USER_ID, "is_admin": True}
+            games, _ = get_filtered_games(source, user_payload)
+            assert games.per_page == 2
+            assert len(games.items) == 2
+        finally:
+            db_session.query(AppSetting).filter_by(key=GAMES_PER_PAGE_KEY).delete()
+            db_session.commit()
 
     def test_default_status_override(self, db_session, admin_user, default_system, default_vtt):
         GameFactory(

@@ -29,10 +29,15 @@
              value="{% if user.not_player_as_of %}{{ user.not_player_as_of|format_datetime('%Y-%m-%dT%H:%M') }}{% endif %}">
     </div>
 
-    <div class="flex justify-between items-center gap-2 pt-2">
-      <a href="{{ url_for('admin.user_games', user_id=user.id) }}" class="btn btn-ghost btn-sm gap-1">
-        <i class="ph ph-scroll" aria-hidden="true"></i> Voir les annonces
-      </a>
+    <div class="flex justify-between items-center gap-2 pt-2 flex-wrap">
+      <div class="flex gap-2">
+        <a href="{{ url_for('admin.user_games', user_id=user.id) }}" class="btn btn-ghost btn-sm gap-1">
+          <i class="ph ph-scroll" aria-hidden="true"></i> Voir les annonces
+        </a>
+        <a href="{{ url_for('admin.user_trophies', user_id=user.id) }}" class="btn btn-ghost btn-sm gap-1">
+          <i class="ph ph-medal" aria-hidden="true"></i> Voir les badges
+        </a>
+      </div>
       <div class="flex gap-2">
         <a href="{{ url_for('admin.list_users') }}" class="btn btn-ghost">Annuler</a>
         <button type="submit" class="btn btn-primary">Enregistrer</button>
