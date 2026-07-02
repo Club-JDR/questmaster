@@ -1,0 +1,1452 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://club-jdr.github.io/questmaster/admin/">
+      
+      
+        <link rel="prev" href="../api/reference/">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Admin Panel - QuestMaster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="light-blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#admin-panel" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="QuestMaster" class="md-header__button md-logo" aria-label="QuestMaster" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            QuestMaster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Admin Panel
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="light-blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="ligh-blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Club-JDR/questmaster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Club-JDR/questmaster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="QuestMaster" class="md-nav__button md-logo" aria-label="QuestMaster" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    QuestMaster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Club-JDR/questmaster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Club-JDR/questmaster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/repositories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/client/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Admin Panel
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Admin Panel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sections
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trophies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trophies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#channel-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channel Categories
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Channel Categories">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#category-settings-auto-provisioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Category settings &amp; auto-provisioning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discord-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discord Messages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discord Messages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postable-channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Postable channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#link-buttons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link buttons
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-rbac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions (RBAC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration-overrides-db-env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration overrides (DB → env)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operational-settings-fully-db-managed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational settings (fully DB-managed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sections
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trophies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trophies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#channel-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channel Categories
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Channel Categories">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#category-settings-auto-provisioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Category settings &amp; auto-provisioning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discord-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discord Messages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discord Messages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postable-channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Postable channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#link-buttons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link buttons
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-rbac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions (RBAC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration-overrides-db-env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration overrides (DB → env)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operational-settings-fully-db-managed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational settings (fully DB-managed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="admin-panel">Admin Panel<a class="headerlink" href="#admin-panel" title="Permanent link">&para;</a></h1>
+<p>QuestMaster ships a custom administration panel mounted at <strong><code>/admin/</code></strong>, built with the
+same DaisyUI + Tailwind layout as the rest of the app (it replaced the legacy Flask-Admin
+panel). Each section is a thin Flask view in <code>website/views/admin/</code> that delegates to the
+existing <a href="../architecture/services/">service layer</a> — no business logic lives in the admin
+views.</p>
+<h2 id="access">Access<a class="headerlink" href="#access" title="Permanent link">&para;</a></h2>
+<p>The panel is open to <strong>administrators</strong> and to <strong>delegated users</strong> who hold at least one
+granted capability (see <a href="#permissions-rbac">Permissions</a>). A <code>before_request</code> guard on the
+admin blueprint rejects any session that is neither an admin (<code>session["is_admin"]</code>) nor
+holds any permission, raising an <code>UnauthorizedError</code> (HTTP 403). The admin role is derived
+from Discord at login (the <code>DISCORD_ADMIN_ROLE_ID</code> role).</p>
+<ul>
+<li><strong>Admins</strong> are superusers: they implicitly hold the full capability catalog and see
+  every sub-section.</li>
+<li><strong>Delegated users</strong> see — and can reach — only the sub-sections their granted
+  capabilities unlock. Each route is additionally fenced by a <code>require_permission</code>
+  decorator, so the panel guard alone is not enough to act on a section.</li>
+</ul>
+<p>The navbar <strong>Admin</strong> dropdown and the in-panel sidebar are filtered to the sections the
+current session may use.</p>
+<h2 id="sections">Sections<a class="headerlink" href="#sections" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Route</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dashboard</td>
+<td><code>/admin/</code></td>
+<td>Landing page with links to every section</td>
+</tr>
+<tr>
+<td>Utilisateurs</td>
+<td><code>/admin/users/</code></td>
+<td>List users; edit display name and activity status; view a user's games and badges</td>
+</tr>
+<tr>
+<td>Annonces</td>
+<td><code>/admin/games/</code></td>
+<td>List games; full-field edit; delete</td>
+</tr>
+<tr>
+<td>Événements</td>
+<td><code>/admin/special-events/</code></td>
+<td>CRUD for special (themed) events; view an event's games</td>
+</tr>
+<tr>
+<td>Badges</td>
+<td><code>/admin/trophies/</code></td>
+<td>CRUD for trophy <strong>definitions</strong></td>
+</tr>
+<tr>
+<td>Systèmes</td>
+<td><code>/admin/systems/</code></td>
+<td>CRUD for RPG systems</td>
+</tr>
+<tr>
+<td>VTTs</td>
+<td><code>/admin/vtts/</code></td>
+<td>CRUD for virtual tabletops</td>
+</tr>
+<tr>
+<td>Catégories (salons)</td>
+<td><code>/admin/channels/</code></td>
+<td>Manage Discord channel categories — create, auto-provision, reconcile sizes (see below)</td>
+</tr>
+<tr>
+<td>Journaux</td>
+<td><code>/admin/game-events/</code></td>
+<td>Read-only game audit trail (most recent events)</td>
+</tr>
+<tr>
+<td>Messages Discord</td>
+<td><code>/admin/discord/</code></td>
+<td>Manage postable channels; compose, send, edit and delete Discord messages (see below)</td>
+</tr>
+<tr>
+<td>Permissions</td>
+<td><code>/admin/permissions/</code></td>
+<td>Grant/revoke granular admin capabilities to Discord roles or users (RBAC, see below)</td>
+</tr>
+<tr>
+<td>Paramètres</td>
+<td><code>/admin/settings/</code></td>
+<td>Runtime configuration overrides and operational settings (see below)</td>
+</tr>
+</tbody>
+</table>
+<p>List views support a search box (<code>?q=</code>) and pagination where relevant.</p>
+<h2 id="trophies">Trophies<a class="headerlink" href="#trophies" title="Permanent link">&para;</a></h2>
+<p>Trophy management is split in two:</p>
+<ul>
+<li><strong>Badges</strong> (<code>/admin/trophies/</code>) manage trophy <em>definitions</em> (name, icon, and whether the
+  trophy is <code>unique</code>).</li>
+<li>A user's awarded trophies are managed from that <strong>user's page</strong> (<code>/admin/users/&lt;id&gt;/trophies</code>).
+  Each awarded trophy row has one-click <strong>+1 / −1</strong> quick actions:<ul>
+<li><strong>+1</strong> awards one more of the trophy (<code>TrophyService.award</code>).</li>
+<li><strong>−1</strong> decrements the quantity, and <strong>removes the record entirely when it would reach
+  0</strong> (quantity never drops below 1).</li>
+<li>For trophies marked <code>unique=True</code>, the +1/−1 buttons are hidden and the row shows a
+  <em>Unique</em> badge instead — a unique trophy cannot be awarded more than once.</li>
+</ul>
+</li>
+</ul>
+<h2 id="channel-categories">Channel Categories<a class="headerlink" href="#channel-categories" title="Permanent link">&para;</a></h2>
+<p>The <strong>Catégories (salons)</strong> section (<code>/admin/channels/</code>) manages the Discord <strong>categories</strong>
+that game channels are grouped under. Each <a href="../architecture/models/#website.models.Channel"><code>Channel</code></a>
+row tracks a category's Discord ID, its game <code>type</code> (one-shot or campaign), and its current
+<code>size</code> (number of game channels inside it). Discord caps a category at <strong>50 channels</strong>, so
+the app spreads games across several categories per type.</p>
+<ul>
+<li><strong>Create</strong> (<code>/admin/channels/new</code>) — provisions a <strong>real Discord category</strong> (not just a
+  registered ID). It is named from the per-type template with the next sequence number
+  (e.g. <code>🎲 CAMPAGNES 2 📖</code>), created on Discord, then stored locally with <code>size = 0</code>.</li>
+<li><strong>Recompter les salons</strong> (<code>POST /admin/channels/reconcile</code>) — re-counts each category's
+  text channels on Discord and corrects any drifted <code>size</code>. Categories at or above the
+  auto-create threshold are flagged <strong>« Presque pleine »</strong> in the list.</li>
+<li><strong>Edit / Delete</strong> — adjust or remove a tracked category row.</li>
+</ul>
+<h3 id="category-settings-auto-provisioning">Category settings &amp; auto-provisioning<a class="headerlink" href="#category-settings-auto-provisioning" title="Permanent link">&para;</a></h3>
+<p>The bottom of the page has a <strong>Paramètres des catégories</strong> form
+(<code>POST /admin/channels/settings</code>) with two DB-managed settings owned by
+<a href="../architecture/services/#website.services.SettingsService"><code>SettingsService</code></a>:</p>
+<ul>
+<li><strong>Seuil d'auto-création</strong> — the per-category fill level (1…50) at which the type is
+  considered full.</li>
+<li><strong>Modèles de nom</strong> — one name template per game type; each must contain the <code>{n}</code>
+  sequence placeholder.</li>
+</ul>
+<p>A daily scheduler job (<code>monitor_category_capacity</code>) reconciles sizes and then, for each game
+type, <strong>auto-provisions a fresh category</strong> when every existing category of that type is at
+or above the threshold (it also bootstraps a first category for a type that has none yet).
+The category creation/auto-provision logic lives in
+<a href="../architecture/services/#website.services.ChannelService"><code>ChannelService</code></a>.</p>
+<h2 id="discord-messages">Discord Messages<a class="headerlink" href="#discord-messages" title="Permanent link">&para;</a></h2>
+<p>The <strong>Messages Discord</strong> section lets admins send, edit and delete Discord messages to a
+configured channel, without leaving the app. A message combines, in any mix, plain
+<strong>content</strong>, one or more <strong>embeds</strong> and a row of link <strong>buttons</strong>. It also manages the list
+of channels that can be posted into.</p>
+<p>The list page (<code>/admin/discord/</code>) has two actions in its header — <strong>Ajouter un salon</strong> and
+<strong>Composer un message</strong> — and shows the <strong>postable channels</strong> first, then the <strong>sent
+messages grouped by channel</strong>.</p>
+<h3 id="postable-channels">Postable channels<a class="headerlink" href="#postable-channels" title="Permanent link">&para;</a></h3>
+<p>The channels you can post into are an <strong>admin-managed list</strong> (no code change needed to add
+one), stored as a single JSON value under the <code>discord_post_channels</code> setting key and owned
+by <a href="../architecture/services/#website.services.SettingsService"><code>SettingsService</code></a>
+(<code>get_post_channels</code>, <code>add_post_channel</code>, <code>remove_post_channel</code>, <code>is_post_channel</code>).</p>
+<ul>
+<li><strong>Add</strong> (<code>/admin/discord/channels/new</code>) — a form page (like Systems/VTTs) taking a human
+  label and a Discord channel ID.</li>
+<li><strong>Remove</strong> (<code>POST /admin/discord/channels/&lt;channel_id&gt;/delete</code>) — from the channels list.</li>
+</ul>
+<h3 id="messages">Messages<a class="headerlink" href="#messages" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>List</strong> (<code>/admin/discord/</code>) — every message sent through the panel is recorded as a
+  <a href="../architecture/models/#website.models.DiscordMessage"><code>DiscordMessage</code></a> so it can be
+  found, edited or deleted later, without anyone needing to remember Discord message IDs.
+  The list is searchable and paginated, and messages are <strong>grouped by channel</strong>.</li>
+<li><strong>Compose</strong> (<code>/admin/discord/compose</code>) — a two-pane editor (form + <strong>live preview</strong>):
+  pick a target channel, optionally type <strong>content</strong>, add up to <strong>10 embeds</strong> (title,
+  description, color, footer, image URL) and up to <strong>5 link buttons</strong> (label + URL). A
+  message must have at least content or one embed.</li>
+<li><strong>Edit</strong> (<code>/admin/discord/&lt;id&gt;/edit</code>) — change the message and push the update to
+  Discord. The <strong>channel can be changed</strong>: because Discord cannot move a message, doing so
+  re-sends it to the new channel and deletes the original.</li>
+<li><strong>Delete</strong> (<code>POST /admin/discord/&lt;id&gt;/delete</code>) — removes the message from Discord and
+  deletes the stored record.</li>
+</ul>
+<p>There is <strong>no message "type"</strong>: a message is simply the combination of content, embeds and
+buttons it carries (<code>is_embed</code> is derived from whether it has any embeds). Embeds and
+buttons are stored as JSON lists on the <code>DiscordMessage</code> row.</p>
+<h3 id="link-buttons">Link buttons<a class="headerlink" href="#link-buttons" title="Permanent link">&para;</a></h3>
+<p>Buttons are <strong>link buttons</strong> (Discord button style 5): a label plus an http(s) URL that
+opens when clicked. They need no interaction handling, so they work over the REST API
+without a gateway connection. Button helpers live in
+<a href="../architecture/utils/"><code>website/utils/discord_components.py</code></a> (<code>clean_link_buttons</code>
+validates the rows; <code>build_link_button_rows</code> builds the Discord <code>components</code> payload).</p>
+<p>Game announcement embeds also carry a link button: the former inline "Pour s'inscrire" URL
+field is now an <strong>S'inscrire</strong> button to the game page. It is omitted while the game is
+<strong>closed</strong> (complet) and restored when the game reopens, kept in sync whenever the
+announcement embed is refreshed.</p>
+<p>Behaviour and guarantees (implemented in <code>DiscordMessageService</code>, which wraps
+<a href="../architecture/services/#website.services.DiscordService"><code>DiscordService</code></a>):</p>
+<ul>
+<li><strong>Discord first, then database.</strong> A <code>DiscordMessage</code> row is only persisted <em>after</em>
+  Discord confirms the send/edit. If the Discord API call fails, the error is flashed, the
+  form is re-rendered with the entered values preserved, and <strong>nothing is stored</strong>.</li>
+<li><strong>Deletion is best-effort on Discord.</strong> The record is removed even if the message was
+  already deleted on Discord, keeping the admin list consistent.</li>
+<li><strong>Channels are validated.</strong> The target must be one of the configured postable channels;
+  a free-typed or unknown channel ID is rejected.</li>
+</ul>
+<h2 id="permissions-rbac">Permissions (RBAC)<a class="headerlink" href="#permissions-rbac" title="Permanent link">&para;</a></h2>
+<p>The <strong>Permissions</strong> section (<code>/admin/permissions/</code>) delegates slices of the admin panel to
+non-admin users without making them full administrators.</p>
+<ul>
+<li><strong>Capabilities are a fixed catalog defined in code</strong> (<code>website/permissions.py</code>) — stable
+  keys such as <code>vtt.manage</code>, <code>trophy.manage</code>, <code>discord.send</code> or <code>permissions.manage</code> that
+  the route decorators reference at compile time. Each capability unlocks one admin
+  sub-section.</li>
+<li><strong>Grants — who holds what — live in the database</strong> (<a href="../architecture/models/#website.models.PermissionGrant"><code>PermissionGrant</code></a>).
+  A grant ties one capability to a <strong>subject</strong>: either a Discord <strong>role</strong> (every member of
+  that role inherits it) or an individual <strong>user</strong>.</li>
+</ul>
+<p>The page lists every catalog capability with its current grants; admins can <strong>grant</strong> a
+capability to a role or user and <strong>revoke</strong> any grant. Granting an existing (capability,
+subject) pair is idempotent.</p>
+<p>Enforcement lives in
+<a href="../architecture/services/#website.services.PermissionService"><code>PermissionService</code></a>:</p>
+<ul>
+<li><strong>Admins implicitly hold the whole catalog.</strong> For everyone else the effective set is the
+  union of grants matching the user's Discord role IDs and their own user ID.</li>
+<li>A user's resolved permission set is <strong>cached for 5 minutes</strong> (mirroring Discord role
+  resolution). A <em>user</em>-subject grant change invalidates that user immediately; a <em>role</em>-
+  subject change propagates with the cache TTL.</li>
+<li>The session's permissions filter the navbar/sidebar, and each route is fenced by a
+  <code>require_permission(&lt;key&gt;)</code> decorator — the panel guard alone never authorises an action.</li>
+</ul>
+<h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
+<p>The <strong>Paramètres</strong> section (<code>/admin/settings/</code>) manages runtime configuration overrides and
+fully DB-managed operational settings.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Changing these settings can break the application — the form is fenced in a red box.
+The currently effective value is shown under each field; leave a field empty to fall
+back to the environment value.</p>
+</div>
+<h3 id="configuration-overrides-db-env">Configuration overrides (DB → env)<a class="headerlink" href="#configuration-overrides-db-env" title="Permanent link">&para;</a></h3>
+<p>A subset of operational Discord identifiers (guild, role and channel IDs) can be overridden
+at runtime and stored in the <code>app_setting</code> table, taking precedence over the
+environment-backed <code>app.config</code>. Secrets (bot token, client secret, JWT key, database URI)
+are <strong>never</strong> overridable and always come from the environment. Resolution and the
+overridable allowlist live in
+<a href="../architecture/services/#website.services.SettingsService"><code>SettingsService</code></a>.</p>
+<h3 id="operational-settings-fully-db-managed">Operational settings (fully DB-managed)<a class="headerlink" href="#operational-settings-fully-db-managed" title="Permanent link">&para;</a></h3>
+<p>These keys live only in the database (no environment fallback) and fall back to a code
+default when unset:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>What it controls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direct-permissions mode</td>
+<td>When enabled, new games grant players access via per-channel permission overwrites instead of a dedicated Discord role</td>
+</tr>
+<tr>
+<td>Role auto-threshold</td>
+<td>Guild role count at which the scheduler turns direct-permissions mode on automatically</td>
+</tr>
+<tr>
+<td>Dashboard agenda / open limits</td>
+<td>Number of agenda and open-game items shown on the personalised landing dashboard</td>
+</tr>
+<tr>
+<td>Cards per page</td>
+<td>Number of game cards shown per page on the public card grid</td>
+</tr>
+</tbody>
+</table>
+<p>The Discord <strong>category</strong> auto-provisioning settings (auto-create threshold and per-type name
+templates) are also DB-managed by <code>SettingsService</code>, but their admin form lives on the
+<a href="#channel-categories">Channel Categories</a> page rather than here.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
