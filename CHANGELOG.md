@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.7.0](https://github.com/Club-JDR/questmaster/compare/v1.6.0...v1.7.0) (2026-07-02)
+
+
+### Features
+
+* **admin:** add granular permissions (RBAC) for delegated admin access ([c799d3a](https://github.com/Club-JDR/questmaster/commit/c799d3a2c8bc6bf386bdc714bc8695660f88a3b5))
+* **channels:** reconcile, create, and auto-provision Discord categories ([fe27c60](https://github.com/Club-JDR/questmaster/commit/fe27c6060d5da5c43bc0299473bc9ea696d0c5ce))
+* **dashboard:** agenda-first personalised landing dashboard ([24af753](https://github.com/Club-JDR/questmaster/commit/24af753149dc911410c19a051e3ed83e223adf38))
+* **discord:** add direct channel permissions mode and GM notify button ([579bbdf](https://github.com/Club-JDR/questmaster/commit/579bbdfec7647fdf07855189e0d76ef0fd735744))
+* **discord:** multi-embed messages with link buttons ([8bfb3f7](https://github.com/Club-JDR/questmaster/commit/8bfb3f7194f3cae1815883af23f6b27bbcfac9cf))
+* **games:** normalise imgur page URLs to direct image links on the game form ([444976c](https://github.com/Club-JDR/questmaster/commit/444976ca5f311ee16ca65409cbcaedf0ca72dcc8))
+* **settings:** make card-grid page size admin-configurable ([0da1eaa](https://github.com/Club-JDR/questmaster/commit/0da1eaab13e13db94e6d7ebefd8198108a718cc0))
+* **stats:** app-wide overview on the statistics page ([f6ab7a0](https://github.com/Club-JDR/questmaster/commit/f6ab7a00dc3fcec57edeb8485d7ab64c476908f4))
+* **users:** add and search users by Discord username ([c11fb22](https://github.com/Club-JDR/questmaster/commit/c11fb224857356d90e1b4ca84df2e0ef6c07ca81))
+
+
+### Bug Fixes
+
+* **scheduler:** persist refreshed Discord profiles so admin shows real names ([09a4003](https://github.com/Club-JDR/questmaster/commit/09a40037d32319a96c220e72883d84e1fc157685))
+
+
+### Documentation
+
+* document RBAC, dashboard, and Discord category auto-provisioning ([fe7278c](https://github.com/Club-JDR/questmaster/commit/fe7278c1f6a4b5581c9ff25b9d0760673f244d79))
+
 ## [1.6.0](https://github.com/Club-JDR/questmaster/compare/v1.5.1...v1.6.0) (2026-06-20)
 
 
