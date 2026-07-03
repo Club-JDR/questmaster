@@ -32,6 +32,13 @@ class Settings:
     CACHE_KEY_PREFIX = "QuestMaster:"
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
+    # Logging (see website/logging_config/)
+    LOG_FORMAT = os.environ.get("QM_LOG_FORMAT", "human")  # "human" or "json"
+    LOG_LEVEL = os.environ.get("QM_LOG_LEVEL", "INFO")
+    DB_LOG_LEVEL = os.environ.get("QM_DB_LOG_LEVEL", "INFO")
+    LOG_RETENTION_DAYS = int(os.environ.get("QM_LOG_RETENTION_DAYS", "30"))
+    DISCORD_ERROR_WEBHOOK_URL = os.environ.get("DISCORD_ERROR_WEBHOOK_URL")
+
     # JWT settings
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", os.environ.get("FLASK_AUTH_SECRET"))
     JWT_ALGORITHM = "HS256"

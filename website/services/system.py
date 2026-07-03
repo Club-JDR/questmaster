@@ -5,6 +5,7 @@ from website.extensions import cache, db
 from website.models import System
 from website.repositories.base import Pagination
 from website.repositories.system import SystemRepository
+from website.utils.logger import logger, sanitize_log_value
 
 
 class SystemService:
@@ -80,6 +81,7 @@ class SystemService:
         self.repo.add(system)
         db.session.commit()
         cache.delete_memoized(self.get_all)
+        logger.info(f"System {system.id} created: {sanitize_log_value(name)}")
         return system
 
     def update(self, id: int, data: dict) -> System:
@@ -96,6 +98,7 @@ class SystemService:
         system.update_from_dict(data)
         db.session.commit()
         cache.delete_memoized(self.get_all)
+        logger.info(f"System {id} updated")
         return system
 
     def delete(self, id: int) -> None:
@@ -108,3 +111,4 @@ class SystemService:
         self.repo.delete(system)
         db.session.commit()
         cache.delete_memoized(self.get_all)
+        logger.info(f"System {id} deleted")

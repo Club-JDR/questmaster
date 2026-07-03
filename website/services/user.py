@@ -9,6 +9,7 @@ from website.models import User
 from website.models.user import get_user_profile as _get_user_profile
 from website.repositories.base import Pagination
 from website.repositories.user import UserRepository
+from website.utils.logger import logger, sanitize_log_value
 
 
 class UserService:
@@ -221,6 +222,10 @@ class UserService:
         user = self.get_by_id(user_id)
         user.update_from_dict(data)
         db.session.commit()
+        logger.info(
+            f"User {sanitize_log_value(user_id)} updated "
+            f"(fields: {sanitize_log_value(', '.join(sorted(data)))})"
+        )
         return user
 
     def mark_inactive(self, user_id: str) -> User:
@@ -238,6 +243,7 @@ class UserService:
         user = self.get_by_id(user_id)
         user.not_player_as_of = datetime.now(timezone.utc)
         db.session.commit()
+        logger.info(f"User {sanitize_log_value(user_id)} marked inactive")
         return user
 
     def clear_inactive(self, user_id: str) -> User:

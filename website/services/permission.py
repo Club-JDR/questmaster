@@ -12,7 +12,7 @@ from website.extensions import cache, db
 from website.models import PermissionGrant
 from website.permissions import PERMISSION_KEYS, PERMISSIONS, Permission
 from website.repositories.permission_grant import PermissionGrantRepository
-from website.utils.logger import logger
+from website.utils.logger import logger, sanitize_log_value
 
 # Cache timeout for a user's resolved permission set (mirrors get_user_roles).
 PERMISSIONS_CACHE_TIMEOUT = 300  # 5 minutes
@@ -93,6 +93,10 @@ class PermissionService:
         self.repo.add(key, subject_type, subject_id, granted_by_id)
         db.session.commit()
         self._invalidate(subject_type, subject_id)
+        logger.info(
+            f"Permission '{key}' granted to {subject_type} {sanitize_log_value(subject_id)} "
+            f"by user {sanitize_log_value(granted_by_id)}"
+        )
 
     def revoke(self, grant_id: int) -> None:
         """Remove a grant.
@@ -105,6 +109,10 @@ class PermissionService:
         db.session.commit()
         if grant is not None:
             self._invalidate(grant.subject_type, grant.subject_id)
+            logger.info(
+                f"Permission '{grant.permission_key}' revoked from "
+                f"{grant.subject_type} {sanitize_log_value(grant.subject_id)}"
+            )
 
     def resolve_for(self, user_id: str, role_ids: list[str], is_admin: bool) -> set[str]:
         """Return the effective permission set for a user.

@@ -1,5 +1,6 @@
 """Repository layer for data access operations."""
 
+from website.repositories.app_log import AppLogRepository
 from website.repositories.base import BaseRepository
 from website.repositories.channel import ChannelRepository
 from website.repositories.discord_message import DiscordMessageRepository
@@ -15,6 +16,7 @@ from website.repositories.user import UserRepository
 from website.repositories.vtt import VttRepository
 
 __all__ = [
+    "AppLogRepository",
     "BaseRepository",
     "DiscordMessageRepository",
     "SystemRepository",

@@ -5,6 +5,7 @@ from website.extensions import cache, db
 from website.models import Vtt
 from website.repositories.base import Pagination
 from website.repositories.vtt import VttRepository
+from website.utils.logger import logger, sanitize_log_value
 
 
 class VttService:
@@ -80,6 +81,7 @@ class VttService:
         self.repo.add(vtt)
         db.session.commit()
         cache.delete_memoized(self.get_all)
+        logger.info(f"VTT {vtt.id} created: {sanitize_log_value(name)}")
         return vtt
 
     def update(self, id: int, data: dict) -> Vtt:
@@ -96,6 +98,7 @@ class VttService:
         vtt.update_from_dict(data)
         db.session.commit()
         cache.delete_memoized(self.get_all)
+        logger.info(f"VTT {id} updated")
         return vtt
 
     def delete(self, id: int) -> None:
@@ -108,3 +111,4 @@ class VttService:
         self.repo.delete(vtt)
         db.session.commit()
         cache.delete_memoized(self.get_all)
+        logger.info(f"VTT {id} deleted")

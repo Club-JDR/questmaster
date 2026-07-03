@@ -55,6 +55,23 @@ secrets.token_urlsafe(64)
 
 If `JWT_SECRET_KEY` is not set, it falls back to `FLASK_AUTH_SECRET`. Using a dedicated key is recommended in production.
 
+### Logging (optional)
+
+Logging works out of the box; these variables tune it:
+
+```ini
+QM_LOG_FORMAT="human"       # "human" (default) or "json" (production)
+QM_LOG_LEVEL="INFO"         # root logger level for stdout
+QM_DB_LOG_LEVEL="INFO"      # minimum level persisted to the app_log table
+QM_LOG_RETENTION_DAYS="30"  # days of app_log rows kept by the daily prune job
+QM_LOG_LEVELS=""            # per-module overrides, e.g. "werkzeug=INFO,website.services=DEBUG"
+DISCORD_ERROR_WEBHOOK_URL="" # when set, CRITICAL records are posted to this Discord webhook
+```
+
+Logs always go to stdout; records at `QM_DB_LOG_LEVEL` and above are also persisted to the
+database and browsable from the admin **Journaux applicatifs** page (filterable by date
+range and level). Known secrets are redacted from every log output.
+
 ## Using Docker Compose (recommended)
 
 Build and start the complete stack:

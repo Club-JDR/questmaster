@@ -5,6 +5,7 @@ from website.extensions import db
 from website.models import SpecialEvent
 from website.repositories.base import Pagination
 from website.repositories.special_event import SpecialEventRepository
+from website.utils.logger import logger, sanitize_log_value
 
 
 class SpecialEventService:
@@ -97,6 +98,7 @@ class SpecialEventService:
         event = SpecialEvent(name=name, emoji=emoji, color=color, active=active)
         self.repo.add(event)
         db.session.commit()
+        logger.info(f"Special event {event.id} created: {sanitize_log_value(name)}")
         return event
 
     def update(self, id: int, data: dict) -> SpecialEvent:
@@ -123,6 +125,7 @@ class SpecialEventService:
 
         event.update_from_dict(data)
         db.session.commit()
+        logger.info(f"Special event {id} updated")
         return event
 
     def delete(self, id: int) -> None:
@@ -137,3 +140,4 @@ class SpecialEventService:
         event = self.repo.get_by_id_or_404(id)
         self.repo.delete(event)
         db.session.commit()
+        logger.info(f"Special event {id} deleted")
