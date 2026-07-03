@@ -28,7 +28,7 @@ from config.constants import (
 from website.exceptions import ValidationError
 from website.extensions import db
 from website.repositories.setting import SettingRepository
-from website.utils.logger import logger
+from website.utils.logger import logger, sanitize_log_value
 
 # Key under which the admin-managed list of postable Discord channels is stored.
 # Distinct from OVERRIDABLE_SETTINGS (env-backed overrides): this is a fully
@@ -182,6 +182,10 @@ class SettingsService:
             self.repo.delete_by_key(key)
         db.session.commit()
         self._invalidate()
+        logger.info(
+            f"Setting override '{key}' {'set to ' + sanitize_log_value(cleaned) if cleaned else 'cleared'} "
+            f"by user {updated_by_id}"
+        )
 
     def _read_post_channels(self) -> list[dict]:
         """Read and normalise the stored postable-channel list.
@@ -270,6 +274,10 @@ class SettingsService:
             raise ValidationError("Channel already added.", field="channel_id")
         channels.append({"label": label or channel_id, "id": channel_id})
         self._write_post_channels(channels, updated_by_id)
+        logger.info(
+            f"Post channel {sanitize_log_value(channel_id)} "
+            f"('{sanitize_log_value(label or channel_id)}') added by user {updated_by_id}"
+        )
 
     def remove_post_channel(self, channel_id: str, updated_by_id: str | None = None) -> None:
         """Remove a channel from the managed postable list.
@@ -280,6 +288,9 @@ class SettingsService:
         """
         channels = [c for c in self._read_post_channels() if c["id"] != channel_id]
         self._write_post_channels(channels, updated_by_id)
+        logger.info(
+            f"Post channel {sanitize_log_value(channel_id)} removed by user {updated_by_id}"
+        )
 
     def set_many(self, values: dict[str, str | None], updated_by_id: str | None = None) -> None:
         """Apply several overrides in one transaction.
@@ -305,6 +316,9 @@ class SettingsService:
                 self.repo.delete_by_key(key)
         db.session.commit()
         self._invalidate()
+        logger.info(
+            f"Setting overrides updated ({', '.join(sorted(values))}) by user {updated_by_id}"
+        )
 
     def is_direct_permissions_enabled(self) -> bool:
         """Return whether new games should use direct per-player channel permissions.
@@ -329,6 +343,10 @@ class SettingsService:
         self.repo.upsert(DIRECT_PERMISSIONS_KEY, "true" if enabled else "false", updated_by_id)
         db.session.commit()
         self._invalidate()
+        logger.info(
+            f"Direct channel permissions {'enabled' if enabled else 'disabled'} "
+            f"by {'user ' + str(updated_by_id) if updated_by_id else 'the role-count monitor'}"
+        )
 
     def get_role_auto_threshold(self) -> int:
         """Return the guild role count at which direct permissions auto-enable.
@@ -364,6 +382,7 @@ class SettingsService:
         self.repo.upsert(ROLE_AUTO_THRESHOLD_KEY, str(value), updated_by_id)
         db.session.commit()
         self._invalidate()
+        logger.info(f"Role auto-threshold set to {value} by user {updated_by_id}")
 
     def _get_positive_int(self, key: str, default: int) -> int:
         """Return a stored positive-integer setting, falling back to a default.
@@ -409,6 +428,7 @@ class SettingsService:
         self.repo.upsert(key, str(parsed), updated_by_id)
         db.session.commit()
         self._invalidate()
+        logger.info(f"Setting '{key}' set to {parsed} by user {updated_by_id}")
 
     def get_dashboard_agenda_limit(self) -> int:
         """Return the number of upcoming sessions listed in the dashboard agenda.
@@ -573,3 +593,4 @@ class SettingsService:
         self.repo.upsert(CATEGORY_NAME_TEMPLATES_KEY, json.dumps(cleaned), updated_by_id)
         db.session.commit()
         self._invalidate()
+        logger.info(f"Category name templates updated by user {updated_by_id}")

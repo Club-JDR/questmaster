@@ -10,7 +10,7 @@ from website.extensions import db
 from website.models import Channel
 from website.repositories.base import Pagination
 from website.repositories.channel import ChannelRepository
-from website.utils.logger import logger
+from website.utils.logger import logger, sanitize_log_value
 
 if TYPE_CHECKING:
     from website.models import Game
@@ -89,6 +89,10 @@ class ChannelService:
         channel = Channel(id=channel_id, type=type, size=size)
         self.repo.add(channel)
         db.session.commit()
+        logger.info(
+            f"Channel category {sanitize_log_value(channel_id)} registered "
+            f"(type={sanitize_log_value(type)}, size={size})"
+        )
         return channel
 
     def update(self, channel_id: str, data: dict) -> Channel:
@@ -104,6 +108,7 @@ class ChannelService:
         channel = self.repo.get_by_id_or_404(channel_id)
         channel.update_from_dict(data)
         db.session.commit()
+        logger.info(f"Channel category {sanitize_log_value(channel_id)} updated")
         return channel
 
     def delete(self, channel_id: str) -> None:
@@ -115,6 +120,7 @@ class ChannelService:
         channel = self.repo.get_by_id_or_404(channel_id)
         self.repo.delete(channel)
         db.session.commit()
+        logger.info(f"Channel category {sanitize_log_value(channel_id)} deleted")
 
     def get_category(self, game_type: str) -> Channel:
         """Get the smallest category for a game type.

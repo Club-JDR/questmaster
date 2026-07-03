@@ -37,9 +37,7 @@ def upgrade():
             name="uq_permission_grant_subject",
         ),
     )
-    op.create_index(
-        "ix_permission_grant_permission_key", "permission_grant", ["permission_key"]
-    )
+    op.create_index("ix_permission_grant_permission_key", "permission_grant", ["permission_key"])
     op.create_index("ix_permission_grant_subject_id", "permission_grant", ["subject_id"])
 
 

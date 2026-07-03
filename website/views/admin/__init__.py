@@ -65,9 +65,15 @@ ADMIN_SECTIONS = [
     },
     {
         "endpoint": "admin.list_game_events",
-        "label": "Journaux",
+        "label": "Audit des annonces",
         "icon": "ph-scroll",
         "permission": "game_event.view",
+    },
+    {
+        "endpoint": "admin.list_app_logs",
+        "label": "Journaux applicatifs",
+        "icon": "ph-terminal-window",
+        "permission": "app_log.view",
     },
     {
         "endpoint": "admin.list_discord_messages",
@@ -157,6 +163,7 @@ def index():
 
 # Import route modules so their routes register on ``admin_bp``.
 from website.views.admin import (  # noqa: E402,F401
+    app_logs,
     channels,
     discord_messages,
     game_events,

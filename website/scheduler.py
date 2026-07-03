@@ -37,6 +37,7 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
         service = UserService()
         user_ids = service.get_active_user_ids()
         if not user_ids:
+            app.logger.info("[Scheduler] No active users to refresh")
             return
 
         sample_ids = random.sample(user_ids, min(batch_size, len(user_ids)))
@@ -79,6 +80,7 @@ def check_inactive_users(app, batch_size=INACTIVE_CHECK_BATCH_SIZE):
         service = UserService()
         inactive_ids = service.get_inactive_user_ids()
         if not inactive_ids:
+            app.logger.info("[Scheduler] No inactive users to re-check")
             return
 
         sample_ids = random.sample(inactive_ids, min(batch_size, len(inactive_ids)))
@@ -121,6 +123,9 @@ def monitor_role_count(app):
     with app.app_context():
         settings = SettingsService()
         if settings.is_direct_permissions_enabled():
+            app.logger.info(
+                "[Scheduler] Direct permissions already enabled; skipping role-count check"
+            )
             return
 
         try:
@@ -172,6 +177,25 @@ def monitor_category_capacity(app):
             app.logger.warning(f"[Scheduler] Category capacity check failed: {e}")
 
 
+def prune_app_logs(app):
+    """Daily: delete application log rows older than the retention window.
+
+    The retention window is ``LOG_RETENTION_DAYS`` (env ``QM_LOG_RETENTION_DAYS``,
+    default 30 days).
+
+    Args:
+        app: Flask application instance for context.
+    """
+    from website.services.app_log import AppLogService
+
+    with app.app_context():
+        try:
+            deleted = AppLogService().prune(app.config["LOG_RETENTION_DAYS"])
+            app.logger.info(f"[Scheduler] Pruned {deleted} application log rows")
+        except Exception as e:
+            app.logger.warning(f"[Scheduler] Application log pruning failed: {e}")
+
+
 def start_scheduler(app):
     """Initialize and start the APScheduler background scheduler.
 
@@ -205,6 +229,7 @@ def start_scheduler(app):
         ("check_inactive_users", check_inactive_users, 24),
         ("monitor_role_count", monitor_role_count, ROLE_MONITOR_FREQUENCY_HOURS),
         ("monitor_category_capacity", monitor_category_capacity, 24),
+        ("prune_app_logs", prune_app_logs, 24),
     ]
     for job_id, func, hours in long_jobs:
         scheduler.add_job(
