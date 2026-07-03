@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "questmaster"
-version = "1.6.0"
+version = "1.7.0"
 description = "Club JDR booking app"
 requires-python = ">=3.14"
 license = "MIT"
