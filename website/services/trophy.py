@@ -97,6 +97,7 @@ class TrophyService:
         trophy = Trophy(name=name, unique=unique, icon=icon)
         self.repo.add(trophy)
         db.session.commit()
+        logger.info("Trophy %s created: %s", trophy.id, sanitize_log_value(name))
         return trophy
 
     def update_trophy(self, trophy_id: int, data: dict) -> Trophy:
@@ -119,6 +120,7 @@ class TrophyService:
                 raise ValidationError("Trophy name already exists.", field="name")
         trophy.update_from_dict(data)
         db.session.commit()
+        logger.info("Trophy %s updated", trophy_id)
         return trophy
 
     def delete_trophy(self, trophy_id: int) -> None:
@@ -130,6 +132,7 @@ class TrophyService:
         trophy = self.repo.get_by_id_or_404(trophy_id)
         self.repo.delete(trophy)
         db.session.commit()
+        logger.info("Trophy %s deleted", trophy_id)
 
     def get_all_user_trophies(self) -> list[UserTrophy]:
         """Get all user/trophy associations.
@@ -188,6 +191,12 @@ class TrophyService:
         user_trophy = UserTrophy(user_id=user_id, trophy_id=trophy_id, quantity=quantity)
         self.repo.add_user_trophy(user_trophy)
         db.session.commit()
+        logger.info(
+            "Trophy %s awarded to user %s (quantity=%s)",
+            trophy_id,
+            sanitize_log_value(user_id),
+            quantity,
+        )
         return user_trophy
 
     def update_user_trophy(self, user_id: str, trophy_id: int, quantity: int) -> UserTrophy:
@@ -209,6 +218,12 @@ class TrophyService:
             quantity = 1
         user_trophy.quantity = max(1, quantity)
         db.session.commit()
+        logger.info(
+            "Trophy %s quantity set to %s for user %s",
+            trophy_id,
+            user_trophy.quantity,
+            sanitize_log_value(user_id),
+        )
         return user_trophy
 
     def delete_user_trophy(self, user_id: str, trophy_id: int) -> None:
@@ -224,6 +239,7 @@ class TrophyService:
         user_trophy = self.get_user_trophy(user_id, trophy_id)
         self.repo.delete_user_trophy(user_trophy)
         db.session.commit()
+        logger.info("Trophy %s removed from user %s", trophy_id, sanitize_log_value(user_id))
 
     def decrement_user_trophy(
         self, user_id: str, trophy_id: int, amount: int = 1

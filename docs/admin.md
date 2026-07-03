@@ -35,7 +35,8 @@ current session may use.
 | Systèmes | `/admin/systems/` | CRUD for RPG systems |
 | VTTs | `/admin/vtts/` | CRUD for virtual tabletops |
 | Catégories (salons) | `/admin/channels/` | Manage Discord channel categories — create, auto-provision, reconcile sizes (see below) |
-| Journaux | `/admin/game-events/` | Read-only game audit trail (most recent events) |
+| Audit des annonces | `/admin/game-events/` | Read-only game audit trail (most recent events) |
+| Journaux applicatifs | `/admin/app-logs/` | Read-only application logs, filterable by date range, minimum level and free-text search |
 | Messages Discord | `/admin/discord/` | Manage postable channels; compose, send, edit and delete Discord messages (see below) |
 | Permissions | `/admin/permissions/` | Grant/revoke granular admin capabilities to Discord roles or users (RBAC, see below) |
 | Paramètres | `/admin/settings/` | Runtime configuration overrides and operational settings (see below) |

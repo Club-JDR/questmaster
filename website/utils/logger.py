@@ -2,15 +2,17 @@
 
 import logging
 
-from flask import g
-
 
 class RequestLoggerAdapter(logging.LoggerAdapter):
-    """Logger adapter that prepends the request trace ID to log messages."""
+    """Logger adapter kept for backward compatibility.
+
+    Request context (trace_id, user_id, endpoint) is injected on every
+    handler by ``website.logging_config.ContextFilter``, so messages no
+    longer need a per-call prefix.
+    """
 
     def process(self, msg, kwargs):
-        trace_id = getattr(g, "trace_id", "no-trace-id")
-        return f"[trace_id={trace_id}] {msg}", kwargs
+        return msg, kwargs
 
 
 def sanitize_log_value(value: object) -> str:
@@ -26,22 +28,6 @@ def sanitize_log_value(value: object) -> str:
         A single-line string safe to embed in a log message.
     """
     return "".join(c for c in str(value) if c.isprintable())
-
-
-def configure_logging(level=logging.INFO):
-    """Configure the root logger with a stream handler.
-
-    Args:
-        level: Logging level. Defaults to INFO.
-    """
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
-    if not root_logger.handlers:
-        root_logger.addHandler(handler)
 
 
 logger = RequestLoggerAdapter(logging.getLogger(__name__), {})

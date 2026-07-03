@@ -18,6 +18,7 @@ from uuid import uuid4
 
 from tests.constants import TEST_ADMIN_USER_ID
 from website.models import (
+    AppLog,
     Channel,
     DiscordMessage,
     Game,
@@ -192,6 +193,30 @@ def GameEventFactory(session, **overrides):
     session.add(event)
     session.flush()
     return event
+
+
+def AppLogFactory(session, **overrides):
+    """Create and persist an AppLog instance.
+
+    Args:
+        session: The SQLAlchemy session.
+        **overrides: Any AppLog column values to override.
+
+    Returns:
+        A flushed AppLog instance.
+    """
+    defaults = {
+        "timestamp": datetime.now(timezone.utc),
+        "level": "INFO",
+        "level_no": 20,
+        "logger": "website.test",
+        "message": f"Test log {_unique_id()}",
+    }
+    defaults.update(overrides)
+    log = AppLog(**defaults)
+    session.add(log)
+    session.flush()
+    return log
 
 
 def SystemFactory(session, **overrides):

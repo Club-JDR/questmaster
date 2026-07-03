@@ -31,7 +31,8 @@ PERMISSIONS: list[Permission] = [
     Permission("trophy.manage", "Gérer les badges", "admin.list_trophies"),
     Permission("channel.manage", "Gérer les catégories de salons", "admin.list_channels"),
     Permission("special_event.manage", "Gérer les événements", "admin.list_special_events"),
-    Permission("game_event.view", "Consulter les journaux", "admin.list_game_events"),
+    Permission("game_event.view", "Consulter l'audit des annonces", "admin.list_game_events"),
+    Permission("app_log.view", "Consulter les journaux applicatifs", "admin.list_app_logs"),
     Permission("discord.send", "Envoyer des messages Discord", "admin.list_discord_messages"),
     Permission("permissions.manage", "Gérer les permissions", "admin.list_permissions"),
 ]

@@ -11,6 +11,7 @@ import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID
 from tests.factories import (
+    AppLogFactory,
     DiscordMessageFactory,
     GameEventFactory,
     GameFactory,
@@ -45,6 +46,7 @@ ADMIN_LIST_ROUTES = [
     "/admin/vtts/",
     "/admin/channels/",
     "/admin/game-events/",
+    "/admin/app-logs/",
     "/admin/discord/",
     "/admin/settings/",
 ]
@@ -601,6 +603,81 @@ def test_game_events_list_renders(admin_client, db_session, default_system):
     response = admin_client.get("/admin/game-events/")
     assert response.status_code == 200
     assert b"Created via test" in response.data
+
+
+# -- Application logs ----------------------------------------------------------
+
+
+def test_app_logs_list_renders(admin_client, db_session):
+    token = uuid4().hex[:10]
+    AppLogFactory(db_session, message=f"Rendered app log {token}")
+    response = admin_client.get("/admin/app-logs/")
+    assert response.status_code == 200
+    assert f"Rendered app log {token}".encode() in response.data
+
+
+def test_app_logs_show_acting_user(admin_client, db_session):
+    token = uuid4().hex[:10]
+    AppLogFactory(db_session, message=f"acted {token}", user_id="999", username="admin_bob")
+
+    body = admin_client.get(f"/admin/app-logs/?q={token}").data.decode()
+
+    assert "admin_bob" in body
+    assert "(999)" in body
+
+
+def test_app_logs_filter_by_minimum_level(admin_client, db_session):
+    token = uuid4().hex[:10]
+    AppLogFactory(db_session, message=f"info row {token}", level="INFO", level_no=20)
+    AppLogFactory(db_session, message=f"error row {token}", level="ERROR", level_no=40)
+
+    body = admin_client.get(f"/admin/app-logs/?level=WARNING&q={token}").data.decode()
+
+    assert f"error row {token}" in body
+    assert f"info row {token}" not in body
+
+
+def test_app_logs_filter_by_date_range(admin_client, db_session):
+    from datetime import datetime, timedelta, timezone
+
+    token = uuid4().hex[:10]
+    now = datetime.now(timezone.utc)
+    AppLogFactory(db_session, message=f"old row {token}", timestamp=now - timedelta(days=10))
+    AppLogFactory(db_session, message=f"recent row {token}", timestamp=now)
+
+    start = (now - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M")
+    end = (now + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+    body = admin_client.get(f"/admin/app-logs/?start={start}&end={end}&q={token}").data.decode()
+
+    assert f"recent row {token}" in body
+    assert f"old row {token}" not in body
+
+
+def test_app_logs_filter_by_logger(admin_client, db_session):
+    token = uuid4().hex[:10]
+    AppLogFactory(db_session, message=f"svc row {token}", logger="website.services.game")
+    AppLogFactory(db_session, message=f"view row {token}", logger="website.views.games")
+
+    body = admin_client.get(f"/admin/app-logs/?logger=services&q={token}").data.decode()
+
+    assert f"svc row {token}" in body
+    assert f"view row {token}" not in body
+
+
+def test_app_logs_invalid_filters_are_ignored(admin_client, db_session):
+    token = uuid4().hex[:10]
+    AppLogFactory(db_session, message=f"still visible {token}")
+
+    response = admin_client.get(f"/admin/app-logs/?level=BOGUS&start=not-a-date&q={token}")
+
+    assert response.status_code == 200
+    assert f"still visible {token}".encode() in response.data
+
+
+def test_app_logs_visible_to_delegated_user(test_app, db_session):
+    """A non-admin holding ``app_log.view`` can reach the page."""
+    client = _delegated_client(test_app, ["app_log.view"])
+    assert client.get("/admin/app-logs/").status_code == 200
 
 
 # -- Search & pagination -----------------------------------------------------

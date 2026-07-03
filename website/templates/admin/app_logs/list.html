@@ -1,0 +1,142 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Journaux applicatifs', 'ph-terminal-window') }}
+
+<form method="get" class="flex items-end gap-3 mb-4 flex-wrap">
+  <div class="form-control">
+    <label class="label py-1" for="filter-start">
+      <span class="label-text text-xs">Du (UTC)</span>
+    </label>
+    <input type="datetime-local" id="filter-start" name="start" value="{{ start or '' }}"
+           class="input input-bordered input-sm">
+  </div>
+  <div class="form-control">
+    <label class="label py-1" for="filter-end">
+      <span class="label-text text-xs">Au (UTC)</span>
+    </label>
+    <input type="datetime-local" id="filter-end" name="end" value="{{ end or '' }}"
+           class="input input-bordered input-sm">
+  </div>
+  <div class="form-control">
+    <label class="label py-1" for="filter-level">
+      <span class="label-text text-xs">Niveau minimum</span>
+    </label>
+    <select id="filter-level" name="level" class="select select-bordered select-sm">
+      <option value="">Tous</option>
+      {% for lvl in levels %}
+      <option value="{{ lvl }}" {{ 'selected' if lvl == level }}>{{ lvl }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-control">
+    <label class="label py-1" for="filter-logger">
+      <span class="label-text text-xs">Logger</span>
+    </label>
+    <input type="text" id="filter-logger" name="logger" value="{{ logger_filter or '' }}"
+           placeholder="ex. website.services" class="input input-bordered input-sm font-mono">
+  </div>
+  <div class="form-control grow max-w-xs">
+    <label class="label py-1" for="filter-q">
+      <span class="label-text text-xs">Recherche</span>
+    </label>
+    <div class="input input-bordered input-sm flex items-center gap-2">
+      <i class="ph ph-magnifying-glass opacity-60" aria-hidden="true"></i>
+      <input type="search" id="filter-q" name="q" value="{{ search or '' }}"
+             placeholder="Message, logger, trace ID…" class="grow">
+    </div>
+  </div>
+  <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
+  {% if filter_args %}
+  <a href="{{ url_for(request.endpoint) }}" class="btn btn-sm btn-ghost">Réinitialiser</a>
+  {% endif %}
+</form>
+
+{% set level_badges = {
+  'DEBUG': 'badge-ghost',
+  'INFO': 'badge-info',
+  'WARNING': 'badge-warning',
+  'ERROR': 'badge-error',
+  'CRITICAL': 'badge-error'
+} %}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra table-sm">
+    <thead>
+      <tr>
+        <th>Timestamp (UTC)</th>
+        <th>Niveau</th>
+        <th>Utilisateur</th>
+        <th>Logger</th>
+        <th>Message</th>
+        <th>Trace ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in pagination.items %}
+      <tr>
+        <td class="whitespace-nowrap font-mono text-xs">{{ log.timestamp|format_datetime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>
+          <span class="badge badge-sm {{ level_badges.get(log.level, 'badge-outline') }}{{ ' font-bold' if log.level == 'CRITICAL' }}">
+            {{ log.level }}
+          </span>
+        </td>
+        <td class="text-xs whitespace-nowrap">
+          {% if log.user_id %}
+          {{ log.username or '?' }}
+          <span class="font-mono text-base-content/60">({{ log.user_id }})</span>
+          {% else %}
+          —
+          {% endif %}
+        </td>
+        <td class="font-mono text-xs">{{ log.logger }}</td>
+        <td class="text-sm break-all whitespace-pre-wrap max-w-xl">{{ log.message }}</td>
+        <td class="font-mono text-xs">{{ log.trace_id or '—' }}</td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(6, 'Aucun journal.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# Custom pager: the shared ui.pager macro only preserves ``q``; this one
+   carries every active filter (level, start, end, q) across pages. #}
+{% if pagination.pages > 1 %}
+<div class="flex items-center justify-between gap-2 mt-4 flex-wrap">
+  <span class="text-sm text-base-content/60">
+    {{ pagination.total }} résultat{{ 's' if pagination.total > 1 else '' }} —
+    page {{ pagination.page }}/{{ pagination.pages }}
+  </span>
+  <div class="join">
+    {% if pagination.has_prev %}
+    <a class="join-item btn btn-sm"
+       href="{{ url_for(request.endpoint, page=pagination.prev_num, **filter_args) }}"
+       aria-label="Page précédente">«</a>
+    {% else %}
+    <button class="join-item btn btn-sm btn-disabled" aria-label="Page précédente">«</button>
+    {% endif %}
+    {% for p in pagination.iter_pages() %}
+      {% if p %}
+        {% if p == pagination.page %}
+        <button class="join-item btn btn-sm btn-active">{{ p }}</button>
+        {% else %}
+        <a class="join-item btn btn-sm"
+           href="{{ url_for(request.endpoint, page=p, **filter_args) }}">{{ p }}</a>
+        {% endif %}
+      {% else %}
+      <button class="join-item btn btn-sm btn-disabled">…</button>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a class="join-item btn btn-sm"
+       href="{{ url_for(request.endpoint, page=pagination.next_num, **filter_args) }}"
+       aria-label="Page suivante">»</a>
+    {% else %}
+    <button class="join-item btn btn-sm btn-disabled" aria-label="Page suivante">»</button>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

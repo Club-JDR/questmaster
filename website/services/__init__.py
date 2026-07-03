@@ -1,5 +1,6 @@
 """Service layer for business logic and transaction management."""
 
+from website.services.app_log import AppLogService
 from website.services.channel import ChannelService
 from website.services.discord import DiscordService
 from website.services.discord_message import DiscordMessageService
@@ -16,6 +17,7 @@ from website.services.user import UserService
 from website.services.vtt import VttService
 
 __all__ = [
+    "AppLogService",
     "SystemService",
     "VttService",
     "ChannelService",

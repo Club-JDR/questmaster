@@ -9,9 +9,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from website.bot import set_bot
 from website.client.discord import Discord
 from website.extensions import cache, csrf, db, migrate, oauth, seed_trophies, setup_test_db
+from website.logging_config import configure_logging
 from website.scheduler import start_scheduler
 from website.utils import get_app_version
-from website.utils.logger import configure_logging
 from website.views import register_blueprints, register_filters
 
 
