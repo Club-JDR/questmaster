@@ -43,7 +43,7 @@ test = [
 ]
 lint = [
     "ruff==0.14.5",
-    "pydoclint==0.8.6",
+    "pydoclint==0.9.1",
 ]
 docs = [
     "mkdocs-material",
