@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.7.0](https://github.com/Club-JDR/questmaster/compare/v1.6.0...v1.7.0) (2026-07-03)
+
+
+### Features
+
+* **admin:** add granular permissions (RBAC) for delegated admin access ([c799d3a](https://github.com/Club-JDR/questmaster/commit/c799d3a2c8bc6bf386bdc714bc8695660f88a3b5))
+* **channels:** reconcile, create, and auto-provision Discord categories ([fe27c60](https://github.com/Club-JDR/questmaster/commit/fe27c6060d5da5c43bc0299473bc9ea696d0c5ce))
+* **dashboard:** agenda-first personalised landing dashboard ([24af753](https://github.com/Club-JDR/questmaster/commit/24af753149dc911410c19a051e3ed83e223adf38))
+* **discord:** add direct channel permissions mode and GM notify button ([579bbdf](https://github.com/Club-JDR/questmaster/commit/579bbdfec7647fdf07855189e0d76ef0fd735744))
+* **discord:** multi-embed messages with link buttons ([8bfb3f7](https://github.com/Club-JDR/questmaster/commit/8bfb3f7194f3cae1815883af23f6b27bbcfac9cf))
+* **games:** normalise imgur page URLs to direct image links on the game form ([444976c](https://github.com/Club-JDR/questmaster/commit/444976ca5f311ee16ca65409cbcaedf0ca72dcc8))
+* **logging:** persist app logs with admin browsing page ([#188](https://github.com/Club-JDR/questmaster/issues/188)) ([2ec706d](https://github.com/Club-JDR/questmaster/commit/2ec706da3712a38d178db1b5b87f402785a46464))
+* **settings:** make card-grid page size admin-configurable ([0da1eaa](https://github.com/Club-JDR/questmaster/commit/0da1eaab13e13db94e6d7ebefd8198108a718cc0))
+* **stats:** app-wide overview on the statistics page ([f6ab7a0](https://github.com/Club-JDR/questmaster/commit/f6ab7a00dc3fcec57edeb8485d7ab64c476908f4))
+* **users:** add and search users by Discord username ([c11fb22](https://github.com/Club-JDR/questmaster/commit/c11fb224857356d90e1b4ca84df2e0ef6c07ca81))
+
+
+### Bug Fixes
+
+* **deps:** update dependency apscheduler to v3.11.3 ([#182](https://github.com/Club-JDR/questmaster/issues/182)) ([53d639d](https://github.com/Club-JDR/questmaster/commit/53d639d34b3b7ce436759307bcf505ccb4b1be78))
+* **deps:** update dependency pydoclint to v0.9.1 ([#177](https://github.com/Club-JDR/questmaster/issues/177)) ([22113ff](https://github.com/Club-JDR/questmaster/commit/22113ff97185cdd94004f0f83e556417bec7c42e))
+* **deps:** update dependency redis to v8.0.1 ([#179](https://github.com/Club-JDR/questmaster/issues/179)) ([f38dcdf](https://github.com/Club-JDR/questmaster/commit/f38dcdfcdbc8dce18f350c146dfd64a88c866963))
+* **scheduler:** persist refreshed Discord profiles so admin shows real names ([09a4003](https://github.com/Club-JDR/questmaster/commit/09a40037d32319a96c220e72883d84e1fc157685))
+
+
+### Documentation
+
+* document RBAC, dashboard, and Discord category auto-provisioning ([fe7278c](https://github.com/Club-JDR/questmaster/commit/fe7278c1f6a4b5581c9ff25b9d0760673f244d79))
+
 ## [1.6.0](https://github.com/Club-JDR/questmaster/compare/v1.5.1...v1.6.0) (2026-06-20)
 
 
