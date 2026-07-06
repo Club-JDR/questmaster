@@ -8,7 +8,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from website.services.user import UserService
 
-BATCH_SIZE = 50
 FREQUENCY = 5
 INACTIVE_CHECK_BATCH_SIZE = 10
 ROLE_MONITOR_FREQUENCY_HOURS = 12
@@ -20,7 +19,7 @@ DAILY_JOB_JITTER = 3600
 DAILY_JOB_START_SPREAD = 30
 
 
-def refresh_user_profiles(app, batch_size=BATCH_SIZE):
+def refresh_user_profiles(app, batch_size=None):
     """Refresh a random batch of active user profiles from Discord.
 
     Users marked as inactive (not_player_as_of is set) are excluded.
@@ -31,10 +30,16 @@ def refresh_user_profiles(app, batch_size=BATCH_SIZE):
 
     Args:
         app: Flask application instance for context.
-        batch_size: Number of users to refresh per run.
+        batch_size: Number of users to refresh per run. When ``None`` (the
+            scheduled default), the admin-configured batch size is resolved at
+            run time so changes take effect without restarting the scheduler.
     """
     with app.app_context():
         service = UserService()
+        if batch_size is None:
+            from website.services.setting import SettingsService
+
+            batch_size = SettingsService().get_profile_refresh_batch_size()
         user_ids = service.get_active_user_ids()
         if not user_ids:
             app.logger.info("[Scheduler] No active users to refresh")

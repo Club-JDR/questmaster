@@ -85,6 +85,21 @@ class TestRefreshUserProfiles:
         mock_service.persist_profile.assert_not_called()
         mock_service.mark_inactive.assert_not_called()
 
+    @patch("website.services.setting.SettingsService")
+    @patch("website.scheduler.UserService")
+    def test_uses_configured_batch_size_by_default(
+        self, mock_service_cls, mock_settings_cls, test_app
+    ):
+        """With no explicit batch_size, the admin-configured value is used."""
+        mock_service = mock_service_cls.return_value
+        mock_service.get_active_user_ids.return_value = [USER_ID]
+        mock_service.get_user_profile.return_value = {"name": "Active", "avatar": DEFAULT_AVATAR}
+        mock_settings_cls.return_value.get_profile_refresh_batch_size.return_value = 5
+
+        refresh_user_profiles(test_app)
+
+        mock_settings_cls.return_value.get_profile_refresh_batch_size.assert_called_once()
+
     @patch("website.scheduler.UserService")
     def test_no_op_when_no_active_users(self, mock_service_cls, test_app):
         """Should not call get_user_profile when there are no active users."""

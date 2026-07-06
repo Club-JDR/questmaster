@@ -4,7 +4,12 @@
 from flask import flash, redirect, render_template, request, session, url_for
 
 # Local imports
-from config.constants import DASHBOARD_LIMIT_MAX, DISCORD_ROLE_LIMIT, GAMES_PER_PAGE_MAX
+from config.constants import (
+    DASHBOARD_LIMIT_MAX,
+    DISCORD_ROLE_LIMIT,
+    GAMES_PER_PAGE_MAX,
+    PROFILE_REFRESH_BATCH_SIZE_MAX,
+)
 from website.exceptions import DiscordAPIError, ValidationError
 from website.services.discord import DiscordService
 from website.services.setting import OVERRIDABLE_KEYS, SettingsService
@@ -54,6 +59,8 @@ def edit_settings():
         dashboard_limit_max=DASHBOARD_LIMIT_MAX,
         games_per_page=settings_service.get_games_per_page(),
         games_per_page_max=GAMES_PER_PAGE_MAX,
+        profile_refresh_batch_size=settings_service.get_profile_refresh_batch_size(),
+        profile_refresh_batch_size_max=PROFILE_REFRESH_BATCH_SIZE_MAX,
     )
 
 
@@ -76,6 +83,9 @@ def update_permissions_settings():
         )
         settings_service.set_games_per_page(
             request.form.get("games_per_page", ""), updated_by_id=updated_by
+        )
+        settings_service.set_profile_refresh_batch_size(
+            request.form.get("profile_refresh_batch_size", ""), updated_by_id=updated_by
         )
         flash("Paramètres mis à jour.", "success")
     except ValidationError as e:
