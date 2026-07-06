@@ -24,6 +24,8 @@ from config.constants import (
     DISCORD_ROLE_AUTO_THRESHOLD_DEFAULT,
     GAMES_PER_PAGE,
     GAMES_PER_PAGE_MAX,
+    PROFILE_REFRESH_BATCH_SIZE_DEFAULT,
+    PROFILE_REFRESH_BATCH_SIZE_MAX,
 )
 from website.exceptions import ValidationError
 from website.extensions import db
@@ -48,6 +50,10 @@ DASHBOARD_OPEN_LIMIT_KEY = "dashboard_open_limit"
 
 # Fully DB-managed: number of game cards shown per page on the public card grid.
 GAMES_PER_PAGE_KEY = "games_per_page"
+
+# Fully DB-managed: number of active users the scheduler refreshes from Discord
+# per run. Kept low to avoid bursting past Discord's rate limits.
+PROFILE_REFRESH_BATCH_SIZE_KEY = "profile_refresh_batch_size"
 
 # Fully DB-managed Discord category settings: the fill level at which a fresh
 # category is auto-provisioned, and the per-type category name templates.
@@ -507,6 +513,35 @@ class SettingsService:
             value,
             GAMES_PER_PAGE_MAX,
             "games_per_page",
+            updated_by_id,
+        )
+
+    def get_profile_refresh_batch_size(self) -> int:
+        """Return the number of users the scheduler refreshes from Discord per run.
+
+        Returns:
+            The stored batch size, or :data:`PROFILE_REFRESH_BATCH_SIZE_DEFAULT`
+            when unset or invalid.
+        """
+        return self._get_positive_int(
+            PROFILE_REFRESH_BATCH_SIZE_KEY, PROFILE_REFRESH_BATCH_SIZE_DEFAULT
+        )
+
+    def set_profile_refresh_batch_size(self, value, updated_by_id: str | None = None) -> None:
+        """Set the number of users the scheduler refreshes from Discord per run.
+
+        Args:
+            value: Batch size (1..:data:`PROFILE_REFRESH_BATCH_SIZE_MAX`).
+            updated_by_id: Discord ID of the admin performing the change.
+
+        Raises:
+            ValidationError: If the value is not an integer within bounds.
+        """
+        self._set_bounded_int(
+            PROFILE_REFRESH_BATCH_SIZE_KEY,
+            value,
+            PROFILE_REFRESH_BATCH_SIZE_MAX,
+            "profile_refresh_batch_size",
             updated_by_id,
         )
 

@@ -157,6 +157,12 @@ API_DEFAULT_PER_PAGE = 20
 API_MAX_PER_PAGE = 100
 ADMIN_PAGE_SIZE = 25
 
+# User profile refresh (scheduler, admin-configurable). The refresh job fetches
+# each sampled profile from Discord sequentially, so a large batch bursts many
+# requests back-to-back and trips Discord's per-route rate limits. Keep it modest.
+PROFILE_REFRESH_BATCH_SIZE_DEFAULT = 20  # Active users refreshed per run.
+PROFILE_REFRESH_BATCH_SIZE_MAX = 100  # Upper bound for the admin-configurable batch size.
+
 # Dashboard (admin-configurable limits use the *_DEFAULT values as fallbacks).
 DASHBOARD_AGENDA_LIMIT_DEFAULT = 10  # Upcoming sessions listed in the agenda.
 DASHBOARD_OPEN_LIMIT_DEFAULT = 8  # Latest open announcements shown on the dashboard.

@@ -139,6 +139,31 @@ class TestSettingsService:
         db_session.commit()
         assert SettingsService().get_games_per_page() == GAMES_PER_PAGE
 
+    def test_profile_refresh_batch_size_default(self, db_session):
+        """Unset batch size falls back to the constant default."""
+        from config.constants import PROFILE_REFRESH_BATCH_SIZE_DEFAULT
+
+        service = SettingsService()
+        assert service.get_profile_refresh_batch_size() == PROFILE_REFRESH_BATCH_SIZE_DEFAULT
+
+    def test_profile_refresh_batch_size_round_trip(self, db_session):
+        """A stored batch size is read back as an integer."""
+        service = SettingsService()
+        service.set_profile_refresh_batch_size(30, updated_by_id="admin-1")
+        assert service.get_profile_refresh_batch_size() == 30
+
+    def test_profile_refresh_batch_size_rejects_invalid(self, db_session):
+        """Non-integer, non-positive and over-bound batch sizes are rejected."""
+        from config.constants import PROFILE_REFRESH_BATCH_SIZE_MAX
+
+        service = SettingsService()
+        with pytest.raises(ValidationError):
+            service.set_profile_refresh_batch_size("nope")
+        with pytest.raises(ValidationError):
+            service.set_profile_refresh_batch_size(0)
+        with pytest.raises(ValidationError):
+            service.set_profile_refresh_batch_size(PROFILE_REFRESH_BATCH_SIZE_MAX + 1)
+
     def test_category_auto_threshold_default(self, db_session):
         """Unset category threshold falls back to the constant default."""
         from config.constants import DISCORD_CATEGORY_AUTO_THRESHOLD_DEFAULT
