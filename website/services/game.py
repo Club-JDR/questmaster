@@ -23,7 +23,7 @@ from website.exceptions import (
     ValidationError,
 )
 from website.extensions import db
-from website.models import Game
+from website.models import Game, User
 from website.repositories.game import GameRepository
 from website.services.channel import ChannelService
 from website.services.game_session import GameSessionService
@@ -755,6 +755,77 @@ class GameService:
         )
         logger.info(f"Game status for {game.id} has been updated to closed")
 
+    def _auto_reopen_if_space(self, game: Game) -> bool:
+        """Reopen a game that was auto-closed once a seat frees up.
+
+        Mirror of :meth:`_auto_close_if_full`. Party-selection games are never
+        reopened automatically (the GM curates the roster).
+
+        Args:
+            game: Game instance a player was just removed from.
+
+        Returns:
+            True if the game was reopened, False otherwise.
+        """
+        if game.status != "closed" or len(game.players) >= game.party_size or game.party_selection:
+            return False
+
+        game.status = "open"
+        log_game_event(
+            "edit",
+            game.id,
+            "Annonce rouverte automatiquement après désinscription.",
+        )
+        return True
+
+    def _validate_registration(self, game: Game, user: User, force: bool) -> None:
+        """Validate that a user may register for a game.
+
+        Args:
+            game: Locked game instance.
+            user: User attempting to register.
+            force: If True, bypass capacity and status checks.
+
+        Raises:
+            DuplicateRegistrationError: If the user is already registered.
+            GameFullError: If the game is at capacity and force is False.
+            GameClosedError: If the game is closed and force is False.
+        """
+        if user in game.players:
+            raise DuplicateRegistrationError(
+                "User is already registered for this game.",
+                game_id=game.id,
+                user_id=user.id,
+            )
+
+        if len(game.players) >= game.party_size and not force:
+            raise GameFullError(
+                "Game is full.",
+                game_id=game.id,
+                max_players=game.party_size,
+            )
+
+        if game.status == "closed" and not force:
+            raise GameClosedError(
+                "Game is closed for registration.",
+                game_id=game.id,
+            )
+
+    def _log_registration_event(self, game: Game, user: User, force: bool) -> None:
+        """Log a registration event, distinguishing self-registration from a GM add.
+
+        Args:
+            game: Game the user was registered to.
+            user: User that was registered.
+            force: If True, the player was added by the GM.
+        """
+        msg = (
+            "Le·a joueur·euse a été ajouté·e à la partie par le MJ."
+            if force
+            else "Le·a joueur·euse s'est inscrit·e sur l'annonce."
+        )
+        log_game_event("register", game.id, msg, user_id=user.id)
+
     def _delete_game_message(self, game: Game) -> None:
         """Delete Discord announcement message.
 
@@ -818,53 +889,14 @@ class GameService:
                     resource_id=game.id,
                 )
 
-            # Check if already registered
-            if user in locked_game.players:
-                raise DuplicateRegistrationError(
-                    "User is already registered for this game.",
-                    game_id=locked_game.id,
-                    user_id=user.id,
-                )
+            self._validate_registration(locked_game, user, force)
 
-            # Check capacity
-            if len(locked_game.players) >= locked_game.party_size and not force:
-                raise GameFullError(
-                    "Game is full.",
-                    game_id=locked_game.id,
-                    max_players=locked_game.party_size,
-                )
-
-            # Check status
-            if locked_game.status == "closed" and not force:
-                raise GameClosedError(
-                    "Game is closed for registration.",
-                    game_id=locked_game.id,
-                )
-
-            # Add player
             locked_game.players.append(user)
-
-            # Auto-close if full
             self._auto_close_if_full(locked_game)
 
             db.session.commit()
 
-            # Log event
-            if force:
-                log_game_event(
-                    "register",
-                    locked_game.id,
-                    "Le·a joueur·euse a été ajouté·e à la partie par le MJ.",
-                    user_id=user.id,
-                )
-            else:
-                log_game_event(
-                    "register",
-                    locked_game.id,
-                    "Le·a joueur·euse s'est inscrit·e sur l'annonce.",
-                    user_id=user.id,
-                )
-
+            self._log_registration_event(locked_game, user, force)
             logger.info(f"User {user.id} registered to Game {locked_game.id}")
 
             # Grant channel access: dedicated role, or a per-member permission
@@ -918,20 +950,7 @@ class GameService:
             )
 
         game.players.remove(user)
-
-        # Reopen if it was full
-        reopened = (
-            game.status == "closed"
-            and len(game.players) < game.party_size
-            and not game.party_selection
-        )
-        if reopened:
-            game.status = "open"
-            log_game_event(
-                "edit",
-                game.id,
-                "Annonce rouverte automatiquement après désinscription.",
-            )
+        reopened = self._auto_reopen_if_space(game)
 
         db.session.commit()
         logger.info(f"User {user.id} removed from Game {game.id}")
