@@ -353,13 +353,19 @@ class TestBuildAnnonceComponents:
         components = build_annonce_components(game)
         assert components[0]["components"][0]["url"] == f"{SITE_BASE_URL}/annonces/my-game/"
 
-    def test_closed_game_has_no_button(self):
-        game = _make_game(status="closed")
-        assert build_annonce_components(game) == []
+    def test_closed_game_shows_consulter_button(self):
+        game = _make_game(slug="my-game", status="closed")
+        components = build_annonce_components(game)
+        assert len(components) == 1
+        buttons = components[0]["components"]
+        assert len(buttons) == 1
+        assert buttons[0]["style"] == 5  # link button
+        assert buttons[0]["label"] == "Consulter"
+        assert buttons[0]["url"] == f"{SITE_BASE_URL}/annonces/my-game/"
 
-    def test_open_game_has_button(self):
+    def test_open_game_shows_inscrire_button(self):
         game = _make_game(status="open")
-        assert build_annonce_components(game) != []
+        assert build_annonce_components(game)[0]["components"][0]["label"] == "S'inscrire"
 
 
 # ---------------------------------------------------------------------------

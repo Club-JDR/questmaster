@@ -100,25 +100,23 @@ def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
 def build_annonce_components(game) -> list[dict]:
     """Build the link-button row shown below a game announcement embed.
 
-    Replaces the former inline "Pour s'inscrire" URL field with a Discord link
-    button pointing to the game's announcement page. A closed game shows no button
-    (returning an empty list, which clears it on edit); reopening the game restores
-    it.
+    Displays a Discord link button pointing to the game's announcement page. An
+    open game shows an "S'inscrire" button; a closed game shows a "Consulter"
+    button pointing to the same page (registration is no longer possible, but the
+    announcement stays reachable).
 
     Args:
         game: Game instance.
 
     Returns:
-        A Discord ``components`` list with a single "S'inscrire" link button, or an
-        empty list when the game is closed.
+        A Discord ``components`` list with a single link button, labelled
+        "S'inscrire" for open games and "Consulter" for closed ones.
     """
     from website.utils.discord_components import build_link_button_rows
 
-    if game.status == "closed":
-        return []
-
     game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
-    return build_link_button_rows([{"label": "S'inscrire", "url": game_url}])
+    label = "Consulter" if game.status == "closed" else "S'inscrire"
+    return build_link_button_rows([{"label": label, "url": game_url}])
 
 
 def _get_embed_color(game) -> int:
