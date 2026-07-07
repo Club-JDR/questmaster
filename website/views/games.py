@@ -383,7 +383,8 @@ def add_game_session(slug):
         flash("Session ajoutée.", "success")
     except ValidationError:
         flash(
-            "Impossible d'ajouter une session qui se termine avant de commencer.",
+            "Dates de session invalides : la fin doit suivre le début "
+            "et la session ne peut excéder 24 heures.",
             "danger",
         )
     except SessionConflictError as e:
@@ -432,7 +433,8 @@ def edit_game_session(slug, session_id):
         flash("Session modifiée.", "success")
     except ValidationError:
         flash(
-            "Impossible d'ajouter une session qui se termine avant de commencer.",
+            "Dates de session invalides : la fin doit suivre le début "
+            "et la session ne peut excéder 24 heures.",
             "danger",
         )
     except SessionConflictError as e:

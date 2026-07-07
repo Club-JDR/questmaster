@@ -6,6 +6,7 @@ from typing import Optional
 from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import joinedload, subqueryload
 
+from config.constants import GAME_STATUS_DRAFT
 from website.models import Game, User
 from website.repositories.base import BaseRepository
 
@@ -91,13 +92,14 @@ class GameRepository(BaseRepository[Game]):
         """Return all games GMed by a user, with stats relations eager-loaded.
 
         Loads system, vtt, sessions and players to avoid N+1 queries when
-        aggregating dashboard statistics.
+        aggregating dashboard statistics. Draft games are excluded so unpublished
+        announcements never contribute to statistics.
 
         Args:
             gm_id: GM user ID.
 
         Returns:
-            List of games GMed by this user.
+            List of non-draft games GMed by this user.
         """
         return (
             self.session.query(Game)
@@ -107,7 +109,7 @@ class GameRepository(BaseRepository[Game]):
                 subqueryload(Game.sessions),
                 subqueryload(Game.players),
             )
-            .filter(Game.gm_id == gm_id)
+            .filter(Game.gm_id == gm_id, Game.status != GAME_STATUS_DRAFT)
             .all()
         )
 
@@ -115,13 +117,14 @@ class GameRepository(BaseRepository[Game]):
         """Return all games a user plays in, with stats relations eager-loaded.
 
         Loads gm, system, vtt, sessions and players to avoid N+1 queries when
-        aggregating dashboard statistics.
+        aggregating dashboard statistics. Draft games are excluded so unpublished
+        announcements never contribute to statistics.
 
         Args:
             player_id: Player user ID.
 
         Returns:
-            List of games where the user is registered as a player.
+            List of non-draft games where the user is registered as a player.
         """
         return (
             self.session.query(Game)
@@ -133,7 +136,7 @@ class GameRepository(BaseRepository[Game]):
                 subqueryload(Game.sessions),
                 subqueryload(Game.players),
             )
-            .filter(User.id == player_id)
+            .filter(User.id == player_id, Game.status != GAME_STATUS_DRAFT)
             .all()
         )
 
@@ -141,10 +144,11 @@ class GameRepository(BaseRepository[Game]):
         """Return every game with stats relations eager-loaded.
 
         Loads system, vtt, sessions and players to avoid N+1 queries when
-        aggregating app-wide statistics.
+        aggregating app-wide statistics. Draft games are excluded so unpublished
+        announcements never contribute to statistics.
 
         Returns:
-            List of all games.
+            List of all non-draft games.
         """
         return (
             self.session.query(Game)
@@ -154,6 +158,7 @@ class GameRepository(BaseRepository[Game]):
                 subqueryload(Game.sessions),
                 subqueryload(Game.players),
             )
+            .filter(Game.status != GAME_STATUS_DRAFT)
             .all()
         )
 

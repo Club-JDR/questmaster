@@ -690,7 +690,28 @@ class TestGameSessions:
         )
         body = response.data.decode()
         assert response.status_code == 200
-        assert "Impossible d'ajouter une session qui se termine avant de commencer" in body
+        assert "Dates de session invalides" in body
+
+    def test_add_session_rejects_over_max_duration(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A session longer than 24h (e.g. an end-date typo) is rejected and not stored."""
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/sessions/ajouter/",
+            # 48h span — mimics a wrong end day/year.
+            data={"date_start": "2025-07-07 20:00", "date_end": "2025-07-09 20:00"},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert "Dates de session invalides" in response.data.decode()
+        # Nothing must have been persisted for this game.
+        assert [s for s in db_session.get(type(open_game), open_game.id).sessions] == []
 
     def test_edit_session(
         self,
@@ -728,7 +749,7 @@ class TestGameSessions:
         )
         body = response.data.decode()
         assert response.status_code == 200
-        assert "Impossible d'ajouter une session qui se termine avant de commencer" in body
+        assert "Dates de session invalides" in body
 
     def test_remove_session(
         self,

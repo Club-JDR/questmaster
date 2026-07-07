@@ -81,10 +81,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         f"/annonces/{slug}/sessions/ajouter/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
-    assert (
-        "Impossible d'ajouter une session qui se termine avant de commencer"
-        in response.data.decode()
-    )
+    assert "Dates de session invalides" in response.data.decode()
     data = {"date_start": "2025-07-07 20:00", "date_end": "2025-07-07 23:00"}
     response = logged_in_admin.post(
         f"/annonces/{slug}/sessions/ajouter/", data=data, follow_redirects=True
@@ -99,10 +96,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
-    assert (
-        "Impossible d'ajouter une session qui se termine avant de commencer"
-        in response.data.decode()
-    )
+    assert "Dates de session invalides" in response.data.decode()
     data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
     response = logged_in_admin.post(
         f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True

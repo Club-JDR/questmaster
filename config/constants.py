@@ -172,6 +172,11 @@ DASHBOARD_RYTHME_MONTHS = 12  # Months of activity shown in the "Rythme" chart.
 DASHBOARD_TOP_SYSTEMS = 3  # Number of systems listed in each "Top systèmes" ranking.
 DASHBOARD_STATS_CACHE_TIMEOUT = 300  # Seconds to cache a user's computed dashboard stats.
 
+# Game sessions
+# Upper bound (hours) for a single play session. Guards against date-entry typos
+# (e.g. an "end" a day/month/year off) that would otherwise poison play-time stats.
+MAX_SESSION_DURATION_HOURS = 24
+
 # Global statistics (app-wide /stats page).
 STATS_TOP_GLOBAL = 10  # Items listed in each global "Top systèmes / VTTs" ranking.
 RESTRICTION_LABELS = {
