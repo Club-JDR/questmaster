@@ -56,6 +56,18 @@ class TrophyRepository(BaseRepository[Trophy]):
         """
         return self.session.query(Trophy).filter_by(name=name).first()
 
+    def count_awarded(self) -> int:
+        """Return the total number of trophies awarded across all users.
+
+        Sums the ``quantity`` of every user/trophy association, so a badge
+        earned three times counts as three. Distinct from :meth:`count`, which
+        counts trophy *definitions*.
+
+        Returns:
+            Total quantity of trophies granted to players (0 when none).
+        """
+        return self.session.query(func.coalesce(func.sum(UserTrophy.quantity), 0)).scalar()
+
     def get_all_user_trophies(self) -> list[UserTrophy]:
         """Retrieve all user/trophy associations.
 

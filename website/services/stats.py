@@ -126,7 +126,13 @@ class StatsService:
     def _compute_data(self, user_id: str) -> dict:
         now = datetime.now()
         gm_games = self.repo.find_by_gm_with_relations(user_id)
-        player_games = self.repo.find_by_player_with_relations(user_id)
+        # A game the user GMs must count once, under the GM role only. Drop any
+        # game already in the GM list so a user registered as a player in their
+        # own game isn't double-counted across every headline stat.
+        gm_ids = {g.id for g in gm_games}
+        player_games = [
+            g for g in self.repo.find_by_player_with_relations(user_id) if g.id not in gm_ids
+        ]
 
         return {
             "agenda": self._build_agenda(gm_games, player_games, now),
@@ -290,7 +296,7 @@ class StatsService:
         return {
             "systems": SystemRepository().count(),
             "vtts": VttRepository().count(),
-            "trophies": TrophyRepository().count(),
+            "trophies": TrophyRepository().count_awarded(),
             "users": UserRepository().count(),
             "games": len(games),
             "sessions": sum(len(g.sessions) for g in games),

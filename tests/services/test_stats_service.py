@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from config.constants import BADGE_OS_ID, RESTRICTION_LABELS
+from config.constants import BADGE_CAMPAIGN_ID, BADGE_OS_ID, RESTRICTION_LABELS
 from tests.factories import (
     GameFactory,
     GameSessionFactory,
@@ -50,6 +50,39 @@ class TestStatsService:
 
         assert stats["games_count"] == 2
         assert stats["sessions_count"] == 5  # 2 (GM) + 3 (player)
+
+    def test_gm_also_player_of_own_game_is_not_double_counted(self, db_session, default_system):
+        """A game the user GMs must count once (as GM), even if also registered as a player."""
+        user, *_ = _build_scenario(db_session, default_system)
+        # gm_game has 2 sessions; registering the GM as a player in their own
+        # game must not inflate any headline stat.
+        gm_game = GameFactory(
+            db_session, type="oneshot", status="open", gm_id=user.id, system_id=default_system.id
+        )
+        gm_game.players.append(user)
+        GameSessionFactory(db_session, game_id=gm_game.id, start=PAST[0], end=PAST[1])
+        db_session.flush()
+
+        stats = StatsService().get_dashboard_stats(user.id, 10)["stats"]
+        # 2 GM games + 1 player game + the new GM game (counted once) == 3.
+        assert stats["games_count"] == 3
+        # 2 (campaign GM) + 3 (player OS) + 1 (new GM game) == 6, no double count.
+        assert stats["sessions_count"] == 6
+        # The user must not appear as one of the GMs they "played with".
+        assert stats["network"]["gm_count"] == 1
+
+    def test_draft_games_are_excluded(self, db_session, default_system):
+        """Unpublished (draft) games must not contribute to a user's stats."""
+        user, *_ = _build_scenario(db_session, default_system)
+        draft = GameFactory(
+            db_session, type="oneshot", status="draft", gm_id=user.id, system_id=default_system.id
+        )
+        GameSessionFactory(db_session, game_id=draft.id, start=PAST[0], end=PAST[1])
+        db_session.flush()
+
+        stats = StatsService().get_dashboard_stats(user.id, 10)["stats"]
+        assert stats["games_count"] == 2  # unchanged: the draft is ignored
+        assert stats["sessions_count"] == 5  # the draft's session is ignored
 
     def test_role_and_type_ratios(self, db_session, default_system):
         user, *_ = _build_scenario(db_session, default_system)
@@ -111,14 +144,27 @@ class TestStatsService:
 
 
 def _game_with(
-    db_session, system, *, type="oneshot", restriction="all", vtt=None, players=0, sessions=0
+    db_session,
+    system,
+    *,
+    type="oneshot",
+    restriction="all",
+    vtt=None,
+    players=0,
+    sessions=0,
+    status="open",
 ):
-    """Build a game with N players and N sessions, returning the flushed game."""
+    """Build a published game with N players and N sessions, returning the flushed game.
+
+    Defaults to a non-draft status so the game is counted by the statistics
+    aggregation (drafts are excluded).
+    """
     gm = UserFactory(db_session)
     game = GameFactory(
         db_session,
         type=type,
         restriction=restriction,
+        status=status,
         gm_id=gm.id,
         system_id=system.id,
         vtt_id=vtt.id if vtt else None,
@@ -186,6 +232,29 @@ class TestGlobalStats:
         assert rows["Tout public"]["n"] == 2
         assert rows["Tout public"]["pct"] == 67
         assert rows["18 ans et +"]["n"] == 1
+
+    def test_catalogue_trophies_counts_awarded_not_types(self, db_session, default_system):
+        """The catalogue trophy tile counts trophies granted to players, not definitions."""
+        user = UserFactory(db_session)
+        # 3 of one badge + 2 of another == 5 awarded, across 2 trophy *types*.
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=BADGE_OS_ID, quantity=3)
+        UserTrophyFactory(db_session, user_id=user.id, trophy_id=BADGE_CAMPAIGN_ID, quantity=2)
+        db_session.flush()
+
+        catalogue = StatsService().get_global_stats()["catalogue"]
+        assert catalogue["trophies"] >= 5  # awarded quantities, not the ~2 types
+
+    def test_global_stats_exclude_draft_games(self, db_session, default_system):
+        """Draft games must not appear in the app-wide statistics aggregation."""
+        from website.repositories.game import GameRepository
+
+        published = _game_with(db_session, default_system, sessions=1, status="open")
+        draft = _game_with(db_session, default_system, sessions=1, status="draft")
+        db_session.flush()
+
+        ids = {g.id for g in GameRepository().find_all_with_relations()}
+        assert published.id in ids
+        assert draft.id not in ids
 
     def test_get_global_stats_shape(self, db_session, default_system):
         _game_with(db_session, default_system, players=2, sessions=2)

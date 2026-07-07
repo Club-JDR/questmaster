@@ -25,6 +25,14 @@ class TestGameSessionService:
         with pytest.raises(ValidationError):
             service.create(sample_game, start, end)
 
+    def test_create_rejects_implausibly_long_session(self, db_session, sample_game):
+        """A session spanning more than the allowed max (e.g. an end-year typo) is rejected."""
+        service = GameSessionService()
+        start = datetime(2024, 7, 31, 20, 30)
+        end = datetime(2025, 7, 31, 23, 0)  # one-year typo -> ~8762h
+        with pytest.raises(ValidationError):
+            service.create(sample_game, start, end)
+
     def test_create_conflict(self, db_session, sample_game):
         service = GameSessionService()
         start = datetime(2025, 9, 1, 20, 0)
@@ -74,6 +82,15 @@ class TestGameSessionService:
         with pytest.raises(ValidationError):
             service.update(session, datetime(2025, 10, 2, 23, 0), datetime(2025, 10, 2, 20, 0))
 
+    def test_update_rejects_implausibly_long_session(self, db_session, sample_game):
+        """Editing a session to an out-of-range duration is rejected."""
+        service = GameSessionService()
+        session = service.create(
+            sample_game, datetime(2025, 10, 2, 20, 0), datetime(2025, 10, 2, 23, 0)
+        )
+        with pytest.raises(ValidationError):
+            service.update(session, datetime(2025, 10, 2, 20, 0), datetime(2025, 10, 30, 23, 0))
+
     def test_update_conflict_with_other_session(self, db_session, sample_game):
         service = GameSessionService()
         service.create(sample_game, datetime(2025, 10, 3, 20, 0), datetime(2025, 10, 3, 23, 0))
@@ -105,6 +122,7 @@ class TestGameSessionService:
 
     def test_get_stats_for_period(self, db_session, sample_game):
         service = GameSessionService()
+        sample_game.status = "open"  # only published games count toward the breakdown
         service.create(sample_game, datetime(2025, 11, 10, 20, 0), datetime(2025, 11, 10, 23, 0))
 
         stats = service.get_stats_for_period(2025, 11)
@@ -113,6 +131,20 @@ class TestGameSessionService:
         assert stats["num_os"] == 1
         assert stats["num_campaign"] == 0
         assert len(stats["gm_names"]) == 1
+
+    def test_get_stats_for_period_excludes_draft_games(self, db_session, sample_game):
+        """Sessions belonging to draft games must not appear in the monthly breakdown."""
+        service = GameSessionService()
+        service.create(sample_game, datetime(2029, 4, 10, 20, 0), datetime(2029, 4, 10, 23, 0))
+        sample_game.status = "draft"
+        db_session.flush()
+
+        stats = service.get_stats_for_period(2029, 4)
+
+        assert stats["num_os"] == 0
+        assert stats["num_campaign"] == 0
+        assert stats["gm_names"] == []
+        assert stats["os_games"] == {}
 
     def test_get_stats_for_period_empty(self, db_session, sample_game):
         service = GameSessionService()
