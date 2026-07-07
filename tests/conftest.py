@@ -65,27 +65,34 @@ def db_session(test_app):
     real transaction.  The outer transaction is rolled back in teardown,
     leaving the database unchanged between tests.
 
-    Reconfigures the *existing* ``db.session`` scoped_session rather than
-    replacing it, so that module-level service singletons whose repositories
-    captured a reference to ``db.session`` at import time transparently use
-    the same transactional connection.
+    Flask-SQLAlchemy's ``Session.get_bind()`` ignores a ``bind=`` passed to the
+    sessionmaker and always routes to the real engine, so binding via kwargs
+    alone silently opens a *separate* connection whose commits escape this
+    transaction (the reason tests used to leak rows unless ``--drop-db`` was
+    passed). We therefore override ``get_bind()`` for the duration of the test
+    to pin every session to our connection. Reconfiguring the *existing*
+    ``db.session`` scoped_session in-place (rather than replacing it) means
+    module-level service singletons whose repositories captured ``db.session``
+    at import time transparently use the same transactional connection.
     """
+    from flask_sqlalchemy.session import Session as FlaskSQLAlchemySession
+
     with test_app.app_context():
         connection = db.engine.connect()
         transaction = connection.begin()
 
-        # Save original factory kwargs and reconfigure in-place so that
-        # every reference to db.session (including those stored in repos)
-        # uses the same connection with savepoint-based commit interception.
+        # Pin every session to our connection and intercept commits as
+        # savepoints, so nothing written during the test survives teardown.
+        original_get_bind = FlaskSQLAlchemySession.get_bind
         original_kw = dict(db.session.session_factory.kw)
         db.session.remove()
-        db.session.session_factory.kw.update(
-            {"bind": connection, "join_transaction_mode": "create_savepoint"}
-        )
+        FlaskSQLAlchemySession.get_bind = lambda self, *args, **kwargs: connection
+        db.session.session_factory.kw.update({"join_transaction_mode": "create_savepoint"})
 
         yield db.session
 
         db.session.remove()
+        FlaskSQLAlchemySession.get_bind = original_get_bind
         db.session.session_factory.kw = original_kw
         transaction.rollback()
         connection.close()
