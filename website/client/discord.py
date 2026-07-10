@@ -348,6 +348,20 @@ class Discord:
         """
         return self._request(endpoint=f"/channels/{channel_id}", method="DELETE")
 
+    def update_channel_parent(self, channel_id: str, parent_id: str) -> dict:
+        """Move a channel under a different parent category.
+
+        Args:
+            channel_id: Channel to move.
+            parent_id: ID of the destination category.
+
+        Returns:
+            Dict with the updated channel data.
+        """
+        return self._request(
+            endpoint=f"/channels/{channel_id}", method="PATCH", json={"parent_id": parent_id}
+        )
+
     def create_role(self, role_name: str, permissions: str, color: int) -> dict:
         """Create a new guild role.
 

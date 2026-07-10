@@ -235,6 +235,43 @@ class ChannelService:
             return self.create_category(discord_service, type)
         return None
 
+    def move_game_channel(self, discord_service: DiscordService, game: Game, new_type: str) -> None:
+        """Move a game's Discord channel to a category matching its new type.
+
+        Used when a game's type changes after its channel already exists (e.g. a
+        one-shot upgraded to a campaign): relocates the channel on Discord and
+        keeps tracked category sizes in sync. A no-op if the game has no channel
+        yet (nothing to move).
+
+        Args:
+            discord_service: DiscordService instance for API calls.
+            game: Game instance whose channel should be relocated.
+            new_type: Destination game type (``oneshot`` or ``campaign``).
+
+        Raises:
+            NotFoundError: If no category is registered for ``new_type``.
+        """
+        if not game.channel:
+            return
+
+        destination = self.get_category(new_type)
+
+        old_parent_id = None
+        try:
+            old_parent_id = discord_service.get_channel(game.channel).get("parent_id")
+        except Exception as e:
+            logger.warning(f"Could not read current category for channel {game.channel}: {e}")
+
+        discord_service.update_channel_parent(game.channel, destination.id)
+        logger.info(f"Channel {game.channel} moved to category {destination.id}")
+
+        if old_parent_id and old_parent_id != destination.id:
+            old_category = self.repo.get_by_id(old_parent_id)
+            if old_category:
+                self.repo.decrement_size(old_category)
+        self.repo.increment_size(destination)
+        db.session.commit()
+
     def adjust_category_size(self, discord_service: DiscordService, game: Game) -> None:
         """Decrement category size when a game channel is deleted.
 
