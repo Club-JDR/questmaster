@@ -64,7 +64,9 @@ def GameFactory(session, **overrides):
         "restriction": "all",
         "party_size": 4,
         "xp": "all",
-        "date": datetime(2025, 6, 15, 20, 0, tzinfo=timezone.utc),
+        # Naive to match the Game.date column (TIMESTAMP WITHOUT TIME ZONE) and
+        # how production builds dates from form input.
+        "date": datetime(2025, 6, 15, 20, 0),
         "session_length": Decimal("3.0"),
         "characters": "self",
         "classification": {

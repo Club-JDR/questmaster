@@ -56,5 +56,6 @@ class TestExceptionPackageExports:
             "GameClosedError",
             "DuplicateRegistrationError",
             "SessionConflictError",
+            "PastDateError",
         }
         assert set(exceptions.__all__) == expected

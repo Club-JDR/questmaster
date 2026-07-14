@@ -16,6 +16,7 @@ from website.exceptions import (
     DuplicateRegistrationError,
     GameClosedError,
     GameFullError,
+    PastDateError,
     QuestMasterError,
     SessionConflictError,
     UnauthorizedError,
@@ -38,6 +39,12 @@ game_bp = Blueprint("annonces", __name__)
 
 # Configurables
 GAME_LIST_TEMPLATE = "games.j2"
+
+# Flashed when publishing a draft whose start date is in the past.
+_PAST_DATE_MESSAGE = (
+    "La date de la partie est dans le passé : la première session serait créée "
+    "dans le passé. Modifiez la date ou confirmez la publication."
+)
 
 # Datetime format
 locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
@@ -232,13 +239,22 @@ def create_game():
     data = request.values.to_dict()
     gm_id = data["gm_id"]
     action = data["action"]
+    allow_past_date = data.get("confirm_past_date") == "1"
 
     try:
         game = game_service.create(data, gm_id)
         if action in ("open", "open-silent"):
-            game_service.publish(
-                game.slug, silent=(action == "open-silent"), user_id=payload["user_id"]
-            )
+            try:
+                game_service.publish(
+                    game.slug,
+                    silent=(action == "open-silent"),
+                    user_id=payload["user_id"],
+                    allow_past_date=allow_past_date,
+                )
+            except PastDateError:
+                # The draft is saved; send the GM back to fix the date or confirm.
+                flash(_PAST_DATE_MESSAGE, "warning")
+                return redirect(url_for("annonces.get_game_edit_form", slug=game.slug))
             msg = f"Annonce {game.name} postée."
         else:
             msg = f"Annonce {game.name} enregistrée."
@@ -260,6 +276,7 @@ def edit_game(slug):
     was_draft = game.status == "draft"
     data = request.values.to_dict()
     action = data.get("action")
+    allow_past_date = data.get("confirm_past_date") == "1"
 
     try:
         game = game_service.update(slug, data, user_id=payload["user_id"])
@@ -267,13 +284,20 @@ def edit_game(slug):
 
         if was_draft and action in ("open", "open-silent"):
             game_service.publish(
-                game.slug, silent=(action == "open-silent"), user_id=payload["user_id"]
+                game.slug,
+                silent=(action == "open-silent"),
+                user_id=payload["user_id"],
+                allow_past_date=allow_past_date,
             )
             msg = (
                 "Annonce modifiée et ouverte."
                 if action == "open-silent"
                 else "Annonce modifiée et postée."
             )
+    except PastDateError:
+        # Edits are saved (still a draft); send the GM back to fix the date or confirm.
+        flash(_PAST_DATE_MESSAGE, "warning")
+        return redirect(url_for("annonces.get_game_edit_form", slug=game.slug))
     except DiscordAPIError as e:
         logger.error(f"Discord error while editing game {slug}: {e}", exc_info=True)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
@@ -363,6 +387,18 @@ def add_game_session(slug):
     """Add session to a game and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
+    if isinstance(game, Response):
+        return game
+
+    # Drafts have no Discord channel yet; sessions are created when the game is
+    # published. Block adding sessions until then.
+    if game.status == "draft":
+        flash(
+            "Impossible d'ajouter une session à un brouillon. Publiez d'abord l'annonce.",
+            "warning",
+        )
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
     start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
     end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
     start_fmt = start.strftime(HUMAN_TIMEFORMAT)
@@ -636,6 +672,8 @@ def _handle_publish(slug, user_id=None):
     try:
         game_service.publish(slug, user_id=user_id)
         flash("Annonce publiée avec succès.", "success")
+    except PastDateError:
+        flash(_PAST_DATE_MESSAGE, "warning")
     except ValidationError as e:
         flash(e.message, "danger")
     except DiscordAPIError as e:

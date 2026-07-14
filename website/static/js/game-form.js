@@ -42,6 +42,58 @@ document.querySelectorAll("input[type=range].range").forEach(function (range) {
   }
 });
 
+// Warn before publishing a draft whose start date is in the past: its first
+// session would be created in the past. The server enforces this too (a
+// PastDateError), so this modal is a friendlier front line, not the guardrail.
+(function () {
+  var form = document.querySelector("form");
+  var dateInput = document.getElementById("game_date");
+  var confirmField = document.getElementById("confirmPastDate");
+  var modal = document.getElementById("pastDateModal");
+  if (!form || !dateInput || !confirmField || !modal) return;
+
+  var pendingSubmitter = null;
+
+  form.addEventListener("submit", function (e) {
+    var submitter = e.submitter;
+    // Only publishing actions create the first session; drafts are exempt.
+    if (!submitter || (submitter.value !== "open" && submitter.value !== "open-silent")) {
+      return;
+    }
+    if (confirmField.value === "1") return; // already confirmed
+    if (!dateInput.value) return;
+    if (new Date(dateInput.value) >= new Date()) return; // not in the past
+
+    e.preventDefault();
+    pendingSubmitter = submitter;
+    modal.showModal();
+  });
+
+  var confirmBtn = document.getElementById("confirmPastDateBtn");
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", function () {
+      confirmField.value = "1";
+      modal.close();
+      form.requestSubmit(pendingSubmitter || undefined);
+    });
+  }
+
+  var changeBtn = document.getElementById("changeDateBtn");
+  if (changeBtn) {
+    changeBtn.addEventListener("click", function () {
+      modal.close();
+      dateInput.focus();
+      if (typeof dateInput.showPicker === "function") {
+        try {
+          dateInput.showPicker();
+        } catch (err) {
+          /* showPicker may throw if not user-activated; focus is enough */
+        }
+      }
+    });
+  }
+})();
+
 // Image URL preview with timeout-based validation
 (function () {
   var input = document.getElementById("imgUrlInput");
