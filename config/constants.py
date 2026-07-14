@@ -128,6 +128,12 @@ DISCORD_BUTTON_STYLE_LINK = 5  # Button style: link (opens a URL, no interaction
 DISCORD_MAX_BUTTONS_PER_ROW = 5  # Discord cap: buttons per action row.
 DISCORD_BUTTON_LABEL_MAX = 80  # Discord cap: characters in a button label.
 DISCORD_EMBED_LIMIT = 10  # Discord cap: embeds per message.
+DISCORD_NAME_MAX = 100  # Discord cap: characters in a role or channel name.
+
+# Game channels are named after the slug and player roles are "PJ_<slug>", both
+# of which must fit Discord's 100-char name limit. Bound the slug well under that
+# to leave room for the "PJ_" prefix and any "-N" uniqueness suffix.
+MAX_SLUG_LENGTH = 90
 
 # Site
 SITE_BASE_URL = "https://questmaster.club-jdr.fr"
