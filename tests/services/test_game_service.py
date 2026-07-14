@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from config.constants import PLAYER_ROLE_PERMISSION
+from config.constants import DISCORD_NAME_MAX, MAX_SLUG_LENGTH, PLAYER_ROLE_PERMISSION
 from tests.factories import GameFactory, UserFactory
 from website.exceptions import (
     DiscordAPIError,
@@ -96,6 +96,19 @@ class TestGameService:
 
         slug = game_service.generate_slug("Plop", "TestGM", exclude_slug=current_slug)
         assert slug != other_slug
+
+    def test_generate_slug_caps_long_name(self, db_session, game_service):
+        """A very long name must yield a slug short enough for Discord names.
+
+        Discord caps role ("PJ_<slug>") and channel names at 100 chars; the slug
+        itself is bounded so those derived names never exceed the limit.
+        """
+        long_name = "Lorem ipsum dolor sit amet " * 10  # ~270 chars
+
+        slug = game_service.generate_slug(long_name, "TestGM")
+
+        assert len(slug) <= MAX_SLUG_LENGTH
+        assert len("PJ_" + slug) <= DISCORD_NAME_MAX
 
     def test_parse_game_type_oneshot(self, db_session, game_service):
         game_type, event_id = game_service.parse_game_type("oneshot")

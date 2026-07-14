@@ -11,6 +11,7 @@ from config.constants import (
     BADGE_CAMPAIGN_ID,
     BADGE_OS_GM_ID,
     BADGE_OS_ID,
+    MAX_SLUG_LENGTH,
     PLAYER_ROLE_PERMISSION,
     SITE_BASE_URL,
 )
@@ -253,12 +254,13 @@ class GameService:
             exclude_slug: Slug to exclude from uniqueness check (used when renaming a game).
 
         Returns:
-            Unique URL-safe slug.
+            Unique URL-safe slug, capped at ``MAX_SLUG_LENGTH`` characters so the
+            derived Discord role and channel names stay within Discord's limit.
         """
         existing_slugs = self.repo.get_all_slugs()
         if exclude_slug:
             existing_slugs.discard(exclude_slug)
-        base_slug = slugify(f"{name}-par-{gm_name}")
+        base_slug = slugify(f"{name}-par-{gm_name}", max_length=MAX_SLUG_LENGTH)
         slug = base_slug
         i = 2
         while slug in existing_slugs:
