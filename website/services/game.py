@@ -547,12 +547,26 @@ class GameService:
         if len(game.players) >= game.party_size:
             raise ValidationError("Cannot publish a full game.", field="party_size")
 
+        # Resources may already exist from an earlier silent publish. In
+        # direct-permission mode game.role stays None by design, so the channel
+        # (always created by _setup_game_resources) is the only reliable marker
+        # of whether setup has already run.
+        resources_preexist = bool(game.channel)
+        created_channel = None
+        created_role = None
+
         try:
             game.status = "closed" if silent else "open"
 
             # Set up resources if not already created
-            if not game.role or not game.channel:
+            if not resources_preexist:
                 self._setup_game_resources(game)
+                # Remember the freshly created IDs: db.session.rollback() in the
+                # error path expires these attributes back to their (empty)
+                # committed values, so we must capture them to undo the Discord
+                # side-effects afterwards.
+                created_channel = game.channel
+                created_role = game.role
 
             # Send Discord announcement if not silent
             if not silent:
@@ -579,9 +593,13 @@ class GameService:
         except Exception as e:
             db.session.rollback()
             logger.error(f"Failed to publish game {game.id}: {e}", exc_info=True)
-            # Rollback Discord resources if they were just created
-            if not game.role or not game.channel:
-                self._rollback_discord_resources(game)
+            # Only undo Discord resources created during THIS publish. Resources
+            # from a prior silent publish must survive a failed re-publish —
+            # deleting them here is what previously wiped users' game channels.
+            if created_channel:
+                self.discord.delete_channel(created_channel)
+            if created_role:
+                self.discord.delete_role(created_role)
             raise
 
     def close(self, slug: str, user_id: str | None = None) -> Game:
