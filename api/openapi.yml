@@ -1,0 +1,917 @@
+openapi: 3.1.0
+info:
+  title: QuestMaster API
+  description: REST API for game announcements, registrations, and events
+  version: 1.0.0
+servers:
+  - url: https://api.questmaster.club-jdr.fr/api/v1
+    description: Production
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Game:
+      type: object
+      required: [id, name, type, status]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        type:
+          type: string
+          enum: [oneshot, campaign]
+        status:
+          type: string
+          enum: [draft, open, closed, archived]
+        gm_id:
+          type: string
+        system_id:
+          type: integer
+        vtt_id:
+          type: integer
+        party_size:
+          type: integer
+        date:
+          type: string
+          format: date-time
+        img:
+          type: string
+          format: uri
+        description:
+          type: string
+        restriction:
+          type: string
+          enum: [all, "16+", "18+"]
+        session_length:
+          type: number
+        player_ids:
+          type: array
+          items:
+            type: string
+
+    GameDetail:
+      description: Game with nested relationships
+      allOf:
+        - $ref: "#/components/schemas/Game"
+        - type: object
+          properties:
+            gm:
+              $ref: "#/components/schemas/User"
+            system:
+              $ref: "#/components/schemas/System"
+            vtt:
+              $ref: "#/components/schemas/Vtt"
+            players:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
+            sessions:
+              type: array
+              items:
+                $ref: "#/components/schemas/GameSession"
+            special_event:
+              $ref: "#/components/schemas/SpecialEvent"
+
+    GameCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        system_id:
+          type: integer
+        vtt_id:
+          type: integer
+
+    GameSession:
+      type: object
+      required: [id, start, end]
+      properties:
+        id:
+          type: integer
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+
+    GameEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        action:
+          type: string
+        game_id:
+          type: integer
+        description:
+          type: string
+        user_id:
+          type: string
+
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        is_gm:
+          type: boolean
+        is_admin:
+          type: boolean
+        is_player:
+          type: boolean
+
+    UserBadge:
+      type: object
+      properties:
+        name:
+          type: string
+        icon:
+          type: string
+        quantity:
+          type: integer
+
+    System:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        icon:
+          type: string
+
+    Vtt:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        icon:
+          type: string
+
+    SpecialEvent:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        color:
+          type: integer
+        active:
+          type: boolean
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        count:
+          type: integer
+
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        color:
+          type: string
+        type:
+          type: string
+          enum: [oneshot, campaign]
+        game_slug:
+          type: string
+
+    StatsResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+        counts:
+          type: object
+          properties:
+            oneshot:
+              type: integer
+            campaign:
+              type: integer
+            total:
+              type: integer
+        oneshot_games:
+          type: object
+          description: Per-system breakdown of oneshot games
+        campaign_games:
+          type: object
+          description: Per-system breakdown of campaign games
+        gm_leaderboard:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+    TokenRequest:
+      type: object
+      required: [discord_access_token]
+      properties:
+        discord_access_token:
+          type: string
+          description: OAuth2 access token obtained from Discord
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+        expires_in:
+          type: integer
+          description: Token lifetime in seconds
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+        database:
+          type: string
+        uptime:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    PaginatedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        pages:
+          type: integer
+
+paths:
+  # ---- Health ----
+  /health/:
+    get:
+      summary: Health check
+      security: []
+      tags: [Health]
+      responses:
+        "200":
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  # ---- Auth ----
+  /auth/token/:
+    post:
+      summary: Exchange Discord token for JWT
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: JWT access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Invalid or missing Discord token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/refresh/:
+    post:
+      summary: Refresh an expired JWT
+      tags: [Auth]
+      responses:
+        "200":
+          description: New JWT access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "403":
+          description: Token too old to refresh
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---- Games ----
+  /games/:
+    get:
+      summary: List games
+      tags: [Games]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (repeatable)
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by game type (repeatable)
+        - in: query
+          name: restriction
+          schema:
+            type: string
+          description: Filter by restriction (repeatable)
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Free-text name search
+        - in: query
+          name: system_id
+          schema:
+            type: integer
+        - in: query
+          name: vtt_id
+          schema:
+            type: integer
+        - in: query
+          name: gm_id
+          schema:
+            type: string
+        - in: query
+          name: player_id
+          schema:
+            type: string
+        - in: query
+          name: special_event_id
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated list of games
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Game"
+
+    post:
+      summary: Create a game
+      tags: [Games]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameCreate"
+      responses:
+        "201":
+          description: Game created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+
+  /games/{slug}/:
+    get:
+      summary: Get game details
+      tags: [Games]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Game details with relationships
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameDetail"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      summary: Update a game
+      tags: [Games]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameCreate"
+      responses:
+        "200":
+          description: Game updated
+
+    delete:
+      summary: Delete a game
+      tags: [Games]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /games/{slug}/sessions/:
+    get:
+      summary: List sessions for a game
+      tags: [Games]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameSession"
+        "404":
+          description: Game not found
+
+  /games/{slug}/events/:
+    get:
+      summary: Game audit trail
+      tags: [Games]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of game events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameEvent"
+        "404":
+          description: Game not found
+
+  # ---- Users ----
+  /users/me/:
+    get:
+      summary: Get current user profile
+      tags: [Users]
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}/:
+    get:
+      summary: Get user by ID
+      tags: [Users]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+
+  /users/{userId}/badges/:
+    get:
+      summary: Get user badges
+      tags: [Users]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of user badges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserBadge"
+        "404":
+          description: User not found
+
+  /users/search/:
+    get:
+      summary: Search users
+      description: Search users by id, name, or Discord username (typeahead).
+      tags: [Users]
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search term (matched case-insensitively)
+      responses:
+        "200":
+          description: Up to 10 matching users (minimal fields)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    username:
+                      type: string
+                    avatar:
+                      type: string
+                      format: uri
+
+  /users/me/games/:
+    get:
+      summary: List the current user's games (as player)
+      tags: [Users]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (repeatable; defaults to open, closed)
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by game type (repeatable)
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated list of games the user is registered to
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/GameDetail"
+
+  /users/me/games/gm/:
+    get:
+      summary: List the current user's games (as GM)
+      tags: [Users]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (repeatable; defaults to open, closed, draft)
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by game type (repeatable)
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated list of games the user runs as GM
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/GameDetail"
+
+  # ---- Stats ----
+  /stats/:
+    get:
+      summary: Monthly statistics
+      tags: [Stats]
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+        - in: query
+          name: month
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stats data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+
+  # ---- Calendar ----
+  /calendar/events/:
+    get:
+      summary: Calendar events for a date range
+      tags: [Calendar]
+      parameters:
+        - in: query
+          name: start
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarEvent"
+        "400":
+          description: Missing or invalid date parameters
+
+  # ---- Leaderboards ----
+  /leaderboards/:
+    get:
+      summary: Trophy leaderboards
+      tags: [Leaderboards]
+      responses:
+        "200":
+          description: All leaderboard categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oneshot_players:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+                  campaign_players:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+                  oneshot_gms:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+                  campaign_gms:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+
+  # ---- Reference Data ----
+  /systems/:
+    get:
+      summary: List game systems
+      tags: [Reference Data]
+      responses:
+        "200":
+          description: List of systems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/System"
+
+  /systems/{id}/:
+    get:
+      summary: Get system by ID
+      tags: [Reference Data]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: System details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/System"
+        "404":
+          description: System not found
+
+  /vtts/:
+    get:
+      summary: List virtual tabletops
+      tags: [Reference Data]
+      responses:
+        "200":
+          description: List of VTTs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vtt"
+
+  /vtts/{id}/:
+    get:
+      summary: Get VTT by ID
+      tags: [Reference Data]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: VTT details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vtt"
+        "404":
+          description: VTT not found
+
+  /special-events/:
+    get:
+      summary: List special events
+      tags: [Reference Data]
+      parameters:
+        - in: query
+          name: active
+          schema:
+            type: boolean
+          description: Filter to active events only
+      responses:
+        "200":
+          description: List of special events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpecialEvent"
+
+  /special-events/{id}/:
+    get:
+      summary: Get special event by ID
+      tags: [Reference Data]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Special event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecialEvent"
+        "404":
+          description: Special event not found
