@@ -721,6 +721,38 @@ class TestGameServiceDirectPermissions:
         _, kwargs = mock_discord.create_channel.call_args
         assert kwargs["role_id"] is None
 
+    def test_silent_then_open_publish_reuses_channel(
+        self, db_session, sample_game, mock_discord, direct_settings, oneshot_channel
+    ):
+        """Re-publishing a silently-opened game must reuse its existing channel.
+
+        Regression (v1.7.0): in direct-permission mode ``game.role`` is always
+        ``None``, so the old ``not game.role or not game.channel`` guard re-ran
+        resource setup on the second publish. That raised ``SessionConflictError``
+        (duplicate session) and the error path then deleted the live channel.
+        """
+        service = GameService(discord_service=mock_discord, settings_service=direct_settings)
+
+        # First publish: open silently -> creates session + channel, no role.
+        game = service.publish(sample_game.slug, silent=True)
+        channel_after_silent = game.channel
+        assert channel_after_silent == "mock_channel_id"
+        assert game.role is None
+        assert game.msg_id is None
+        mock_discord.create_channel.assert_called_once()
+
+        # Second publish: open for real. Must reuse the existing resources.
+        mock_discord.send_game_embed.return_value = "announce_msg"
+        game = service.publish(sample_game.slug, silent=False)
+
+        assert game.status == "open"
+        assert game.channel == channel_after_silent
+        assert game.msg_id == "announce_msg"
+        # Setup must not run a second time...
+        mock_discord.create_channel.assert_called_once()
+        # ...and the live channel must never be deleted.
+        mock_discord.delete_channel.assert_not_called()
+
     def test_register_player_grants_channel_permission(
         self, db_session, sample_game, regular_user, mock_discord, game_service
     ):
