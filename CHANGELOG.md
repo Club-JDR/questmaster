@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.7.1](https://github.com/Club-JDR/questmaster/compare/v1.7.0...v1.7.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **admin/logs:** collapse stacktrace rows behind a detail modal ([b042ce9](https://github.com/Club-JDR/questmaster/commit/b042ce97ecafbcd5881a2b3ea0504f7bbe413f8d))
+* **deps:** update dependency flask-caching to v2.4.1 ([87b0a08](https://github.com/Club-JDR/questmaster/commit/87b0a081bd6346ff17f13521a487a4b1b5487df2))
+* **embeds:** show "Consulter" button on closed game announcements ([7dbdd64](https://github.com/Club-JDR/questmaster/commit/7dbdd64cf90fa7529835b8c0d900dab6e1d44d18))
+* **games:** cap slug length so Discord role/channel names fit the 100-char limit ([509f634](https://github.com/Club-JDR/questmaster/commit/509f63411d16bfab1b472637330bfe6fffbf06fc))
+* **games:** don't re-run setup or delete channel on re-publish in direct mode ([af58d46](https://github.com/Club-JDR/questmaster/commit/af58d46f420802069c7cece74d40050f14044be4))
+* **games:** guard draft publishing against past dates and draft sessions ([a0dcb09](https://github.com/Club-JDR/questmaster/commit/a0dcb095e71cf1272facd46c7e3c6eae8f8d5e40))
+* **scheduler:** lower profile-refresh batch size and make it configurable ([495eb6b](https://github.com/Club-JDR/questmaster/commit/495eb6b6a8f31300a15f03de148ca82e581d1d1e))
+* **stats:** correct play-time inflation and miscounts ([4acfc31](https://github.com/Club-JDR/questmaster/commit/4acfc3160cdba58fa73e75991165d950163f4870))
+
+
+### Documentation
+
+* refresh documentation to match current status ([50b5aca](https://github.com/Club-JDR/questmaster/commit/50b5acaf4d5d4906d0adbd989f0516ad5cb2fc98))
+
 ## [1.7.0](https://github.com/Club-JDR/questmaster/compare/v1.6.0...v1.7.0) (2026-07-03)
 
 
