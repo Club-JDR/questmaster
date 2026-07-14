@@ -59,8 +59,23 @@ If you're just looking to play tabletop RPGs with us, that's also fine, just hea
 
 ## Roadmap
 
-This roadmap isn't a Product roadmap. It doesn't include feature requests or bugfix, only tech stack improvements.
+This roadmap isn't a Product roadmap. It doesn't include feature requests or bugfixes, only
+tech stack improvements.
 
-- **Logging** — improve logging for better observability and debugging.
-- **Performances** — improve queries, cache and index for better performances.
-- **API + frontend split** — move from a monolithic Flask app with server-rendered templates to a Flask REST API backend and a Vue.js frontend.
+The **North Star** is an **API-first backend with a Vue.js frontend**: move the UI out of Flask
+into a standalone Vue.js SPA that consumes the `/api/v1/` REST API, leaving Flask as an
+API-only backend once the SPA reaches feature parity with the server-rendered templates.
+
+- **Logging** — persistent app logs with an admin browsing page and redaction. ✅ _Done._
+- **REST API write layer** — complete the write API (game lifecycle & registration, admin
+  endpoints) on top of the existing read-only API, then document and test it (OpenAPI, ~90%
+  coverage). Game CRUD is done; lifecycle, admin, and API docs remain.
+- **Vue.js frontend** — scaffold the SPA (Vite, shared Tailwind v4 + DaisyUI v5 tokens), port
+  views to parity with the Jinja2 UI, then cut over and retire the server-rendered templates.
+- **Full-stack E2E testing** — run the complete stack via docker-compose and drive it with a
+  browser E2E suite (Playwright) wired into CI.
+- **Performances** — eliminate N+1 queries, add indexes, and layer caching (repository →
+  service → view) before the SPA drives heavier API traffic.
+
+Smaller self-contained improvements (Discord role/channel colour on game-type change, a Discord
+slash-command "sidekick" bot) can ship alongside the roadmap above.
