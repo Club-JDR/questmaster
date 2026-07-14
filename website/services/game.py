@@ -20,6 +20,7 @@ from website.exceptions import (
     GameClosedError,
     GameFullError,
     NotFoundError,
+    PastDateError,
     ValidationError,
 )
 from website.extensions import db
@@ -523,13 +524,21 @@ class GameService:
             logger.error(f"Failed to update game {game.id}: {e}", exc_info=True)
             raise
 
-    def publish(self, slug: str, silent: bool = False, user_id: str | None = None) -> Game:
+    def publish(
+        self,
+        slug: str,
+        silent: bool = False,
+        user_id: str | None = None,
+        allow_past_date: bool = False,
+    ) -> Game:
         """Publish a draft game to Discord.
 
         Args:
             slug: Game slug.
             silent: If True, don't send announcement (set to closed instead of open).
             user_id: ID of the user performing the publish.
+            allow_past_date: If True, publish even when the game's start date is in
+                the past (its first session would be created in the past).
 
         Returns:
             Published Game instance.
@@ -537,6 +546,8 @@ class GameService:
         Raises:
             NotFoundError: If game doesn't exist.
             ValidationError: If game is already published or is full.
+            PastDateError: If the game's start date is in the past and
+                ``allow_past_date`` is False.
             DiscordAPIError: If Discord operations fail.
         """
         game = self.get_by_slug(slug)
@@ -552,6 +563,17 @@ class GameService:
         # (always created by _setup_game_resources) is the only reliable marker
         # of whether setup has already run.
         resources_preexist = bool(game.channel)
+
+        # A fresh setup creates the first session at game.date. Refuse to place it
+        # in the past unless the caller has explicitly confirmed. Skip the check
+        # when resources already exist (the session was created on the prior
+        # silent publish, so nothing new is scheduled in the past here).
+        if not resources_preexist and not allow_past_date and game.date < datetime.now():
+            raise PastDateError(
+                "Game start date is in the past.",
+                game_id=game.id,
+            )
+
         created_channel = None
         created_role = None
 

@@ -6,6 +6,7 @@ from website.exceptions.business import (
     GameClosedError,
     GameError,
     GameFullError,
+    PastDateError,
     SessionConflictError,
 )
 from website.exceptions.database import DatabaseError
@@ -25,4 +26,5 @@ __all__ = [
     "GameClosedError",
     "DuplicateRegistrationError",
     "SessionConflictError",
+    "PastDateError",
 ]

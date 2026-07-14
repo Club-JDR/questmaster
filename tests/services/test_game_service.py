@@ -1,6 +1,6 @@
 """Tests for GameService."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -13,6 +13,7 @@ from website.exceptions import (
     GameClosedError,
     GameFullError,
     NotFoundError,
+    PastDateError,
     ValidationError,
 )
 from website.services.game import GameService
@@ -348,7 +349,7 @@ class TestGameService:
     ):
         mock_discord.send_game_embed.return_value = "msg_123456"
 
-        game = game_service.publish(sample_game.slug, silent=False)
+        game = game_service.publish(sample_game.slug, silent=False, allow_past_date=True)
 
         assert game.status == "open"
         assert game.msg_id == "msg_123456"
@@ -357,7 +358,7 @@ class TestGameService:
     def test_publish_game_silent(
         self, db_session, sample_game, mock_discord, game_service, oneshot_channel
     ):
-        game = game_service.publish(sample_game.slug, silent=True)
+        game = game_service.publish(sample_game.slug, silent=True, allow_past_date=True)
 
         assert game.status == "closed"
         assert game.msg_id is None
@@ -369,6 +370,47 @@ class TestGameService:
 
         with pytest.raises(ValidationError, match="already published"):
             game_service.publish(sample_game.slug)
+
+    def test_publish_past_date_raises(
+        self, db_session, sample_game, mock_discord, game_service, oneshot_channel
+    ):
+        """Publishing a draft dated in the past must be refused without confirmation."""
+        sample_game.date = datetime.now() - timedelta(days=1)
+        db_session.commit()
+
+        with pytest.raises(PastDateError):
+            game_service.publish(sample_game.slug)
+
+        # No resources or announcement should have been created.
+        assert sample_game.status == "draft"
+        assert sample_game.channel is None
+        mock_discord.create_channel.assert_not_called()
+
+    def test_publish_past_date_allowed(
+        self, db_session, sample_game, mock_discord, game_service, oneshot_channel
+    ):
+        """With explicit confirmation, a past-dated draft publishes normally."""
+        sample_game.date = datetime.now() - timedelta(days=1)
+        db_session.commit()
+        mock_discord.send_game_embed.return_value = "msg_past"
+
+        game = game_service.publish(sample_game.slug, silent=False, allow_past_date=True)
+
+        assert game.status == "open"
+        assert game.msg_id == "msg_past"
+
+    def test_publish_future_date_ok(
+        self, db_session, sample_game, mock_discord, game_service, oneshot_channel
+    ):
+        """A future start date needs no confirmation to publish."""
+        sample_game.date = datetime.now() + timedelta(days=7)
+        db_session.commit()
+        mock_discord.send_game_embed.return_value = "msg_future"
+
+        game = game_service.publish(sample_game.slug, silent=False)
+
+        assert game.status == "open"
+        assert game.msg_id == "msg_future"
 
     def test_close_game(self, db_session, sample_game, game_service):
         sample_game.status = "open"
@@ -734,7 +776,7 @@ class TestGameServiceDirectPermissions:
         service = GameService(discord_service=mock_discord, settings_service=direct_settings)
 
         # First publish: open silently -> creates session + channel, no role.
-        game = service.publish(sample_game.slug, silent=True)
+        game = service.publish(sample_game.slug, silent=True, allow_past_date=True)
         channel_after_silent = game.channel
         assert channel_after_silent == "mock_channel_id"
         assert game.role is None
