@@ -75,6 +75,8 @@
     </thead>
     <tbody>
       {% for log in pagination.items %}
+      {% set first_line = (log.message or '').split('\n', 1)[0] %}
+      {% set has_details = '\n' in (log.message or '') %}
       <tr>
         <td class="whitespace-nowrap font-mono text-xs">{{ log.timestamp|format_datetime('%Y-%m-%d %H:%M:%S') }}</td>
         <td>
@@ -91,7 +93,20 @@
           {% endif %}
         </td>
         <td class="font-mono text-xs">{{ log.logger }}</td>
-        <td class="text-sm break-all whitespace-pre-wrap max-w-xl">{{ log.message }}</td>
+        <td class="text-sm break-all max-w-xl">
+          <div class="flex items-start gap-2">
+            <span class="{{ 'line-clamp-2' if has_details }} grow">{{ first_line }}</span>
+            {% if has_details %}
+            <button type="button"
+                    class="btn btn-ghost btn-xs shrink-0 gap-1"
+                    aria-label="Voir les détails du journal {{ log.id }}"
+                    onclick="document.getElementById('log-modal-{{ log.id }}').showModal()">
+              <i class="ph ph-arrows-out-simple" aria-hidden="true"></i>
+              Détails
+            </button>
+            {% endif %}
+          </div>
+        </td>
         <td class="font-mono text-xs">{{ log.trace_id or '—' }}</td>
       </tr>
       {% else %}
@@ -100,6 +115,44 @@
     </tbody>
   </table>
 </div>
+
+{# Detail modals: one per row carrying a multi-line message (i.e. a stacktrace).
+   Rendered outside the table so the ``<dialog>`` markup stays valid. #}
+{% for log in pagination.items %}
+{% if '\n' in (log.message or '') %}
+<dialog id="log-modal-{{ log.id }}" class="modal">
+  <div class="modal-box max-w-4xl">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" aria-label="Fermer">✕</button>
+    </form>
+    <h3 class="text-lg font-bold flex items-center gap-2">
+      <span class="badge badge-sm {{ level_badges.get(log.level, 'badge-outline') }}{{ ' font-bold' if log.level == 'CRITICAL' }}">
+        {{ log.level }}
+      </span>
+      Journal #{{ log.id }}
+    </h3>
+    <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-xs mt-3 mb-3">
+      <dt class="font-semibold text-base-content/60">Timestamp (UTC)</dt>
+      <dd class="font-mono">{{ log.timestamp|format_datetime('%Y-%m-%d %H:%M:%S') }}</dd>
+      <dt class="font-semibold text-base-content/60">Logger</dt>
+      <dd class="font-mono break-all">{{ log.logger or '—' }}</dd>
+      <dt class="font-semibold text-base-content/60">Source</dt>
+      <dd class="font-mono break-all">{{ log.module or '?' }}.{{ log.func or '?' }}:{{ log.line or '?' }}</dd>
+      <dt class="font-semibold text-base-content/60">Utilisateur</dt>
+      <dd class="font-mono break-all">
+        {% if log.user_id %}{{ log.username or '?' }} ({{ log.user_id }}){% else %}—{% endif %}
+      </dd>
+      <dt class="font-semibold text-base-content/60">Trace ID</dt>
+      <dd class="font-mono break-all">{{ log.trace_id or '—' }}</dd>
+    </dl>
+    <pre class="bg-base-200 rounded-box p-3 text-xs whitespace-pre-wrap break-all overflow-x-auto max-h-[60vh]">{{ log.message }}</pre>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button aria-label="Fermer">Fermer</button>
+  </form>
+</dialog>
+{% endif %}
+{% endfor %}
 
 {# Custom pager: the shared ui.pager macro only preserves ``q``; this one
    carries every active filter (level, start, end, q) across pages. #}
