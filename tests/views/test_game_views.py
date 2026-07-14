@@ -4,6 +4,8 @@ Each test exercises a single action with mocked Discord and factory data.
 For end-to-end scenarios with real Discord, see test_e2e.py.
 """
 
+from datetime import datetime, timedelta
+
 import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID, TEST_GM_USER_ID
@@ -76,7 +78,8 @@ def _game_form_data(system_id, vtt_id, **overrides):
         "class-horror": "1",
         "img": "",
         "action": "draft",
-        "date": "2025-07-01 20:30",
+        # Future by default so publish flows aren't blocked by the past-date guard.
+        "date": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d 20:30"),
         "session_length": "3.5",
     }
     data.update(overrides)
@@ -367,6 +370,9 @@ class TestGameStatus:
         db_session,
         draft_game,
     ):
+        # Give the draft a future date so the past-date publish guard doesn't fire.
+        draft_game.date = datetime.now() + timedelta(days=30)
+        db_session.commit()
         response = logged_in_admin.post(
             f"/annonces/{draft_game.slug}/statut/",
             data={"status": "publish"},

@@ -59,3 +59,18 @@ class SessionConflictError(GameError):
         if game_id is not None:
             details["game_id"] = game_id
         super().__init__(message, details=details, **kwargs)
+
+
+class PastDateError(GameError):
+    """Game is being published with a start date in the past.
+
+    Raised when publishing a draft would create its first session in the past.
+    The caller may retry with explicit confirmation to publish anyway.
+    """
+
+    def __init__(self, message: str, game_id=None, **kwargs):
+        kwargs.setdefault("code", "PAST_DATE")
+        details = kwargs.pop("details", {})
+        if game_id is not None:
+            details["game_id"] = game_id
+        super().__init__(message, details=details, **kwargs)

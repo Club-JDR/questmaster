@@ -13,6 +13,8 @@
 <form method="post" action="{% if game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="gm_id" value="{% if game and not clone %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
+  {# Set to "1" by the past-date confirmation modal to publish despite a past start date. #}
+  <input type="hidden" name="confirm_past_date" id="confirmPastDate" value="">
 
   <div class="flex flex-col lg:flex-row gap-4">
 
@@ -359,6 +361,31 @@
 
   </div>
 </form>
+
+{# ── Past-date confirmation ── #}
+<dialog id="pastDateModal" class="modal" aria-modal="true">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold flex items-center gap-2">
+      <i class="ph ph-calendar-x text-warning" aria-hidden="true"></i> Date dans le passé
+    </h3>
+    <div role="alert" class="alert alert-warning text-sm mt-4">
+      <i class="ph ph-warning" aria-hidden="true"></i>
+      <span>La date de la partie est dans le passé. Sa première session sera créée dans le passé.</span>
+    </div>
+    <p class="text-sm text-base-content/70 mt-3">
+      Vous pouvez modifier la date, ou publier quand même si c'est volontaire.
+    </p>
+    <div class="modal-action">
+      <button type="button" id="changeDateBtn" class="btn">
+        <i class="ph ph-pencil-simple" aria-hidden="true"></i> Modifier la date
+      </button>
+      <button type="button" id="confirmPastDateBtn" class="btn btn-warning">
+        <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> Publier quand même
+      </button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
+</dialog>
 {% endblock %}
 
 {% block scripts %}{{ super() }}
