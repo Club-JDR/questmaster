@@ -54,6 +54,8 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
         "action": "open",
         "date": "2025-07-01 20:30",
         "session_length": "3.5",
+        # The fixed date is in the past; confirm publication past the date guard.
+        "confirm_past_date": "1",
     }
     response = logged_in_user.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
@@ -306,6 +308,8 @@ def test_e2e_scenario_2(
 
     # Open Game without posting
     data["action"] = "open-silent"
+    # The fixed date is in the past; confirm publication past the date guard.
+    data["confirm_past_date"] = "1"
     response = logged_in_admin.post(f"/annonces/{slug}/editer/", data=data, follow_redirects=True)
     assert response.status_code == 200
     assert "Annonce modifiée et ouverte." in response.data.decode()
