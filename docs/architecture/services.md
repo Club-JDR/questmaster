@@ -28,6 +28,7 @@ Services:
 | `UserService` | [`UserRepository`](repositories.md#website.repositories.UserRepository) | [`User`](models.md#website.models.User) | User retrieval, creation, and Discord profile initialization |
 | `VttService` | [`VttRepository`](repositories.md#website.repositories.VttRepository) | [`Vtt`](models.md#website.models.Vtt) | Virtual tabletop CRUD with cache invalidation |
 | `SettingsService` | [`SettingRepository`](repositories.md#website.repositories.SettingRepository) | [`AppSetting`](models.md#website.models.AppSetting) | Runtime config overrides (DB → env), the managed postable-channel list, and fully DB-managed operational settings (dashboard sizes, page size, role/category auto-provisioning thresholds, direct-permissions mode) |
+| `AppLogService` | [`AppLogRepository`](repositories.md#website.repositories.AppLogRepository) | [`AppLog`](models.md#website.models.AppLog) | Browse (paginated/filtered) and prune persisted application logs for the admin log viewer |
 
 ## API Reference
 

@@ -26,6 +26,7 @@ Repositories:
 | `SettingRepository` | [`AppSetting`](models.md#website.models.AppSetting) | Runtime config override storage and lookups |
 | `DiscordMessageRepository` | [`DiscordMessage`](models.md#website.models.DiscordMessage) | Admin-sent Discord message queries (search + pagination) |
 | `PermissionGrantRepository` | [`PermissionGrant`](models.md#website.models.PermissionGrant) | RBAC grant lookups and subject (role/user) resolution |
+| `AppLogRepository` | [`AppLog`](models.md#website.models.AppLog) | Application log queries (paginated/filtered, newest-first) and retention pruning |
 
 ## API Reference
 
