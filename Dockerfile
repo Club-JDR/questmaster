@@ -9,7 +9,7 @@ RUN npm run build
 
 
 FROM python:3.14-alpine3.23 AS builder
-COPY --from=ghcr.io/astral-sh/uv:0.11.28 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.29 /uv /bin/uv
 WORKDIR /app
 RUN apk add --no-cache \
   bash \
@@ -56,7 +56,7 @@ COPY --chmod=555 questmaster.py ./
 COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/static/dist/
 
 FROM base AS app-test
-COPY --from=ghcr.io/astral-sh/uv:0.11.28 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.29 /uv /bin/uv
 COPY pyproject.toml uv.lock ./
 RUN uv export --frozen --no-emit-project --extra test --extra lint -o /tmp/requirements-test.txt \
   && pip install --require-hashes --only-binary :all: --no-cache-dir -r /tmp/requirements-test.txt
