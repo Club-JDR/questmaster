@@ -1,0 +1,151 @@
+{% extends 'base.j2' %}
+{% block title %}Commandes Discord{% endblock %}
+
+{% macro command(name, args, summary, role, scope='channel') %}
+{# Swagger-style expandable command row.
+   role: 'gm' (blue) or 'player' (green); scope: 'channel' or 'anywhere'. #}
+<details
+  class="collapse collapse-arrow bg-base-100 shadow border-s-4 {{ 'border-primary' if role == 'gm' else 'border-success' }}">
+  <summary class="collapse-title min-h-0 py-3 pe-12">
+    <span class="flex flex-wrap items-center gap-2">
+      <code class="font-bold">/{{ name }}</code>
+      {% if args %}<code class="text-base-content/60 text-sm">{{ args }}</code>{% endif %}
+      <span class="grow"></span>
+      {% if scope == 'anywhere' %}
+      <span class="badge badge-outline badge-sm gap-1"><i class="ph ph-globe" aria-hidden="true"></i> Partout</span>
+      {% else %}
+      <span class="badge badge-outline badge-sm gap-1"><i class="ph ph-hash" aria-hidden="true"></i> Salon de partie</span>
+      {% endif %}
+      {% if role == 'gm' %}
+      <span class="badge badge-primary badge-sm gap-1"><i class="ph ph-crown" aria-hidden="true"></i> MJ</span>
+      {% else %}
+      <span class="badge badge-success badge-sm gap-1"><i class="ph ph-user" aria-hidden="true"></i> Joueur·euses</span>
+      {% endif %}
+    </span>
+    <span class="block text-sm text-base-content/70 mt-1">{{ summary }}</span>
+  </summary>
+  <div class="collapse-content space-y-3 text-sm">
+    {{ caller() }}
+  </div>
+</details>
+{% endmacro %}
+
+{% macro example(code_lines) %}
+<div>
+  <div class="font-semibold mb-1"><i class="ph ph-terminal" aria-hidden="true"></i> Exemple</div>
+  <pre class="bg-base-200 rounded-box p-3 overflow-x-auto"><code>{{ code_lines }}</code></pre>
+</div>
+{% endmacro %}
+
+{% block content %}
+<h1 class="text-center font-black text-2xl my-4"><i class="ph ph-discord-logo" aria-hidden="true"></i> Commandes Discord
+</h1>
+
+<div class="max-w-3xl mx-auto space-y-6">
+  <p>
+    QuestMaster propose des <strong>commandes slash</strong> utilisables directement dans le salon
+    Discord de votre partie. Elles effectuent les mêmes actions que les boutons de la page de
+    l'annonce, sans quitter Discord. Les réponses du bot ne sont visibles que par vous&nbsp;;
+    les effets (embed de signalement, annonce de session, notification) sont publiés dans le
+    salon comme depuis le site.
+  </p>
+
+  <div class="alert" role="note">
+    <i class="ph ph-info" aria-hidden="true"></i>
+    <span>Les commandes doivent être lancées <strong>dans le salon de la partie</strong> concernée
+      (sauf <code>/badges</code> et <code>/signaler</code>, utilisables partout).
+      Les dates s'écrivent au format <code>JJ/MM/AAAA HH:MM</code> (ex. <code>31/12/2026 20:30</code>)
+      et les durées sous la forme <code>3h</code> ou <code>2h30</code>.</span>
+  </div>
+
+  <h2 class="font-bold text-xl mt-8"><i class="ph ph-user" aria-hidden="true"></i> Pour les joueur·euses</h2>
+  <div class="space-y-2">
+
+    {% call command('info', '', "Affiche un résumé de la partie du salon.", 'player') %}
+    <p>Nom, lien de l'annonce, rôle (ou liste des joueur·euses), prochaine session et statut
+      de la partie associée au salon.</p>
+    {{ example('/info') }}
+    {% endcall %}
+
+    {% call command('signaler', 'message', "Signale un problème aux admins.", 'player', scope='anywhere') %}
+    <p>Utilisable partout. Dans le salon d'une partie, le signalement référence la partie
+      (réservé aux MJ, admins et joueur·euses inscrit·es), comme le bouton
+      «&nbsp;Signaler&nbsp;» de la page de l'annonce. Ailleurs, seuls votre nom et votre
+      message sont transmis aux admins.</p>
+    {{ example('/signaler message: Le lien FoundryVTT ne fonctionne plus') }}
+    {% endcall %}
+
+    {% call command('badges', '[membre]', "Affiche les badges d'un membre (les vôtres par défaut).", 'player', scope='anywhere') %}
+    <p>Fonctionne dans n'importe quel salon. Sans paramètre, affiche vos propres badges.</p>
+    {{ example('/badges\n/badges membre: @Loulou') }}
+    {% endcall %}
+
+  </div>
+
+  <h2 class="font-bold text-xl mt-8"><i class="ph ph-crown" aria-hidden="true"></i> Pour les MJs</h2>
+  <div class="space-y-2">
+
+    {% call command('notifier', 'message', "Notifie les joueur·euses de la partie.", 'gm') %}
+    <p>Publie votre message dans le salon en mentionnant les joueur·euses de la partie.</p>
+    {{ example('/notifier message: Pensez à préparer vos fiches pour samedi !') }}
+    {% endcall %}
+
+    {% call command('ajouter-session', 'debut [duree] [fin]', "Ajoute une session de jeu.", 'gm') %}
+    <p>La session est créée et annoncée dans le salon. Sans <code>duree</code> ni <code>fin</code>,
+      la durée de session configurée pour la partie est utilisée&nbsp;; <code>fin</code> est
+      prioritaire sur <code>duree</code>.</p>
+    {{ example('/ajouter-session debut: 31/12/2026 20:30\n'
+    ~ '/ajouter-session debut: 31/12/2026 20:30 duree: 2h30\n'
+    ~ '/ajouter-session debut: 31/12/2026 20:30 fin: 31/12/2026 23:30') }}
+    {% endcall %}
+
+    {% call command('editer-session', 'debut nouveau_debut [duree] [nouvelle_fin]', "Déplace une session existante.",
+    'gm') %}
+    <p>La session est identifiée par sa date de début actuelle (<code>debut</code>). Sans
+      <code>duree</code> ni <code>nouvelle_fin</code>, sa durée actuelle est conservée.
+    </p>
+    {{ example('/editer-session debut: 31/12/2026 20:30 nouveau_debut: 02/01/2027 20:30\n'
+    ~ '/editer-session debut: 31/12/2026 20:30 nouveau_debut: 02/01/2027 20:30 duree: 4h') }}
+    {% endcall %}
+
+    {% call command('supprimer-session', 'debut', "Supprime une session.", 'gm') %}
+    <p>La session qui commence à cette date est supprimée et l'annulation est annoncée dans le salon.</p>
+    {{ example('/supprimer-session debut: 31/12/2026 20:30') }}
+    {% endcall %}
+
+    {% call command('inscrire', 'membre', "Inscrit un·e joueur·euse à la partie.", 'gm') %}
+    <p>Équivalent de la page de gestion des joueur·euses&nbsp;: le membre est ajouté à la partie et
+      reçoit l'accès au salon. Le membre doit avoir le rôle joueur·euse sur le Discord.</p>
+    {{ example('/inscrire membre: @Riri') }}
+    {% endcall %}
+
+    {% call command('desinscrire', 'membre', "Désinscrit un·e joueur·euse de la partie.", 'gm') %}
+    <p>Le membre est retiré de la liste des joueur·euses et perd l'accès au salon.</p>
+    {{ example('/desinscrire membre: @Fifi') }}
+    {% endcall %}
+
+    {% call command('ouvrir', '', "Rouvre les inscriptions de l'annonce.", 'gm') %}
+    <p>Repasse une annonce fermée au statut «&nbsp;ouverte&nbsp;» et met à jour son embed d'annonce.</p>
+    {{ example('/ouvrir') }}
+    {% endcall %}
+
+    {% call command('fermer', '', "Ferme les inscriptions de l'annonce.", 'gm') %}
+    <p>Passe une annonce ouverte au statut «&nbsp;fermée&nbsp;» et met à jour son embed d'annonce.</p>
+    {{ example('/fermer') }}
+    {% endcall %}
+
+    {% call command('publier', '', "Publie l'annonce de la partie si elle ne l'est pas encore.", 'gm') %}
+    <p>Utile après une publication silencieuse&nbsp;: publie l'embed d'annonce de la partie du salon.
+      Un brouillon sans salon Discord se publie depuis le site.</p>
+    {{ example('/publier') }}
+    {% endcall %}
+
+  </div>
+
+  <p>
+    Si une commande est lancée dans un salon qui n'est pas associé à une partie, le bot répond
+    «&nbsp;Ce salon n'est pas associé à une partie.&nbsp;». Les commandes réservées aux MJ sont
+    refusées poliment aux autres membres — aucune action n'est effectuée.
+  </p>
+</div>
+{% endblock %}

@@ -67,6 +67,25 @@ class TestGameRepository:
         assert len(games) >= 1
         assert any(g.id == sample_game.id for g in games)
 
+    def test_get_by_channel(self, db_session, admin_user, default_system):
+        game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            status="open",
+            channel="123456700000000001",
+        )
+        repo = GameRepository()
+        found = repo.get_by_channel("123456700000000001")
+        assert found is not None
+        assert found.id == game.id
+        # Integer channel IDs are coerced to strings before querying
+        assert repo.get_by_channel(123456700000000001).id == game.id
+
+    def test_get_by_channel_not_found(self, db_session):
+        repo = GameRepository()
+        assert repo.get_by_channel("999999999999999999") is None
+
     def test_find_by_special_event(self, db_session, admin_user, default_system):
         event_game = GameFactory(
             db_session,

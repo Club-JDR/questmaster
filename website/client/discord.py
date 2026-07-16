@@ -270,6 +270,72 @@ class Discord:
             method="PUT",
         )
 
+    def register_guild_commands(self, application_id: str, commands: list[dict]) -> list:
+        """Bulk-overwrite this guild's application (slash) commands.
+
+        Args:
+            application_id: The Discord application (client) ID.
+            commands: List of application-command definitions.
+
+        Returns:
+            The list of registered command objects returned by Discord.
+        """
+        return self._request(
+            endpoint=f"/applications/{application_id}/guilds/{self.guild_id}/commands",
+            method="PUT",
+            json=commands,
+        )
+
+    def create_interaction_response(
+        self, interaction_id: str, interaction_token: str, payload: dict
+    ) -> dict:
+        """Send the initial response to an interaction (PONG, message, or deferred ack).
+
+        The interaction token in the URL authorizes this call; the bot
+        authorization header is ignored by Discord for this endpoint.
+
+        Args:
+            interaction_id: The interaction ID from the payload.
+            interaction_token: The interaction token from the payload.
+            payload: Interaction-response object (type + optional data).
+
+        Returns:
+            Dict with the API response (usually empty on success).
+        """
+        return self._request(
+            endpoint=f"/interactions/{interaction_id}/{interaction_token}/callback",
+            method="POST",
+            json=payload,
+        )
+
+    def create_followup_message(
+        self,
+        application_id: str,
+        interaction_token: str,
+        content: str,
+        *,
+        ephemeral: bool = True,
+    ) -> dict:
+        """Post a follow-up message to a (usually deferred) interaction.
+
+        Args:
+            application_id: The Discord application (client) ID.
+            interaction_token: The interaction token (valid ~15 minutes).
+            content: Message text.
+            ephemeral: If True, only the invoking user sees the message (flag 64).
+
+        Returns:
+            Dict with the created message data.
+        """
+        payload: dict = {"content": content}
+        if ephemeral:
+            payload["flags"] = 64
+        return self._request(
+            endpoint=f"/webhooks/{application_id}/{interaction_token}",
+            method="POST",
+            json=payload,
+        )
+
     def create_channel(
         self, channel_name: str, parent_id: str, role_id: str | None, gm_id: str
     ) -> dict:

@@ -3,6 +3,7 @@
 from website.services.app_log import AppLogService
 from website.services.channel import ChannelService
 from website.services.discord import DiscordService
+from website.services.discord_command import DiscordCommandService
 from website.services.discord_message import DiscordMessageService
 from website.services.game import GameService
 from website.services.game_event import GameEventService
@@ -31,5 +32,6 @@ __all__ = [
     "TrophyService",
     "GameService",
     "DiscordService",
+    "DiscordCommandService",
     "DiscordMessageService",
 ]

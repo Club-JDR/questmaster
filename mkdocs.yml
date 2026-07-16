@@ -65,4 +65,5 @@ nav:
   - API:
       - Reference: api/reference.md
   - Admin Panel: admin.md
+  - Discord Bot: discord-bot.md
   - Contributing: contributing.md

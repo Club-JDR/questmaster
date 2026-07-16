@@ -14,6 +14,10 @@ class Settings:
 
     DISCORD_CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID")
     DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET")
+    # Ed25519 public key used to verify Discord interaction signatures
+    DISCORD_PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY")
+    # Discord application ID (equals the client ID for a single-app setup)
+    DISCORD_APP_ID = os.environ.get("DISCORD_APP_ID", os.environ.get("DISCORD_CLIENT_ID"))
     DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
     DISCORD_REDIRECT_URI = os.environ.get("DISCORD_REDIRECT_URI")
     DISCORD_GUILD_NAME = os.environ.get("DISCORD_GUILD_NAME")

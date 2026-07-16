@@ -499,6 +499,51 @@ class DiscordService:
         return self.bot.pin_message(message_id, channel_id)
 
     # -------------------------------------------------------------------------
+    # Interaction (slash command) operations
+    # -------------------------------------------------------------------------
+
+    def register_guild_commands(self, application_id: str, commands: list[dict]) -> list:
+        """Bulk-overwrite the guild's application (slash) commands.
+
+        Args:
+            application_id: The Discord application (client) ID.
+            commands: List of application-command definitions.
+
+        Returns:
+            The list of registered command objects returned by Discord.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.register_guild_commands(application_id, commands)
+
+    def send_interaction_followup(
+        self,
+        application_id: str,
+        interaction_token: str,
+        content: str,
+        *,
+        ephemeral: bool = True,
+    ) -> dict:
+        """Post a follow-up message to a deferred interaction.
+
+        Args:
+            application_id: The Discord application (client) ID.
+            interaction_token: The interaction token (valid ~15 minutes).
+            content: Message text.
+            ephemeral: If True, only the invoking user sees the message.
+
+        Returns:
+            Created message data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.create_followup_message(
+            application_id, interaction_token, content, ephemeral=ephemeral
+        )
+
+    # -------------------------------------------------------------------------
     # Game embed operations (high-level)
     # -------------------------------------------------------------------------
 

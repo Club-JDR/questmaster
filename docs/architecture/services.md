@@ -16,6 +16,7 @@ Services:
 | --- | --- | --- | --- |
 | `ChannelService` | [`ChannelRepository`](repositories.md#website.repositories.ChannelRepository) | [`Channel`](models.md#website.models.Channel) | Category management: size tracking/reconciliation, creating and auto-provisioning categories, and Discord channel cleanup |
 | `DiscordService` | [`Discord`](client.md#website.client.Discord) (client) | — | Discord API wrapper with dependency injection for testability |
+| `DiscordCommandService` | [`GameRepository`](repositories.md#website.repositories.GameRepository) (via `GameService`) | — | Dispatch Discord slash commands to QuestMaster actions (see [Discord Bot](../discord-bot.md)) |
 | `DiscordMessageService` | [`DiscordMessageRepository`](repositories.md#website.repositories.DiscordMessageRepository) | [`DiscordMessage`](models.md#website.models.DiscordMessage) | Compose/send/edit admin Discord messages (Discord-first, then persist) |
 | `GameService` | [`GameRepository`](repositories.md#website.repositories.GameRepository) | [`Game`](models.md#website.models.Game) | Complete game lifecycle — creation, publishing, registration, archival, Discord sync |
 | `GameEventService` | [`GameEventRepository`](repositories.md#website.repositories.GameEventRepository) | [`GameEvent`](models.md#website.models.GameEvent) | Transaction-safe audit trail logging for games |

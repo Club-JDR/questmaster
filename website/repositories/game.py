@@ -58,6 +58,17 @@ class GameRepository(BaseRepository[Game]):
         """
         return self.session.query(Game).filter_by(slug=slug).first_or_404()
 
+    def get_by_channel(self, channel_id: str) -> Optional[Game]:
+        """Get the game whose Discord channel is ``channel_id``.
+
+        Args:
+            channel_id: Discord channel ID the command was invoked in.
+
+        Returns:
+            The matching Game, or None if the channel isn't a game channel.
+        """
+        return self.session.query(Game).filter_by(channel=str(channel_id)).first()
+
     def get_all_slugs(self) -> set[str]:
         """Get all existing game slugs.
 

@@ -6,6 +6,7 @@ from website.utils.assets import asset, asset_css
 from .admin import admin_bp
 from .auth import auth_bp
 from .demo import demo_bp
+from .discord_interactions import discord_bp
 from .errors import error_bp
 from .filters import duration_hours, format_datetime, hex_color, text_color
 from .games import game_bp
@@ -21,6 +22,7 @@ def register_blueprints(app):
     app.register_blueprint(stats_bp)
     app.register_blueprint(demo_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(discord_bp)
     app.register_blueprint(create_api_blueprint())
 
 
