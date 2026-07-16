@@ -7,6 +7,7 @@ from flask import Flask, g
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from website.bot import set_bot
+from website.cli import sync_discord_commands
 from website.client.discord import Discord
 from website.extensions import cache, csrf, db, migrate, oauth, seed_trophies, setup_test_db
 from website.logging_config import configure_logging
@@ -90,6 +91,7 @@ def create_app():
     )
     app.cli.add_command(seed_trophies)
     app.cli.add_command(setup_test_db)
+    app.cli.add_command(sync_discord_commands)
 
     # Create bot instance and store it
     bot_instance = Discord(app.config["DISCORD_GUILD_ID"], app.config["DISCORD_BOT_TOKEN"])

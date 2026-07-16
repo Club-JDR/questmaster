@@ -245,6 +245,17 @@ class GameService:
         """
         return self.repo.get_by_slug_or_404(slug)
 
+    def get_by_channel(self, channel_id: str) -> Optional[Game]:
+        """Get the game associated with a Discord channel, if any.
+
+        Args:
+            channel_id: Discord channel ID.
+
+        Returns:
+            The matching Game, or None if the channel isn't a game channel.
+        """
+        return self.repo.get_by_channel(channel_id)
+
     def generate_slug(self, name: str, gm_name: str, exclude_slug: str | None = None) -> str:
         """Generate unique slug for a game.
 

@@ -20,6 +20,12 @@ user_service = UserService()
 trophy_service = TrophyService()
 
 
+@misc_bp.route("/aide/commandes-discord/", methods=["GET"])
+def discord_commands_help():
+    """Render the help page for the Discord slash commands."""
+    return render_template("discord_commands.j2")
+
+
 @misc_bp.route("/vtts/", methods=["GET"])
 def list_vtts():
     """List all VTTs."""
