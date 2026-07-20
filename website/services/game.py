@@ -20,6 +20,7 @@ from website.exceptions import (
     DuplicateRegistrationError,
     GameClosedError,
     GameFullError,
+    GamePostingBlockedError,
     NotFoundError,
     PastDateError,
     ValidationError,
@@ -300,6 +301,22 @@ class GameService:
 
         return game_type, special_event_id
 
+    @staticmethod
+    def _ensure_can_post_games(gm: User) -> None:
+        """Ensure a GM is allowed to create or publish games.
+
+        Args:
+            gm: The GM user whose posting permission is checked.
+
+        Raises:
+            GamePostingBlockedError: If the GM has been blocked from posting.
+        """
+        if not getattr(gm, "can_post_games", True):
+            raise GamePostingBlockedError(
+                "This user is blocked from posting games.",
+                user_id=gm.id,
+            )
+
     def create(
         self,
         data: dict,
@@ -320,6 +337,7 @@ class GameService:
 
         Raises:
             ValidationError: If data is invalid.
+            GamePostingBlockedError: If the GM is blocked from posting games.
             DiscordAPIError: If Discord resource creation fails.
         """
         from website.utils.form_parsers import (
@@ -328,12 +346,13 @@ class GameService:
             parse_restriction_tags,
         )
 
+        # Enforce the posting block before any DB work (and fetch GM name for slug).
+        gm = self.user_service.get_by_id(gm_id)
+        self._ensure_can_post_games(gm)
+
         try:
             # Parse special fields
             game_type, special_event_id = self.parse_game_type(data["type"])
-
-            # Get GM name for slug
-            gm = self.user_service.get_by_id(gm_id)
 
             # Create game instance
             game = Game(
@@ -559,11 +578,14 @@ class GameService:
         Raises:
             NotFoundError: If game doesn't exist.
             ValidationError: If game is already published or is full.
+            GamePostingBlockedError: If the game's GM is blocked from posting.
             PastDateError: If the game's start date is in the past and
                 ``allow_past_date`` is False.
             DiscordAPIError: If Discord operations fail.
         """
         game = self.get_by_slug(slug)
+
+        self._ensure_can_post_games(game.gm)
 
         if game.msg_id:
             raise ValidationError("Game is already published.", field="status")

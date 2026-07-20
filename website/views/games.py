@@ -16,6 +16,7 @@ from website.exceptions import (
     DuplicateRegistrationError,
     GameClosedError,
     GameFullError,
+    GamePostingBlockedError,
     PastDateError,
     QuestMasterError,
     SessionConflictError,
@@ -44,6 +45,11 @@ GAME_LIST_TEMPLATE = "games.j2"
 _PAST_DATE_MESSAGE = (
     "La date de la partie est dans le passé : la première session serait créée "
     "dans le passé. Modifiez la date ou confirmez la publication."
+)
+
+# Flashed when a GM blocked by an admin tries to create or publish a game.
+_POSTING_BLOCKED_MESSAGE = (
+    "Vous n'êtes pas autorisé·e à poster des annonces. Contactez un·e administrateur·rice."
 )
 
 # Datetime format
@@ -217,6 +223,9 @@ def get_game_form():
     """Get form to create a new game."""
     payload = who()
     _abort_if_not_gm(payload)
+    if not payload.get("can_post_games", True):
+        flash(_POSTING_BLOCKED_MESSAGE, "danger")
+        return redirect(url_for(SEARCH_GAMES_ROUTE))
     return render_template(
         "game_form.j2",
         systems=system_service.get_all(),
@@ -258,6 +267,9 @@ def create_game():
             msg = f"Annonce {game.name} postée."
         else:
             msg = f"Annonce {game.name} enregistrée."
+    except GamePostingBlockedError:
+        flash(_POSTING_BLOCKED_MESSAGE, "danger")
+        return redirect(url_for(SEARCH_GAMES_ROUTE))
     except QuestMasterError as e:
         logger.error(f"Failed to save game: {e}", exc_info=True)
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
@@ -298,6 +310,10 @@ def edit_game(slug):
         # Edits are saved (still a draft); send the GM back to fix the date or confirm.
         flash(_PAST_DATE_MESSAGE, "warning")
         return redirect(url_for("annonces.get_game_edit_form", slug=game.slug))
+    except GamePostingBlockedError:
+        # Edits are saved (still a draft); only the publish step was blocked.
+        flash(_POSTING_BLOCKED_MESSAGE, "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     except DiscordAPIError as e:
         logger.error(f"Discord error while editing game {slug}: {e}", exc_info=True)
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")

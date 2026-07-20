@@ -6,6 +6,7 @@ from website.exceptions.business import (
     GameClosedError,
     GameError,
     GameFullError,
+    GamePostingBlockedError,
     PastDateError,
     SessionConflictError,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "GameError",
     "GameFullError",
     "GameClosedError",
+    "GamePostingBlockedError",
     "DuplicateRegistrationError",
     "SessionConflictError",
     "PastDateError",
