@@ -25,6 +25,7 @@ def who():
         session["is_gm"] = user.is_gm
         session["is_admin"] = user.is_admin
         session["is_player"] = user.is_player
+        session["can_post_games"] = user.can_post_games
         session["permissions"] = sorted(user.permissions)
     return session
 

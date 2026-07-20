@@ -42,6 +42,7 @@ def edit_user(user_id):
         data = {
             "name": request.form.get("name", "").strip(),
             "not_player_as_of": datetime.fromisoformat(raw_date) if raw_date else None,
+            "can_post_games": "can_post_games" in request.form,
         }
         user_service.update(user_id, data)
         flash("Utilisateur mis à jour.", "success")

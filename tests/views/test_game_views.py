@@ -157,6 +157,27 @@ class TestGameCreation:
         assert response.status_code == 200
         assert "Vous devez être MJ pour poster une annonce." in body
 
+    def test_blocked_gm_cannot_create_game(
+        self,
+        logged_in_admin,
+        admin_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        default_system,
+        default_vtt,
+    ):
+        admin_user.can_post_games = False
+        db_session.flush()
+
+        data = _game_form_data(default_system.id, default_vtt.id, action="open")
+        response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "n'êtes pas autorisé" in body
+        mock_discord_service.create_role.assert_not_called()
+
     def test_create_special_event_game(
         self,
         logged_in_admin,

@@ -122,6 +122,7 @@ class User(db.Model, SerializableMixin):
         id: Discord user ID (17-21 digit string).
         name: Display name (nick or global_name), refreshed from Discord.
         username: Stable Discord username, used for slug generation.
+        can_post_games: Whether the user may create/publish games (admin-toggled).
         games_gm: Games where this user is the GM.
         trophies: User trophy associations.
     """
@@ -135,6 +136,7 @@ class User(db.Model, SerializableMixin):
     name = db.Column(db.String(), nullable=False, index=True)
     username = db.Column(db.String(), nullable=True)
     not_player_as_of = db.Column(db.DateTime, nullable=True)
+    can_post_games = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
@@ -144,6 +146,7 @@ class User(db.Model, SerializableMixin):
         self.id = id
         self.name = name
         self.username = username
+        self.can_post_games = True
 
     @property
     def slug_name(self) -> str:
@@ -284,6 +287,7 @@ class User(db.Model, SerializableMixin):
             "not_player_as_of": (
                 self.not_player_as_of.isoformat() if self.not_player_as_of else None
             ),
+            "can_post_games": getattr(self, "can_post_games", True),
             "avatar": getattr(self, "avatar", DEFAULT_AVATAR),
             "is_gm": getattr(self, "is_gm", False),
             "is_admin": getattr(self, "is_admin", False),
@@ -327,6 +331,8 @@ class User(db.Model, SerializableMixin):
                 user.not_player_as_of = datetime.fromisoformat(value)
             else:
                 user.not_player_as_of = value
+        if "can_post_games" in data:
+            user.can_post_games = bool(data["can_post_games"])
 
         return user
 
@@ -337,7 +343,7 @@ class User(db.Model, SerializableMixin):
 
     def update_from_dict(self, data: dict):
         """Update the user from a dictionary of fields."""
-        for field in ["name", "username", "not_player_as_of"]:
+        for field in ["name", "username", "not_player_as_of", "can_post_games"]:
             if field in data:
                 setattr(self, field, data[field])
 

@@ -58,7 +58,7 @@
                   class="{% if not payload['username'] or not payload['is_gm'] %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] %} aria-disabled="true" tabindex="-1"{% endif %}>Mes
                   annonces</a></li>
               <li><a id="postNewGame" href="/annonce/"
-                  class="{% if not payload['username'] or not payload['is_gm'] %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] %} aria-disabled="true" tabindex="-1"{% endif %}>Poster
+                  class="{% if not payload['username'] or not payload['is_gm'] or not payload.get('can_post_games', True) %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] or not payload.get('can_post_games', True) %} aria-disabled="true" tabindex="-1"{% endif %}>Poster
                   une annonce</a></li>
             </ul>
           </details>
@@ -163,7 +163,7 @@
                     class="{% if not payload['username'] or not payload['is_gm'] %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] %} aria-disabled="true" tabindex="-1"{% endif %}>Mes
                     annonces</a></li>
                 <li><a href="/annonce/"
-                    class="{% if not payload['username'] or not payload['is_gm'] %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] %} aria-disabled="true" tabindex="-1"{% endif %}>Poster
+                    class="{% if not payload['username'] or not payload['is_gm'] or not payload.get('can_post_games', True) %}pointer-events-none opacity-50{% endif %}"{% if not payload['username'] or not payload['is_gm'] or not payload.get('can_post_games', True) %} aria-disabled="true" tabindex="-1"{% endif %}>Poster
                     une annonce</a></li>
               </ul>
             </details>

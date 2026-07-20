@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from website.exceptions import NotFoundError
+from website.exceptions import GamePostingBlockedError, NotFoundError
 
 VALID_GAME_PAYLOAD = {
     "name": "Test Game",
@@ -275,6 +275,21 @@ class TestCreateGame:
         assert service_data["type"] == "oneshot"
         assert service_data["system"] == 1
         created.to_dict.assert_called_once_with(include_relationships=True)
+
+    @patch("website.api.games.load_current_user")
+    @patch("website.api.games.game_service")
+    def test_blocked_gm_returns_403(
+        self, mock_service, mock_load_user, api_client, auth_headers_gm
+    ):
+        """A GM blocked from posting gets a 403 from the service."""
+        mock_load_user.return_value = _mock_user(user_id="gm-123", is_gm=True)
+        mock_service.create.side_effect = GamePostingBlockedError("blocked", user_id="gm-123")
+
+        response = api_client.post(
+            "/api/v1/games/", json=VALID_GAME_PAYLOAD, headers=auth_headers_gm
+        )
+        assert response.status_code == 403
+        assert response.get_json()["code"] == "GAME_POSTING_BLOCKED"
 
     @patch("website.api.games.load_current_user")
     @patch("website.api.games.game_service")

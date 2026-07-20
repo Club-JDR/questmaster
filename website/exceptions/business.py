@@ -37,6 +37,19 @@ class GameClosedError(GameError):
         super().__init__(message, details=details, **kwargs)
 
 
+class GamePostingBlockedError(GameError):
+    """The GM has been blocked from creating or publishing games."""
+
+    http_status = 403
+
+    def __init__(self, message: str, user_id=None, **kwargs):
+        kwargs.setdefault("code", "GAME_POSTING_BLOCKED")
+        details = kwargs.pop("details", {})
+        if user_id is not None:
+            details["user_id"] = user_id
+        super().__init__(message, details=details, **kwargs)
+
+
 class DuplicateRegistrationError(GameError):
     """Player already registered for this game."""
 

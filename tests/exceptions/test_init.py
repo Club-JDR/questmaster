@@ -54,6 +54,7 @@ class TestExceptionPackageExports:
             "GameError",
             "GameFullError",
             "GameClosedError",
+            "GamePostingBlockedError",
             "DuplicateRegistrationError",
             "SessionConflictError",
             "PastDateError",

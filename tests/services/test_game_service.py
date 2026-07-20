@@ -12,6 +12,7 @@ from website.exceptions import (
     DuplicateRegistrationError,
     GameClosedError,
     GameFullError,
+    GamePostingBlockedError,
     NotFoundError,
     PastDateError,
     ValidationError,
@@ -204,6 +205,58 @@ class TestGameService:
         assert game.channel == "mock_channel_id"
         mock_discord.create_role.assert_called_once()
         mock_discord.create_channel.assert_called_once()
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_create_blocked_gm_raises(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        admin_user,
+        default_system,
+        game_service,
+    ):
+        """A GM flagged as blocked cannot create a game."""
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+
+        admin_user.can_post_games = False
+        db_session.flush()
+
+        data = {
+            "name": "Blocked Game",
+            "type": "oneshot",
+            "length": "4h",
+            "system": default_system.id,
+            "description": "Test",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "session_length": 4.0,
+            "characters": "self",
+        }
+
+        with pytest.raises(GamePostingBlockedError):
+            game_service.create(data, admin_user.id)
+
+    def test_publish_blocked_gm_raises(self, db_session, admin_user, default_system, game_service):
+        """Publishing is blocked when the game's GM has been flagged."""
+        game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            status="draft",
+        )
+        admin_user.can_post_games = False
+        db_session.flush()
+
+        with pytest.raises(GamePostingBlockedError):
+            game_service.publish(game.slug)
 
     @patch("website.utils.form_parsers.get_classification")
     @patch("website.utils.form_parsers.get_ambience")

@@ -506,11 +506,29 @@ def test_edit_user(admin_client, db_session, mock_csrf):
     user = UserFactory(db_session)
     admin_client.post(
         f"/admin/users/{user.id}/edit",
-        data={"name": "Renamed User", "not_player_as_of": "2026-01-01T00:00"},
+        data={
+            "name": "Renamed User",
+            "not_player_as_of": "2026-01-01T00:00",
+            "can_post_games": "on",
+        },
     )
     db_session.refresh(user)
     assert user.name == "Renamed User"
     assert user.not_player_as_of is not None
+    assert user.can_post_games is True
+
+
+def test_edit_user_can_block_game_posting(admin_client, db_session, mock_csrf):
+    """Omitting the checkbox blocks the user from posting games."""
+    user = UserFactory(db_session)
+    assert user.can_post_games is True
+
+    admin_client.post(
+        f"/admin/users/{user.id}/edit",
+        data={"name": user.name},  # checkbox unchecked -> absent
+    )
+    db_session.refresh(user)
+    assert user.can_post_games is False
 
 
 def test_user_games_lists_gm_and_player_games(admin_client, db_session, default_system):
