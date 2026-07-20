@@ -325,6 +325,21 @@ class DiscordService:
         """
         return self.bot.delete_channel(channel_id)
 
+    def update_channel_parent(self, channel_id: str, parent_id: str) -> dict:
+        """Move a channel under a different parent category.
+
+        Args:
+            channel_id: Discord channel ID to move.
+            parent_id: ID of the destination category.
+
+        Returns:
+            Dict with the updated channel data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.update_channel_parent(channel_id, parent_id)
+
     # -------------------------------------------------------------------------
     # Message operations
     # -------------------------------------------------------------------------

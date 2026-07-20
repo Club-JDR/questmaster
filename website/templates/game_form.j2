@@ -42,15 +42,18 @@
               <label class="join-item btn btn-sm has-[:checked]:color-oneshot">
                 <input type="radio" name="type" value="oneshot" class="sr-only"
                   {% if not game or game.type == 'oneshot' %}checked{% endif %}
-                  {% if game and game.status != "draft" and not clone %}disabled{% endif %}>
+                  {% if game and game.status != "draft" and not clone and (game.type == 'campaign' or game.special_event_id) %}disabled{% endif %}>
                 <i class="ph ph-scroll" aria-hidden="true"></i> One Shot
               </label>
               <label class="join-item btn btn-sm has-[:checked]:color-campaign">
                 <input type="radio" name="type" value="campaign" class="sr-only"
                   {% if game and game.type == 'campaign' %}checked{% endif %}
-                  {% if game and game.type != 'campaign' and game.status != "draft" and not clone %}disabled{% endif %}>
+                  {% if game and game.type == 'oneshot' and game.special_event_id and game.status != "draft" and not clone %}disabled{% endif %}>
                 <i class="ph ph-books" aria-hidden="true"></i> Campagne
               </label>
+              {# Outside draft, a one-shot may still be upgraded to a campaign
+                 (a session that grows beyond its planned scope); the reverse
+                 and special-event games stay locked, see GameService.update(). #}
               {% if payload.active_events %}
                 {% for event in payload.active_events %}
                   {% set color = hex_color(event.color) %}

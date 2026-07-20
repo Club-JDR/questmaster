@@ -470,6 +470,7 @@ class GameService:
 
         game = self.get_by_slug(slug)
 
+        type_upgraded = False
         try:
             # Only allow type/name changes if game is draft
             if game.status == "draft":
@@ -482,6 +483,19 @@ class GameService:
                         data["name"], gm.slug_name, exclude_slug=game.slug
                     )
                 game.name = data["name"]
+            elif "type" in data:
+                # Once published, only a one-shot -> campaign upgrade is allowed (a
+                # game running longer than planned), never the reverse, and never
+                # into/out of a special event. Name/slug stay locked outside draft.
+                game_type, special_event_id = self.parse_game_type(data["type"])
+                if (
+                    game.type == "oneshot"
+                    and game_type == "campaign"
+                    and special_event_id is None
+                    and game.special_event_id is None
+                ):
+                    game.type = game_type
+                    type_upgraded = True
 
             # Update fields
             game.system_id = data["system"]
@@ -515,6 +529,13 @@ class GameService:
                     logger.info(f"Embed updated for game {game.id}")
                 except DiscordAPIError as e:
                     logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
+
+            # Relocate the Discord channel to the campaign category on upgrade
+            if type_upgraded:
+                try:
+                    self.channel_service.move_game_channel(self.discord, game, game.type)
+                except Exception as e:
+                    logger.warning(f"Failed to move channel for game {game.id}: {e}")
 
             return game
 
