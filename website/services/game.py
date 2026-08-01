@@ -502,6 +502,7 @@ class GameService:
 
         game = self.get_by_slug(slug)
 
+        type_changed = False
         try:
             # Only allow type/name changes if game is draft
             if game.status == "draft":
@@ -514,6 +515,20 @@ class GameService:
                         data["name"], gm.slug_name, exclude_slug=game.slug
                     )
                 game.name = data["name"]
+            elif "type" in data:
+                # Once published, the game may still be switched between one-shot
+                # and campaign (a session growing beyond its planned scope, or a
+                # campaign trimmed down to a single session), but never into/out
+                # of a special event. Name/slug stay locked outside draft.
+                game_type, special_event_id = self.parse_game_type(data["type"])
+                if (
+                    game_type in ("oneshot", "campaign")
+                    and game_type != game.type
+                    and special_event_id is None
+                    and game.special_event_id is None
+                ):
+                    game.type = game_type
+                    type_changed = True
 
             # Update fields
             game.system_id = data["system"]
@@ -547,6 +562,22 @@ class GameService:
                     logger.info(f"Embed updated for game {game.id}")
                 except DiscordAPIError as e:
                     logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
+
+            # Relocate the Discord channel to match the new type's category, and
+            # recolor the player role accordingly. Each is independent: a failure
+            # in one is logged and does not roll back the already-saved type or
+            # block the other.
+            if type_changed:
+                try:
+                    self.channel_service.move_game_channel(self.discord, game, game.type)
+                except Exception as e:
+                    logger.warning(f"Failed to move channel for game {game.id}: {e}")
+
+                if game.role:
+                    try:
+                        self.discord.update_role_color(game.role, Game.COLORS[game.type])
+                    except Exception as e:
+                        logger.warning(f"Failed to update role color for game {game.id}: {e}")
 
             return game
 

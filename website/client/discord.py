@@ -434,6 +434,20 @@ class Discord:
         """
         return self._request(endpoint=f"/channels/{channel_id}", method="DELETE")
 
+    def update_channel_parent(self, channel_id: str, parent_id: str) -> dict:
+        """Move a channel under a different parent category.
+
+        Args:
+            channel_id: Channel to move.
+            parent_id: ID of the destination category.
+
+        Returns:
+            Dict with the updated channel data.
+        """
+        return self._request(
+            endpoint=f"/channels/{channel_id}", method="PATCH", json={"parent_id": parent_id}
+        )
+
     def create_role(self, role_name: str, permissions: str, color: int) -> dict:
         """Create a new guild role.
 
@@ -453,6 +467,22 @@ class Discord:
         }
         return self._request(
             endpoint=f"/guilds/{self.guild_id}/roles", method="POST", json=payload
+        )
+
+    def update_role_color(self, role_id: str, color: int) -> dict:
+        """Update a guild role's color.
+
+        Args:
+            role_id: Role ID to update.
+            color: New role color as integer.
+
+        Returns:
+            Dict with the updated role data.
+        """
+        return self._request(
+            endpoint=f"/guilds/{self.guild_id}/roles/{role_id}",
+            method="PATCH",
+            json={"color": color},
         )
 
     def list_roles(self) -> list:

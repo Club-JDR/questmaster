@@ -141,6 +141,21 @@ class DiscordService:
         """
         return self.bot.get_role(role_id)
 
+    def update_role_color(self, role_id: str, color: int) -> dict:
+        """Update a Discord role's color.
+
+        Args:
+            role_id: Discord role ID.
+            color: New role color as integer.
+
+        Returns:
+            Updated role data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.update_role_color(role_id, color)
+
     def list_roles(self) -> list:
         """Return all roles defined in the guild.
 
@@ -324,6 +339,21 @@ class DiscordService:
             DiscordAPIError: If the API request fails.
         """
         return self.bot.delete_channel(channel_id)
+
+    def update_channel_parent(self, channel_id: str, parent_id: str) -> dict:
+        """Move a channel under a different parent category.
+
+        Args:
+            channel_id: Discord channel ID to move.
+            parent_id: ID of the destination category.
+
+        Returns:
+            Dict with the updated channel data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.update_channel_parent(channel_id, parent_id)
 
     # -------------------------------------------------------------------------
     # Message operations
