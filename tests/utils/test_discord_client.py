@@ -68,6 +68,15 @@ class TestRolesAndMessages:
 
         assert req.call_args.kwargs["endpoint"] == "/guilds/guild_1/roles"
 
+    def test_update_role_color(self, client):
+        """update_role_color PATCHes the role with the new color."""
+        with patch.object(Discord, "_request", return_value={"id": "role_9"}) as req:
+            client.update_role_color("role_9", 0x0D6EFD)
+
+        assert req.call_args.kwargs["endpoint"] == "/guilds/guild_1/roles/role_9"
+        assert req.call_args.kwargs["method"] == "PATCH"
+        assert req.call_args.kwargs["json"] == {"color": 0x0D6EFD}
+
     def test_send_message_forwards_allowed_mentions(self, client):
         """allowed_mentions is included in the message payload when provided."""
         allowed = {"parse": ["users", "roles"]}

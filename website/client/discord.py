@@ -383,6 +383,22 @@ class Discord:
             endpoint=f"/guilds/{self.guild_id}/roles", method="POST", json=payload
         )
 
+    def update_role_color(self, role_id: str, color: int) -> dict:
+        """Update a guild role's color.
+
+        Args:
+            role_id: Role ID to update.
+            color: New role color as integer.
+
+        Returns:
+            Dict with the updated role data.
+        """
+        return self._request(
+            endpoint=f"/guilds/{self.guild_id}/roles/{role_id}",
+            method="PATCH",
+            json={"color": color},
+        )
+
     def list_roles(self) -> list:
         """Fetch all roles defined in the guild.
 

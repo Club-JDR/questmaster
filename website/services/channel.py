@@ -235,7 +235,9 @@ class ChannelService:
             return self.create_category(discord_service, type)
         return None
 
-    def move_game_channel(self, discord_service: DiscordService, game: Game, new_type: str) -> None:
+    def move_game_channel(
+        self, discord_service: DiscordService, game: Game, new_type: str
+    ) -> None:
         """Move a game's Discord channel to a category matching its new type.
 
         Used when a game's type changes after its channel already exists (e.g. a

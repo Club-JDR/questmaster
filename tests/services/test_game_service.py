@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from config.constants import PLAYER_ROLE_PERMISSION
-from tests.factories import GameFactory, UserFactory
+from tests.factories import GameFactory, SpecialEventFactory, UserFactory
 from website.exceptions import (
     DiscordAPIError,
     DuplicateRegistrationError,
@@ -15,6 +15,7 @@ from website.exceptions import (
     NotFoundError,
     ValidationError,
 )
+from website.models import Game
 from website.services.game import GameService
 
 
@@ -342,6 +343,230 @@ class TestGameService:
 
         assert game.slug == old_slug
         assert game.name == sample_game.name
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_published_oneshot_can_upgrade_to_campaign(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+        mock_discord,
+        oneshot_channel,
+        campaign_channel,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        sample_game.status = "open"
+        sample_game.role = "role_123"
+        sample_game.channel = oneshot_channel.id
+        db_session.commit()
+
+        data = {
+            "name": sample_game.name,
+            "type": "campaign",
+            "system": default_system.id,
+            "description": "desc",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(sample_game.slug, data)
+
+        assert game.type == "campaign"
+        mock_discord.update_channel_parent.assert_called_once_with(
+            oneshot_channel.id, campaign_channel.id
+        )
+        mock_discord.update_role_color.assert_called_once_with("role_123", Game.COLORS["campaign"])
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_published_campaign_can_downgrade_to_oneshot(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+        mock_discord,
+        oneshot_channel,
+        campaign_channel,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        sample_game.type = "campaign"
+        sample_game.status = "open"
+        sample_game.role = "role_456"
+        sample_game.channel = campaign_channel.id
+        db_session.commit()
+
+        data = {
+            "name": sample_game.name,
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "desc",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(sample_game.slug, data)
+
+        assert game.type == "oneshot"
+        mock_discord.update_channel_parent.assert_called_once_with(
+            campaign_channel.id, oneshot_channel.id
+        )
+        mock_discord.update_role_color.assert_called_once_with("role_456", Game.COLORS["oneshot"])
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_published_game_type_unchanged_skips_move_and_recolor(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+        mock_discord,
+        oneshot_channel,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        sample_game.status = "open"
+        sample_game.role = "role_123"
+        sample_game.channel = oneshot_channel.id
+        db_session.commit()
+
+        data = {
+            "name": sample_game.name,
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "desc",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(sample_game.slug, data)
+
+        assert game.type == "oneshot"
+        mock_discord.update_channel_parent.assert_not_called()
+        mock_discord.update_role_color.assert_not_called()
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_published_special_event_game_type_stays_locked(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+        mock_discord,
+        admin_user,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        event = SpecialEventFactory(db_session)
+        sample_game.status = "open"
+        sample_game.special_event_id = event.id
+        db_session.commit()
+
+        data = {
+            "name": sample_game.name,
+            "type": "campaign",
+            "system": default_system.id,
+            "description": "desc",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(sample_game.slug, data)
+
+        assert game.type == "oneshot"
+        assert game.special_event_id == event.id
+        mock_discord.update_channel_parent.assert_not_called()
+        mock_discord.update_role_color.assert_not_called()
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_published_type_change_without_role_skips_recolor(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+        mock_discord,
+        oneshot_channel,
+        campaign_channel,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        sample_game.status = "open"
+        sample_game.role = None
+        sample_game.channel = oneshot_channel.id
+        db_session.commit()
+
+        data = {
+            "name": sample_game.name,
+            "type": "campaign",
+            "system": default_system.id,
+            "description": "desc",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "3h",
+            "session_length": 3.0,
+            "characters": "self",
+        }
+
+        game = game_service.update(sample_game.slug, data)
+
+        assert game.type == "campaign"
+        mock_discord.update_channel_parent.assert_called_once()
+        mock_discord.update_role_color.assert_not_called()
 
     def test_publish_game(
         self, db_session, sample_game, mock_discord, game_service, oneshot_channel

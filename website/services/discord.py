@@ -141,6 +141,21 @@ class DiscordService:
         """
         return self.bot.get_role(role_id)
 
+    def update_role_color(self, role_id: str, color: int) -> dict:
+        """Update a Discord role's color.
+
+        Args:
+            role_id: Discord role ID.
+            color: New role color as integer.
+
+        Returns:
+            Updated role data.
+
+        Raises:
+            DiscordAPIError: If the API request fails.
+        """
+        return self.bot.update_role_color(role_id, color)
+
     def list_roles(self) -> list:
         """Return all roles defined in the guild.
 

@@ -73,6 +73,15 @@ class TestDiscordService:
         mock_bot.delete_role.assert_called_once_with("role123")
         assert result == {}
 
+    def test_update_role_color(self, discord_service, mock_bot):
+        """Test updating a Discord role's color."""
+        mock_bot.update_role_color.return_value = {"id": "role123", "color": 0x0D6EFD}
+
+        result = discord_service.update_role_color("role123", 0x0D6EFD)
+
+        mock_bot.update_role_color.assert_called_once_with("role123", 0x0D6EFD)
+        assert result["color"] == 0x0D6EFD
+
     def test_count_roles(self, discord_service, mock_bot):
         """count_roles returns the number of guild roles."""
         mock_bot.list_roles.return_value = [{"id": "1"}, {"id": "2"}, {"id": "3"}]

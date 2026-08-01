@@ -467,7 +467,7 @@ class GameService:
 
         game = self.get_by_slug(slug)
 
-        type_upgraded = False
+        type_changed = False
         try:
             # Only allow type/name changes if game is draft
             if game.status == "draft":
@@ -481,18 +481,19 @@ class GameService:
                     )
                 game.name = data["name"]
             elif "type" in data:
-                # Once published, only a one-shot -> campaign upgrade is allowed (a
-                # game running longer than planned), never the reverse, and never
-                # into/out of a special event. Name/slug stay locked outside draft.
+                # Once published, the game may still be switched between one-shot
+                # and campaign (a session growing beyond its planned scope, or a
+                # campaign trimmed down to a single session), but never into/out
+                # of a special event. Name/slug stay locked outside draft.
                 game_type, special_event_id = self.parse_game_type(data["type"])
                 if (
-                    game.type == "oneshot"
-                    and game_type == "campaign"
+                    game_type in ("oneshot", "campaign")
+                    and game_type != game.type
                     and special_event_id is None
                     and game.special_event_id is None
                 ):
                     game.type = game_type
-                    type_upgraded = True
+                    type_changed = True
 
             # Update fields
             game.system_id = data["system"]
@@ -527,12 +528,21 @@ class GameService:
                 except DiscordAPIError as e:
                     logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
 
-            # Relocate the Discord channel to the campaign category on upgrade
-            if type_upgraded:
+            # Relocate the Discord channel to match the new type's category, and
+            # recolor the player role accordingly. Each is independent: a failure
+            # in one is logged and does not roll back the already-saved type or
+            # block the other.
+            if type_changed:
                 try:
                     self.channel_service.move_game_channel(self.discord, game, game.type)
                 except Exception as e:
                     logger.warning(f"Failed to move channel for game {game.id}: {e}")
+
+                if game.role:
+                    try:
+                        self.discord.update_role_color(game.role, Game.COLORS[game.type])
+                    except Exception as e:
+                        logger.warning(f"Failed to update role color for game {game.id}: {e}")
 
             return game
 
