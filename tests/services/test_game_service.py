@@ -15,6 +15,7 @@ from website.exceptions import (
     GamePostingBlockedError,
     NotFoundError,
     PastDateError,
+    ScheduleConflictError,
     ValidationError,
 )
 from website.services.game import GameService
@@ -585,6 +586,78 @@ class TestGameService:
         # Force should bypass both capacity and status checks
         assert regular_user in game.players
         assert len(game.players) == 2
+
+    def test_register_player_schedule_conflict(
+        self, db_session, sample_game, regular_user, admin_user, default_system, game_service
+    ):
+        other_game = GameFactory(
+            db_session, gm_id=admin_user.id, system_id=default_system.id, status="open"
+        )
+        other_game.players.append(regular_user)
+        sample_game.status = "open"
+        db_session.commit()
+
+        with pytest.raises(ScheduleConflictError):
+            game_service.register_player(sample_game.slug, regular_user.id)
+
+        assert regular_user not in sample_game.players
+
+    def test_register_player_force_does_not_bypass_schedule_conflict(
+        self, db_session, sample_game, regular_user, admin_user, default_system, game_service
+    ):
+        other_game = GameFactory(
+            db_session, gm_id=admin_user.id, system_id=default_system.id, status="open"
+        )
+        other_game.players.append(regular_user)
+        sample_game.status = "open"
+        db_session.commit()
+
+        with pytest.raises(ScheduleConflictError):
+            game_service.register_player(sample_game.slug, regular_user.id, force=True)
+
+    def test_register_player_skip_schedule_check_bypasses_conflict(
+        self,
+        db_session,
+        sample_game,
+        regular_user,
+        admin_user,
+        default_system,
+        mock_discord,
+        game_service,
+    ):
+        other_game = GameFactory(
+            db_session, gm_id=admin_user.id, system_id=default_system.id, status="open"
+        )
+        other_game.players.append(regular_user)
+        sample_game.status = "open"
+        db_session.commit()
+
+        game = game_service.register_player(
+            sample_game.slug, regular_user.id, force=True, skip_schedule_check=True
+        )
+
+        assert regular_user in game.players
+
+    def test_register_player_no_conflict_with_archived_game(
+        self,
+        db_session,
+        sample_game,
+        regular_user,
+        admin_user,
+        default_system,
+        mock_discord,
+        game_service,
+    ):
+        other_game = GameFactory(
+            db_session, gm_id=admin_user.id, system_id=default_system.id, status="archived"
+        )
+        other_game.players.append(regular_user)
+        sample_game.status = "open"
+        db_session.commit()
+
+        game = game_service.register_player(sample_game.slug, regular_user.id)
+
+        assert regular_user in game.players
 
     def test_register_player_auto_close(
         self, db_session, sample_game, regular_user, mock_discord, game_service

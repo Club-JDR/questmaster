@@ -633,6 +633,39 @@ class TestPlayerRegistration:
         assert response.status_code == 200
         assert "La partie est fermée aux inscriptions." in body
 
+    def test_cannot_register_with_schedule_conflict(
+        self,
+        logged_in_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        default_system,
+        default_vtt,
+        regular_user,
+        admin_user,
+    ):
+        other_game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            status="open",
+        )
+        other_game.players.append(regular_user)
+        # Commit to release the savepoint so the service-level rollback
+        # (on ScheduleConflictError) cannot undo the factory-created game.
+        db_session.commit()
+
+        response = logged_in_user.post(
+            f"/annonces/{open_game.slug}/inscription/",
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Vous avez déjà une partie prévue à cette date et heure." in body
+
     def test_registration_auto_closes_full_game(
         self,
         logged_in_user,
