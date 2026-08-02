@@ -6,6 +6,7 @@ from website.exceptions.business import (
     GameClosedError,
     GameError,
     GameFullError,
+    ScheduleConflictError,
     SessionConflictError,
 )
 
@@ -183,6 +184,42 @@ class TestSessionConflictError:
         assert result["details"]["game_id"] == 3
 
 
+class TestScheduleConflictError:
+    """Tests for ScheduleConflictError."""
+
+    def test_inherits_from_game_error(self):
+        err = ScheduleConflictError("Schedule overlaps.")
+        assert isinstance(err, GameError)
+        assert isinstance(err, QuestMasterError)
+
+    def test_default_code(self):
+        err = ScheduleConflictError("Schedule overlaps.")
+        assert err.code == "SCHEDULE_CONFLICT"
+
+    def test_structured_kwargs(self):
+        err = ScheduleConflictError(
+            "Overlaps with another game.", game_id=1, user_id="u1", conflicting_game_id=2
+        )
+        assert err.details["game_id"] == 1
+        assert err.details["user_id"] == "u1"
+        assert err.details["conflicting_game_id"] == 2
+
+    def test_can_be_raised_and_caught_as_game_error(self):
+        with pytest.raises(GameError):
+            raise ScheduleConflictError("conflict.")
+
+    def test_can_be_caught_specifically(self):
+        with pytest.raises(ScheduleConflictError):
+            raise ScheduleConflictError("conflict.")
+
+    def test_to_dict(self):
+        err = ScheduleConflictError("Overlap.", game_id=3, conflicting_game_id=4)
+        result = err.to_dict()
+        assert result["code"] == "SCHEDULE_CONFLICT"
+        assert result["details"]["game_id"] == 3
+        assert result["details"]["conflicting_game_id"] == 4
+
+
 class TestExceptionHierarchyCatching:
     """Test that exception hierarchy allows proper catch patterns."""
 
@@ -193,6 +230,7 @@ class TestExceptionHierarchyCatching:
             GameClosedError("closed."),
             DuplicateRegistrationError("duplicate."),
             SessionConflictError("conflict."),
+            ScheduleConflictError("schedule conflict."),
         ]
         for exc in exceptions:
             with pytest.raises(GameError):
@@ -206,6 +244,7 @@ class TestExceptionHierarchyCatching:
             GameClosedError("closed."),
             DuplicateRegistrationError("duplicate."),
             SessionConflictError("conflict."),
+            ScheduleConflictError("schedule conflict."),
         ]
         for exc in exceptions:
             with pytest.raises(QuestMasterError):
@@ -226,6 +265,7 @@ class TestExceptionHierarchyCatching:
             GameClosedError,
             DuplicateRegistrationError,
             SessionConflictError,
+            ScheduleConflictError,
         ]:
             assert cls("test.").http_status == 409
 
@@ -235,3 +275,4 @@ class TestExceptionHierarchyCatching:
         assert GameClosedError("t.").code == "GAME_CLOSED"
         assert DuplicateRegistrationError("t.").code == "DUPLICATE_REGISTRATION"
         assert SessionConflictError("t.").code == "SESSION_CONFLICT"
+        assert ScheduleConflictError("t.").code == "SCHEDULE_CONFLICT"

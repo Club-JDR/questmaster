@@ -18,6 +18,7 @@ from website.exceptions import (
     GameFullError,
     PastDateError,
     QuestMasterError,
+    ScheduleConflictError,
     SessionConflictError,
     UnauthorizedError,
     ValidationError,
@@ -535,6 +536,8 @@ def register_game(slug):
         flash("La partie est complète.", "danger")
     except GameClosedError:
         flash("La partie est fermée aux inscriptions.", "warning")
+    except ScheduleConflictError:
+        flash("Vous avez déjà une partie prévue à cette date et heure.", "warning")
     except QuestMasterError:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
@@ -732,7 +735,7 @@ def _handle_add_player(game, slug, data, payload):
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     force = payload["user_id"] == game.gm_id or payload.get("is_admin", False)
-    game_service.register_player(slug, user.id, force=force)
+    game_service.register_player(slug, user.id, force=force, skip_schedule_check=force)
 
 
 # ---------------------------------------------------------------------------

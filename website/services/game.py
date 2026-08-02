@@ -22,6 +22,7 @@ from website.exceptions import (
     GameFullError,
     NotFoundError,
     PastDateError,
+    ScheduleConflictError,
     ValidationError,
 )
 from website.extensions import db
@@ -820,18 +821,25 @@ class GameService:
         )
         return True
 
-    def _validate_registration(self, game: Game, user: User, force: bool) -> None:
+    def _validate_registration(
+        self, game: Game, user: User, force: bool, skip_schedule_check: bool = False
+    ) -> None:
         """Validate that a user may register for a game.
 
         Args:
             game: Locked game instance.
             user: User attempting to register.
             force: If True, bypass capacity and status checks.
+            skip_schedule_check: If True, bypass the schedule-conflict check (a
+                trusted GM/admin override, independent of ``force`` since ``force``
+                also covers the untrusted "party selection" auto-bypass).
 
         Raises:
             DuplicateRegistrationError: If the user is already registered.
             GameFullError: If the game is at capacity and force is False.
             GameClosedError: If the game is closed and force is False.
+            ScheduleConflictError: If the user already has another game scheduled
+                at an overlapping time and skip_schedule_check is False.
         """
         if user in game.players:
             raise DuplicateRegistrationError(
@@ -852,6 +860,53 @@ class GameService:
                 "Game is closed for registration.",
                 game_id=game.id,
             )
+
+        if not skip_schedule_check:
+            conflict = self._find_schedule_conflict(user, game)
+            if conflict:
+                raise ScheduleConflictError(
+                    "User already has another game scheduled at an overlapping time.",
+                    game_id=game.id,
+                    user_id=user.id,
+                    conflicting_game_id=conflict.id,
+                )
+
+    @staticmethod
+    def _game_time_windows(game: Game) -> list[tuple[datetime, datetime]]:
+        """Return the time windows a game occupies, for schedule-conflict checks.
+
+        Always includes the announced ``date``/``session_length`` window, plus any
+        additional scheduled ``GameSession`` rows (a campaign's later sessions).
+
+        Args:
+            game: Game instance.
+
+        Returns:
+            List of (start, end) datetime tuples.
+        """
+        windows = [(game.date, game.date + timedelta(hours=float(game.session_length)))]
+        windows.extend((s.start, s.end) for s in game.sessions)
+        return windows
+
+    def _find_schedule_conflict(self, user: User, game: Game) -> Game | None:
+        """Find another active game of the user that overlaps this game's schedule.
+
+        Args:
+            user: Candidate player.
+            game: Game the user is trying to register for.
+
+        Returns:
+            The first conflicting Game, or None if the schedule is clear.
+        """
+        target_windows = self._game_time_windows(game)
+        for other in self.repo.find_by_player_with_relations(user.id):
+            if other.id == game.id or other.status == "archived":
+                continue
+            for t_start, t_end in target_windows:
+                for o_start, o_end in self._game_time_windows(other):
+                    if t_start < o_end and o_start < t_end:
+                        return other
+        return None
 
     def _log_registration_event(self, game: Game, user: User, force: bool) -> None:
         """Log a registration event, distinguishing self-registration from a GM add.
@@ -901,13 +956,23 @@ class GameService:
         logger.info(f"Game {game.id} has been deleted.")
         self._invalidate_dashboard_stats(*affected)
 
-    def register_player(self, slug: str, user_id: str, force: bool = False) -> Game:
+    def register_player(
+        self,
+        slug: str,
+        user_id: str,
+        force: bool = False,
+        skip_schedule_check: bool = False,
+    ) -> Game:
         """Register a player to a game (concurrent-safe).
 
         Args:
             slug: Game slug.
             user_id: User ID to register.
             force: If True, bypass capacity and status checks.
+            skip_schedule_check: If True, bypass the schedule-conflict check (used
+                for a trusted GM/admin override; ``force`` alone is not a reliable
+                trust signal since it is also set for the untrusted "party
+                selection" auto-bypass on public self-registration).
 
         Returns:
             Updated Game instance.
@@ -917,6 +982,8 @@ class GameService:
             DuplicateRegistrationError: If user is already registered.
             GameFullError: If game is at capacity and force is False.
             GameClosedError: If game is closed and force is False.
+            ScheduleConflictError: If the user already has another game at an
+                overlapping time and skip_schedule_check is False.
         """
         game = self.get_by_slug(slug)
         user = self.user_service.get_by_id(user_id)
@@ -931,7 +998,7 @@ class GameService:
                     resource_id=game.id,
                 )
 
-            self._validate_registration(locked_game, user, force)
+            self._validate_registration(locked_game, user, force, skip_schedule_check)
 
             locked_game.players.append(user)
             self._auto_close_if_full(locked_game)
@@ -960,7 +1027,12 @@ class GameService:
             self._invalidate_dashboard_stats(user.id, locked_game.gm_id)
             return locked_game
 
-        except (DuplicateRegistrationError, GameFullError, GameClosedError):
+        except (
+            DuplicateRegistrationError,
+            GameFullError,
+            GameClosedError,
+            ScheduleConflictError,
+        ):
             db.session.rollback()
             raise
         except SQLAlchemyError:
