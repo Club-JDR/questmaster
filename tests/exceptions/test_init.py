@@ -42,6 +42,9 @@ class TestExceptionPackageExports:
     def test_session_conflict_error(self):
         assert hasattr(exceptions, "SessionConflictError")
 
+    def test_schedule_conflict_error(self):
+        assert hasattr(exceptions, "ScheduleConflictError")
+
     def test_all_exports_match(self):
         expected = {
             "QuestMasterError",
@@ -58,5 +61,6 @@ class TestExceptionPackageExports:
             "DuplicateRegistrationError",
             "SessionConflictError",
             "PastDateError",
+            "ScheduleConflictError",
         }
         assert set(exceptions.__all__) == expected

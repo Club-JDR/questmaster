@@ -74,6 +74,23 @@ class SessionConflictError(GameError):
         super().__init__(message, details=details, **kwargs)
 
 
+class ScheduleConflictError(GameError):
+    """Player already has another game scheduled at an overlapping time."""
+
+    def __init__(
+        self, message: str, game_id=None, user_id=None, conflicting_game_id=None, **kwargs
+    ):
+        kwargs.setdefault("code", "SCHEDULE_CONFLICT")
+        details = kwargs.pop("details", {})
+        if game_id is not None:
+            details["game_id"] = game_id
+        if user_id is not None:
+            details["user_id"] = user_id
+        if conflicting_game_id is not None:
+            details["conflicting_game_id"] = conflicting_game_id
+        super().__init__(message, details=details, **kwargs)
+
+
 class PastDateError(GameError):
     """Game is being published with a start date in the past.
 
