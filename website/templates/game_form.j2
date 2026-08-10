@@ -214,7 +214,7 @@
             <label for="game_complement" class="{{ lbl }}">Informations complémentaires <span class="font-normal text-xs text-base-content/70">(optionnel)</span></label>
             <textarea id="game_complement" name="complement" class="textarea textarea-bordered w-full"
               data-markdown-editor data-min-height="100px"
-              rows="2" spellcheck="true">{% if game and game.complement %}{{ game.complement }}{% else %}{{ defaults.complement }}{% endif %}</textarea>
+              rows="2" placeholder="Places déjà réservées, niveau des personnages, utilisation d'IA ou non, partie ou support en anglais…" spellcheck="true">{% if game and game.complement %}{{ game.complement }}{% else %}{{ defaults.complement }}{% endif %}</textarea>
           </div>
 
         </div>
