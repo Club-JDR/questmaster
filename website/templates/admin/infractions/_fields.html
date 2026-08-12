@@ -1,0 +1,43 @@
+{# Shared form fields for creating/editing an infraction. #}
+{% macro infraction_fields(infraction, severity_labels, lbl) %}
+<div class="flex flex-col gap-1">
+  <label for="rule_article" class="{{ lbl }}">Article du règlement
+    <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+  <input type="text" id="rule_article" name="rule_article" class="input input-bordered w-full"
+         value="{{ infraction.rule_article if infraction and infraction.rule_article else '' }}"
+         autocomplete="off">
+</div>
+
+<div class="flex flex-col gap-1">
+  <label for="severity" class="{{ lbl }}">Gravité</label>
+  <select id="severity" name="severity" class="select select-bordered w-full">
+    {% for value, label in severity_labels.items() %}
+    <option value="{{ value }}"
+      {% if infraction and infraction.severity == value %}selected{% elif not infraction and value == 1 %}selected{% endif %}>
+      {{ label }}
+    </option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="flex flex-col gap-1">
+  <label for="reason" class="{{ lbl }}">Raison / détail</label>
+  <textarea id="reason" name="reason" rows="3" class="textarea textarea-bordered w-full"
+            required>{{ infraction.reason if infraction else '' }}</textarea>
+</div>
+
+<div class="flex flex-col gap-1">
+  <label for="message_link" class="{{ lbl }}">Lien vers le post de modération
+    <span class="font-normal text-xs text-base-content/40">(optionnel)</span></label>
+  <input type="url" id="message_link" name="message_link" class="input input-bordered w-full"
+         value="{{ infraction.message_link if infraction and infraction.message_link else '' }}"
+         placeholder="https://discord.com/channels/…" autocomplete="off">
+</div>
+
+<div class="flex flex-col gap-1">
+  <label for="created_at" class="{{ lbl }}">Date
+    <span class="font-normal text-xs text-base-content/40">(pour l'historique)</span></label>
+  <input type="datetime-local" id="created_at" name="created_at" class="input input-bordered w-full"
+         value="{{ infraction.created_at.strftime('%Y-%m-%dT%H:%M') if infraction and infraction.created_at else '' }}">
+</div>
+{% endmacro %}

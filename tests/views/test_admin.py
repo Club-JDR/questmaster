@@ -15,6 +15,7 @@ from tests.factories import (
     DiscordMessageFactory,
     GameEventFactory,
     GameFactory,
+    InfractionFactory,
     SpecialEventFactory,
     SystemFactory,
     TrophyFactory,
@@ -27,6 +28,7 @@ from website.models import (
     Channel,
     DiscordMessage,
     Game,
+    Infraction,
     PermissionGrant,
     SpecialEvent,
     System,
@@ -48,6 +50,7 @@ ADMIN_LIST_ROUTES = [
     "/admin/game-events/",
     "/admin/app-logs/",
     "/admin/discord/",
+    "/admin/infractions/",
     "/admin/settings/",
 ]
 
@@ -301,6 +304,89 @@ def test_special_event_games_lists_linked_games(admin_client, db_session, defaul
 
 def test_special_event_games_unknown_event_redirects(admin_client):
     resp = admin_client.get("/admin/special-events/999999/games")
+    assert resp.status_code == 302
+
+
+# -- Infractions (moderation) ------------------------------------------------
+
+
+@pytest.fixture
+def moderator_client(test_app, admin_user):
+    """Admin client whose session user is a real, persisted user.
+
+    Creating an infraction records ``admin_id`` (a FK to ``user``), so the
+    acting admin must exist in the database — unlike the string-id
+    ``admin_client``.
+    """
+    client = test_app.test_client()
+    with client.session_transaction() as sess:
+        sess["user_id"] = admin_user.id
+        sess["is_admin"] = True
+    return client
+
+
+def test_create_infraction(moderator_client, db_session, mock_csrf, admin_user):
+    user = UserFactory(db_session)
+    response = moderator_client.post(
+        f"/admin/infractions/user/{user.id}",
+        data={
+            "reason": "Propos déplacés",
+            "severity": "2",
+            "rule_article": "Art. 4",
+            "message_link": "https://discord.com/channels/1/2/3",
+        },
+    )
+    assert response.status_code == 302
+    created = db_session.query(Infraction).filter_by(user_id=user.id).first()
+    assert created is not None
+    assert created.reason == "Propos déplacés"
+    assert created.severity == 2
+    assert created.rule_article == "Art. 4"
+    assert created.admin_id == admin_user.id
+
+
+def test_create_infraction_empty_reason_flashes(admin_client, db_session, mock_csrf):
+    user = UserFactory(db_session)
+    response = admin_client.post(
+        f"/admin/infractions/user/{user.id}",
+        data={"reason": "   ", "severity": "1"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert db_session.query(Infraction).filter_by(user_id=user.id).count() == 0
+
+
+def test_user_infractions_lists_only_that_user(admin_client, db_session):
+    user = InfractionFactory(db_session, reason="Ciblée").user_id
+    InfractionFactory(db_session, reason="Autre utilisateur")
+
+    resp = admin_client.get(f"/admin/infractions/user/{user}")
+
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Ciblée" in body
+    assert "Autre utilisateur" not in body
+
+
+def test_edit_infraction(admin_client, db_session, mock_csrf):
+    infraction = InfractionFactory(db_session, reason="Avant", severity=1)
+    admin_client.post(
+        f"/admin/infractions/{infraction.id}/edit",
+        data={"reason": "Après", "severity": "2"},
+    )
+    db_session.refresh(infraction)
+    assert infraction.reason == "Après"
+    assert infraction.severity == 2
+
+
+def test_delete_infraction(admin_client, db_session, mock_csrf):
+    infraction = InfractionFactory(db_session)
+    admin_client.post(f"/admin/infractions/{infraction.id}/delete")
+    assert db_session.get(Infraction, infraction.id) is None
+
+
+def test_user_infractions_unknown_user_redirects(admin_client):
+    resp = admin_client.get("/admin/infractions/user/000000000000000000")
     assert resp.status_code == 302
 
 

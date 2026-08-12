@@ -7,6 +7,7 @@ from website.repositories.discord_message import DiscordMessageRepository
 from website.repositories.game import GameRepository
 from website.repositories.game_event import GameEventRepository
 from website.repositories.game_session import GameSessionRepository
+from website.repositories.infraction import InfractionRepository
 from website.repositories.permission_grant import PermissionGrantRepository
 from website.repositories.setting import SettingRepository
 from website.repositories.special_event import SpecialEventRepository
@@ -25,6 +26,7 @@ __all__ = [
     "GameEventRepository",
     "UserRepository",
     "GameSessionRepository",
+    "InfractionRepository",
     "PermissionGrantRepository",
     "SettingRepository",
     "SpecialEventRepository",

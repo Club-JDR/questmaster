@@ -22,6 +22,16 @@ GAME_STATUS_LABELS = {
     GAME_STATUS_ARCHIVED: "archivée",
 }
 
+# Moderation infractions
+# Severity is stored as an integer so new levels can be inserted between the
+# existing ones without a database enum migration.
+INFRACTION_SEVERITY_REMINDER = 1
+INFRACTION_SEVERITY_WARNING = 2
+INFRACTION_SEVERITY_LABELS = {
+    INFRACTION_SEVERITY_REMINDER: "Rappel à l'ordre",
+    INFRACTION_SEVERITY_WARNING: "Avertissement",
+}
+
 # Game Frequencies
 GAME_FREQ_WEEKLY = "weekly"
 GAME_FREQ_BI_WEEKLY = "bi-weekly"
