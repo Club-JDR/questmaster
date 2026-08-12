@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@phosphor-icons/web": "^2.1.0",
+    "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.1.0",
     "daisyui": "^5.0.0",
     "tailwindcss": "^4.1.0",
@@ -17,6 +18,7 @@
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/list": "^6.1.20",
+    "easymde": "^2.21.0",
     "intro.js": "^8.3.2",
     "theme-change": "^3.0.0"
   }

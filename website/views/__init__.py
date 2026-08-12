@@ -2,6 +2,7 @@ from datetime import datetime
 
 from website.api import create_api_blueprint
 from website.utils.assets import asset, asset_css
+from website.utils.markdown import render_markdown
 
 from .admin import admin_bp
 from .auth import auth_bp
@@ -29,6 +30,7 @@ def register_blueprints(app):
 def register_filters(app):
     app.add_template_filter(format_datetime, name="format_datetime")
     app.add_template_filter(duration_hours, name="duration_hours")
+    app.add_template_filter(render_markdown, name="markdown")
     app.jinja_env.globals.update(
         hex_color=hex_color,
         text_color=text_color,

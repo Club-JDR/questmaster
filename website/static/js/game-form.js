@@ -16,19 +16,6 @@
   }
 })();
 
-// Auto-resize textareas to always show full content without scrolling
-function autoResize(el) {
-  el.style.height = "auto";
-  el.style.height = el.scrollHeight + "px";
-  el.style.overflowY = "hidden";
-}
-document.querySelectorAll("textarea.auto-resize").forEach(function (ta) {
-  autoResize(ta);
-  ta.addEventListener("input", function () {
-    autoResize(this);
-  });
-});
-
 // Classification range sliders → Absent / Mineur / Majeur label
 var classLabels = ["Absent", "Mineur", "Majeur"];
 document.querySelectorAll("input[type=range].range").forEach(function (range) {
