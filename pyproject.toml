@@ -30,7 +30,7 @@ dependencies = [
     "python-slugify==8.0.4",
     "apscheduler==3.11.3",
     "PyJWT==2.13.0",
-    "marshmallow==4.3.0",
+    "marshmallow==4.3.1",
     "pynacl>=1.5",
     "markdown-it-py[linkify]==3.0.0",
     "nh3==0.3.2",
