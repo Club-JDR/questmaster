@@ -236,6 +236,40 @@ class TestGameDetails:
         assert "editButton" not in body
         assert "statusButton" not in body
 
+    def test_description_renders_markdown(
+        self, client, mock_discord_lookups, db_session, default_system, default_vtt
+    ):
+        """Markdown in description/complement is rendered to HTML, not shown raw."""
+        game = GameFactory(
+            db_session,
+            status="open",
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            description="**Bold** scenario",
+            complement="Some *complement* info",
+        )
+        response = client.get(f"/annonces/{game.slug}/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "<strong>Bold</strong>" in body
+        assert "<em>complement</em>" in body
+
+    def test_description_xss_attempt_is_neutralized(
+        self, client, mock_discord_lookups, db_session, default_system, default_vtt
+    ):
+        """A script-tag XSS attempt in description is rendered inert, not executed."""
+        game = GameFactory(
+            db_session,
+            status="open",
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            description="<script>alert(1)</script>",
+        )
+        response = client.get(f"/annonces/{game.slug}/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "<script>alert(1)</script>" not in body
+
 
 # -- Game Status -----------------------------------------------------------
 

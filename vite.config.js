@@ -13,6 +13,7 @@ export default defineConfig({
         style: "assets/css/main.css",
         introManager: "assets/js/intro-manager.js",
         calendar: "assets/js/calendar.js",
+        markdownEditor: "assets/js/markdown-editor.js",
       },
     },
     emptyOutDir: true,

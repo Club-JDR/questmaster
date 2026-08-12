@@ -1,6 +1,13 @@
 {% extends 'base.j2' %}
 {% block title %}{% if game %}{% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce{% else %}Nouvelle annonce{% endif %}{% endblock %}
 
+{% block head %}
+{{ super() }}
+{% for url in asset_css('assets/js/markdown-editor.js') %}
+<link rel="stylesheet" href="{{ url }}">
+{% endfor %}
+{% endblock %}
+
 {% block content %}
 <h1 class="text-center font-black text-2xl my-4">
   {% if game %}<i class="ph ph-note-pencil" aria-hidden="true"></i> {% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce
@@ -193,14 +200,16 @@
 
           <div class="flex flex-col gap-1">
             <label for="game_description" class="{{ lbl }}">Description du scénario</label>
-            <textarea id="game_description" name="description" class="textarea textarea-bordered w-full auto-resize"
+            <textarea id="game_description" name="description" class="textarea textarea-bordered w-full"
+              data-markdown-editor data-min-height="200px"
               rows="6" placeholder="Décrivez votre scénario..." spellcheck="true"
               required aria-required="true">{% if game %}{{ game.description }}{% endif %}</textarea>
           </div>
 
           <div class="flex flex-col gap-1">
             <label for="game_complement" class="{{ lbl }}">Informations complémentaires <span class="font-normal text-xs text-base-content/70">(optionnel)</span></label>
-            <textarea id="game_complement" name="complement" class="textarea textarea-bordered w-full auto-resize"
+            <textarea id="game_complement" name="complement" class="textarea textarea-bordered w-full"
+              data-markdown-editor data-min-height="100px"
               rows="2" spellcheck="true">{% if game and game.complement %}{{ game.complement }}{% endif %}</textarea>
           </div>
 
@@ -389,5 +398,6 @@
 {% endblock %}
 
 {% block scripts %}{{ super() }}
+<script type="module" src="{{ asset('assets/js/markdown-editor.js') }}"></script>
 <script src="{{ url_for('static', filename='js/game-form.js') }}" defer></script>
 {% endblock %}
