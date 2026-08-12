@@ -8,6 +8,7 @@ from website.services.discord_message import DiscordMessageService
 from website.services.game import GameService
 from website.services.game_event import GameEventService
 from website.services.game_session import GameSessionService
+from website.services.moderation import ModerationService
 from website.services.permission import PermissionService
 from website.services.setting import SettingsService
 from website.services.special_event import SpecialEventService
@@ -25,6 +26,7 @@ __all__ = [
     "GameEventService",
     "UserService",
     "GameSessionService",
+    "ModerationService",
     "PermissionService",
     "SettingsService",
     "SpecialEventService",

@@ -24,6 +24,7 @@ from website.models import (
     Game,
     GameEvent,
     GameSession,
+    Infraction,
     SpecialEvent,
     System,
     Trophy,
@@ -195,6 +196,30 @@ def GameEventFactory(session, **overrides):
     session.add(event)
     session.flush()
     return event
+
+
+def InfractionFactory(session, **overrides):
+    """Create and persist an Infraction instance.
+
+    Args:
+        session: The SQLAlchemy session.
+        **overrides: Any Infraction column values to override.
+            When ``user_id`` is absent, a new user is created for it.
+
+    Returns:
+        A flushed Infraction instance.
+    """
+    if "user_id" not in overrides:
+        overrides["user_id"] = UserFactory(session).id
+    defaults = {
+        "reason": f"Test infraction {_unique_id()}",
+        "severity": 1,
+    }
+    defaults.update(overrides)
+    infraction = Infraction(**defaults)
+    session.add(infraction)
+    session.flush()
+    return infraction
 
 
 def AppLogFactory(session, **overrides):

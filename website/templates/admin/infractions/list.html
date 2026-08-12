@@ -1,0 +1,80 @@
+{% extends 'admin/base.html' %}
+{% import 'admin/_macros.html' as ui %}
+
+{% block admin_content %}
+{{ ui.header('Modération', 'ph-warning-octagon') }}
+
+{# Typeahead: pick a user to open their infractions page and issue a warning. #}
+<form method="get" data-user-typeahead
+      data-select-url="{{ url_for('admin.user_infractions', user_id='__ID__')|replace('__ID__', '{id}') }}"
+      class="flex items-center gap-2 mb-4 flex-wrap">
+  <div class="relative grow max-w-xs">
+    <label for="modUserSearch" class="sr-only">Rechercher un utilisateur à modérer</label>
+    <input type="search" name="u" id="modUserSearch"
+      class="input input-bordered input-sm w-full"
+      placeholder="Modérer un utilisateur (ID, nom, pseudo)…"
+      role="combobox" aria-expanded="false" aria-autocomplete="list"
+      aria-controls="modUserSearchList" autocomplete="off">
+    <ul id="modUserSearchList" role="listbox" aria-label="Suggestions"
+      class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden"></ul>
+  </div>
+</form>
+
+{{ ui.search_bar(search, 'Rechercher (règle, raison, utilisateur…)') }}
+
+<div class="card bg-base-100 shadow-md overflow-x-auto">
+  <table class="table table-zebra table-sm">
+    <thead>
+      <tr>
+        <th>Date (UTC)</th>
+        <th>Utilisateur</th>
+        <th>Gravité</th>
+        <th>Article</th>
+        <th>Raison</th>
+        <th>Admin</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for infraction in pagination.items %}
+      <tr>
+        <td class="whitespace-nowrap font-mono text-xs">{{ infraction.created_at|format_datetime('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          <a href="{{ url_for('admin.user_infractions', user_id=infraction.user_id) }}"
+             class="link link-hover">{{ infraction.user.name if infraction.user else infraction.user_id }}</a>
+        </td>
+        <td>
+          {% if infraction.severity == 1 %}
+          <span class="badge badge-warning badge-sm">{{ severity_labels.get(infraction.severity, infraction.severity) }}</span>
+          {% else %}
+          <span class="badge badge-error badge-sm">{{ severity_labels.get(infraction.severity, infraction.severity) }}</span>
+          {% endif %}
+        </td>
+        <td class="text-sm">{{ infraction.rule_article or '—' }}</td>
+        <td class="text-sm max-w-xs truncate" title="{{ infraction.reason }}">{{ infraction.reason }}</td>
+        <td class="text-sm">{{ infraction.admin.name if infraction.admin else '—' }}</td>
+        <td class="text-right whitespace-nowrap">
+          {% if infraction.message_link %}
+          <a href="{{ infraction.message_link }}" target="_blank" rel="noopener noreferrer"
+             class="btn btn-ghost btn-xs" aria-label="Voir le post de modération" title="Post de modération">
+            <i class="ph ph-link" aria-hidden="true"></i>
+          </a>
+          {% endif %}
+          {{ ui.edit_link(url_for('admin.edit_infraction', infraction_id=infraction.id)) }}
+          {{ ui.delete_button(url_for('admin.delete_infraction', infraction_id=infraction.id)) }}
+        </td>
+      </tr>
+      {% else %}
+      {{ ui.empty_row(7, 'Aucune infraction.') }}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ ui.pager(pagination, search) }}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="/static/js/user-typeahead.js" defer></script>
+{% endblock %}

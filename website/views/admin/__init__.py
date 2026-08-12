@@ -64,6 +64,12 @@ ADMIN_SECTIONS = [
         "permission": "channel.manage",
     },
     {
+        "endpoint": "admin.list_infractions",
+        "label": "Modération",
+        "icon": "ph-warning-octagon",
+        "permission": "moderation.manage",
+    },
+    {
         "endpoint": "admin.list_game_events",
         "label": "Audit des annonces",
         "icon": "ph-scroll",
@@ -168,6 +174,7 @@ from website.views.admin import (  # noqa: E402,F401
     discord_messages,
     game_events,
     games,
+    infractions,
     permissions,
     settings,
     special_events,
