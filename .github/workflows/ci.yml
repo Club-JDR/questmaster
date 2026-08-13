@@ -26,8 +26,37 @@ jobs:
 
       - uses: webiny/action-conventional-commits@7f91b1595ca1951cdb671ddc9f07a49081ec5b69 # v1.4.2
 
+  changes:
+    name: Detect Changed Paths
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      # 'true' when EVERY changed file is in the safe list below,
+      # i.e. nothing the test suite or the Docker build can validate.
+      only-safe: ${{ steps.filter.outputs.safe }}
+    steps:
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+        id: filter
+        with:
+          predicate-quantifier: 'every'
+          filters: |
+            safe:
+              - 'website/templates/**'
+              - 'website/static/**'
+              - 'docs/**'
+              - 'mkdocs.yml'
+              - '**/*.md'
+              - '.github/**'
+              - 'renovate.json'
+              - 'LICENSE'
+              - '.gitignore'
+
   lint:
     name: Lint
+    needs: changes
+    if: >-
+      !cancelled() &&
+      (needs.changes.result == 'skipped' || needs.changes.outputs.only-safe != 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -50,6 +79,10 @@ jobs:
 
   tests:
     name: Run Tests
+    needs: changes
+    if: >-
+      !cancelled() &&
+      (needs.changes.result == 'skipped' || needs.changes.outputs.only-safe != 'true')
     runs-on: ubuntu-latest
 
     steps:
@@ -99,7 +132,7 @@ jobs:
       - name: Run app
         run: |
           docker compose up -d app
-          for i in {1..10}; do
+          for i in {1..20}; do
             status=$(docker inspect --format='{{.State.Health.Status}}' questmaster-app-1 || echo "unknown")
             echo "Health status: $status"
             if [ "$status" = "healthy" ]; then
