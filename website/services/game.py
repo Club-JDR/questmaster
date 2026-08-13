@@ -11,9 +11,9 @@ from config.constants import (
     BADGE_CAMPAIGN_ID,
     BADGE_OS_GM_ID,
     BADGE_OS_ID,
+    DISCORD_MESSAGE_MAX_LENGTH,
     MAX_SLUG_LENGTH,
     PLAYER_ROLE_PERMISSION,
-    SITE_BASE_URL,
 )
 from website.exceptions import (
     DiscordAPIError,
@@ -1074,10 +1074,11 @@ class GameService:
 
         Raises:
             NotFoundError: If the game doesn't exist.
-            ValidationError: If the message is empty or the game has no channel.
+            ValidationError: If the message is empty, the game has no channel, or the
+                message (with mentions added) exceeds Discord's length limit.
             DiscordAPIError: If the Discord request fails.
         """
-        from website.utils.game_embeds import player_mentions
+        from website.utils.game_embeds import build_notify_content
 
         game = self.get_by_slug(slug)
 
@@ -1087,14 +1088,15 @@ class GameService:
         if not game.channel:
             raise ValidationError("Game has no Discord channel.", field="channel")
 
-        mentions = player_mentions(game)
-        game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
-        content = (
-            f"{mentions}\n"
-            f"📣 **{game.name}** — un message de votre MJ :\n\n"
-            f"{cleaned}\n\n"
-            f"🔗 L'annonce sur QuestMaster : {game_url}"
-        ).strip()
+        content = build_notify_content(game, cleaned)
+        if len(content) > DISCORD_MESSAGE_MAX_LENGTH:
+            overflow = len(content) - DISCORD_MESSAGE_MAX_LENGTH
+            raise ValidationError(
+                "Notification message is too long once mentions are added.",
+                field="message",
+                code="MESSAGE_TOO_LONG",
+                details={"overflow": overflow, "limit": DISCORD_MESSAGE_MAX_LENGTH},
+            )
 
         self.discord.send_message(
             content,
