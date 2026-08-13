@@ -167,7 +167,8 @@
           <summary class="text-sm font-semibold text-base-content/70 cursor-pointer hover:text-base-content/70">
             <i class="ph ph-info"></i> Informations complémentaires
           </summary>
-          <div class="prose prose-sm max-w-none text-base-content/70 mt-2 leading-relaxed">{{ game.complement | markdown }}</div>
+          <div class="prose prose-sm max-w-none text-base-content/70 mt-2 leading-relaxed">{{ game.complement | markdown
+            }}</div>
         </details>
         {% endif %}
       </div>
@@ -699,19 +700,19 @@
         <div role="tabpanel" class="tab-content py-4">
           <p class="text-sm text-base-content/70 mb-4">
             Recherchez par nom d'utilisateur·rice, ou collez un
-            <a href="https://support.discord.com/hc/fr/articles/206346498" target="_blank"
-              rel="noopener noreferrer" class="link link-primary">ID Discord</a>.
+            <a href="https://support.discord.com/hc/fr/articles/206346498" target="_blank" rel="noopener noreferrer"
+              class="link link-primary">ID Discord</a>.
           </p>
           <div data-user-typeahead>
             <div class="flex gap-2 items-start">
               <div class="relative flex-1">
                 <label for="user-search" class="sr-only">Rechercher un·e joueur·euse</label>
                 <input type="text" id="user-search" class="input input-bordered w-full"
-                  placeholder="Nom d'utilisateur·rice ou ID Discord"
-                  role="combobox" aria-expanded="false" aria-autocomplete="list"
-                  aria-controls="user-search-list" autocomplete="off">
+                  placeholder="Nom d'utilisateur·rice ou ID Discord" role="combobox" aria-expanded="false"
+                  aria-autocomplete="list" aria-controls="user-search-list" autocomplete="off">
                 <ul id="user-search-list" role="listbox" aria-label="Suggestions"
-                  class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden"></ul>
+                  class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden">
+                </ul>
               </div>
               <button type="submit" class="btn btn-primary gap-1" name="action" value="add">
                 <i class="ph ph-user-plus"></i> Ajouter
@@ -882,10 +883,9 @@ and game.channel and game.status not in ['archived', 'draft'] %}
       <label class="form-control" for="notifyMessage">
         <div class="label"><span class="label-text">Votre message :</span></div>
         <textarea id="notifyMessage" class="textarea textarea-bordered w-full h-28" name="notifyMessage"
-          placeholder="Écrivez le message à envoyer aux joueur·euses..." required></textarea>
+          placeholder="Écrivez le message à envoyer aux joueur·euses..." maxlength="1800" required></textarea>
       </label>
-      <p class="text-xs text-base-content/70 mt-2">Publié dans le salon de la partie en mentionnant
-        l'ensemble des joueur·euses inscrit·es.</p>
+      <p id="notifyMessageCount" class="text-xs text-base-content/70 mt-1" aria-live="polite">0 / 1800 caractères</p>
       <div class="modal-action">
         <button type="button" class="btn" onclick="this.closest('dialog').close()">Annuler</button>
         <button type="submit" class="btn btn-primary">Notifier</button>
@@ -924,10 +924,11 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Éditer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('editSessionForm').action =
-      {{ ('/annonces/' ~ game.slug ~ '/sessions/')|tojson }} + btn.dataset.sessionId + '/editer';
-    modal.querySelector('[name="date_start"]').value = btn.dataset.start;
-    modal.querySelector('[name="date_end"]').value = btn.dataset.end;
-    modal.showModal();
+      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }
+  } + btn.dataset.sessionId + '/editer';
+  modal.querySelector('[name="date_start"]').value = btn.dataset.start;
+  modal.querySelector('[name="date_end"]').value = btn.dataset.end;
+  modal.showModal();
   }
 
   function openDeleteSessionModal(btn) {
@@ -935,8 +936,9 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Supprimer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('deleteSessionForm').action =
-      {{ ('/annonces/' ~ game.slug ~ '/sessions/')|tojson }} + btn.dataset.sessionId + '/supprimer';
-    modal.showModal();
+      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }
+  } + btn.dataset.sessionId + '/supprimer';
+  modal.showModal();
   }
 
   function openAddSessionModal() {
@@ -1037,6 +1039,26 @@ and game.channel and game.status not in ['archived', 'draft'] %}
         badge.innerHTML = '<span class="badge badge-sm">Dans ' + weeks + ' sem.</span>';
       }
     });
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var notifyMessage = document.getElementById('notifyMessage');
+    var notifyCount = document.getElementById('notifyMessageCount');
+    if (!notifyMessage || !notifyCount) return;
+    var max = notifyMessage.maxLength;
+
+    var updateNotifyCount = function () {
+      var length = notifyMessage.value.length;
+      var atLimit = length >= max;
+      notifyCount.textContent = length + ' / ' + max + ' caractères' +
+        (atLimit ? ' — limite atteinte, les mentions des joueur·euses s\'ajoutent en plus' : '');
+      notifyCount.classList.toggle('text-error', atLimit);
+      notifyCount.classList.toggle('font-semibold', atLimit);
+      notifyMessage.classList.toggle('textarea-error', atLimit);
+    };
+
+    notifyMessage.addEventListener('input', updateNotifyCount);
+    updateNotifyCount();
   });
 </script>
 {% endblock %}

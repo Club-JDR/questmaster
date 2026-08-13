@@ -131,6 +131,9 @@ CATEGORY_NAME_TEMPLATES = {
     GAME_TYPE_ONESHOT: "🎲 ONE SHOTS {n} 📖",
 }
 
+# Discord hard cap: characters per message (newlines included).
+DISCORD_MESSAGE_MAX_LENGTH = 2000
+
 # Discord message components (buttons)
 DISCORD_COMPONENT_ACTION_ROW = 1  # Component type: action row (button container).
 DISCORD_COMPONENT_BUTTON = 2  # Component type: button.

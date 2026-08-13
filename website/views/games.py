@@ -393,8 +393,16 @@ def notify_players(slug):
     try:
         game_service.notify_players(slug, message, user_id=payload["user_id"])
         flash("Joueur·euses notifié·es.", "success")
-    except ValidationError:
-        flash("Le message de notification est vide.", "danger")
+    except ValidationError as e:
+        if e.code == "MESSAGE_TOO_LONG":
+            overflow = e.details.get("overflow", 0)
+            flash(
+                f"Le message est trop long de {overflow} caractères une fois les mentions "
+                "des joueur·euses ajoutées. Raccourcissez-le et réessayez.",
+                "danger",
+            )
+        else:
+            flash("Le message de notification est vide.", "danger")
     except DiscordAPIError as e:
         flash("Une erreur est survenue lors de la notification.", "danger")
         logger.error(f"Failed to notify players for game {slug}: {e}", exc_info=True)

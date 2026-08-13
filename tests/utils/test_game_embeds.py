@@ -29,6 +29,7 @@ from website.utils.game_embeds import (
     build_annonce_embed,
     build_delete_session_embed,
     build_edit_session_embed,
+    build_notify_content,
     build_register_embed,
     player_mentions,
 )
@@ -432,6 +433,27 @@ class TestPlayerMentions:
     def test_direct_mode_no_players_returns_empty(self):
         game = _make_game(role=None, players=[])
         assert player_mentions(game) == ""
+
+
+# ---------------------------------------------------------------------------
+# build_notify_content
+# ---------------------------------------------------------------------------
+
+
+class TestBuildNotifyContent:
+    def test_contains_mentions_name_and_message(self):
+        game = _make_game(role="role_42", name="My Game", slug="my-game")
+        content = build_notify_content(game, "Rendez-vous ce soir !")
+        assert "<@&role_42>" in content
+        assert "My Game" in content
+        assert "Rendez-vous ce soir !" in content
+        assert f"{SITE_BASE_URL}/annonces/my-game/" in content
+
+    def test_stays_short_around_the_message(self):
+        """The wrapper text (everything but mentions and the GM's message) is minimal."""
+        game = _make_game(role="role_42", name="My Game", slug="my-game")
+        overhead = len(build_notify_content(game, ""))
+        assert overhead < 150
 
 
 # ---------------------------------------------------------------------------

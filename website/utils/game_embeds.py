@@ -44,6 +44,25 @@ def player_mentions(game) -> str:
     return " ".join(f"<@{player.id}>" for player in game.players)
 
 
+def build_notify_content(game, message: str) -> str:
+    """Build the Discord message content for the "Notifier" action.
+
+    Kept short on purpose: the mentions alone can already run long in
+    direct-permission games (no role, one mention per registered player), so the
+    wrapper text around the GM's message must stay minimal to leave room under
+    Discord's message length limit.
+
+    Args:
+        game: Game instance.
+        message: Free-text message written by the GM.
+
+    Returns:
+        The full message content to send, ready for the Discord API.
+    """
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}/"
+    return f"{player_mentions(game)}\n📣 **{game.name}**\n{message}\n🔗 {game_url}".strip()
+
+
 def _build_restriction_message(game) -> str:
     """Return the formatted restriction message with tags."""
     restriction_icons = {

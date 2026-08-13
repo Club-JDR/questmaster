@@ -956,6 +956,22 @@ class TestGameServiceDirectPermissions:
 
         mock_discord.send_message.assert_not_called()
 
+    def test_notify_players_too_long_raises(
+        self, db_session, sample_game, mock_discord, game_service
+    ):
+        """A message that overflows Discord's 2000-character limit is rejected."""
+        sample_game.status = "open"
+        sample_game.role = "role_123"
+        sample_game.channel = "channel_123"
+        db_session.commit()
+
+        with pytest.raises(ValidationError) as exc_info:
+            game_service.notify_players(sample_game.slug, "x" * 2000, user_id=sample_game.gm_id)
+
+        assert exc_info.value.code == "MESSAGE_TOO_LONG"
+        assert exc_info.value.details["overflow"] > 0
+        mock_discord.send_message.assert_not_called()
+
 
 class TestGetOpenPreview:
     """Tests for GameService.get_open_preview (dashboard open-games section)."""
