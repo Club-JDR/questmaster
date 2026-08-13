@@ -186,3 +186,30 @@ class TestUserService:
         )
         assert stored.name == "Back"
         assert stored.not_player_as_of is None
+
+    def test_update_game_defaults_persists_whitelisted_fields(self, db_session):
+        user = UserFactory(db_session)
+        service = UserService()
+
+        updated = service.update_game_defaults(
+            user.id, {"description": "My canvas", "restriction": "18+", "xp": "beginners"}
+        )
+
+        assert updated.game_defaults == {"description": "My canvas", "xp": "beginners"}
+        stored = db_session.get(User, user.id)
+        assert stored.game_defaults == {"description": "My canvas", "xp": "beginners"}
+
+    def test_update_game_defaults_replaces_previous_value(self, db_session):
+        user = UserFactory(db_session)
+        user.game_defaults = {"description": "Old", "complement": "Old complement"}
+        db_session.flush()
+        service = UserService()
+
+        service.update_game_defaults(user.id, {"description": "New"})
+
+        assert db_session.get(User, user.id).game_defaults == {"description": "New"}
+
+    def test_update_game_defaults_not_found(self, db_session):
+        service = UserService()
+        with pytest.raises(NotFoundError):
+            service.update_game_defaults("000000000000000000", {"description": "x"})

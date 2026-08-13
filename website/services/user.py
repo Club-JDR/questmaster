@@ -228,6 +228,31 @@ class UserService:
         )
         return user
 
+    def update_game_defaults(self, user_id: str, data: dict) -> User:
+        """Update a user's whitelisted game-form defaults.
+
+        Args:
+            user_id: Discord user ID.
+            data: Raw mapping of proposed defaults (e.g. submitted form data).
+                Only whitelisted fields are persisted; everything else is
+                dropped (see ``website.utils.game_form_defaults.
+                USER_DEFAULT_FIELDS``). A whitelisted field submitted empty or
+                invalid is cleared rather than kept.
+
+        Returns:
+            Updated User instance.
+
+        Raises:
+            NotFoundError: If user does not exist.
+        """
+        from website.utils.game_form_defaults import sanitize_user_defaults
+
+        user = self.get_by_id(user_id)
+        user.game_defaults = sanitize_user_defaults(data)
+        db.session.commit()
+        logger.info(f"User {sanitize_log_value(user_id)} updated their game-form defaults")
+        return user
+
     def mark_inactive(self, user_id: str) -> User:
         """Mark a user as inactive (left the Discord server).
 

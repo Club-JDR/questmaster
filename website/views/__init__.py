@@ -12,6 +12,7 @@ from .errors import error_bp
 from .filters import duration_hours, format_datetime, hex_color, text_color
 from .games import game_bp
 from .misc import misc_bp
+from .profile import profile_bp
 from .stats import stats_bp
 
 
@@ -19,6 +20,7 @@ def register_blueprints(app):
     app.register_blueprint(game_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(misc_bp)
+    app.register_blueprint(profile_bp)
     app.register_blueprint(error_bp)
     app.register_blueprint(stats_bp)
     app.register_blueprint(demo_bp)

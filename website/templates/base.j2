@@ -122,7 +122,7 @@
       {# User menu #}
       {% if payload['username'] %}
       <div class="dropdown dropdown-end">
-        <div tabindex="0" role="button" aria-haspopup="menu" aria-label="Menu utilisateur"
+        <div id="userMenuTrigger" tabindex="0" role="button" aria-haspopup="menu" aria-label="Menu utilisateur"
           class="btn btn-ghost btn-circle avatar">
           <div class="w-8 rounded-full">
             <img alt="{{ payload['username'] }}" src="{{ payload['avatar'] }}" />
@@ -131,6 +131,9 @@
         <ul tabindex="0"
           class="dropdown-content menu bg-base-100 text-base-content rounded-box z-50 w-52 p-2 shadow-xl">
           <li class="menu-title">{{ payload['username'] }}</li>
+          {% if payload['is_gm'] %}
+          <li><a href="/preferences/" id="preferencesLink"><i class="ph ph-sliders-horizontal" aria-hidden="true"></i> Mes préférences</a></li>
+          {% endif %}
           <li><a href="/logout/">Me déconnecter</a></li>
         </ul>
       </div>

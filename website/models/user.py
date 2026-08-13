@@ -6,6 +6,8 @@ from datetime import datetime
 import requests
 from flask import current_app, has_request_context, request
 from sqlalchemy import orm
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.mutable import MutableDict
 
 from config.constants import (
     AVATAR_BASE_URL,
@@ -123,6 +125,10 @@ class User(db.Model, SerializableMixin):
         name: Display name (nick or global_name), refreshed from Discord.
         username: Stable Discord username, used for slug generation.
         can_post_games: Whether the user may create/publish games (admin-toggled).
+        game_defaults: Per-user default values for the game creation form (e.g.
+            description, complement), keyed by field name. Only whitelisted
+            fields (see ``website.utils.game_form_defaults``) are honored when
+            resolving form values; unknown keys are ignored, not errors.
         games_gm: Games where this user is the GM.
         trophies: User trophy associations.
     """
@@ -137,6 +143,7 @@ class User(db.Model, SerializableMixin):
     username = db.Column(db.String(), nullable=True)
     not_player_as_of = db.Column(db.DateTime, nullable=True)
     can_post_games = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    game_defaults = db.Column(MutableDict.as_mutable(JSONB))
     games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
