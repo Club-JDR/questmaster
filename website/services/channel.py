@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from config.constants import DISCORD_CHANNEL_TYPE_TEXT
-from website.exceptions import NotFoundError, ValidationError
+from website.exceptions import DiscordAPIError, NotFoundError, ValidationError
 from website.extensions import db
 from website.models import Channel
 from website.repositories.base import Pagination
@@ -252,6 +254,7 @@ class ChannelService:
 
         Raises:
             NotFoundError: If no category is registered for ``new_type``.
+            DiscordAPIError: If the Discord channel move itself fails.
         """
         if not game.channel:
             return
@@ -261,18 +264,35 @@ class ChannelService:
         old_parent_id = None
         try:
             old_parent_id = discord_service.get_channel(game.channel).get("parent_id")
-        except Exception as e:
-            logger.warning(f"Could not read current category for channel {game.channel}: {e}")
+        except DiscordAPIError as e:
+            logger.warning(
+                f"Could not read current category for channel {game.channel}: {e}. "
+                "Tracked category sizes may be out of sync; run reconcile_sizes to correct them."
+            )
 
         discord_service.update_channel_parent(game.channel, destination.id)
         logger.info(f"Channel {game.channel} moved to category {destination.id}")
 
-        if old_parent_id and old_parent_id != destination.id:
-            old_category = self.repo.get_by_id(old_parent_id)
-            if old_category:
-                self.repo.decrement_size(old_category)
+        if old_parent_id is None:
+            # Previous category unknown (the read above failed): skip size
+            # bookkeeping entirely rather than incrementing the destination
+            # without a matching decrement, which would drift the tracked
+            # counts upward every time this happens.
+            return
+        if old_parent_id == destination.id:
+            # Already in the right category (e.g. a retried call) — nothing to adjust.
+            return
+
+        old_category = self.repo.get_by_id(old_parent_id)
+        if old_category:
+            self.repo.decrement_size(old_category)
         self.repo.increment_size(destination)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            logger.exception(f"Failed to persist category size change for channel {game.channel}")
+            raise
 
     def adjust_category_size(self, discord_service: DiscordService, game: Game) -> None:
         """Decrement category size when a game channel is deleted.

@@ -17,13 +17,22 @@ class ChannelRepository(BaseRepository[Channel]):
     def get_smallest_by_type(self, type: str) -> Channel | None:
         """Find the category with the fewest channels for a game type.
 
+        Ties on ``size`` (common right after seeding, or when several categories
+        are equally full) are broken by ``id`` so the choice is deterministic
+        rather than depending on physical row order.
+
         Args:
             type: Game type (oneshot or campaign).
 
         Returns:
             Channel with smallest size, or None if no match.
         """
-        return self.session.query(Channel).filter_by(type=type).order_by(Channel.size).first()
+        return (
+            self.session.query(Channel)
+            .filter_by(type=type)
+            .order_by(Channel.size, Channel.id)
+            .first()
+        )
 
     def count_by_type(self, type: str) -> int:
         """Return how many categories exist for a game type.

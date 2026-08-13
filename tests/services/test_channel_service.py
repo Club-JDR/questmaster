@@ -1,9 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 
 from tests.constants import TEST_ONESHOT_CHANNEL_ID
-from website.exceptions import NotFoundError, ValidationError
+from website.exceptions import DiscordAPIError, NotFoundError, ValidationError
 from website.models import Channel
 from website.repositories.channel import ChannelRepository
 from website.services.channel import ChannelService
@@ -204,3 +205,110 @@ class TestCountByType:
         repo = ChannelRepository()
         assert repo.count_by_type("oneshot") >= 1
         assert repo.count_by_type("campaign") >= 1
+
+
+class TestMoveGameChannel:
+    def _service(self, destination):
+        mock_repo = MagicMock()
+        mock_repo.get_smallest_by_type.return_value = destination
+        return ChannelService(repository=mock_repo), mock_repo
+
+    def test_noop_when_game_has_no_channel(self, db_session):
+        """Nothing happens (no Discord call) when the game has no channel yet."""
+        service, mock_repo = self._service(MagicMock(id="dest"))
+        discord = MagicMock()
+        game = MagicMock(channel=None)
+
+        service.move_game_channel(discord, game, "campaign")
+
+        discord.get_channel.assert_not_called()
+        discord.update_channel_parent.assert_not_called()
+
+    def test_moves_and_adjusts_both_category_sizes(self, db_session):
+        """The old category is decremented and the new one incremented."""
+        destination = MagicMock(id="dest")
+        old_category = MagicMock(id="old")
+        service, mock_repo = self._service(destination)
+        mock_repo.get_by_id.return_value = old_category
+
+        discord = MagicMock()
+        discord.get_channel.return_value = {"parent_id": "old"}
+        game = MagicMock(channel="chan_1")
+
+        with patch("website.services.channel.db.session.commit") as commit:
+            service.move_game_channel(discord, game, "campaign")
+
+        discord.update_channel_parent.assert_called_once_with("chan_1", "dest")
+        mock_repo.get_by_id.assert_called_once_with("old")
+        mock_repo.decrement_size.assert_called_once_with(old_category)
+        mock_repo.increment_size.assert_called_once_with(destination)
+        commit.assert_called_once()
+
+    def test_skips_decrement_when_old_category_not_tracked(self, db_session):
+        """A known-but-untracked previous parent still increments the destination."""
+        destination = MagicMock(id="dest")
+        service, mock_repo = self._service(destination)
+        mock_repo.get_by_id.return_value = None
+
+        discord = MagicMock()
+        discord.get_channel.return_value = {"parent_id": "untracked"}
+        game = MagicMock(channel="chan_1")
+
+        with patch("website.services.channel.db.session.commit"):
+            service.move_game_channel(discord, game, "campaign")
+
+        mock_repo.decrement_size.assert_not_called()
+        mock_repo.increment_size.assert_called_once_with(destination)
+
+    def test_noop_when_already_in_destination_category(self, db_session):
+        """No size adjustment is made when the channel is already in the destination."""
+        destination = MagicMock(id="dest")
+        service, mock_repo = self._service(destination)
+
+        discord = MagicMock()
+        discord.get_channel.return_value = {"parent_id": "dest"}
+        game = MagicMock(channel="chan_1")
+
+        service.move_game_channel(discord, game, "campaign")
+
+        discord.update_channel_parent.assert_called_once_with("chan_1", "dest")
+        mock_repo.increment_size.assert_not_called()
+        mock_repo.decrement_size.assert_not_called()
+
+    def test_skips_size_adjustment_when_old_parent_unreadable(self, db_session):
+        """A failed read of the current category skips sizing entirely (no drift)."""
+        destination = MagicMock(id="dest")
+        service, mock_repo = self._service(destination)
+
+        discord = MagicMock()
+        discord.get_channel.side_effect = DiscordAPIError("boom", status_code=500)
+        game = MagicMock(channel="chan_1")
+
+        service.move_game_channel(discord, game, "campaign")
+
+        discord.update_channel_parent.assert_called_once_with("chan_1", "dest")
+        mock_repo.increment_size.assert_not_called()
+        mock_repo.decrement_size.assert_not_called()
+
+    def test_rolls_back_and_reraises_on_commit_failure(self, db_session):
+        """A DB error while persisting the size change is rolled back and re-raised."""
+        destination = MagicMock(id="dest")
+        old_category = MagicMock(id="old")
+        service, mock_repo = self._service(destination)
+        mock_repo.get_by_id.return_value = old_category
+
+        discord = MagicMock()
+        discord.get_channel.return_value = {"parent_id": "old"}
+        game = MagicMock(channel="chan_1")
+
+        with (
+            patch(
+                "website.services.channel.db.session.commit",
+                side_effect=SQLAlchemyError("db down"),
+            ),
+            patch("website.services.channel.db.session.rollback") as rollback,
+        ):
+            with pytest.raises(SQLAlchemyError):
+                service.move_game_channel(discord, game, "campaign")
+
+        rollback.assert_called_once()

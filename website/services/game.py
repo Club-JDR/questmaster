@@ -570,13 +570,13 @@ class GameService:
             if type_changed:
                 try:
                     self.channel_service.move_game_channel(self.discord, game, game.type)
-                except Exception as e:
+                except (DiscordAPIError, NotFoundError, SQLAlchemyError) as e:
                     logger.warning(f"Failed to move channel for game {game.id}: {e}")
 
                 if game.role:
                     try:
                         self.discord.update_role_color(game.role, Game.COLORS[game.type])
-                    except Exception as e:
+                    except DiscordAPIError as e:
                         logger.warning(f"Failed to update role color for game {game.id}: {e}")
 
             return game
