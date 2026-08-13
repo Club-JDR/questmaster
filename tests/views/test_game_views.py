@@ -700,12 +700,68 @@ class TestGMPlayerManagement:
 
         response = logged_in_admin.post(
             f"/annonces/{open_game.slug}/gerer/",
-            data={"action": "manage"},
+            data={"action": "manage", "known_players": str(regular_user.id)},
             follow_redirects=True,
         )
         body = response.data.decode()
         assert response.status_code == 200
         assert body.count("Libre") == open_game.party_size
+
+    def test_gm_removes_unchecked_known_player(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        regular_user,
+    ):
+        """A shown player left unchecked is unregistered."""
+        open_game.players.append(regular_user)
+        db_session.flush()
+
+        # known_players lists the player, but no checkbox came back for them.
+        logged_in_admin.post(
+            f"/annonces/{open_game.slug}/gerer/",
+            data={"action": "manage", "known_players": str(regular_user.id)},
+            follow_redirects=True,
+        )
+        assert regular_user not in open_game.players
+
+    def test_manage_does_not_remove_player_registered_after_modal_opened(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        regular_user,
+        admin_user,
+    ):
+        """A player absent from the modal snapshot is never unregistered.
+
+        Simulates the race: the GM's modal only knew about ``regular_user`` (kept
+        checked), while ``admin_user`` registered afterwards and so is absent from
+        ``known_players``. ``admin_user`` must survive the submission.
+        """
+        open_game.players.append(regular_user)
+        open_game.players.append(admin_user)
+        db_session.flush()
+
+        logged_in_admin.post(
+            f"/annonces/{open_game.slug}/gerer/",
+            data={
+                "action": "manage",
+                "known_players": str(regular_user.id),
+                str(regular_user.id): "on",
+            },
+            follow_redirects=True,
+        )
+
+        assert regular_user in open_game.players
+        assert admin_user in open_game.players
 
     def test_non_owner_gm_cannot_manage_players(
         self,
