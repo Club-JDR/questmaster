@@ -4,6 +4,9 @@
     "config:recommended",
     "helpers:pinGitHubActionDigests"
   ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "groupName": "Python dependencies (non-major)",
