@@ -565,7 +565,7 @@
           id="editButton" class="btn btn-primary btn-sm flex-1 gap-1">
           <i class="ph ph-note-pencil"></i> Éditer
         </a>
-        {% if game.status not in ['draft', 'open'] or request.path == '/demo/gerer/' %}
+        {% if game.status != 'draft' or request.path == '/demo/gerer/' %}
         <button id="manageButton" type="button" class="btn btn-primary btn-sm flex-1 gap-1"
           onclick="document.getElementById('editPlayersModal').showModal()">
           <i class="ph ph-users"></i> Gérer
@@ -670,6 +670,7 @@
   <div class="modal-box w-11/12 max-w-2xl">
     <form method="post" action="/annonces/{{ game.slug }}/gerer/">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="known_players" value="{{ game.players | map(attribute='id') | join(',') }}">
       <h3 class="text-lg font-bold"><i class="ph ph-users text-primary"></i> Gérer les joueur·euses</h3>
 
       <div role="tablist" class="tabs tabs-lift mt-4">
@@ -924,8 +925,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Éditer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('editSessionForm').action =
-      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }
-  } + btn.dataset.sessionId + '/editer';
+      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }} + btn.dataset.sessionId + '/editer';
   modal.querySelector('[name="date_start"]').value = btn.dataset.start;
   modal.querySelector('[name="date_end"]').value = btn.dataset.end;
   modal.showModal();
@@ -936,8 +936,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Supprimer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('deleteSessionForm').action =
-      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }
-  } + btn.dataset.sessionId + '/supprimer';
+      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }} + btn.dataset.sessionId + '/supprimer';
   modal.showModal();
   }
 

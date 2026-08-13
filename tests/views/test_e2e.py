@@ -299,9 +299,11 @@ def test_e2e_scenario_2(
     assert response.status_code == 200
     assert response.data.decode().count("Libre") == 3
 
-    # GM clears players
+    # GM clears players (snapshot lists the shown player, left unchecked)
     response = logged_in_admin.post(
-        f"/annonces/{slug}/gerer/", data={"action": "manage"}, follow_redirects=True
+        f"/annonces/{slug}/gerer/",
+        data={"action": "manage", "known_players": str(regular_user.id)},
+        follow_redirects=True,
     )
     assert response.status_code == 200
     assert response.data.decode().count("Libre") == 4

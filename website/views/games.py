@@ -739,8 +739,20 @@ def _handle_status_transition(slug, game, status, award_trophies, user_id=None):
 
 
 def _handle_remove_players(game, data):
-    """Remove unchecked players from the game via service."""
-    players_to_remove = [p for p in game.players if str(p.id) not in data]
+    """Remove players that were shown in the modal but came back unchecked.
+
+    Only players present in the submitted ``known_players`` snapshot are eligible
+    for removal, so anyone who registered after the modal was opened is never
+    touched (avoids a race with concurrent registrations).
+
+    Args:
+        game: Game whose players are being managed.
+        data: Submitted form data (checkbox names + ``known_players`` snapshot).
+    """
+    known_ids = {pid for pid in data.get("known_players", "").split(",") if pid}
+    players_to_remove = [
+        p for p in game.players if str(p.id) in known_ids and str(p.id) not in data
+    ]
     for player in players_to_remove:
         game_service.unregister_player(game.slug, player.id)
 
