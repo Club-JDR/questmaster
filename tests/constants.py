@@ -22,3 +22,7 @@ TEST_CAMPAIGN_CHANNEL_ID = "1247613296870162474"
 # Seeded special event
 TEST_SPECIAL_EVENT_ID = "1000"
 TEST_SPECIAL_EVENT_NAME = "CthulhuFest"
+
+# Seeded reference data (must match _seed_test_data in website/extensions.py)
+TEST_SYSTEM_NAME = "Appel de Cthulhu v7"
+TEST_VTT_NAME = "Foundry"
