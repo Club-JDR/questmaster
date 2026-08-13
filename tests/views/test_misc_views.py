@@ -4,6 +4,8 @@ The demo views serve static fake data and require no authentication.
 The calendar view requires a logged-in user.
 """
 
+import html
+
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -31,12 +33,15 @@ class TestDemo:
 
     These pages showcase the UI to unauthenticated visitors using
     hard-coded fake games (defined in website/views/demo.py).
+
+    Bodies are unescaped before asserting: templates are autoescaped, so an
+    apostrophe reaches the browser as ``&#39;``.
     """
 
     def test_demo_landing(self, client):
         """Landing demo page lists the two fake games."""
         response = client.get("/demo/")
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "La Tombe de l'Annihilation" in body
         assert "Le Pensionnaire" in body
@@ -44,7 +49,7 @@ class TestDemo:
     def test_demo_inscription(self, client):
         """Registration demo page shows the sign-up button."""
         response = client.get("/demo/inscription/")
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "La Tombe de l'Annihilation" in body
         assert "S'inscrire" in body
@@ -52,14 +57,14 @@ class TestDemo:
     def test_demo_post(self, client):
         """Post demo page shows the game creation form."""
         response = client.get("/demo/poster/")
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "Nouvelle annonce" in body
 
     def test_demo_manage(self, client):
         """Management demo page shows edit controls on a fake game."""
         response = client.get("/demo/gerer/")
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "La Tombe de l'Annihilation" in body
         assert "editButton" in body

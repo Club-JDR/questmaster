@@ -1,6 +1,7 @@
 """Miscellaneous views for VTTs, systems, badges, and leaderboards."""
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
+from markupsafe import Markup
 
 from config.constants import BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID, BADGE_OS_GM_ID, BADGE_OS_ID
 from website.exceptions import NotFoundError
@@ -53,13 +54,17 @@ def list_user_badges():
     try:
         user = user_service.get_by_id(user_id)
     except NotFoundError:
+        # Markup: static, developer-authored HTML — flash messages are
+        # autoescaped like everything else.
         flash(
-            "Utilisateur introuvable. Veuillez entrer un ID valide.<br>"
-            "Si vous ne savez pas comment le trouver, vous pouvez consulter "
-            '<a href="https://support.discord.com/hc/fr/articles/'
-            "206346498-O%C3%B9-trouver-l-ID-de-mon-compte-utilisateur-"
-            'serveur-message" target="_blank" rel="noopener noreferrer">'
-            "cet article.</a>",
+            Markup(
+                "Utilisateur introuvable. Veuillez entrer un ID valide.<br>"
+                "Si vous ne savez pas comment le trouver, vous pouvez consulter "
+                '<a href="https://support.discord.com/hc/fr/articles/'
+                "206346498-O%C3%B9-trouver-l-ID-de-mon-compte-utilisateur-"
+                'serveur-message" target="_blank" rel="noopener noreferrer">'
+                "cet article.</a>"
+            ),
             "danger",
         )
         return redirect(url_for("misc.list_user_badges"))

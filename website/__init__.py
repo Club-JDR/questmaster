@@ -25,6 +25,10 @@ def create_app():
     app = Flask(__name__)
     app.url_map.strict_slashes = False
 
+    # Flask only autoescapes .html/.xml/.svg by default, never our .j2
+    # templates. Must be set before the Jinja env is built.
+    app.jinja_options = {"autoescape": True}
+
     # Config
     app.secret_key = os.environ.get("FLASK_AUTH_SECRET")
     app.config.from_object("config.settings.Settings")
