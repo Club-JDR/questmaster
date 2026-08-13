@@ -228,6 +228,66 @@ class GameRepository(BaseRepository[Game]):
         """
         return self.session.query(Game).filter(Game.special_event_id == event_id)
 
+    def get_player_leaderboard_for_event(
+        self, event_id: int, limit: int = 10
+    ) -> list[tuple[User, int]]:
+        """Get the player leaderboard for a special event.
+
+        Ranks users by how many of the event's games they are registered in as
+        a player. Only counts games whose GM actually awarded trophies when
+        archiving (``trophies_awarded``) — this implies the game is archived,
+        so drafts, open and closed games are excluded too, along with archived
+        games the GM chose not to award trophies for.
+
+        Args:
+            event_id: Special event ID to scope the leaderboard to.
+            limit: Maximum number of entries to return. Defaults to 10.
+
+        Returns:
+            List of (User, game_count) tuples ordered by game_count descending.
+        """
+        return (
+            self.session.query(User, func.count(Game.id).label("total"))
+            .join(Game.players)
+            .filter(
+                Game.special_event_id == event_id,
+                Game.trophies_awarded.is_(True),
+            )
+            .group_by(User.id)
+            .order_by(func.count(Game.id).desc())
+            .limit(limit)
+            .all()
+        )
+
+    def get_gm_leaderboard_for_event(
+        self, event_id: int, limit: int = 10
+    ) -> list[tuple[User, int]]:
+        """Get the GM leaderboard for a special event.
+
+        Ranks users by how many of the event's games they GMed. Only counts
+        games whose trophies were actually awarded — see
+        ``get_player_leaderboard_for_event``.
+
+        Args:
+            event_id: Special event ID to scope the leaderboard to.
+            limit: Maximum number of entries to return. Defaults to 10.
+
+        Returns:
+            List of (User, game_count) tuples ordered by game_count descending.
+        """
+        return (
+            self.session.query(User, func.count(Game.id).label("total"))
+            .join(Game, Game.gm_id == User.id)
+            .filter(
+                Game.special_event_id == event_id,
+                Game.trophies_awarded.is_(True),
+            )
+            .group_by(User.id)
+            .order_by(func.count(Game.id).desc())
+            .limit(limit)
+            .all()
+        )
+
     def get_for_update(self, game_id: int) -> Optional[Game]:
         """Get game with pessimistic lock for updates.
 

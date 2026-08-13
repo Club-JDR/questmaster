@@ -1,6 +1,6 @@
 import pytest
 
-from tests.factories import SpecialEventFactory
+from tests.factories import GameFactory, SpecialEventFactory
 from website.exceptions import NotFoundError, ValidationError
 from website.models import SpecialEvent
 from website.services.special_event import SpecialEventService
@@ -123,3 +123,29 @@ class TestSpecialEventService:
         service = SpecialEventService()
         with pytest.raises(NotFound):
             service.delete(-999)
+
+    def test_get_leaderboard(self, db_session, admin_user, regular_user, default_system):
+        """Test get_leaderboard returns the event plus player/GM leaderboards."""
+        service = SpecialEventService()
+        event = SpecialEventFactory(db_session, name="Leaderboard Event")
+        game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="archived",
+            trophies_awarded=True,
+        )
+        game.players.append(regular_user)
+        db_session.flush()
+
+        result = service.get_leaderboard(event.id)
+        assert result["event"].id == event.id
+        assert result["player_leaderboard"] == [(regular_user, 1)]
+        assert result["gm_leaderboard"] == [(admin_user, 1)]
+
+    def test_get_leaderboard_not_found(self, db_session):
+        """Test get_leaderboard raises NotFoundError for nonexistent event."""
+        service = SpecialEventService()
+        with pytest.raises(NotFoundError):
+            service.get_leaderboard(-999)
