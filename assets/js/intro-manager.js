@@ -354,164 +354,166 @@ function runRegistrationIntro() {
 
 function runPostGameIntro() {
   const annoncesDetails = document.querySelector('#annoncesMenu')?.closest('details');
+  const userMenuDropdown = document.getElementById('userMenuTrigger')?.closest('.dropdown');
   const intro = introJs.tour();
 
   // Steps follow the visual form layout: Card 1 → Card 2 → Card 3 → description → bottom row → right sidebar
-  intro.setOptions({
-    ...INTRO_DEFAULTS,
-    steps: [
-      // ── Menu entry point ──
-      {
-        element: '#postNewGame',
-        intro: "Cliquez sur ce bouton du menu depuis n'importe quelle page pour accéder à ce formulaire et poster une nouvelle annonce.",
-        title: "Poster une annonce"
-      },
-      // ── Card 1: Nom · Type · Système · VTT ──
-      {
-        element: '#game_name',
-        intro: "Donnez un nom à votre annonce.",
-        title: "Nom"
-      },
-      {
-        element: '#sessionType',
-        intro: "Cliquez sur <span class='text-success font-semibold'>One Shot</span> ou sur <span class='text-primary font-semibold'>Campagne</span> pour choisir le type de partie.",
-        title: "Type de session"
-      },
-      {
-        element: '#game_system',
-        intro: "Choisissez le système de jeu utilisé parmi la liste déroulante." +
-          infoNote("Si vous ne trouvez pas votre système de jeu, demandez à un Admin de le créer pour vous."),
-        title: "Système"
-      },
-      {
-        element: '#game_vtt',
-        intro: "Choisissez le VTT utilisé parmi la liste déroulante." +
-          infoNote("Si vous ne trouvez pas le VTT que vous souhaitez, demandez à un Admin de le créer pour vous."),
-        title: "VTT"
-      },
-      // ── Card 2: Date · Durée · Fréquence ──
-      {
-        element: '#game_date',
-        intro: "Sélectionnez la date de la première session.",
-        title: "Date"
-      },
-      {
-        element: '#lengthGroup',
-        intro: "Indiquez le nombre de sessions et la durée moyenne des sessions en heures.",
-        title: "Durée"
-      },
-      {
-        element: '#game_frequency',
-        intro: "Indiquez la fréquence des sessions (peut rester vide) parmi les choix possibles.",
-        title: "Fréquence des sessions"
-      },
-      // ── Card 3: Joueurs · Sélection · XP · Personnages ──
-      {
-        element: '#party_size_input',
-        intro: "Nombre de places de joueur·euses disponibles.",
-        title: "Taille du groupe"
-      },
-      {
-        element: '#party_selection',
-        intro: "Activez cette option si vous voulez choisir vos joueur·euses parmi les inscrit·es." +
-          infoNote("Si l'option est activée, l'annonce ne se fermera pas automatiquement une fois le nombre maximal de joueur·euses atteint."),
-        title: "Sélection de joueur·euses"
-      },
-      {
-        element: '#game_xp',
-        intro: "Choisissez le profil de joueur·euses que vous recherchez.",
-        title: "Niveau des joueur·euses"
-      },
-      {
-        element: '#game_characters',
-        intro: "Indiquez comment se fera la création des personnages.",
-        title: "Création de personnages"
-      },
-      // ── Description ──
-      {
-        element: '#game_description',
-        intro: "Ajoutez le pitch du scénario correspondant à votre annonce.",
-        title: "Description"
-      },
-      {
-        element: '#game_complement',
-        intro: "Dans ce champ, vous pouvez ajouter des informations supplémentaires. Par exemple : un lien vers un formulaire de sélection, une demande spécifique du MJ, ou tout ce qui ne rentrerait pas dans les cases du formulaire.",
-        title: "Informations complémentaires"
-      },
-      // ── Bottom row: Avertissement · Classification · Ambiance ──
-      {
-        element: '#restrictionGroup',
-        intro: "Cliquez sur <span class='text-success font-semibold'>Tout public</span>, sur <span class='text-warning font-semibold'>16+</span> ou sur <span class='text-error font-semibold'>18+</span> pour définir la limite d'âge de votre annonce.",
-        title: "Restriction"
-      },
-      {
-        element: '#restriction_tags',
-        intro: "Ajoutez les thèmes sensibles, séparés par des virgules.",
-        title: "Thèmes sensibles"
-      },
-      {
-        element: '#classification',
-        intro: "Votre partie est plutôt orientée action, investigation, interaction ou horreur ? Utilisez les curseurs pour donner à vos joueur·euses le ton de votre partie.",
-        title: "Classification du scénario"
-      },
-      {
-        element: '#ambience',
-        intro: "Utilisez les switchs pour définir l'ambiance attendue sur votre partie.",
-        title: "Ambiance de la partie"
-      },
-      // ── Right sidebar: Image · Actions ──
-      {
-        element: '#imgUrlInput',
-        intro: "Collez ici l'URL d'une illustration pour votre annonce." +
-          infoNote("Utilisez un lien direct vers l'image (ex: imgur)."),
-        title: "Image"
-      },
-      {
-        element: '#gameActionButtons',
-        intro: "Il existe plusieurs actions possibles pour enregistrer votre annonce.",
-        title: "Enregistrer"
-      },
-      {
-        element: '#saveButton',
-        intro: "Crée votre annonce dans QuestMaster sous forme de brouillon :<br>" +
-          "- le salon et le rôle de parties <strong>ne sont pas</strong> créés<br>" +
-          "- les joueur·euses <strong>ne peuvent pas</strong> s'inscrire<br>" +
-          "- l'annonce <strong>n'est pas</strong> publiée sur Discord",
-        title: "Enregistrer comme Brouillon"
-      },
-      {
-        element: '#openButton',
-        intro: "Idéal pour une partie sans annonce :<br>" +
-          "- le salon et le rôle de parties sont créés<br>" +
-          "- les joueur·euses peuvent s'inscrire<br>" +
-          "- l'annonce <strong>n'est pas publiée</strong> sur Discord",
-        title: "Ouvrir sans publier"
-      },
-      {
-        element: '#publishButton',
-        intro: "Le grand classique pour poster une annonce :<br>" +
-          "- le salon et le rôle de parties sont créés<br>" +
-          "- les joueur·euses peuvent s'inscrire<br>" +
-          "- l'annonce est publiée sur Discord",
-        title: "Publier sur Discord"
-      },
-      {
-        title: "Gérer ses parties",
-        intro: "Voyons maintenant comment gérer une annonce."
-      }
-    ],
-  });
+  const steps = [
+    // ── Menu entry point ──
+    {
+      element: '#postNewGame',
+      intro: "Cliquez sur ce bouton du menu depuis n'importe quelle page pour accéder à ce formulaire et poster une nouvelle annonce.",
+      title: "Poster une annonce"
+    },
+    {
+      element: '#preferencesLink',
+      intro: "Astuce : ce formulaire peut être pré-rempli automatiquement (système, VTT, description type...) à partir de vos préférences, pour gagner du temps sur vos prochaines annonces.",
+      title: "Pré-remplir le formulaire"
+    },
+    // ── Card 1: Nom · Type · Système · VTT ──
+    {
+      element: '#game_name',
+      intro: "Donnez un nom à votre annonce.",
+      title: "Nom"
+    },
+    {
+      element: '#sessionType',
+      intro: "Cliquez sur <span class='text-success font-semibold'>One Shot</span> ou sur <span class='text-primary font-semibold'>Campagne</span> pour choisir le type de partie.",
+      title: "Type de session"
+    },
+    {
+      element: '#game_system',
+      intro: "Choisissez le système de jeu utilisé parmi la liste déroulante." +
+        infoNote("Si vous ne trouvez pas votre système de jeu, demandez à un Admin de le créer pour vous."),
+      title: "Système"
+    },
+    {
+      element: '#game_vtt',
+      intro: "Choisissez le VTT utilisé parmi la liste déroulante." +
+        infoNote("Si vous ne trouvez pas le VTT que vous souhaitez, demandez à un Admin de le créer pour vous."),
+      title: "VTT"
+    },
+    // ── Card 2: Date · Durée · Fréquence ──
+    {
+      element: '#game_date',
+      intro: "Sélectionnez la date de la première session.",
+      title: "Date"
+    },
+    {
+      element: '#lengthGroup',
+      intro: "Indiquez le nombre de sessions et la durée moyenne des sessions en heures.",
+      title: "Durée"
+    },
+    {
+      element: '#game_frequency',
+      intro: "Indiquez la fréquence des sessions (peut rester vide) parmi les choix possibles.",
+      title: "Fréquence des sessions"
+    },
+    // ── Card 3: Joueurs · Sélection · XP · Personnages ──
+    {
+      element: '#party_size_input',
+      intro: "Nombre de places de joueur·euses disponibles.",
+      title: "Taille du groupe"
+    },
+    {
+      element: '#party_selection',
+      intro: "Activez cette option si vous voulez choisir vos joueur·euses parmi les inscrit·es." +
+        infoNote("Si l'option est activée, l'annonce ne se fermera pas automatiquement une fois le nombre maximal de joueur·euses atteint."),
+      title: "Sélection de joueur·euses"
+    },
+    {
+      element: '#game_xp',
+      intro: "Choisissez le profil de joueur·euses que vous recherchez.",
+      title: "Niveau des joueur·euses"
+    },
+    {
+      element: '#game_characters',
+      intro: "Indiquez comment se fera la création des personnages.",
+      title: "Création de personnages"
+    },
+    // ── Description ──
+    {
+      element: '#game_description',
+      intro: "Ajoutez le pitch du scénario correspondant à votre annonce.",
+      title: "Description"
+    },
+    {
+      element: '#game_complement',
+      intro: "Dans ce champ, vous pouvez ajouter des informations supplémentaires. Par exemple : un lien vers un formulaire de sélection, une demande spécifique du MJ, ou tout ce qui ne rentrerait pas dans les cases du formulaire.",
+      title: "Informations complémentaires"
+    },
+    // ── Bottom row: Avertissement · Classification · Ambiance ──
+    {
+      element: '#restrictionGroup',
+      intro: "Cliquez sur <span class='text-success font-semibold'>Tout public</span>, sur <span class='text-warning font-semibold'>16+</span> ou sur <span class='text-error font-semibold'>18+</span> pour définir la limite d'âge de votre annonce.",
+      title: "Restriction"
+    },
+    {
+      element: '#restriction_tags',
+      intro: "Ajoutez les thèmes sensibles, séparés par des virgules.",
+      title: "Thèmes sensibles"
+    },
+    {
+      element: '#classification',
+      intro: "Votre partie est plutôt orientée action, investigation, interaction ou horreur ? Utilisez les curseurs pour donner à vos joueur·euses le ton de votre partie.",
+      title: "Classification du scénario"
+    },
+    {
+      element: '#ambience',
+      intro: "Utilisez les switchs pour définir l'ambiance attendue sur votre partie.",
+      title: "Ambiance de la partie"
+    },
+    // ── Right sidebar: Image · Actions ──
+    {
+      element: '#imgUrlInput',
+      intro: "Collez ici l'URL d'une illustration pour votre annonce." +
+        infoNote("Utilisez un lien direct vers l'image (ex: imgur)."),
+      title: "Image"
+    },
+    {
+      element: '#gameActionButtons',
+      intro: "Il existe plusieurs actions possibles pour enregistrer votre annonce.",
+      title: "Enregistrer"
+    },
+    {
+      element: '#saveButton',
+      intro: "Crée votre annonce dans QuestMaster sous forme de brouillon :<br>" +
+        "- le salon et le rôle de parties <strong>ne sont pas</strong> créés<br>" +
+        "- les joueur·euses <strong>ne peuvent pas</strong> s'inscrire<br>" +
+        "- l'annonce <strong>n'est pas</strong> publiée sur Discord",
+      title: "Enregistrer comme Brouillon"
+    },
+    {
+      element: '#openButton',
+      intro: "Idéal pour une partie sans annonce :<br>" +
+        "- le salon et le rôle de parties sont créés<br>" +
+        "- les joueur·euses peuvent s'inscrire<br>" +
+        "- l'annonce <strong>n'est pas publiée</strong> sur Discord",
+      title: "Ouvrir sans publier"
+    },
+    {
+      element: '#publishButton',
+      intro: "Le grand classique pour poster une annonce :<br>" +
+        "- le salon et le rôle de parties sont créés<br>" +
+        "- les joueur·euses peuvent s'inscrire<br>" +
+        "- l'annonce est publiée sur Discord",
+      title: "Publier sur Discord"
+    },
+    {
+      title: "Gérer ses parties",
+      intro: "Voyons maintenant comment gérer une annonce."
+    }
+  ];
+
+  intro.setOptions({ ...INTRO_DEFAULTS, steps });
 
   intro.onbeforechange(function (target) {
-    if (!annoncesDetails) return;
-    const needsOpen = target?.id === 'postNewGame';
-    annoncesDetails.open = needsOpen;
-    if (needsOpen) {
-      return new Promise(resolve => setTimeout(() => {
-        annoncesDetails.open = true;
-        resolve();
-      }, 50));
-    }
+    const id = target?.id;
+    if (annoncesDetails) annoncesDetails.open = id === 'postNewGame';
+    // Forces the dropdown open/closed synchronously (DaisyUI's own modifier
+    // class for this), unlike the default :focus-within toggle — avoids a
+    // race against intro.js measuring the target's position mid-transition.
+    if (userMenuDropdown) userMenuDropdown.classList.toggle('dropdown-open', id === 'preferencesLink');
   });
 
   intro.onexit(() => showOutroMessage());

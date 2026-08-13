@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template
 
+from website.utils.game_form_defaults import resolve_game_form_defaults
+
 demo_bp = Blueprint("demo", __name__)
 
 today = datetime.now()
@@ -227,7 +229,7 @@ def demo_register():
 @demo_bp.route("/demo/poster/", methods=["GET"])
 def demo_post():
     """Render the demo game creation form."""
-    return render_template("game_form.j2")
+    return render_template("game_form.j2", defaults=resolve_game_form_defaults())
 
 
 @demo_bp.route("/demo/gerer/", methods=["GET"])

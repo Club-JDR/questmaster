@@ -903,6 +903,45 @@ class TestGameFormAccess:
         assert response.status_code == 403
 
 
+class TestGameFormDefaults:
+    """User game-form defaults: only pre-fill new games, never edit/clone."""
+
+    def test_new_game_form_prefills_from_user_defaults(
+        self, logged_in_admin, mock_discord_lookups, db_session, admin_user
+    ):
+        admin_user.game_defaults = {"description": "Ma trame habituelle"}
+        db_session.flush()
+
+        response = logged_in_admin.get("/annonce/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Ma trame habituelle" in body
+
+    def test_edit_form_ignores_user_defaults(
+        self, logged_in_admin, mock_discord_lookups, db_session, draft_game, admin_user
+    ):
+        admin_user.game_defaults = {"description": "Ma trame habituelle"}
+        db_session.flush()
+
+        response = logged_in_admin.get(f"/annonces/{draft_game.slug}/editer/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Ma trame habituelle" not in body
+        assert draft_game.description in body
+
+    def test_clone_form_ignores_user_defaults(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_game, admin_user
+    ):
+        admin_user.game_defaults = {"description": "Ma trame habituelle"}
+        db_session.flush()
+
+        response = logged_in_admin.get(f"/annonces/{open_game.slug}/cloner/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Ma trame habituelle" not in body
+        assert open_game.description in body
+
+
 # -- Game Search -----------------------------------------------------------
 
 

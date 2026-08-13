@@ -42,6 +42,19 @@ def login_required(view):
     return wrapped_view
 
 
+def abort_if_not_gm(payload):
+    """Raise UnauthorizedError if user is not GM.
+
+    Args:
+        payload: Auth payload dict (from ``who()``).
+
+    Raises:
+        UnauthorizedError: If the user isn't a GM.
+    """
+    if not payload["is_gm"]:
+        raise UnauthorizedError("GM access required.", action="gm")
+
+
 def admin_only(view):
     """View decorator restricting access to superuser admins.
 

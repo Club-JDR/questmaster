@@ -20,7 +20,6 @@ from website.exceptions import (
     PastDateError,
     QuestMasterError,
     SessionConflictError,
-    UnauthorizedError,
     ValidationError,
 )
 from website.services import DiscordService
@@ -33,8 +32,9 @@ from website.services.system import SystemService
 from website.services.user import UserService
 from website.services.vtt import VttService
 from website.utils.game_filters import get_filtered_games, get_filtered_user_games
+from website.utils.game_form_defaults import resolve_game_form_defaults
 from website.utils.logger import log_game_event, logger
-from website.views.auth import login_required, who
+from website.views.auth import abort_if_not_gm, login_required, who
 
 game_bp = Blueprint("annonces", __name__)
 
@@ -64,6 +64,7 @@ system_service = SystemService()
 vtt_service = VttService()
 stats_service = StatsService()
 settings_service = SettingsService()
+user_service = UserService()
 
 
 # ---------------------------------------------------------------------------
@@ -222,14 +223,18 @@ def get_game_details(slug):
 def get_game_form():
     """Get form to create a new game."""
     payload = who()
-    _abort_if_not_gm(payload)
+    abort_if_not_gm(payload)
     if not payload.get("can_post_games", True):
         flash(_POSTING_BLOCKED_MESSAGE, "danger")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
+    systems = system_service.get_all()
+    vtts = vtt_service.get_all()
+    user = user_service.get_by_id(payload["user_id"])
     return render_template(
         "game_form.j2",
-        systems=system_service.get_all(),
-        vtts=vtt_service.get_all(),
+        systems=systems,
+        vtts=vtts,
+        defaults=resolve_game_form_defaults(user=user, systems=systems, vtts=vtts),
     )
 
 
@@ -610,6 +615,7 @@ def get_game_edit_form(slug):
         systems=system_service.get_all(),
         vtts=vtt_service.get_all(),
         clone=True if "cloner" in request.path else False,
+        defaults=resolve_game_form_defaults(game=game),
     )
 
 
@@ -618,7 +624,7 @@ def get_game_edit_form(slug):
 def my_gm_games():
     """List all games where current user is GM."""
     payload = who()
-    _abort_if_not_gm(payload)
+    abort_if_not_gm(payload)
     games, request_args = get_filtered_user_games(
         request.args, payload["user_id"], payload, role="gm"
     )
@@ -738,7 +744,7 @@ def _handle_add_player(game, slug, data, payload):
         flash("Identifiant Discord manquant.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
-    user, created = UserService().get_or_create(str(uid))
+    user, created = user_service.get_or_create(str(uid))
     if created:
         logger.info(f"User {uid} created in database")
 
@@ -754,12 +760,6 @@ def _handle_add_player(game, slug, data, payload):
 # ---------------------------------------------------------------------------
 # Authorization helpers
 # ---------------------------------------------------------------------------
-
-
-def _abort_if_not_gm(payload):
-    """Raise UnauthorizedError if user is not GM."""
-    if not payload["is_gm"]:
-        raise UnauthorizedError("GM access required.", action="gm")
 
 
 def _get_game_if_authorized(payload, slug):

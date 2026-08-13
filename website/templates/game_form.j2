@@ -48,13 +48,13 @@
             <div class="join flex-wrap" id="sessionType">
               <label class="join-item btn btn-sm has-[:checked]:color-oneshot">
                 <input type="radio" name="type" value="oneshot" class="sr-only"
-                  {% if not game or game.type == 'oneshot' %}checked{% endif %}
+                  {% if (game and game.type == 'oneshot') or (not game and defaults.type == 'oneshot') %}checked{% endif %}
                   {% if game and game.status != "draft" and not clone %}disabled{% endif %}>
                 <i class="ph ph-scroll" aria-hidden="true"></i> One Shot
               </label>
               <label class="join-item btn btn-sm has-[:checked]:color-campaign">
                 <input type="radio" name="type" value="campaign" class="sr-only"
-                  {% if game and game.type == 'campaign' %}checked{% endif %}
+                  {% if (game and game.type == 'campaign') or (not game and defaults.type == 'campaign') %}checked{% endif %}
                   {% if game and game.type != 'campaign' and game.status != "draft" and not clone %}disabled{% endif %}>
                 <i class="ph ph-books" aria-hidden="true"></i> Campagne
               </label>
@@ -77,9 +77,9 @@
           <div class="flex flex-col gap-1">
             <label for="game_system" class="{{ lbl }}">Système</label>
             <select id="game_system" name="system" class="select select-bordered w-full" required aria-required="true">
-              <option value="" {% if not game %}selected{% endif %}></option>
+              <option value="" {% if not game and not defaults.system %}selected{% endif %}></option>
               {% for s in systems %}
-              <option value="{{ s.id }}" {% if game and game.system_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+              <option value="{{ s.id }}" {% if (game and game.system_id == s.id) or (not game and defaults.system == s.id) %}selected{% endif %}>{{ s.name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -89,7 +89,7 @@
             <select id="game_vtt" name="vtt" class="select select-bordered w-full">
               <option value=""></option>
               {% for v in vtts %}
-              <option value="{{ v.id }}" {% if game and game.vtt_id == v.id %}selected{% endif %}>{{ v.name }}</option>
+              <option value="{{ v.id }}" {% if (game and game.vtt_id == v.id) or (not game and defaults.vtt == v.id) %}selected{% endif %}>{{ v.name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -118,7 +118,7 @@
                 <span class="text-sm text-base-content/70" aria-hidden="true">session(s) de</span>
                 <label class="sr-only" for="session_length_input">Durée par session en heures</label>
                 <input type="number" id="session_length_input" step="0.5" min="0.5" max="24" name="session_length"
-                  value="{% if game %}{{ game.session_length }}{% else %}3.5{% endif %}"
+                  value="{% if game %}{{ game.session_length }}{% else %}{{ defaults.session_length }}{% endif %}"
                   class="input input-bordered input-sm w-20" required aria-required="true">
                 <span class="text-sm text-base-content/70" aria-hidden="true">h</span>
               </div>
@@ -153,7 +153,7 @@
               <label class="sr-only" for="party_size_input">Nombre de joueurs</label>
               <input type="number" id="party_size_input" step="1" min="1" max="99" name="party_size"
                 class="w-14 text-center text-3xl font-black text-primary bg-transparent border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                value="{% if game %}{{ game.party_size }}{% else %}4{% endif %}" required aria-required="true">
+                value="{% if game %}{{ game.party_size }}{% else %}{{ defaults.party_size }}{% endif %}" required aria-required="true">
               <button type="button" class="btn btn-circle btn-sm btn-ghost" aria-label="Ajouter un joueur"
                 onclick="var i=document.getElementById('party_size_input');i.value=Math.min(99,parseInt(i.value||1)+1)">
                 <i class="ph ph-plus" aria-hidden="true"></i>
@@ -165,7 +165,7 @@
           {# Row 2 — aligns with Type: sur sélection toggle #}
           <label class="flex items-center justify-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="party_selection" name="party_selection" class="toggle toggle-primary toggle-sm"
-              {% if game and game.party_selection %}checked{% endif %}>
+              {% if (game and game.party_selection) or (not game and defaults.party_selection) %}checked{% endif %}>
             <span class="text-sm text-base-content/70">Sur sélection</span>
           </label>
 
@@ -173,9 +173,9 @@
           <div class="flex flex-col gap-1">
             <label for="game_xp" class="{{ lbl }}">Expérience</label>
             <select id="game_xp" name="xp" class="select select-bordered select-sm w-full">
-              <option value="all" {% if not game or game.xp == "all" %}selected{% endif %}>Débutants bienvenus</option>
-              <option value="beginners" {% if game and game.xp == "beginners" %}selected{% endif %}>Réservé aux débutants</option>
-              <option value="seasoned" {% if game and game.xp == "seasoned" %}selected{% endif %}>Interdit aux débutants</option>
+              <option value="all" {% if (game and game.xp == "all") or (not game and defaults.xp == "all") %}selected{% endif %}>Débutants bienvenus</option>
+              <option value="beginners" {% if (game and game.xp == "beginners") or (not game and defaults.xp == "beginners") %}selected{% endif %}>Réservé aux débutants</option>
+              <option value="seasoned" {% if (game and game.xp == "seasoned") or (not game and defaults.xp == "seasoned") %}selected{% endif %}>Interdit aux débutants</option>
             </select>
           </div>
 
@@ -183,10 +183,10 @@
           <div class="flex flex-col gap-1">
             <label for="game_characters" class="{{ lbl }}">Personnages</label>
             <select id="game_characters" name="characters" class="select select-bordered select-sm w-full">
-              <option value="with_gm" {% if not game or game.characters == "with_gm" %}selected{% endif %}>Avec le·a MJ</option>
-              <option value="self" {% if game and game.characters == "self" %}selected{% endif %}>Seul·e</option>
-              <option value="pregen" {% if game and game.characters == "pregen" %}selected{% endif %}>Prétirés</option>
-              <option value="choice" {% if game and game.characters == "choice" %}selected{% endif %}>Au choix</option>
+              <option value="with_gm" {% if (game and game.characters == "with_gm") or (not game and defaults.characters == "with_gm") %}selected{% endif %}>Avec le·a MJ</option>
+              <option value="self" {% if (game and game.characters == "self") or (not game and defaults.characters == "self") %}selected{% endif %}>Seul·e</option>
+              <option value="pregen" {% if (game and game.characters == "pregen") or (not game and defaults.characters == "pregen") %}selected{% endif %}>Prétirés</option>
+              <option value="choice" {% if (game and game.characters == "choice") or (not game and defaults.characters == "choice") %}selected{% endif %}>Au choix</option>
             </select>
           </div>
 
@@ -203,14 +203,14 @@
             <textarea id="game_description" name="description" class="textarea textarea-bordered w-full"
               data-markdown-editor data-min-height="200px"
               rows="6" placeholder="Décrivez votre scénario..." spellcheck="true"
-              required aria-required="true">{% if game %}{{ game.description }}{% endif %}</textarea>
+              required aria-required="true">{% if game %}{{ game.description }}{% else %}{{ defaults.description }}{% endif %}</textarea>
           </div>
 
           <div class="flex flex-col gap-1">
             <label for="game_complement" class="{{ lbl }}">Informations complémentaires <span class="font-normal text-xs text-base-content/70">(optionnel)</span></label>
             <textarea id="game_complement" name="complement" class="textarea textarea-bordered w-full"
               data-markdown-editor data-min-height="100px"
-              rows="2" spellcheck="true">{% if game and game.complement %}{{ game.complement }}{% endif %}</textarea>
+              rows="2" spellcheck="true">{% if game and game.complement %}{{ game.complement }}{% else %}{{ defaults.complement }}{% endif %}</textarea>
           </div>
 
         </div>
@@ -298,7 +298,7 @@
                 ] %}
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" class="toggle toggle-primary toggle-sm" name="{{ key }}"
-                    {% if game and key in game.ambience %}checked{% endif %}>
+                    {% if (game and key in game.ambience) or (not game and key in defaults.ambience) %}checked{% endif %}>
                   <span class="text-sm flex items-center gap-1.5">
                     <i class="ph {{ icon }}" aria-hidden="true"></i> {{ label }}
                   </span>
