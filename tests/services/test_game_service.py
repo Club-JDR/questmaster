@@ -735,8 +735,25 @@ class TestGameService:
 
         game = game_service.get_by_slug(sample_game.slug)
         assert game.status == "archived"
+        assert game.trophies_awarded is False
         mock_discord.delete_role.assert_called_once()
         mock_discord.delete_channel.assert_called_once()
+
+    def test_archive_game_persists_trophies_awarded(
+        self, db_session, sample_game, mock_discord, game_service
+    ):
+        """The award_trophies decision is persisted on the game row.
+
+        Downstream aggregates (e.g. the special-event leaderboard) rely on
+        this column to know which archived games actually handed out trophies.
+        """
+        sample_game.status = "closed"
+        db_session.commit()
+
+        game_service.archive(sample_game.slug, award_trophies=True)
+
+        game = game_service.get_by_slug(sample_game.slug)
+        assert game.trophies_awarded is True
 
     def test_archive_game_already_archived_is_noop(
         self, db_session, sample_game, mock_discord, game_service
@@ -749,6 +766,8 @@ class TestGameService:
 
         mock_discord.delete_role.assert_not_called()
         mock_discord.delete_channel.assert_not_called()
+        # Idempotency guard returns before any field is touched.
+        assert sample_game.trophies_awarded is False
 
     def test_delete_game(self, db_session, sample_game, game_service):
         game_service.delete(sample_game.slug)
