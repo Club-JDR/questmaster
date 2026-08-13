@@ -13,6 +13,7 @@ from config.constants import (
     GAME_STATUS,
     GAME_TYPES,
     GAME_XP,
+    MAX_SLUG_LENGTH,
     RESTRICTIONS,
 )
 from website.exceptions import ValidationError
@@ -104,6 +105,24 @@ class Game(db.Model):
                 "Number of players must be at least one.",
                 field="party_size",
                 details={"value": value},
+            )
+        return value
+
+    @orm.validates("slug")
+    def validate_slug(self, key, value):
+        """Ensure the slug stays short enough for its derived Discord names.
+
+        The channel is named after the slug and the player role after "PJ_<slug>";
+        both must fit Discord's 100-char name limit. GameService.generate_slug()
+        already bounds generated slugs, but this catches any other write path
+        (e.g. a direct admin edit) before it reaches Discord.
+        """
+        if value and len(value) > MAX_SLUG_LENGTH:
+            raise ValidationError(
+                f"Slug must be at most {MAX_SLUG_LENGTH} characters "
+                "(Discord role/channel name limit).",
+                field="slug",
+                details={"value": value, "length": len(value)},
             )
         return value
 

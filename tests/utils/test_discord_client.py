@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from config.constants import GM_ROLE_PERMISSION, PLAYER_ROLE_PERMISSION
+from config.constants import DISCORD_NAME_MAX, GM_ROLE_PERMISSION, PLAYER_ROLE_PERMISSION
 from website.client.discord import Discord
 
 
@@ -40,6 +40,18 @@ class TestCreateChannel:
         assert all(o["id"] != "role_9" for o in overwrites)
         assert {"id": "guild_1", "type": 0, "deny": "1024"} in overwrites
 
+    def test_truncates_name_over_discord_limit(self, client):
+        """A name over Discord's limit is clipped rather than sent as-is.
+
+        Safety net for names that slip past upstream length guards (e.g. a
+        slug written before ``MAX_SLUG_LENGTH`` was enforced).
+        """
+        long_name = "x" * (DISCORD_NAME_MAX + 50)
+        with patch.object(Discord, "_request", return_value={"id": "chan"}) as req:
+            client.create_channel(long_name, "cat_1", None, "gm_1")
+
+        assert len(req.call_args.kwargs["json"]["name"]) == DISCORD_NAME_MAX
+
 
 class TestChannelPermissions:
     def test_set_channel_permission(self, client):
@@ -61,6 +73,14 @@ class TestChannelPermissions:
 
 
 class TestRolesAndMessages:
+    def test_create_role_truncates_name_over_discord_limit(self, client):
+        """A role name over Discord's limit is clipped rather than sent as-is."""
+        long_name = "PJ_" + "x" * DISCORD_NAME_MAX
+        with patch.object(Discord, "_request", return_value={"id": "role"}) as req:
+            client.create_role(long_name, PLAYER_ROLE_PERMISSION, 0)
+
+        assert len(req.call_args.kwargs["json"]["name"]) == DISCORD_NAME_MAX
+
     def test_list_roles(self, client):
         """list_roles fetches the guild roles list."""
         with patch.object(Discord, "_request", return_value=[{"id": "1"}]) as req:
