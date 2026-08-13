@@ -11,9 +11,11 @@ import threading
 from datetime import datetime, timedelta
 
 from config.constants import (
+    DISCORD_MESSAGE_MAX_LENGTH,
     EMBED_COLOR_RED,
     GAME_STATUS_LABELS,
     HUMAN_TIMEFORMAT,
+    INFRACTION_SEVERITY_REMINDER,
     SITE_BASE_URL,
 )
 from website.exceptions import (
@@ -25,10 +27,11 @@ from website.exceptions import (
     SessionConflictError,
     ValidationError,
 )
-from website.models import Game, User
+from website.models import Game, Infraction, User
 from website.services.discord import DiscordService
 from website.services.game import GameService
 from website.services.game_session import GameSessionService
+from website.services.moderation import ModerationService
 from website.services.user import UserService
 from website.utils.logger import log_game_event, logger
 
@@ -36,6 +39,7 @@ from website.utils.logger import log_game_event, logger
 MSG_NOT_A_GAME_CHANNEL = "Ce salon n'est pas associé à une partie."
 MSG_NOT_PARTICIPANT = "Vous n'êtes pas autorisé·e à effectuer cette action pour cette partie."
 MSG_NOT_GM = "Seul·e le·a MJ de l'annonce peut faire cette opération."
+MSG_NOT_ADMIN = "Seul·es les admins peuvent faire cette opération."
 MSG_UNKNOWN_COMMAND = "Commande inconnue."
 MSG_GENERIC_ERROR = "Une erreur est survenue."
 MSG_ALERT_SENT = "Signalement effectué."
@@ -70,6 +74,8 @@ MSG_PAST_DATE = (
     "depuis le site pour confirmer."
 )
 MSG_NO_BADGES = "Aucun badge pour ce membre."
+MSG_NO_INFRACTIONS = "Aucune infraction pour ce membre."
+MSG_EMPTY_REASON = "La raison de l'infraction est vide."
 
 # Input format documented in the slash-command option descriptions
 SLASH_DATE_FORMAT = "%d/%m/%Y %H:%M"
@@ -99,7 +105,7 @@ class DiscordCommandService:
     INLINE_COMMANDS = {"info", "badges"}
 
     # Commands that also work outside a game channel (game becomes None)
-    CHANNEL_OPTIONAL_COMMANDS = {"signaler"}
+    CHANNEL_OPTIONAL_COMMANDS = {"signaler", "avertir", "infractions"}
 
     def __init__(
         self,
@@ -107,11 +113,13 @@ class DiscordCommandService:
         session_service=None,
         discord_service=None,
         user_service=None,
+        moderation_service=None,
     ):
         self.games = game_service or GameService()
         self.sessions = session_service or GameSessionService()
         self.discord = discord_service or DiscordService()
         self.users = user_service or UserService()
+        self.moderation = moderation_service or ModerationService()
 
     # -------------------------------------------------------------------------
     # Entry points (called by the interactions blueprint)
@@ -199,6 +207,8 @@ class DiscordCommandService:
             "ouvrir": self._handle_open,
             "fermer": self._handle_close,
             "publier": self._handle_publish,
+            "avertir": self._handle_warn,
+            "infractions": self._handle_infractions,
         }
         name = payload.get("data", {}).get("name")
         handler = handlers.get(name)
@@ -454,6 +464,85 @@ class DiscordCommandService:
         lines = [f"**Badges de {user.name}**"]
         lines += [f"- {t['name']} ×{t['quantity']}" for t in summary]
         return "\n".join(lines)
+
+    def _handle_warn(self, game: Game | None, user: User, payload: dict) -> str:
+        """``/avertir <membre> <raison> [gravite] [article] [lien]`` — record an infraction.
+
+        Admin-only, usable in any channel. Records the infraction through
+        ``ModerationService`` exactly as the admin "Modération" page does;
+        nothing is posted publicly and the target is not notified.
+        """
+        if not user.is_admin:
+            return MSG_NOT_ADMIN
+        target = self._resolve_target_member(payload)
+        try:
+            infraction = self.moderation.create(
+                user_id=target.id,
+                reason=self._option(payload, "raison", ""),
+                severity=int(self._option(payload, "gravite", INFRACTION_SEVERITY_REMINDER)),
+                rule_article=self._option(payload, "article"),
+                message_link=self._option(payload, "lien"),
+                admin_id=user.id,
+            )
+        except ValidationError as exc:
+            return MSG_EMPTY_REASON if exc.field == "reason" else MSG_GENERIC_ERROR
+        total = len(self.moderation.list_for_user(target.id))
+        return (
+            f"Infraction enregistrée pour <@{target.id}> — "
+            f"{infraction.severity_label} ({total} au total)."
+        )
+
+    def _handle_infractions(self, game: Game | None, user: User, payload: dict) -> str:
+        """``/infractions <membre>`` — list a member's infractions (admin-only).
+
+        Mirrors the historical Mee6 ``!infractions`` output; the list is
+        truncated to fit Discord's message length limit, newest first.
+        """
+        if not user.is_admin:
+            return MSG_NOT_ADMIN
+        target_id = str(self._option(payload, "membre") or "")
+        infractions = self.moderation.list_for_user(target_id)
+        if not infractions:
+            return MSG_NO_INFRACTIONS
+
+        header = f"**Infractions de <@{target_id}>** ({len(infractions)})"
+        lines = [header]
+        length = len(header)
+        # Keep room for the "… et N de plus" note added when the list is cut.
+        budget = DISCORD_MESSAGE_MAX_LENGTH - 40
+        shown = 0
+        for infraction in infractions:
+            line = self._format_infraction(infraction)
+            if length + 1 + len(line) > budget:
+                break
+            lines.append(line)
+            length += 1 + len(line)
+            shown += 1
+        if shown < len(infractions):
+            lines.append(f"… et {len(infractions) - shown} de plus")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_infraction(infraction: Infraction) -> str:
+        """Build the one-line French summary of an infraction.
+
+        Args:
+            infraction: Infraction to format.
+
+        Returns:
+            ``- date — gravité — article — raison — par admin (lien)`` with the
+            optional parts omitted when absent.
+        """
+        parts = [infraction.created_at.strftime("%d/%m/%Y"), infraction.severity_label]
+        if infraction.rule_article:
+            parts.append(infraction.rule_article)
+        parts.append(infraction.reason)
+        if infraction.admin_id:
+            parts.append(f"par <@{infraction.admin_id}>")
+        line = "- " + " — ".join(parts)
+        if infraction.message_link:
+            line += f" ({infraction.message_link})"
+        return line
 
     # -------------------------------------------------------------------------
     # Resolution + authorization helpers

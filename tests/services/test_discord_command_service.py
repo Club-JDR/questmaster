@@ -6,22 +6,30 @@ from uuid import uuid4
 
 import pytest
 
+from config.constants import (
+    DISCORD_MESSAGE_MAX_LENGTH,
+    INFRACTION_SEVERITY_REMINDER,
+    INFRACTION_SEVERITY_WARNING,
+)
 from tests.factories import GameFactory, GameSessionFactory
 from website.exceptions import NotFoundError
-from website.models import GameEvent
+from website.models import GameEvent, Infraction
 from website.services.discord_command import (
     MSG_ALERT_SENT,
     MSG_ALREADY_PUBLISHED,
     MSG_BAD_DATE_FORMAT,
     MSG_BAD_DURATION_FORMAT,
     MSG_EMPTY_NOTIFICATION,
+    MSG_EMPTY_REASON,
     MSG_GAME_CLOSED_OK,
     MSG_GAME_OPENED_OK,
     MSG_GAME_PUBLISHED,
     MSG_GM_CANNOT_REGISTER,
     MSG_NO_BADGES,
+    MSG_NO_INFRACTIONS,
     MSG_NOT_A_GAME_CHANNEL,
     MSG_NOT_A_PLAYER,
+    MSG_NOT_ADMIN,
     MSG_NOT_CLOSED,
     MSG_NOT_GM,
     MSG_NOT_OPEN,
@@ -650,6 +658,160 @@ class TestBadges:
 
     def test_badges_is_inline(self, command_service):
         assert command_service.is_inline(_payload("badges", "1"))
+
+
+class TestAvertir:
+    def test_avertir_records_infraction(
+        self, db_session, command_service, admin_user, regular_user
+    ):
+        command_service.users.get_or_create.side_effect = [
+            (_make_user(admin_user.id, is_admin=True), False),  # caller
+            (_make_user(regular_user.id), False),  # membre option
+        ]
+        payload = _payload(
+            "avertir",
+            "000000000000000000",
+            options=[_opt("membre", regular_user.id), _opt("raison", "Spam dans #général")],
+        )
+
+        content = command_service._execute(payload)
+
+        assert "Infraction enregistrée" in content
+        assert f"<@{regular_user.id}>" in content
+        assert "Rappel à l'ordre" in content
+        infraction = db_session.query(Infraction).filter_by(user_id=regular_user.id).one()
+        assert infraction.reason == "Spam dans #général"
+        assert infraction.severity == INFRACTION_SEVERITY_REMINDER
+        assert infraction.admin_id == admin_user.id
+
+    def test_avertir_with_all_options(self, db_session, command_service, admin_user, regular_user):
+        command_service.users.get_or_create.side_effect = [
+            (_make_user(admin_user.id, is_admin=True), False),
+            (_make_user(regular_user.id), False),
+        ]
+        payload = _payload(
+            "avertir",
+            "000000000000000000",
+            options=[
+                _opt("membre", regular_user.id),
+                _opt("raison", "Récidive"),
+                _opt("gravite", INFRACTION_SEVERITY_WARNING),
+                _opt("article", "Article 3"),
+                _opt("lien", "https://discord.com/channels/1/2/3"),
+            ],
+        )
+
+        content = command_service._execute(payload)
+
+        assert "Avertissement" in content
+        infraction = db_session.query(Infraction).filter_by(user_id=regular_user.id).one()
+        assert infraction.severity == INFRACTION_SEVERITY_WARNING
+        assert infraction.rule_article == "Article 3"
+        assert infraction.message_link == "https://discord.com/channels/1/2/3"
+
+    def test_avertir_blank_reason_returns_french_error(
+        self, db_session, command_service, admin_user, regular_user
+    ):
+        command_service.users.get_or_create.side_effect = [
+            (_make_user(admin_user.id, is_admin=True), False),
+            (_make_user(regular_user.id), False),
+        ]
+        payload = _payload(
+            "avertir",
+            "000000000000000000",
+            options=[_opt("membre", regular_user.id), _opt("raison", "   ")],
+        )
+
+        assert command_service._execute(payload) == MSG_EMPTY_REASON
+        assert db_session.query(Infraction).filter_by(user_id=regular_user.id).count() == 0
+
+    def test_avertir_non_admin_is_refused(self, db_session, command_service, regular_user):
+        _resolve_as(command_service, _make_user(regular_user.id, is_admin=False))
+        payload = _payload(
+            "avertir",
+            "000000000000000000",
+            options=[_opt("membre", "42"), _opt("raison", "x")],
+        )
+
+        assert command_service._execute(payload) == MSG_NOT_ADMIN
+        assert db_session.query(Infraction).filter_by(user_id="42").count() == 0
+
+
+class TestInfractions:
+    def test_infractions_lists_member_history_newest_first(
+        self, db_session, command_service, admin_user, regular_user
+    ):
+        db_session.add(
+            Infraction(
+                user_id=regular_user.id,
+                reason="Spam",
+                severity=INFRACTION_SEVERITY_WARNING,
+                rule_article="Article 3",
+                message_link="https://discord.com/channels/1/2/3",
+                admin_id=admin_user.id,
+                created_at=datetime(2026, 1, 1, 12, 0),
+            )
+        )
+        db_session.add(
+            Infraction(
+                user_id=regular_user.id,
+                reason="Flood",
+                created_at=datetime(2026, 2, 1, 12, 0),
+            )
+        )
+        db_session.flush()
+        _resolve_as(command_service, _make_user(admin_user.id, is_admin=True))
+        payload = _payload(
+            "infractions", "000000000000000000", options=[_opt("membre", regular_user.id)]
+        )
+
+        content = command_service._execute(payload)
+
+        assert f"**Infractions de <@{regular_user.id}>** (2)" in content
+        assert "01/01/2026 — Avertissement — Article 3 — Spam" in content
+        assert f"par <@{admin_user.id}>" in content
+        assert "(https://discord.com/channels/1/2/3)" in content
+        # Newest first
+        assert content.index("Flood") < content.index("Spam")
+
+    def test_infractions_without_history_returns_notice(
+        self, db_session, command_service, admin_user, regular_user
+    ):
+        _resolve_as(command_service, _make_user(admin_user.id, is_admin=True))
+        payload = _payload(
+            "infractions", "000000000000000000", options=[_opt("membre", regular_user.id)]
+        )
+
+        assert command_service._execute(payload) == MSG_NO_INFRACTIONS
+
+    def test_infractions_non_admin_is_refused(self, db_session, command_service, regular_user):
+        _resolve_as(command_service, _make_user(regular_user.id, is_admin=False))
+        payload = _payload("infractions", "000000000000000000", options=[_opt("membre", "42")])
+
+        assert command_service._execute(payload) == MSG_NOT_ADMIN
+
+    def test_infractions_long_history_is_truncated(
+        self, db_session, command_service, admin_user, regular_user
+    ):
+        for i in range(30):
+            db_session.add(
+                Infraction(
+                    user_id=regular_user.id,
+                    reason=f"Motif {i} " + "x" * 100,
+                    admin_id=admin_user.id,
+                )
+            )
+        db_session.flush()
+        _resolve_as(command_service, _make_user(admin_user.id, is_admin=True))
+        payload = _payload(
+            "infractions", "000000000000000000", options=[_opt("membre", regular_user.id)]
+        )
+
+        content = command_service._execute(payload)
+
+        assert len(content) <= DISCORD_MESSAGE_MAX_LENGTH
+        assert "de plus" in content
+        assert "(30)" in content
 
 
 class TestResolutionAndFollowup:
