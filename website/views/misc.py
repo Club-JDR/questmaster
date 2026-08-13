@@ -6,6 +6,7 @@ from markupsafe import Markup
 from config.constants import BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID, BADGE_OS_GM_ID, BADGE_OS_ID
 from website.exceptions import NotFoundError
 from website.extensions import cache
+from website.services.special_event import SpecialEventService
 from website.services.system import SystemService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
@@ -19,6 +20,7 @@ system_service = SystemService()
 vtt_service = VttService()
 user_service = UserService()
 trophy_service = TrophyService()
+special_event_service = SpecialEventService()
 
 
 @misc_bp.route("/aide/commandes-discord/", methods=["GET"])
@@ -122,13 +124,52 @@ def _serialize_leaderboard(entries):
     return [(user.to_dict(), count) for user, count in entries]
 
 
+@cache.memoize(timeout=3600)
+def get_event_leaderboard(event_id: int) -> dict | None:
+    """Get the player/GM leaderboards for a special event, memoized per event.
+
+    Args:
+        event_id: Special event ID.
+
+    Returns:
+        Dict with keys ``event``, ``player_leaderboard``, ``gm_leaderboard``
+        (see ``SpecialEventService.get_leaderboard``), or None if the event
+        doesn't exist.
+    """
+    try:
+        return special_event_service.get_leaderboard(event_id)
+    except NotFoundError:
+        return None
+
+
 @misc_bp.route("/badges/classement/", methods=["GET"])
 def trophies_leaderboard():
-    """Render the trophy leaderboard page."""
+    """Render the trophy leaderboard page.
+
+    Includes a "Global" tab (badge-based leaderboards) and an "Événements"
+    tab where a dropdown selects any special event (active or past) to see
+    its own player/GM leaderboard, scoped by game count.
+    """
+    event_id = request.args.get("event", type=int)
+    event_leaderboard = None
+    if event_id is not None:
+        result = get_event_leaderboard(event_id)
+        if result is None:
+            flash("Événement introuvable.", "warning")
+        else:
+            event_leaderboard = {
+                "event": result["event"].to_dict(),
+                "player_leaderboard": _serialize_leaderboard(result["player_leaderboard"]),
+                "gm_leaderboard": _serialize_leaderboard(result["gm_leaderboard"]),
+            }
+
     return render_template(
         "trophies_leaderboard.j2",
         os_leaderboard=_serialize_leaderboard(get_os_leaderboard()),
         campaign_leaderboard=_serialize_leaderboard(get_campaign_leaderboard()),
         os_gm_leaderboard=_serialize_leaderboard(get_os_gm_leaderboard()),
         campaign_gm_leaderboard=_serialize_leaderboard(get_campaign_gm_leaderboard()),
+        special_events=[e.to_dict() for e in special_event_service.get_all()],
+        selected_event_id=event_id,
+        event_leaderboard=event_leaderboard,
     )

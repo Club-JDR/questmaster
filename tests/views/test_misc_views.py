@@ -1,4 +1,4 @@
-"""Tests for non-game view endpoints (calendar, demo pages).
+"""Tests for non-game view endpoints (calendar, demo pages, leaderboard).
 
 The demo views serve static fake data and require no authentication.
 The calendar view requires a logged-in user.
@@ -7,6 +7,8 @@ The calendar view requires a logged-in user.
 import html
 
 import pytest
+
+from tests.factories import GameFactory, SpecialEventFactory
 
 pytestmark = pytest.mark.integration
 
@@ -68,3 +70,49 @@ class TestDemo:
         assert response.status_code == 200
         assert "La Tombe de l'Annihilation" in body
         assert "editButton" in body
+
+
+# -- Trophy Leaderboard ------------------------------------------------------
+
+
+class TestTrophiesLeaderboard:
+    """GET /badges/classement/ — global badge leaderboards + per-event tab."""
+
+    def test_renders_without_event_selected(self, client, mock_discord_lookups, db_session):
+        """With no ?event=, the page renders the global leaderboards only."""
+        response = client.get("/badges/classement/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Classement des badges" in body
+        assert "Sélectionnez un évènement" in body
+
+    def test_renders_event_leaderboard(
+        self, client, mock_discord_lookups, db_session, admin_user, regular_user, default_system
+    ):
+        """Selecting an event shows its player/GM game-count leaderboard."""
+        event = SpecialEventFactory(db_session, name="Halloween Test Event")
+        game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="archived",
+            trophies_awarded=True,
+        )
+        game.players.append(regular_user)
+        db_session.flush()
+
+        response = client.get(f"/badges/classement/?event={event.id}")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Halloween Test Event" in body
+        assert admin_user.name in body
+        assert regular_user.name in body
+        assert "Annonces" in body
+
+    def test_unknown_event_flashes_and_falls_back(self, client, mock_discord_lookups, db_session):
+        """An unknown event id flashes a warning and falls back to no selection."""
+        response = client.get("/badges/classement/?event=999999", follow_redirects=True)
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Événement introuvable." in body

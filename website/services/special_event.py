@@ -4,8 +4,12 @@ from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import SpecialEvent
 from website.repositories.base import Pagination
+from website.repositories.game import GameRepository
 from website.repositories.special_event import SpecialEventRepository
 from website.utils.logger import logger, sanitize_log_value
+
+# Number of entries shown per leaderboard table.
+_LEADERBOARD_SIZE = 10
 
 
 class SpecialEventService:
@@ -15,8 +19,9 @@ class SpecialEventService:
     Manages transaction boundaries and validation.
     """
 
-    def __init__(self, repository=None):
+    def __init__(self, repository=None, game_repository=None):
         self.repo = repository or SpecialEventRepository()
+        self.game_repo = game_repository or GameRepository()
 
     def get_all(self, active_only: bool = False) -> list[SpecialEvent]:
         """Get all special events, optionally filtered by active status.
@@ -127,6 +132,31 @@ class SpecialEventService:
         db.session.commit()
         logger.info(f"Special event {id} updated")
         return event
+
+    def get_leaderboard(self, event_id: int) -> dict:
+        """Get the player and GM leaderboards for a special event.
+
+        Args:
+            event_id: Special event ID.
+
+        Returns:
+            Dict with keys ``event`` (the SpecialEvent), ``player_leaderboard``
+            and ``gm_leaderboard`` (each a list of (User, game_count) tuples
+            ordered by game_count descending).
+
+        Raises:
+            NotFoundError: If special event doesn't exist.
+        """
+        event = self.get_by_id(event_id)
+        return {
+            "event": event,
+            "player_leaderboard": self.game_repo.get_player_leaderboard_for_event(
+                event_id, limit=_LEADERBOARD_SIZE
+            ),
+            "gm_leaderboard": self.game_repo.get_gm_leaderboard_for_event(
+                event_id, limit=_LEADERBOARD_SIZE
+            ),
+        }
 
     def delete(self, id: int) -> None:
         """Delete special event.

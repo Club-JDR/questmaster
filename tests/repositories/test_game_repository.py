@@ -3,7 +3,7 @@
 import pytest
 
 from tests.constants import TEST_SPECIAL_EVENT_ID
-from tests.factories import GameFactory
+from tests.factories import GameFactory, SpecialEventFactory
 from website.repositories.game import GameRepository
 
 
@@ -118,6 +118,129 @@ class TestGameRepository:
         repo = GameRepository()
         query = repo.query_by_special_event(999999)
         assert query.all() == []
+
+    def test_get_player_leaderboard_for_event(
+        self, db_session, admin_user, regular_user, default_system
+    ):
+        event = SpecialEventFactory(db_session)
+        game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="archived",
+            trophies_awarded=True,
+        )
+        game.players.append(regular_user)
+        db_session.flush()
+
+        repo = GameRepository()
+        leaderboard = repo.get_player_leaderboard_for_event(event.id)
+        assert leaderboard == [(regular_user, 1)]
+
+    def test_get_player_leaderboard_for_event_ignores_other_events(
+        self, db_session, admin_user, regular_user, default_system
+    ):
+        event = SpecialEventFactory(db_session)
+        other_event = SpecialEventFactory(db_session)
+        other_game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=other_event.id,
+            status="archived",
+            trophies_awarded=True,
+        )
+        other_game.players.append(regular_user)
+        db_session.flush()
+
+        repo = GameRepository()
+        assert repo.get_player_leaderboard_for_event(event.id) == []
+
+    def test_get_player_leaderboard_for_event_excludes_drafts(
+        self, db_session, admin_user, regular_user, default_system
+    ):
+        """Unpublished draft games never contribute to the leaderboard."""
+        event = SpecialEventFactory(db_session)
+        draft_game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="draft",
+        )
+        draft_game.players.append(regular_user)
+        db_session.flush()
+
+        repo = GameRepository()
+        assert repo.get_player_leaderboard_for_event(event.id) == []
+
+    def test_get_player_leaderboard_for_event_excludes_games_without_trophies(
+        self, db_session, admin_user, regular_user, default_system
+    ):
+        """An archived game where the GM opted out of awarding trophies doesn't count."""
+        event = SpecialEventFactory(db_session)
+        game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="archived",
+            trophies_awarded=False,
+        )
+        game.players.append(regular_user)
+        db_session.flush()
+
+        repo = GameRepository()
+        assert repo.get_player_leaderboard_for_event(event.id) == []
+
+    def test_get_gm_leaderboard_for_event(self, db_session, admin_user, default_system):
+        event = SpecialEventFactory(db_session)
+        GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="archived",
+            trophies_awarded=True,
+        )
+
+        repo = GameRepository()
+        leaderboard = repo.get_gm_leaderboard_for_event(event.id)
+        assert leaderboard == [(admin_user, 1)]
+
+    def test_get_gm_leaderboard_for_event_excludes_drafts(
+        self, db_session, admin_user, default_system
+    ):
+        """Unpublished draft games never contribute to the GM leaderboard."""
+        event = SpecialEventFactory(db_session)
+        GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="draft",
+        )
+
+        repo = GameRepository()
+        assert repo.get_gm_leaderboard_for_event(event.id) == []
+
+    def test_get_gm_leaderboard_for_event_excludes_games_without_trophies(
+        self, db_session, admin_user, default_system
+    ):
+        """An archived game where the GM opted out of awarding trophies doesn't count."""
+        event = SpecialEventFactory(db_session)
+        GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            special_event_id=event.id,
+            status="archived",
+            trophies_awarded=False,
+        )
+
+        repo = GameRepository()
+        assert repo.get_gm_leaderboard_for_event(event.id) == []
 
     def test_get_for_update(self, db_session, sample_game):
         repo = GameRepository()
