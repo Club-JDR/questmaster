@@ -399,7 +399,10 @@ class DiscordCommandService:
         if not target.is_player:
             return MSG_NOT_A_PLAYER
         try:
-            self.games.register_player(game.slug, target.id, force=True)
+            # A GM/admin manually registering a member is the trusted override
+            # case: skip the schedule-conflict check (it's meant to stop players
+            # double-booking themselves, not to block a GM's call).
+            self.games.register_player(game.slug, target.id, force=True, skip_schedule_check=True)
         except DuplicateRegistrationError:
             return MSG_PLAYER_ALREADY_REGISTERED
         return MSG_PLAYER_REGISTERED

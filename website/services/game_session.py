@@ -12,6 +12,7 @@ from website.extensions import cache, db
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
 from website.utils.logger import logger
+from website.utils.scheduling import intervals_overlap
 
 if TYPE_CHECKING:
     from website.models import Game
@@ -259,6 +260,6 @@ class GameSessionService:
         for s in game.sessions:
             if exclude_session_id and s.id == exclude_session_id:
                 continue
-            if not (end_dt <= s.start or start_dt >= s.end):
+            if intervals_overlap(start_dt, end_dt, s.start, s.end):
                 return True
         return False

@@ -34,6 +34,7 @@ from website.services.game_session import GameSessionService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
 from website.utils.logger import log_game_event, logger
+from website.utils.scheduling import intervals_overlap
 
 
 class GameService:
@@ -924,6 +925,9 @@ class GameService:
     def _find_schedule_conflict(self, user: User, game: Game) -> Game | None:
         """Find another active game of the user that overlaps this game's schedule.
 
+        Checks every non-draft, non-archived game the user is involved in —
+        whether they GM it or play in it — since either role double-books them.
+
         Args:
             user: Candidate player.
             game: Game the user is trying to register for.
@@ -932,12 +936,12 @@ class GameService:
             The first conflicting Game, or None if the schedule is clear.
         """
         target_windows = self._game_time_windows(game)
-        for other in self.repo.find_by_player_with_relations(user.id):
+        for other in self.repo.find_schedule_relevant_games(user.id):
             if other.id == game.id or other.status == "archived":
                 continue
             for t_start, t_end in target_windows:
                 for o_start, o_end in self._game_time_windows(other):
-                    if t_start < o_end and o_start < t_end:
+                    if intervals_overlap(t_start, t_end, o_start, o_end):
                         return other
         return None
 
@@ -1030,6 +1034,14 @@ class GameService:
                     resource_type="Game",
                     resource_id=game.id,
                 )
+
+            if not skip_schedule_check:
+                # Also lock the user row: the schedule-conflict check below reads
+                # the user's *other* games via a plain SELECT, so without this
+                # lock two concurrent registrations for different overlapping
+                # games could both read a clean schedule and commit before
+                # either sees the other's new registration.
+                user = self.user_service.get_for_update(user.id)
 
             self._validate_registration(locked_game, user, force, skip_schedule_check)
 

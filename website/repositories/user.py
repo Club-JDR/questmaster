@@ -1,5 +1,7 @@
 """User repository for user data access."""
 
+from typing import Optional
+
 from website.models import User
 from website.repositories.base import BaseRepository
 
@@ -13,6 +15,21 @@ class UserRepository(BaseRepository[User]):
     def base_query(self):
         """Return all users ordered by display name."""
         return self.session.query(User).order_by(User.name)
+
+    def get_for_update(self, user_id: str) -> Optional[User]:
+        """Get user with pessimistic lock for updates.
+
+        Uses SELECT FOR UPDATE to serialize concurrent operations that must not
+        interleave for the same user (e.g. registering them to two overlapping
+        games at once).
+
+        Args:
+            user_id: User ID to lock.
+
+        Returns:
+            User instance with exclusive lock, or None if not found.
+        """
+        return self.session.query(User).filter_by(id=user_id).with_for_update().first()
 
     def get_active_users(self) -> list[User]:
         """Retrieve all users not marked as inactive.

@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from config.constants import DISCORD_NAME_MAX, MAX_SLUG_LENGTH, PLAYER_ROLE_PERMISSION
-from tests.factories import GameFactory, UserFactory
+from tests.factories import GameFactory, GameSessionFactory, UserFactory
 from website.exceptions import (
     DiscordAPIError,
     DuplicateRegistrationError,
@@ -658,6 +658,52 @@ class TestGameService:
         game = game_service.register_player(sample_game.slug, regular_user.id)
 
         assert regular_user in game.players
+
+    def test_register_player_schedule_conflict_via_gm_game(
+        self, db_session, sample_game, regular_user, default_system, game_service
+    ):
+        # regular_user GMs another game overlapping sample_game's schedule —
+        # this must conflict too, not just games they play in.
+        GameFactory(
+            db_session,
+            gm_id=regular_user.id,
+            system_id=default_system.id,
+            status="open",
+        )
+        sample_game.status = "open"
+        db_session.commit()
+
+        with pytest.raises(ScheduleConflictError):
+            game_service.register_player(sample_game.slug, regular_user.id)
+
+        assert regular_user not in sample_game.players
+
+    def test_register_player_schedule_conflict_via_session_window(
+        self, db_session, sample_game, regular_user, admin_user, default_system, game_service
+    ):
+        # other_game's own date/session_length window doesn't overlap
+        # sample_game, but one of its extra GameSession rows does.
+        other_game = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            status="open",
+            date=datetime(2025, 1, 1, 9, 0),
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=other_game.id,
+            start=sample_game.date,
+            end=sample_game.date + timedelta(hours=float(sample_game.session_length)),
+        )
+        other_game.players.append(regular_user)
+        sample_game.status = "open"
+        db_session.commit()
+
+        with pytest.raises(ScheduleConflictError):
+            game_service.register_player(sample_game.slug, regular_user.id)
+
+        assert regular_user not in sample_game.players
 
     def test_register_player_auto_close(
         self, db_session, sample_game, regular_user, mock_discord, game_service
