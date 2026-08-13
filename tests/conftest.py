@@ -19,6 +19,8 @@ from tests.constants import (
     TEST_GM_USER_ID,
     TEST_ONESHOT_CHANNEL_ID,
     TEST_REGULAR_USER_ID,
+    TEST_SYSTEM_NAME,
+    TEST_VTT_NAME,
 )
 from website import create_app, db
 from website.client.discord import Discord
@@ -131,13 +133,13 @@ def gm_user(test_app):
 @pytest.fixture
 def default_system(test_app):
     """Return the pre-seeded RPG system."""
-    return System.query.first()
+    return System.query.filter_by(name=TEST_SYSTEM_NAME).one()
 
 
 @pytest.fixture
 def default_vtt(test_app):
     """Return the pre-seeded VTT."""
-    return Vtt.query.first()
+    return Vtt.query.filter_by(name=TEST_VTT_NAME).one()
 
 
 @pytest.fixture

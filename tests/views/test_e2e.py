@@ -6,13 +6,50 @@ service layer.  They are marked as integration tests and require valid
 Discord credentials to run.
 
 For focused, mocked tests of individual endpoints see test_game_views.py.
+
+These scenarios must stay idempotent against a non-empty database: game
+names carry a per-run suffix (slugs would otherwise collide with existing
+games by the same GM), session ids are parsed from the rendered page
+(PostgreSQL sequences never roll back, so ids cannot be hardcoded), and
+stats assertions avoid absolute counts that depend on pre-existing data.
 """
 
+import re
+import uuid
 from unittest.mock import patch
 
 import pytest
 
+from website.extensions import cache
+
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(autouse=True)
+def _clean_cache(test_app):
+    """Flush the shared Redis cache before each scenario.
+
+    Cached pages (monthly stats via ``GameSessionService._compute_stats``,
+    leaderboards) live in Redis and survive across test runs, so a stale
+    entry from a previous run would otherwise be served instead of the
+    data created by this run.
+    """
+    cache.clear()
+
+
+def _find_session_id(html: str, start: str) -> str:
+    """Return the id of the session whose edit button carries ``data-start``.
+
+    Args:
+        html: Rendered game details page.
+        start: Session start in ``%Y-%m-%dT%H:%M`` format.
+
+    Returns:
+        The session id as a string.
+    """
+    match = re.search(rf'data-session-id="(\d+)"[^>]*data-start="{re.escape(start)}"', html)
+    assert match, f"no session starting at {start} found in page"
+    return match.group(1)
 
 
 @patch("flask_wtf.csrf.validate_csrf", return_value=True)
@@ -26,7 +63,8 @@ def test_e2e_scenario_1(
     regular_user,
 ):
     # Create open Game
-    title = "Les Masques de Nyarlathotep"
+    suffix = uuid.uuid4().hex[:6]
+    title = f"Les Masques de Nyarlathotep {suffix}"
     data = {
         "name": title,
         "type": "campaign",
@@ -64,7 +102,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
     slug = response.request.path.strip("/").split("/")[-1]
-    assert slug == "les-masques-de-nyarlathotep-par-notsag"
+    assert slug == f"les-masques-de-nyarlathotep-{suffix}-par-notsag"
     assert all(
         text in response.data.decode()
         for text in [
@@ -91,17 +129,18 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert response.status_code == 200
     assert 'data-start-date="2025-07-07"' in response.data.decode()
     assert 'data-end-date="2025-07-07"' in response.data.decode()
+    session_id = _find_session_id(response.data.decode(), "2025-07-07T20:00")
 
     # Edit session
     data = {"date_start": "2025-07-07 23:00", "date_end": "2025-07-07 20:00"}
     response = logged_in_admin.post(
-        f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True
+        f"/annonces/{slug}/sessions/{session_id}/editer/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
     assert "Dates de session invalides" in response.data.decode()
     data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
     response = logged_in_admin.post(
-        f"/annonces/{slug}/sessions/2/editer/", data=data, follow_redirects=True
+        f"/annonces/{slug}/sessions/{session_id}/editer/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
     assert 'data-start-date="2025-07-08"' in response.data.decode()
@@ -115,9 +154,11 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     assert "Vue d'ensemble" in response.data.decode()
     assert "Temps de jeu" in response.data.decode()
     assert "Détail mensuel" in response.data.decode()
-    assert "Les Masques de Nyarlathotep" in response.data.decode()
+    assert title in response.data.decode()
     assert "Appel de Cthulhu v7" in response.data.decode()
-    assert "(1 campagne)" in response.data.decode()
+    # The absolute count depends on pre-existing campaigns in the DB; only
+    # check the counter renders and includes at least this test's campaign.
+    assert re.search(r"\(\d+ campagnes?\)", response.data.decode())
 
     # Get calendar info
     response = logged_in_user.get(
@@ -125,12 +166,12 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
     )
     assert response.status_code == 200
     assert '"start":"2025-07-01T20:30:00"' in response.data.decode()
-    assert '"title":"Les Masques de Nyarlathotep"' in response.data.decode()
+    assert f'"title":"{title}"' in response.data.decode()
 
     # Remove session
     data = {"date_start": "2025-07-08 20:00", "date_end": "2025-07-08 23:00"}
     response = logged_in_admin.post(
-        f"/annonces/{slug}/sessions/2/supprimer/", data=data, follow_redirects=True
+        f"/annonces/{slug}/sessions/{session_id}/supprimer/", data=data, follow_redirects=True
     )
     assert response.status_code == 200
     assert 'data-start-date="2025-07-08"' not in response.data.decode()
@@ -234,7 +275,8 @@ def test_e2e_scenario_2(
     default_vtt,
 ):
     # Create draft Game
-    title = "La Nécropole"
+    suffix = uuid.uuid4().hex[:6]
+    title = f"La Nécropole {suffix}"
     data = {
         "name": title,
         "type": "oneshot",
@@ -264,7 +306,8 @@ def test_e2e_scenario_2(
     response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
     slug = response.request.path.strip("/").split("/")[-1]
-    assert slug == "la-necropole-par-notsag"
+    base_slug = f"la-necropole-{suffix}-par-notsag"
+    assert slug == base_slug
     assert all(
         text in response.data.decode()
         for text in [
@@ -350,7 +393,7 @@ def test_e2e_scenario_2(
     response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
     assert response.status_code == 200
     slug = response.request.path.strip("/").split("/")[-1]
-    assert slug == "la-necropole-par-notsag-2"
+    assert slug == f"{base_slug}-2"
     assert all(
         text in response.data.decode()
         for text in [title, "editButton", "Libre", "archiveButton", "CthulhuFest"]
