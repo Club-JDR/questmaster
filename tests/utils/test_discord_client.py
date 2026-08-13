@@ -97,6 +97,15 @@ class TestRolesAndMessages:
         assert req.call_args.kwargs["method"] == "PATCH"
         assert req.call_args.kwargs["json"] == {"color": 0x0D6EFD}
 
+    def test_update_channel_parent(self, client):
+        """update_channel_parent PATCHes the channel with the new parent_id."""
+        with patch.object(Discord, "_request", return_value={"id": "chan_1"}) as req:
+            client.update_channel_parent("chan_1", "cat_2")
+
+        assert req.call_args.kwargs["endpoint"] == "/channels/chan_1"
+        assert req.call_args.kwargs["method"] == "PATCH"
+        assert req.call_args.kwargs["json"] == {"parent_id": "cat_2"}
+
     def test_send_message_forwards_allowed_mentions(self, client):
         """allowed_mentions is included in the message payload when provided."""
         allowed = {"parse": ["users", "roles"]}
