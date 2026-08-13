@@ -261,7 +261,7 @@
   <script src="/static/js/api-client.js"></script>
   <script>
     window.pageContext = {
-      path: "{{ request.path }}",
+      path: {{ request.path|tojson }},
       isAuthenticated: {% if payload.get('username') %}true{% else %} false{% endif %},
     isGM: {% if payload.get('is_gm') %} true{% else %} false{% endif %}
     };

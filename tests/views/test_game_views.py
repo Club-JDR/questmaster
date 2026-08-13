@@ -4,6 +4,7 @@ Each test exercises a single action with mocked Discord and factory data.
 For end-to-end scenarios with real Discord, see test_e2e.py.
 """
 
+import html
 from datetime import datetime, timedelta
 
 import pytest
@@ -173,7 +174,7 @@ class TestGameCreation:
 
         data = _game_form_data(default_system.id, default_vtt.id, action="open")
         response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "n'êtes pas autorisé" in body
         mock_discord_service.create_role.assert_not_called()
@@ -235,6 +236,21 @@ class TestGameDetails:
         assert response.status_code == 200
         assert "editButton" not in body
         assert "statusButton" not in body
+
+    def test_gm_authored_name_is_escaped(
+        self, client, mock_discord_lookups, db_session, open_game
+    ):
+        """.j2 templates must autoescape: a GM-chosen name is not raw HTML."""
+        open_game.name = "<script>alert('xss')</script>"
+        open_game.restriction_tags = "<img src=x onerror=alert(1)>"
+        db_session.flush()
+
+        response = client.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "<script>alert(" not in body
+        assert "<img src=x onerror" not in body
+        assert "&lt;script&gt;" in body
 
     def test_description_renders_markdown(
         self, client, mock_discord_lookups, db_session, default_system, default_vtt
@@ -480,7 +496,7 @@ class TestGameStatus:
             data={"status": "closed"},
             follow_redirects=True,
         )
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "Seul·e le·a MJ de l'annonce peut faire cette opération." in body
 
@@ -706,7 +722,7 @@ class TestGMPlayerManagement:
             data={"action": "manage"},
             follow_redirects=True,
         )
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "Vous n'êtes pas autorisé·e à faire cette action." in body
 
@@ -873,7 +889,7 @@ class TestGameAlert:
             data={"alertMessage": "Spam alert"},
             follow_redirects=True,
         )
-        body = response.data.decode()
+        body = html.unescape(response.data.decode())
         assert response.status_code == 200
         assert "Vous n'êtes pas autorisé·e" in body
 

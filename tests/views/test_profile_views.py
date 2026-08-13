@@ -33,6 +33,17 @@ class TestPreferencesAccess:
         body = response.data.decode()
         assert "My canvas text" in body
 
+    def test_saved_default_is_escaped(
+        self, logged_in_gm, mock_discord_lookups, db_session, gm_user
+    ):
+        """A saved default is validated for shape only, so it must be escaped."""
+        gm_user.game_defaults = {"description": "</textarea><script>alert('xss')</script>"}
+        db_session.flush()
+        response = logged_in_gm.get("/preferences/")
+        body = response.data.decode()
+        assert "</textarea><script>" not in body
+        assert "&lt;/textarea&gt;" in body
+
 
 class TestUpdatePreferences:
     """POST /preferences/ — save game-form default preferences (GM-only)."""

@@ -924,7 +924,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Éditer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('editSessionForm').action =
-      '/annonces/{{ game.slug }}/sessions/' + btn.dataset.sessionId + '/editer';
+      {{ ('/annonces/' ~ game.slug ~ '/sessions/')|tojson }} + btn.dataset.sessionId + '/editer';
     modal.querySelector('[name="date_start"]').value = btn.dataset.start;
     modal.querySelector('[name="date_end"]').value = btn.dataset.end;
     modal.showModal();
@@ -935,7 +935,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Supprimer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('deleteSessionForm').action =
-      '/annonces/{{ game.slug }}/sessions/' + btn.dataset.sessionId + '/supprimer';
+      {{ ('/annonces/' ~ game.slug ~ '/sessions/')|tojson }} + btn.dataset.sessionId + '/supprimer';
     modal.showModal();
   }
 
