@@ -12,6 +12,7 @@ from unidecode import unidecode
 from config.constants import (
     DISCORD_API_BASE_URL,
     DISCORD_CHANNEL_TYPE_CATEGORY,
+    DISCORD_NAME_MAX,
     GM_ROLE_PERMISSION,
     PLAYER_ROLE_PERMISSION,
 )
@@ -43,6 +44,25 @@ class Discord:
             "authorization": f"Bot {authorization}",
         }
         return headers
+
+    def _truncate_name(self, name: str) -> str:
+        """Clip a role/channel name to Discord's name length limit.
+
+        Upstream callers are expected to already stay under the limit (see
+        ``MAX_SLUG_LENGTH``); this is a last-resort safety net so a name that
+        slips through (e.g. legacy data predating that guard) gets a working,
+        if truncated, Discord resource instead of an API error.
+
+        Args:
+            name: Proposed role or channel name.
+
+        Returns:
+            The name unchanged, or clipped to ``DISCORD_NAME_MAX`` characters.
+        """
+        if len(name) <= DISCORD_NAME_MAX:
+            return name
+        logger.warning(f"Discord name exceeds {DISCORD_NAME_MAX} chars, truncating: {name!r}")
+        return name[:DISCORD_NAME_MAX]
 
     def _request(
         self,
@@ -361,7 +381,7 @@ class Discord:
                 0, {"id": role_id, "type": 0, "allow": PLAYER_ROLE_PERMISSION}
             )
         payload = {
-            "name": "-".join(unidecode(channel_name).split()),
+            "name": self._truncate_name("-".join(unidecode(channel_name).split())),
             "type": 0,
             "parent_id": parent_id,
             "permission_overwrites": permission_overwrites,
@@ -426,7 +446,7 @@ class Discord:
             Dict with the created role data.
         """
         payload = {
-            "name": "_".join(unidecode(role_name).split()),
+            "name": self._truncate_name("_".join(unidecode(role_name).split())),
             "permissions": permissions,
             "color": color,
             "mentionable": True,

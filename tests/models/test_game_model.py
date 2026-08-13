@@ -194,6 +194,14 @@ def test_validate_party_size_valid_and_invalid(sample_game):
         sample_game.validate_party_size("party_size", 0)
 
 
+def test_validate_slug_valid_and_too_long(sample_game):
+    # Valid slug
+    assert sample_game.validate_slug("slug", "a-short-slug") == "a-short-slug"
+    # A slug over MAX_SLUG_LENGTH would make "PJ_<slug>" exceed Discord's name limit
+    with pytest.raises(ValidationError):
+        sample_game.validate_slug("slug", "x" * 200)
+
+
 def test_repr_contains_info(sample_game):
     rep = repr(sample_game)
     assert "Game" in rep
