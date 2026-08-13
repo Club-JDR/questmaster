@@ -1,7 +1,5 @@
 """DiscordMessage model recording messages sent via the admin panel."""
 
-from datetime import datetime
-
 from website.extensions import db
 from website.models.base import SerializableMixin
 
@@ -44,7 +42,7 @@ class DiscordMessage(db.Model, SerializableMixin):
     content = db.Column(db.Text, nullable=True)
     embeds = db.Column(db.JSON, nullable=True)
     buttons = db.Column(db.JSON, nullable=True)
-    sent_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    sent_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     @property
     def is_embed(self) -> bool:
