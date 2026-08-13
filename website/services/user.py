@@ -42,6 +42,32 @@ class UserService:
             )
         return user
 
+    def get_for_update(self, user_id: str) -> User:
+        """Get user by ID with a pessimistic row lock.
+
+        Serializes concurrent operations that must not interleave for the same
+        user (e.g. registering them to two overlapping games at once). Must be
+        called within a transaction that will commit or roll back promptly, since
+        the lock is held until then.
+
+        Args:
+            user_id: Discord user ID.
+
+        Returns:
+            Locked User instance.
+
+        Raises:
+            NotFoundError: If user does not exist.
+        """
+        user = self.repo.get_for_update(user_id)
+        if not user:
+            raise NotFoundError(
+                f"User with id {user_id} not found",
+                resource_type="User",
+                resource_id=user_id,
+            )
+        return user
+
     def get_or_create(
         self, user_id: str, name: str = "Inconnu", username: str | None = None
     ) -> tuple[User, bool]:

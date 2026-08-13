@@ -666,6 +666,39 @@ class TestPlayerRegistration:
         assert response.status_code == 200
         assert "Vous avez déjà une partie prévue à cette date et heure." in body
 
+    def test_cannot_register_with_schedule_conflict_via_gm_game(
+        self,
+        logged_in_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        default_system,
+        default_vtt,
+        regular_user,
+    ):
+        # regular_user GMs another game overlapping open_game's schedule — this
+        # must be caught too, not just games they're already a player in.
+        GameFactory(
+            db_session,
+            gm_id=regular_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            status="open",
+        )
+        # Commit to release the savepoint so the service-level rollback
+        # (on ScheduleConflictError) cannot undo the factory-created game.
+        db_session.commit()
+
+        response = logged_in_user.post(
+            f"/annonces/{open_game.slug}/inscription/",
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Vous avez déjà une partie prévue à cette date et heure." in body
+
     def test_registration_auto_closes_full_game(
         self,
         logged_in_user,

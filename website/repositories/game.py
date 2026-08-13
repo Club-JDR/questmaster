@@ -151,6 +151,36 @@ class GameRepository(BaseRepository[Game]):
             .all()
         )
 
+    def find_schedule_relevant_games(self, user_id: str) -> list[Game]:
+        """Return non-draft games a user is involved in, for schedule-conflict checks.
+
+        Includes games where the user is GM *or* a player. Only eager-loads
+        ``sessions`` (needed to compute each game's occupied time windows) —
+        unlike ``find_by_gm_with_relations``/``find_by_player_with_relations``,
+        it skips ``gm``/``system``/``vtt``/``players``, which schedule-conflict
+        checks never read, to keep this query cheap when run under a row lock.
+
+        Args:
+            user_id: User ID (GM or player).
+
+        Returns:
+            List of matching non-draft games, deduplicated.
+        """
+        gm_games = (
+            self.session.query(Game)
+            .options(subqueryload(Game.sessions))
+            .filter(Game.gm_id == user_id, Game.status != GAME_STATUS_DRAFT)
+            .all()
+        )
+        player_games = (
+            self.session.query(Game)
+            .join(Game.players)
+            .options(subqueryload(Game.sessions))
+            .filter(User.id == user_id, Game.status != GAME_STATUS_DRAFT)
+            .all()
+        )
+        return list({g.id: g for g in (*gm_games, *player_games)}.values())
+
     def find_all_with_relations(self) -> list[Game]:
         """Return every game with stats relations eager-loaded.
 
