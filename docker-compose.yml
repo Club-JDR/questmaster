@@ -9,6 +9,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 15s
     ports:
       - "8000:8000"
     env_file:
@@ -49,16 +50,20 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/
     healthcheck:
+      # TCP (-h) so the temporary socket-only server used by initdb never
+      # reports healthy; start_period covers slow first-boot initdb on CI
+      # runners without counting toward the unhealthy retry budget.
       test:
         - CMD
         - sh
         - -c
         - |
-          pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" &&
-          psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT 1;'
+          pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" &&
+          psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT 1;'
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
   redis:
     image: redis:8.8-alpine
     restart: always
