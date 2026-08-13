@@ -171,7 +171,7 @@ def search_games_by_event(event_id):
 
     next_url = (
         url_for(
-            "game.search_games_by_event",
+            "annonces.search_games_by_event",
             event_id=event_id,
             page=games.next_num,
             **request_args,
@@ -181,7 +181,7 @@ def search_games_by_event(event_id):
     )
     prev_url = (
         url_for(
-            "game.search_games_by_event",
+            "annonces.search_games_by_event",
             event_id=event_id,
             page=games.prev_num,
             **request_args,

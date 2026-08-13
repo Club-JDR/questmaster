@@ -9,8 +9,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from config.constants import GAMES_PER_PAGE
 from tests.constants import TEST_ADMIN_USER_ID, TEST_GM_USER_ID
-from tests.factories import GameFactory, GameSessionFactory
+from tests.factories import GameFactory, GameSessionFactory, SpecialEventFactory
 
 pytestmark = pytest.mark.integration
 
@@ -1156,6 +1157,50 @@ class TestGameSearch:
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name in body
+
+
+class TestSpecialEventGameSearch:
+    """GET /annonces/evenement/<event_id>/ — games filtered by special event."""
+
+    def test_search_by_event_renders(self, client, mock_discord_lookups, db_session):
+        """The event-filtered search page renders and names the event."""
+        event = SpecialEventFactory(db_session, name="Halloween 2026")
+        response = client.get(f"/annonces/evenement/{event.id}/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Halloween 2026" in body
+
+    def test_search_by_event_unknown_id_redirects(self, client, mock_discord_lookups, db_session):
+        """An unknown event id redirects back to the general search page."""
+        response = client.get("/annonces/evenement/999999/")
+        assert response.status_code == 302
+        assert response.location.endswith("/annonces/")
+
+    def test_search_by_event_pagination_links(
+        self, client, mock_discord_lookups, db_session, default_system, default_vtt
+    ):
+        """Regression: pagination must not crash with a BuildError.
+
+        The route's next/prev links used to be built with the wrong endpoint
+        prefix ("game.search_games_by_event" instead of
+        "annonces.search_games_by_event"), which raised a BuildError as soon
+        as a second page of results existed.
+        """
+        event = SpecialEventFactory(db_session, name="Overflowing Event")
+        for _ in range(GAMES_PER_PAGE + 1):
+            GameFactory(
+                db_session,
+                status="open",
+                type="oneshot",
+                system_id=default_system.id,
+                vtt_id=default_vtt.id,
+                special_event_id=event.id,
+            )
+
+        response = client.get(f"/annonces/evenement/{event.id}/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert f"/annonces/evenement/{event.id}/?page=2" in body
 
 
 # -- My Games / My GM Games -----------------------------------------------
