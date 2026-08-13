@@ -770,11 +770,15 @@ class GameService:
         Note:
             Idempotent: calling on an already-archived game is a no-op, preventing
             double trophy awards on duplicate form submissions or browser retries.
+            The decision is persisted on ``game.trophies_awarded`` so downstream
+            aggregates (e.g. the special-event leaderboard) can tell which
+            archived games actually had trophies handed out.
         """
         game = self.get_by_slug(slug)
         if game.status == "archived":
             return
         game.status = "archived"
+        game.trophies_awarded = award_trophies
 
         db.session.commit()
         log_game_event("edit", game.id, "L'annonce a été archivée.", user_id=user_id)

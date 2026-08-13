@@ -82,6 +82,9 @@ class Game(db.Model):
     )
     special_event_id = db.Column(db.Integer, db.ForeignKey("special_event.id"), nullable=True)
     special_event = db.relationship("SpecialEvent", back_populates="games")
+    trophies_awarded = db.Column(
+        db.Boolean(), nullable=False, default=False, server_default="false"
+    )
 
     @orm.validates("classification")
     def validate_classification(self, key, value):
@@ -189,6 +192,7 @@ class Game(db.Model):
             "role": self.role,
             "status": self.status,
             "special_event_id": self.special_event_id,
+            "trophies_awarded": self.trophies_awarded,
         }
 
         if include_relationships:
@@ -259,6 +263,7 @@ class Game(db.Model):
             role=data.get("role"),
             status=data.get("status"),
             special_event_id=data.get("special_event_id"),
+            trophies_awarded=data.get("trophies_awarded", False),
         )
 
     @classmethod
