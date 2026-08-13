@@ -7,9 +7,9 @@ would, then replies ephemerally in Discord.
 
 ## Available commands
 
-All commands except `/badges` and `/signaler` are scoped to the **game's Discord channel**
-(the game is resolved from the channel the command is run in). Dates use the
-`JJ/MM/AAAA HH:MM` format; durations use `3h` / `2h30` forms.
+All commands except `/badges`, `/signaler` and the admin moderation commands are scoped to
+the **game's Discord channel** (the game is resolved from the channel the command is run in).
+Dates use the `JJ/MM/AAAA HH:MM` format; durations use `3h` / `2h30` forms.
 
 | Command | Description | Who |
 | --- | --- | --- |
@@ -25,6 +25,8 @@ All commands except `/badges` and `/signaler` are scoped to the **game's Discord
 | `/fermer` | Close an open game to registrations | GM, admins |
 | `/publier` | Publish the channel's announcement if it isn't published yet (e.g. after a silent publish; pure drafts have no channel and are published from the website) | GM, admins |
 | `/badges [membre]` | Show a member's trophies (the caller's by default); works in any channel | anyone |
+| `/avertir <membre> <raison> [gravite] [article] [lien]` | Record a moderation infraction against a member (same as the admin "Modération" page); nothing is posted publicly and the member is not notified; works in any channel | admins |
+| `/infractions <membre>` | List a member's infractions, newest first (mirrors the historical Mee6 `!infractions`); works in any channel | admins |
 
 Bot replies are **ephemeral** (only the invoking user sees them); the side effects (alert
 embed, session embed, player notification) are posted publicly through the existing embed

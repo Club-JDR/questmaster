@@ -4,7 +4,10 @@ import click
 from flask import current_app
 from flask.cli import with_appcontext
 
-# Discord application-command definitions (type 1 = CHAT_INPUT, option type 3 = STRING).
+from config.constants import INFRACTION_SEVERITY_LABELS
+
+# Discord application-command definitions (type 1 = CHAT_INPUT, option type 3 = STRING,
+# type 4 = INTEGER, type 6 = USER).
 # Guild-scoped registration is deliberate: it propagates instantly and
 # QuestMaster serves a single guild.
 SLASH_COMMANDS = [
@@ -149,6 +152,60 @@ SLASH_COMMANDS = [
                 "description": "Membre à consulter (vous par défaut)",
                 "type": 6,
                 "required": False,
+            },
+        ],
+    },
+    {
+        "name": "avertir",
+        "description": "Enregistrer une infraction pour un membre (admin)",
+        "type": 1,
+        "options": [
+            {
+                "name": "membre",
+                "description": "Membre concerné",
+                "type": 6,
+                "required": True,
+            },
+            {
+                "name": "raison",
+                "description": "Raison / détail de l'infraction",
+                "type": 3,
+                "required": True,
+            },
+            {
+                "name": "gravite",
+                "description": "Gravité — défaut : rappel à l'ordre",
+                "type": 4,
+                "required": False,
+                "choices": [
+                    {"name": label, "value": value}
+                    for value, label in INFRACTION_SEVERITY_LABELS.items()
+                ],
+            },
+            {
+                "name": "article",
+                "description": "Article du règlement non respecté",
+                "type": 3,
+                "required": False,
+            },
+            {
+                "name": "lien",
+                "description": "Lien vers le post de modération",
+                "type": 3,
+                "required": False,
+            },
+        ],
+    },
+    {
+        "name": "infractions",
+        "description": "Lister les infractions d'un membre (admin)",
+        "type": 1,
+        "options": [
+            {
+                "name": "membre",
+                "description": "Membre à consulter",
+                "type": 6,
+                "required": True,
             },
         ],
     },

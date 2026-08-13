@@ -3,9 +3,9 @@
 
 {% macro command(name, args, summary, role, scope='channel') %}
 {# Swagger-style expandable command row.
-   role: 'gm' (blue) or 'player' (green); scope: 'channel' or 'anywhere'. #}
+   role: 'gm' (blue), 'admin' (red) or 'player' (green); scope: 'channel' or 'anywhere'. #}
 <details
-  class="collapse collapse-arrow bg-base-100 shadow border-s-4 {{ 'border-primary' if role == 'gm' else 'border-success' }}">
+  class="collapse collapse-arrow bg-base-100 shadow border-s-4 {{ 'border-primary' if role == 'gm' else 'border-error' if role == 'admin' else 'border-success' }}">
   <summary class="collapse-title min-h-0 py-3 pe-12">
     <span class="flex flex-wrap items-center gap-2">
       <code class="font-bold">/{{ name }}</code>
@@ -18,6 +18,8 @@
       {% endif %}
       {% if role == 'gm' %}
       <span class="badge badge-primary badge-sm gap-1"><i class="ph ph-crown" aria-hidden="true"></i> MJ</span>
+      {% elif role == 'admin' %}
+      <span class="badge badge-error badge-sm gap-1"><i class="ph ph-shield-star" aria-hidden="true"></i> Admins</span>
       {% else %}
       <span class="badge badge-success badge-sm gap-1"><i class="ph ph-user" aria-hidden="true"></i> Joueur·euses</span>
       {% endif %}
@@ -53,7 +55,8 @@
   <div class="alert" role="note">
     <i class="ph ph-info" aria-hidden="true"></i>
     <span>Les commandes doivent être lancées <strong>dans le salon de la partie</strong> concernée
-      (sauf <code>/badges</code> et <code>/signaler</code>, utilisables partout).
+      (sauf <code>/badges</code>, <code>/signaler</code> et les commandes d'administration,
+      utilisables partout).
       Les dates s'écrivent au format <code>JJ/MM/AAAA HH:MM</code> (ex. <code>31/12/2026 20:30</code>)
       et les durées sous la forme <code>3h</code> ou <code>2h30</code>.</span>
   </div>
@@ -142,10 +145,31 @@
 
   </div>
 
+  <h2 class="font-bold text-xl mt-8"><i class="ph ph-shield-star" aria-hidden="true"></i> Pour les admins</h2>
+  <div class="space-y-2">
+
+    {% call command('avertir', 'membre raison [gravite] [article] [lien]',
+    "Enregistre une infraction pour un membre.", 'admin', scope='anywhere') %}
+    <p>Équivalent de la page d'administration «&nbsp;Modération&nbsp;»&nbsp;: l'infraction est
+      enregistrée dans QuestMaster (rien n'est publié et le membre n'est pas notifié). Sans
+      <code>gravite</code>, un rappel à l'ordre est enregistré&nbsp;; <code>article</code> et
+      <code>lien</code> (vers le post de modération) sont optionnels.</p>
+    {{ example('/avertir membre: @Loulou raison: Spam dans #général\n'
+    ~ '/avertir membre: @Loulou raison: Récidive gravite: Avertissement article: Article 3') }}
+    {% endcall %}
+
+    {% call command('infractions', 'membre', "Liste les infractions d'un membre.", 'admin', scope='anywhere') %}
+    <p>Affiche l'historique des infractions du membre (de la plus récente à la plus ancienne),
+      visible uniquement par vous.</p>
+    {{ example('/infractions membre: @Loulou') }}
+    {% endcall %}
+
+  </div>
+
   <p>
     Si une commande est lancée dans un salon qui n'est pas associé à une partie, le bot répond
-    «&nbsp;Ce salon n'est pas associé à une partie.&nbsp;». Les commandes réservées aux MJ sont
-    refusées poliment aux autres membres — aucune action n'est effectuée.
+    «&nbsp;Ce salon n'est pas associé à une partie.&nbsp;». Les commandes réservées aux MJ ou aux
+    admins sont refusées poliment aux autres membres — aucune action n'est effectuée.
   </p>
 </div>
 {% endblock %}
