@@ -28,6 +28,7 @@ from website.models import (
     Channel,
     DiscordMessage,
     Game,
+    GameEvent,
     Infraction,
     PermissionGrant,
     SpecialEvent,
@@ -699,6 +700,160 @@ def test_admin_delete_game(admin_client, db_session, mock_csrf, default_system):
     game_id = game.id
     admin_client.post(f"/admin/games/{game_id}/delete")
     assert db_session.get(Game, game_id) is None
+
+
+def test_award_game_trophies(admin_client, db_session, mock_csrf, default_system):
+    """An admin can award trophies for an archived game that opted out."""
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        type="oneshot",
+        status="archived",
+        trophies_awarded=False,
+    )
+    # The logged game_event needs a real user row (FK); admin_client's default
+    # session user_id ("admin") is a fixture placeholder, not a seeded user.
+    with admin_client.session_transaction() as sess:
+        sess["user_id"] = TEST_ADMIN_USER_ID
+
+    response = admin_client.post(f"/admin/games/{game.id}/award-trophies", follow_redirects=True)
+    assert response.status_code == 200
+    assert "Badges distribués." in response.data.decode()
+    db_session.refresh(game)
+    assert game.trophies_awarded is True
+
+    event = (
+        db_session.query(GameEvent)
+        .filter_by(game_id=game.id, action="edit")
+        .order_by(GameEvent.id.desc())
+        .first()
+    )
+    assert event is not None
+    assert event.user_id == TEST_ADMIN_USER_ID
+
+
+def test_award_game_trophies_already_awarded_flashes(
+    admin_client, db_session, mock_csrf, default_system
+):
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        status="archived",
+        trophies_awarded=True,
+    )
+    response = admin_client.post(f"/admin/games/{game.id}/award-trophies", follow_redirects=True)
+    assert response.status_code == 200
+    assert "déjà été distribués" in response.data.decode()
+
+
+def test_award_game_trophies_not_archived_flashes(
+    admin_client, db_session, mock_csrf, default_system
+):
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        status="open",
+        trophies_awarded=False,
+    )
+    response = admin_client.post(f"/admin/games/{game.id}/award-trophies", follow_redirects=True)
+    assert response.status_code == 200
+    assert "doit être archivée" in response.data.decode()
+    db_session.refresh(game)
+    assert game.trophies_awarded is False
+
+
+def test_games_list_shows_award_button_when_archived_and_unawarded(
+    admin_client, db_session, default_system
+):
+    game = GameFactory(
+        db_session, system_id=default_system.id, status="archived", trophies_awarded=False
+    )
+    response = admin_client.get("/admin/games/")
+    body = response.data.decode()
+    assert response.status_code == 200
+    assert f"/admin/games/{game.id}/award-trophies" in body
+    assert f"/admin/games/{game.id}/revoke-trophies" not in body
+
+
+def test_games_list_shows_awarded_badge_once_trophies_awarded(
+    admin_client, db_session, default_system
+):
+    game = GameFactory(
+        db_session, system_id=default_system.id, status="archived", trophies_awarded=True
+    )
+    response = admin_client.get("/admin/games/")
+    body = response.data.decode()
+    assert response.status_code == 200
+    assert f"/admin/games/{game.id}/award-trophies" not in body
+    assert f"/admin/games/{game.id}/revoke-trophies" in body
+    assert "Badges distribués" in body
+
+
+def test_games_list_hides_award_control_before_archiving(admin_client, db_session, default_system):
+    game = GameFactory(
+        db_session, system_id=default_system.id, status="open", trophies_awarded=False
+    )
+    response = admin_client.get("/admin/games/")
+    body = response.data.decode()
+    assert response.status_code == 200
+    assert f"/admin/games/{game.id}/award-trophies" not in body
+    assert f"/admin/games/{game.id}/revoke-trophies" not in body
+
+
+def test_revoke_game_trophies(admin_client, db_session, mock_csrf, default_system):
+    """An admin can revoke trophies previously awarded for an archived game."""
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        type="oneshot",
+        status="archived",
+        trophies_awarded=True,
+    )
+    with admin_client.session_transaction() as sess:
+        sess["user_id"] = TEST_ADMIN_USER_ID
+
+    response = admin_client.post(f"/admin/games/{game.id}/revoke-trophies", follow_redirects=True)
+    assert response.status_code == 200
+    assert "Badges retirés." in response.data.decode()
+    db_session.refresh(game)
+    assert game.trophies_awarded is False
+
+    event = (
+        db_session.query(GameEvent)
+        .filter_by(game_id=game.id, action="edit")
+        .order_by(GameEvent.id.desc())
+        .first()
+    )
+    assert event is not None
+    assert event.user_id == TEST_ADMIN_USER_ID
+
+
+def test_revoke_game_trophies_not_awarded_flashes(
+    admin_client, db_session, mock_csrf, default_system
+):
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        status="archived",
+        trophies_awarded=False,
+    )
+    response = admin_client.post(f"/admin/games/{game.id}/revoke-trophies", follow_redirects=True)
+    assert response.status_code == 200
+    assert "pas été distribués" in response.data.decode()
+
+
+def test_revoke_game_trophies_not_archived_flashes(
+    admin_client, db_session, mock_csrf, default_system
+):
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        status="open",
+        trophies_awarded=False,
+    )
+    response = admin_client.post(f"/admin/games/{game.id}/revoke-trophies", follow_redirects=True)
+    assert response.status_code == 200
+    assert "doit être archivée" in response.data.decode()
 
 
 def test_game_events_list_renders(admin_client, db_session, default_system):

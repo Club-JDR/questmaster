@@ -5,7 +5,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from config.constants import DISCORD_NAME_MAX, MAX_SLUG_LENGTH, PLAYER_ROLE_PERMISSION
+from config.constants import (
+    BADGE_OS_GM_ID,
+    DISCORD_NAME_MAX,
+    MAX_SLUG_LENGTH,
+    PLAYER_ROLE_PERMISSION,
+)
 from tests.factories import (
     GameFactory,
     GameSessionFactory,
@@ -21,9 +26,12 @@ from website.exceptions import (
     NotFoundError,
     PastDateError,
     ScheduleConflictError,
+    TrophiesAlreadyAwardedError,
+    TrophiesNotAwardedError,
     ValidationError,
 )
-from website.models import Game
+from website.models import Game, GameEvent
+from website.models.trophy import UserTrophy
 from website.services.game import GameService
 
 
@@ -432,6 +440,7 @@ class TestGameService:
         mock_discord,
         oneshot_channel,
         campaign_channel,
+        isolated_channel_categories,
     ):
         mock_class.return_value = {}
         mock_ambience.return_value = []
@@ -478,6 +487,7 @@ class TestGameService:
         mock_discord,
         oneshot_channel,
         campaign_channel,
+        isolated_channel_categories,
     ):
         mock_class.return_value = {}
         mock_ambience.return_value = []
@@ -768,6 +778,107 @@ class TestGameService:
         mock_discord.delete_channel.assert_not_called()
         # Idempotency guard returns before any field is touched.
         assert sample_game.trophies_awarded is False
+
+    def test_award_trophies_manually(self, db_session, sample_game, admin_user, game_service):
+        """An admin can award trophies for an archived game that opted out."""
+        sample_game.status = "archived"
+        sample_game.type = "oneshot"
+        sample_game.trophies_awarded = False
+        db_session.commit()
+
+        game = game_service.award_trophies(sample_game.id, user_id=admin_user.id)
+
+        assert game.trophies_awarded is True
+        event = (
+            db_session.query(GameEvent)
+            .filter_by(game_id=sample_game.id, action="edit")
+            .order_by(GameEvent.id.desc())
+            .first()
+        )
+        assert event is not None
+        assert "manuellement" in event.description
+        assert event.user_id == admin_user.id
+
+    def test_award_trophies_not_archived_raises(self, db_session, sample_game, game_service):
+        """Trophies can't be manually awarded before the game is archived."""
+        sample_game.status = "open"
+        db_session.commit()
+
+        with pytest.raises(ValidationError):
+            game_service.award_trophies(sample_game.id)
+
+        assert sample_game.trophies_awarded is False
+
+    def test_award_trophies_already_awarded_raises(self, db_session, sample_game, game_service):
+        """Calling it twice (or after archive() already awarded) is rejected."""
+        sample_game.status = "archived"
+        sample_game.trophies_awarded = True
+        db_session.commit()
+
+        with pytest.raises(TrophiesAlreadyAwardedError):
+            game_service.award_trophies(sample_game.id)
+
+    def test_award_trophies_not_found_raises(self, db_session, game_service):
+        with pytest.raises(NotFoundError):
+            game_service.award_trophies(999999)
+
+    def test_revoke_trophies_manually(self, db_session, sample_game, admin_user, game_service):
+        """An admin can undo trophies awarded (manually or at archive time).
+
+        Quantity deltas (not absolute counts) are asserted since ``admin_user``
+        is a real, shared seeded user who may already hold this non-unique
+        "games GM'd" trophy from unrelated data.
+        """
+        sample_game.status = "archived"
+        sample_game.type = "oneshot"
+        sample_game.trophies_awarded = False
+        db_session.commit()
+
+        def gm_trophy_quantity():
+            user_trophy = db_session.get(UserTrophy, (admin_user.id, BADGE_OS_GM_ID))
+            return user_trophy.quantity if user_trophy else 0
+
+        baseline = gm_trophy_quantity()
+        game_service.award_trophies(sample_game.id)
+        assert gm_trophy_quantity() == baseline + 1
+
+        game = game_service.revoke_trophies(sample_game.id, user_id=admin_user.id)
+
+        assert game.trophies_awarded is False
+        assert gm_trophy_quantity() == baseline
+        event = (
+            db_session.query(GameEvent)
+            .filter_by(game_id=sample_game.id, action="edit")
+            .order_by(GameEvent.id.desc())
+            .first()
+        )
+        assert event is not None
+        assert "retirés" in event.description
+        assert event.user_id == admin_user.id
+
+    def test_revoke_trophies_not_archived_raises(self, db_session, sample_game, game_service):
+        """Trophies can't be manually revoked before the game is archived."""
+        sample_game.status = "open"
+        sample_game.trophies_awarded = True
+        db_session.commit()
+
+        with pytest.raises(ValidationError):
+            game_service.revoke_trophies(sample_game.id)
+
+        assert sample_game.trophies_awarded is True
+
+    def test_revoke_trophies_not_awarded_raises(self, db_session, sample_game, game_service):
+        """Revoking is rejected when trophies haven't been awarded."""
+        sample_game.status = "archived"
+        sample_game.trophies_awarded = False
+        db_session.commit()
+
+        with pytest.raises(TrophiesNotAwardedError):
+            game_service.revoke_trophies(sample_game.id)
+
+    def test_revoke_trophies_not_found_raises(self, db_session, game_service):
+        with pytest.raises(NotFoundError):
+            game_service.revoke_trophies(999999)
 
     def test_delete_game(self, db_session, sample_game, game_service):
         game_service.delete(sample_game.slug)

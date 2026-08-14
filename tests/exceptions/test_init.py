@@ -45,6 +45,12 @@ class TestExceptionPackageExports:
     def test_schedule_conflict_error(self):
         assert hasattr(exceptions, "ScheduleConflictError")
 
+    def test_trophies_already_awarded_error(self):
+        assert hasattr(exceptions, "TrophiesAlreadyAwardedError")
+
+    def test_trophies_not_awarded_error(self):
+        assert hasattr(exceptions, "TrophiesNotAwardedError")
+
     def test_all_exports_match(self):
         expected = {
             "QuestMasterError",
@@ -62,5 +68,7 @@ class TestExceptionPackageExports:
             "SessionConflictError",
             "PastDateError",
             "ScheduleConflictError",
+            "TrophiesAlreadyAwardedError",
+            "TrophiesNotAwardedError",
         }
         assert set(exceptions.__all__) == expected

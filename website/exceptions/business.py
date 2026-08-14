@@ -91,6 +91,28 @@ class ScheduleConflictError(GameError):
         super().__init__(message, details=details, **kwargs)
 
 
+class TrophiesAlreadyAwardedError(GameError):
+    """Trophies have already been awarded for this game."""
+
+    def __init__(self, message: str, game_id=None, **kwargs):
+        kwargs.setdefault("code", "TROPHIES_ALREADY_AWARDED")
+        details = kwargs.pop("details", {})
+        if game_id is not None:
+            details["game_id"] = game_id
+        super().__init__(message, details=details, **kwargs)
+
+
+class TrophiesNotAwardedError(GameError):
+    """Trophies haven't been awarded for this game yet, so they can't be revoked."""
+
+    def __init__(self, message: str, game_id=None, **kwargs):
+        kwargs.setdefault("code", "TROPHIES_NOT_AWARDED")
+        details = kwargs.pop("details", {})
+        if game_id is not None:
+            details["game_id"] = game_id
+        super().__init__(message, details=details, **kwargs)
+
+
 class PastDateError(GameError):
     """Game is being published with a start date in the past.
 
