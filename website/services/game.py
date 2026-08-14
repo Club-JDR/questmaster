@@ -24,6 +24,8 @@ from website.exceptions import (
     NotFoundError,
     PastDateError,
     ScheduleConflictError,
+    TrophiesAlreadyAwardedError,
+    TrophiesNotAwardedError,
     ValidationError,
 )
 from website.extensions import db
@@ -801,6 +803,50 @@ class GameService:
         # Awarded badges + a now-archived game change everyone's stats.
         self._invalidate_dashboard_stats(game.gm_id, *(p.id for p in game.players))
 
+    def award_trophies(self, game_id: int, user_id: str | None = None) -> Game:
+        """Manually award trophies for an archived game that didn't get them.
+
+        Lets an admin correct a GM's choice to skip trophies at archive time,
+        without re-archiving the game. Restricted to archived games so it can
+        never race with ``archive()``'s own trophy award (archiving is a
+        no-op past the first call, so once a game is archived this is the
+        only remaining path to award its trophies).
+
+        Args:
+            game_id: Game ID.
+            user_id: ID of the admin performing the action.
+
+        Returns:
+            Updated Game instance.
+
+        Raises:
+            NotFoundError: If game doesn't exist.
+            ValidationError: If the game isn't archived yet.
+            TrophiesAlreadyAwardedError: If trophies were already awarded for
+                this game (at archive time or via a previous call).
+        """
+        game = self.get_by_id(game_id)
+        if game.status != "archived":
+            raise ValidationError(
+                "L'annonce doit être archivée avant de distribuer les badges.",
+                field="status",
+            )
+        if game.trophies_awarded:
+            raise TrophiesAlreadyAwardedError(
+                "Les badges ont déjà été distribués pour cette annonce.",
+                game_id=game.id,
+            )
+
+        self._award_game_trophies(game)
+        game.trophies_awarded = True
+        db.session.commit()
+
+        log_game_event("edit", game.id, "Badges distribués manuellement.", user_id=user_id)
+        logger.info(f"Trophies manually awarded for game {game.id}")
+
+        self._invalidate_dashboard_stats(game.gm_id, *(p.id for p in game.players))
+        return game
+
     def _award_game_trophies(self, game: Game) -> None:
         """Award trophies to GM and players.
 
@@ -819,6 +865,77 @@ class GameService:
                     self.trophy_service.award(user_id=user.id, trophy_id=player_trophy)
             except Exception as e:
                 logger.error(f"Failed to award trophies for game {game.id}: {e}")
+
+    def revoke_trophies(self, game_id: int, user_id: str | None = None) -> Game:
+        """Manually revoke trophies previously awarded for an archived game.
+
+        Lets an admin undo a mistaken trophy award (whether granted at archive
+        time or via ``award_trophies()``) without deleting the game. Restricted
+        to archived games with ``trophies_awarded`` set, mirroring
+        ``award_trophies()``'s guard so the two actions can't race each other.
+
+        Args:
+            game_id: Game ID.
+            user_id: ID of the admin performing the action.
+
+        Returns:
+            Updated Game instance.
+
+        Raises:
+            NotFoundError: If game doesn't exist.
+            ValidationError: If the game isn't archived yet.
+            TrophiesNotAwardedError: If trophies haven't been awarded for this
+                game, so there is nothing to revoke.
+        """
+        game = self.get_by_id(game_id)
+        if game.status != "archived":
+            raise ValidationError(
+                "L'annonce doit être archivée avant de retirer les badges.",
+                field="status",
+            )
+        if not game.trophies_awarded:
+            raise TrophiesNotAwardedError(
+                "Les badges n'ont pas été distribués pour cette annonce.",
+                game_id=game.id,
+            )
+
+        self._revoke_game_trophies(game)
+        game.trophies_awarded = False
+        db.session.commit()
+
+        log_game_event("edit", game.id, "Badges retirés manuellement.", user_id=user_id)
+        logger.info(f"Trophies manually revoked for game {game.id}")
+
+        self._invalidate_dashboard_stats(game.gm_id, *(p.id for p in game.players))
+        return game
+
+    def _revoke_game_trophies(self, game: Game) -> None:
+        """Revoke trophies from GM and players.
+
+        Missing associations (e.g. a player who never actually received the
+        trophy because ``_award_game_trophies`` failed for them) are skipped
+        rather than aborting the rest of the revocation.
+
+        Args:
+            game: Game instance.
+        """
+        trophy_map = {
+            "oneshot": (BADGE_OS_GM_ID, BADGE_OS_ID),
+            "campaign": (BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID),
+        }
+        gm_trophy, player_trophy = trophy_map.get(game.type, (None, None))
+        if not gm_trophy:
+            return
+
+        recipients = [(game.gm.id, gm_trophy)]
+        recipients += [(user.id, player_trophy) for user in game.players]
+        for user_id, trophy_id in recipients:
+            try:
+                self.trophy_service.decrement_user_trophy(user_id=user_id, trophy_id=trophy_id)
+            except NotFoundError:
+                logger.debug(f"User {user_id} had no trophy {trophy_id} to revoke")
+            except Exception as e:
+                logger.error(f"Failed to revoke trophies for game {game.id}: {e}")
 
     def _cleanup_discord_resources(self, game: Game) -> None:
         """Clean up Discord resources for a game.

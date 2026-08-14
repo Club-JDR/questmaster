@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from tests.factories import GameFactory
+from website.models import Channel
 from website.services.discord import DiscordService
 from website.services.game import GameService
 
@@ -39,3 +40,23 @@ def sample_game(db_session, admin_user, default_system):
         gm_id=admin_user.id,
         system_id=default_system.id,
     )
+
+
+@pytest.fixture
+def isolated_channel_categories(db_session, oneshot_channel, campaign_channel):
+    """Make oneshot_channel/campaign_channel the smallest of their type.
+
+    get_category() picks the smallest category per type, and the shared dev
+    DB may hold other categories with arbitrary sizes (or even a drifted
+    `type` on these two rows themselves). Rolled back with the rest of the
+    test, so nothing here is persisted.
+    """
+    db_session.query(Channel).filter(
+        Channel.type.in_(["oneshot", "campaign"]),
+        Channel.id.notin_([oneshot_channel.id, campaign_channel.id]),
+    ).update({Channel.size: 9999}, synchronize_session=False)
+    oneshot_channel.type = "oneshot"
+    oneshot_channel.size = 0
+    campaign_channel.type = "campaign"
+    campaign_channel.size = 0
+    db_session.commit()

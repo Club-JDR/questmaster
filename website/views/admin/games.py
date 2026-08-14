@@ -1,7 +1,7 @@
 """Admin routes for managing games (full field editor)."""
 
 # Third-party imports
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, session, url_for
 
 # Local imports
 from config.constants import (
@@ -13,7 +13,12 @@ from config.constants import (
     GAME_XP,
     RESTRICTIONS,
 )
-from website.exceptions import NotFoundError, ValidationError
+from website.exceptions import (
+    NotFoundError,
+    TrophiesAlreadyAwardedError,
+    TrophiesNotAwardedError,
+    ValidationError,
+)
 from website.services.game import GameService
 from website.services.special_event import SpecialEventService
 from website.services.system import SystemService
@@ -116,6 +121,34 @@ def edit_game(game_id):
             flash(str(e), "danger")
 
     return render_template("admin/games/edit.html", game=game, **_form_context())
+
+
+@admin_bp.route("/games/<int:game_id>/award-trophies", methods=["POST"])
+@admin_only
+def award_game_trophies(game_id):
+    """Manually award trophies for an archived game that didn't get them."""
+    try:
+        game_service.award_trophies(game_id, user_id=session.get("user_id"))
+        flash("Badges distribués.", "success")
+    except NotFoundError:
+        flash("Annonce introuvable.", "danger")
+    except (ValidationError, TrophiesAlreadyAwardedError) as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.edit_game", game_id=game_id))
+
+
+@admin_bp.route("/games/<int:game_id>/revoke-trophies", methods=["POST"])
+@admin_only
+def revoke_game_trophies(game_id):
+    """Manually revoke trophies previously awarded for an archived game."""
+    try:
+        game_service.revoke_trophies(game_id, user_id=session.get("user_id"))
+        flash("Badges retirés.", "success")
+    except NotFoundError:
+        flash("Annonce introuvable.", "danger")
+    except (ValidationError, TrophiesNotAwardedError) as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.edit_game", game_id=game_id))
 
 
 @admin_bp.route("/games/<int:game_id>/delete", methods=["POST"])

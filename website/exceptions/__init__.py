@@ -10,6 +10,8 @@ from website.exceptions.business import (
     PastDateError,
     ScheduleConflictError,
     SessionConflictError,
+    TrophiesAlreadyAwardedError,
+    TrophiesNotAwardedError,
 )
 from website.exceptions.database import DatabaseError
 from website.exceptions.discord import DiscordAPIError, DiscordError
@@ -31,4 +33,6 @@ __all__ = [
     "SessionConflictError",
     "PastDateError",
     "ScheduleConflictError",
+    "TrophiesAlreadyAwardedError",
+    "TrophiesNotAwardedError",
 ]
