@@ -1,4 +1,4 @@
-from tests.factories import SystemFactory
+from tests.factories import GameFactory, SystemFactory, UserFactory
 from website.models import System
 from website.repositories.system import SystemRepository
 
@@ -41,3 +41,43 @@ class TestSystemRepository:
         count_before = repo.count()
         repo.delete(system)
         assert repo.count() == count_before - 1
+
+    def test_get_gm_history_returns_gms_of_non_draft_games(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session, name="AAA GM With History")
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="open")
+
+        history = repo.get_gm_history(system.id)
+
+        assert [u.id for u in history] == [gm.id]
+
+    def test_get_gm_history_excludes_drafts(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="draft")
+
+        assert repo.get_gm_history(system.id) == []
+
+    def test_get_gm_history_deduplicates_and_orders_by_name(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session, name="ZZZ Repeat GM")
+        other_gm = UserFactory(db_session, name="AAA Other GM")
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="open")
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="closed")
+        GameFactory(db_session, system_id=system.id, gm_id=other_gm.id, status="archived")
+
+        history = repo.get_gm_history(system.id)
+
+        assert [u.id for u in history] == [other_gm.id, gm.id]
+
+    def test_get_gm_history_empty_for_unrelated_system(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        other_system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+        GameFactory(db_session, system_id=other_system.id, gm_id=gm.id, status="open")
+
+        assert repo.get_gm_history(system.id) == []

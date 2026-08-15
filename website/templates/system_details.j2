@@ -1,0 +1,161 @@
+{% extends "base.j2" %}
+
+{% block title %}{{ system.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-4">
+
+  {# ── Header ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 sm:p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-base-200 overflow-hidden flex items-center justify-center shrink-0">
+          {% if system.icon %}
+          <img src="{{ system.icon }}" alt="" class="w-full h-full object-cover">
+          {% else %}
+          <i class="ph ph-dice-five text-2xl text-base-content/40" aria-hidden="true"></i>
+          {% endif %}
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-2xl font-black">{{ system.name }}</h1>
+          <a href="{{ url_for('annonces.search_games', system=system.id) }}" class="link link-primary text-sm">
+            Voir les annonces pour ce système
+          </a>
+        </div>
+      </div>
+
+      {% if system.description %}
+      <div class="prose prose-sm max-w-none leading-relaxed mt-4">{{ system.description | markdown }}</div>
+      {% endif %}
+
+      {% if system.reference_url %}
+      <p class="mt-3">
+        <a href="{{ system.reference_url }}" target="_blank" rel="noopener noreferrer"
+          class="link link-primary inline-flex items-center gap-1">
+          Fiche de référence pour {{ system.name }}
+          <i class="ph ph-arrow-square-out" aria-hidden="true"></i>
+          <span class="sr-only">(nouvel onglet)</span>
+        </a>
+      </p>
+      {% endif %}
+
+      {% if not system.description and not system.reference_url %}
+      <p class="mt-4 text-base-content/70 text-sm">Aucune description pour ce système.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Self-service interest toggle ── #}
+  {% if payload.get('username') %}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 sm:p-6">
+      <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/70">
+        <i class="ph ph-hand-waving" aria-hidden="true"></i> Votre intérêt
+      </h2>
+      <p class="text-xs text-base-content/70 -mt-1">
+        Purement informatif : cela n'inscrit à rien et ne contacte personne. Un·e MJ qui voit de la
+        demande vous recontactera directement, en dehors du site.
+      </p>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <form method="post" action="{{ url_for('systems.toggle_interest', system_id=system.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="player">
+          <button type="submit"
+            class="btn btn-sm {% if my_interests.get('player') %}btn-primary{% else %}btn-outline{% endif %} gap-1"
+            aria-pressed="{{ 'true' if my_interests.get('player') else 'false' }}">
+            <i class="ph {{ 'ph-check-circle' if my_interests.get('player') else 'ph-plus-circle' }}"
+              aria-hidden="true"></i>
+            {% if my_interests.get('player') %}Intéressé·e pour jouer{% else %}Je veux jouer à ce système{% endif %}
+          </button>
+        </form>
+        {% if payload.get('is_gm') %}
+        <form method="post" action="{{ url_for('systems.toggle_interest', system_id=system.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="gm">
+          <button type="submit"
+            class="btn btn-sm {% if my_interests.get('gm') %}btn-primary{% else %}btn-outline{% endif %} gap-1"
+            aria-pressed="{{ 'true' if my_interests.get('gm') else 'false' }}">
+            <i class="ph {{ 'ph-check-circle' if my_interests.get('gm') else 'ph-plus-circle' }}"
+              aria-hidden="true"></i>
+            {% if my_interests.get('gm') %}Intéressé·e pour le faire tourner{% else %}Je veux faire tourner ce système{% endif %}
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div role="alert" class="alert alert-info text-sm">
+    <i class="ph ph-info" aria-hidden="true"></i>
+    <span><a href="{{ url_for('auth.login') }}" class="link font-semibold">Connectez-vous</a> pour déclarer votre
+      intérêt.</span>
+  </div>
+  {% endif %}
+
+  {# ── Matchmaking lists ── #}
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body p-4">
+        <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/70">
+          <i class="ph ph-crown" aria-hidden="true"></i> MJ qui l'ont fait tourner
+        </h2>
+        {% if gm_history %}
+        <ul class="space-y-2 mt-2">
+          {% for user in gm_history %}
+          <li class="flex items-center gap-2 text-sm">
+            <div class="avatar"><div class="w-6 rounded-full"><img src="{{ user.avatar }}" alt=""></div></div>
+            <span class="truncate">{{ user.name }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-base-content/70 mt-2">Personne pour l'instant.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body p-4">
+        <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/70">
+          <i class="ph ph-crown-simple" aria-hidden="true"></i> MJ intéressé·es
+        </h2>
+        {% if gms_interested %}
+        <ul class="space-y-2 mt-2">
+          {% for user in gms_interested %}
+          <li class="flex items-center gap-2 text-sm">
+            <div class="avatar"><div class="w-6 rounded-full"><img src="{{ user.avatar }}" alt=""></div></div>
+            <span class="truncate">{{ user.name }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-base-content/70 mt-2">Personne pour l'instant.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body p-4">
+        <h2 class="card-title text-sm font-bold uppercase tracking-wider text-base-content/70">
+          <i class="ph ph-users" aria-hidden="true"></i> Joueur·euses intéressé·es
+        </h2>
+        {% if players_interested %}
+        <ul class="space-y-2 mt-2">
+          {% for user in players_interested %}
+          <li class="flex items-center gap-2 text-sm">
+            <div class="avatar"><div class="w-6 rounded-full"><img src="{{ user.avatar }}" alt=""></div></div>
+            <span class="truncate">{{ user.name }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-base-content/70 mt-2">Personne pour l'instant.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

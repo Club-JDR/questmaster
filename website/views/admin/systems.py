@@ -31,6 +31,8 @@ def create_system():
             system_service.create(
                 name=request.form.get("name", "").strip(),
                 icon=request.form.get("icon", "").strip() or None,
+                description=request.form.get("description", "").strip() or None,
+                reference_url=request.form.get("reference_url", "").strip() or None,
             )
             flash("Système créé.", "success")
             return redirect(url_for("admin.list_systems"))
@@ -51,15 +53,20 @@ def edit_system(system_id):
         return redirect(url_for("admin.list_systems"))
 
     if request.method == "POST":
-        system_service.update(
-            system_id,
-            {
-                "name": request.form.get("name", "").strip(),
-                "icon": request.form.get("icon", "").strip() or None,
-            },
-        )
-        flash("Système mis à jour.", "success")
-        return redirect(url_for("admin.list_systems"))
+        try:
+            system_service.update(
+                system_id,
+                {
+                    "name": request.form.get("name", "").strip(),
+                    "icon": request.form.get("icon", "").strip() or None,
+                    "description": request.form.get("description", "").strip() or None,
+                    "reference_url": request.form.get("reference_url", "").strip() or None,
+                },
+            )
+            flash("Système mis à jour.", "success")
+            return redirect(url_for("admin.list_systems"))
+        except ValidationError as e:
+            flash(str(e), "danger")
 
     return render_template("admin/systems/form.html", system=system)
 

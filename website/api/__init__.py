@@ -15,7 +15,7 @@ from website.api.auth import auth_bp, exchange_token, refresh_token
 from website.api.games import create_game, delete_game, games_bp, update_game
 from website.api.health import health_bp
 from website.api.leaderboards import leaderboards_bp
-from website.api.reference_data import reference_data_bp
+from website.api.reference_data import reference_data_bp, toggle_system_interest
 from website.api.stats import stats_bp
 from website.api.users import users_bp
 from website.extensions import csrf
@@ -46,5 +46,6 @@ def create_api_blueprint() -> Blueprint:
     csrf.exempt(create_game)
     csrf.exempt(update_game)
     csrf.exempt(delete_game)
+    csrf.exempt(toggle_system_interest)
 
     return api_bp

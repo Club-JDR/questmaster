@@ -24,6 +24,21 @@
              value="{{ system.icon if system and system.icon else '' }}">
     </div>
 
+    <div class="flex flex-col gap-1">
+      <label for="description" class="{{ lbl }}">Description
+        <span class="font-normal text-xs text-base-content/40">(Markdown, optionnel — affichée sur la page publique du système)</span></label>
+      <textarea id="description" name="description" rows="4"
+                class="textarea textarea-bordered w-full">{{ system.description if system and system.description else '' }}</textarea>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="reference_url" class="{{ lbl }}">Lien de référence
+        <span class="font-normal text-xs text-base-content/40">(legrog.org, site officiel…, optionnel)</span></label>
+      <input type="url" id="reference_url" name="reference_url" class="input input-bordered w-full"
+             value="{{ system.reference_url if system and system.reference_url else '' }}"
+             placeholder="https://legrog.org/…" autocomplete="off">
+    </div>
+
     <div class="flex justify-end gap-2 pt-2">
       <a href="{{ url_for('admin.list_systems') }}" class="btn btn-ghost">Annuler</a>
       <button type="submit" class="btn btn-primary">Enregistrer</button>

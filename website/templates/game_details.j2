@@ -122,8 +122,15 @@
             </div>
             {% endif %}
           </div>
-          <span class="font-semibold text-white">{{ game.system.name or 'Système inconnu' }}{% if game.vtt %} / {{
-            game.vtt.name }}{% endif %}</span>
+          <span class="font-semibold text-white">
+            {% if game.system.id %}
+            <a href="{{ url_for('systems.get_system', system_id=game.system.id) }}"
+              class="link link-hover text-white">{{ game.system.name or 'Système inconnu' }}</a>
+            {% else %}
+            {{ game.system.name or 'Système inconnu' }}
+            {% endif %}
+            {% if game.vtt %} / {{ game.vtt.name }}{% endif %}
+          </span>
         </div>
 
         <div class="w-px h-4 bg-white/20 hidden sm:block"></div>

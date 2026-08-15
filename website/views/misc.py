@@ -7,7 +7,6 @@ from config.constants import BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID, BADGE_OS_G
 from website.exceptions import NotFoundError
 from website.extensions import cache
 from website.services.special_event import SpecialEventService
-from website.services.system import SystemService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
 from website.services.vtt import VttService
@@ -16,7 +15,6 @@ from website.views.auth import login_required, who
 misc_bp = Blueprint("misc", __name__)
 
 # Service instances
-system_service = SystemService()
 vtt_service = VttService()
 user_service = UserService()
 trophy_service = TrophyService()
@@ -34,13 +32,6 @@ def list_vtts():
     """List all VTTs."""
     vtts = [v.to_dict() for v in vtt_service.get_all()]
     return render_template("list.j2", items=vtts, title="Virtual TableTops", icon="ph-desktop")
-
-
-@misc_bp.route("/systemes/", methods=["GET"])
-def list_systems():
-    """List all game systems."""
-    systems = [s.to_dict() for s in system_service.get_all()]
-    return render_template("list.j2", items=systems, title="Systèmes", icon="ph-cube")
 
 
 @misc_bp.route("/badges/", methods=["GET"])

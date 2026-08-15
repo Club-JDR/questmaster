@@ -6,29 +6,63 @@ from website.models.system import System
 @pytest.fixture
 def sample_system():
     """Reusable System instance."""
-    return System(id=1, name="Call of Cthulhu", icon="/img/cthulhu.png")
+    return System(
+        id=1,
+        name="Call of Cthulhu",
+        icon="/img/cthulhu.png",
+        description="Une enquête lovecraftienne.",
+        reference_url="https://legrog.org/jeux/call-of-cthulhu",
+    )
 
 
 def test_to_dict(sample_system):
     data = sample_system.to_dict()
-    assert data == {"id": 1, "name": "Call of Cthulhu", "icon": "/img/cthulhu.png"}
+    assert data == {
+        "id": 1,
+        "name": "Call of Cthulhu",
+        "icon": "/img/cthulhu.png",
+        "description": "Une enquête lovecraftienne.",
+        "reference_url": "https://legrog.org/jeux/call-of-cthulhu",
+    }
+
+
+def test_to_dict_without_optional_fields():
+    system = System(id=2, name="Rêve de Dragon", icon=None)
+    data = system.to_dict()
+    assert data["description"] is None
+    assert data["reference_url"] is None
 
 
 def test_from_dict_creates_system():
-    data = {"id": 2, "name": "Dungeons & Dragons", "icon": "/img/dnd.png"}
+    data = {
+        "id": 2,
+        "name": "Dungeons & Dragons",
+        "icon": "/img/dnd.png",
+        "description": "Le classique.",
+        "reference_url": "https://legrog.org/jeux/dnd",
+    }
     system = System.from_dict(data)
     assert isinstance(system, System)
     assert system.id == 2
     assert system.name == "Dungeons & Dragons"
     assert system.icon == "/img/dnd.png"
+    assert system.description == "Le classique."
+    assert system.reference_url == "https://legrog.org/jeux/dnd"
 
 
 def test_update_from_dict(sample_system):
-    update = {"name": "Delta Green", "icon": "/img/delta-green.png"}
+    update = {
+        "name": "Delta Green",
+        "icon": "/img/delta-green.png",
+        "description": "Horreur moderne.",
+        "reference_url": "https://legrog.org/jeux/delta-green",
+    }
     updated = sample_system.update_from_dict(update)
     assert updated is sample_system
     assert sample_system.name == "Delta Green"
     assert sample_system.icon == "/img/delta-green.png"
+    assert sample_system.description == "Horreur moderne."
+    assert sample_system.reference_url == "https://legrog.org/jeux/delta-green"
 
 
 def test_update_from_dict_ignores_unknown_fields(sample_system):
@@ -50,6 +84,13 @@ def test_equality_and_inequality():
 
     assert s1 == s2
     assert s1 != s3
+
+
+def test_equality_considers_description_and_reference_url():
+    s1 = System(id=1, name="D&D 5e", icon="/img/dnd.png", description="Un jeu.")
+    s2 = System(id=1, name="D&D 5e", icon="/img/dnd.png", description="Un autre texte.")
+
+    assert s1 != s2
 
 
 def test_equality_with_non_system_returns_notimplemented(sample_system):
