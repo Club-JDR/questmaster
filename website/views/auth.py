@@ -14,19 +14,40 @@ from website.services.user import UserService
 auth_bp = Blueprint("auth", __name__)
 
 
+def session_fields(user) -> dict:
+    """Build the session dict mirroring a user's identity and roles.
+
+    Shared by ``who()`` (self-refresh on every request) and admin
+    impersonation (swapping the session to another user's identity), so the
+    two stay in sync — a role/permission newly considered here is picked up
+    by both.
+
+    Args:
+        user: The user whose identity should populate the session. Must have
+            already gone through ``refresh_roles()`` (or otherwise carry
+            ``avatar``/``is_gm``/``is_admin``/``is_player``/``permissions``).
+
+    Returns:
+        Dict of session keys/values.
+    """
+    return {
+        "user_id": user.id,
+        "username": user.name,
+        "avatar": user.avatar,
+        "is_gm": user.is_gm,
+        "is_admin": user.is_admin,
+        "is_player": user.is_player,
+        "can_post_games": user.can_post_games,
+        "permissions": sorted(user.permissions),
+    }
+
+
 def who():
     """Initialize session with user information from Discord API."""
     if "user_id" in session:
         user = UserService().get_by_id(str(session["user_id"]))
         user.refresh_roles()
-        session["user_id"] = user.id
-        session["username"] = user.name
-        session["avatar"] = user.avatar
-        session["is_gm"] = user.is_gm
-        session["is_admin"] = user.is_admin
-        session["is_player"] = user.is_player
-        session["can_post_games"] = user.can_post_games
-        session["permissions"] = sorted(user.permissions)
+        session.update(session_fields(user))
     return session
 
 
@@ -119,7 +140,14 @@ def login():
 
 @auth_bp.route("/logout/", methods=["GET"])
 def logout():
-    """Clear session and revoke Discord OAuth2 token."""
+    """Clear session and revoke Discord OAuth2 token.
+
+    ``session.clear()`` also wipes ``impersonator_id``/``impersonator_username``
+    when set: logging out while impersonating ends the session outright (the
+    admin is logged out, same as it would be for the impersonated user), not
+    a restore of the real admin's identity. Use "Return to my account"
+    (``view_as.stop``) instead to keep the admin's own session alive.
+    """
     token = session.get("_discord_token", {})
     access_token = token.get("access_token")
     session.clear()
@@ -182,13 +210,7 @@ def callback():
                 user_id=str(uid),
                 action="login",
             )
-        session["user_id"] = user.id
-        session["username"] = user.name
-        session["avatar"] = user.avatar
-        session["is_gm"] = user.is_gm
-        session["is_admin"] = user.is_admin
-        session["is_player"] = user.is_player
-        session["permissions"] = sorted(user.permissions)
+        session.update(session_fields(user))
         session["_discord_token"] = dict(token)
     redirect_url = session.pop("next_url", url_for(SEARCH_GAMES_ROUTE))
     if not is_safe_url(redirect_url):

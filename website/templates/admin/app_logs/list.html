@@ -88,6 +88,12 @@
           {% if log.user_id %}
           {{ log.username or '?' }}
           <span class="font-mono text-base-content/60">({{ log.user_id }})</span>
+          {% if log.impersonator_id %}
+          <span class="badge badge-warning badge-xs gap-1 block w-fit mt-1"
+                title="Usurpé par {{ log.impersonator_username or '?' }} ({{ log.impersonator_id }})">
+            <i class="ph ph-eye" aria-hidden="true"></i> via {{ log.impersonator_username or '?' }}
+          </span>
+          {% endif %}
           {% else %}
           —
           {% endif %}
@@ -142,6 +148,10 @@
       <dd class="font-mono break-all">
         {% if log.user_id %}{{ log.username or '?' }} ({{ log.user_id }}){% else %}—{% endif %}
       </dd>
+      {% if log.impersonator_id %}
+      <dt class="font-semibold text-base-content/60">Usurpé par</dt>
+      <dd class="font-mono break-all">{{ log.impersonator_username or '?' }} ({{ log.impersonator_id }})</dd>
+      {% endif %}
       <dt class="font-semibold text-base-content/60">Trace ID</dt>
       <dd class="font-mono break-all">{{ log.trace_id or '—' }}</dd>
     </dl>

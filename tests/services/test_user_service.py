@@ -3,9 +3,9 @@ from datetime import datetime
 
 import pytest
 
-from tests.constants import TEST_ADMIN_USER_ID
+from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
 from tests.factories import UserFactory
-from website.exceptions import NotFoundError
+from website.exceptions import NotFoundError, ValidationError
 from website.models import User
 from website.services.user import UserService
 
@@ -57,6 +57,21 @@ class TestUserService:
         inactive_users = service.get_inactive_users()
         inactive_ids = [u.id for u in inactive_users]
         assert inactive_user.id in inactive_ids
+
+    def test_validate_impersonation_target(self, db_session):
+        service = UserService()
+        target = service.validate_impersonation_target(TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID)
+        assert target.id == TEST_REGULAR_USER_ID
+
+    def test_validate_impersonation_target_self_rejected(self, db_session):
+        service = UserService()
+        with pytest.raises(ValidationError):
+            service.validate_impersonation_target(TEST_ADMIN_USER_ID, TEST_ADMIN_USER_ID)
+
+    def test_validate_impersonation_target_not_found(self, db_session):
+        service = UserService()
+        with pytest.raises(NotFoundError):
+            service.validate_impersonation_target(TEST_ADMIN_USER_ID, "000000000000000000")
 
     def test_get_active_user_ids(self, db_session):
         active_user = UserFactory(db_session)

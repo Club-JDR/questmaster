@@ -82,6 +82,8 @@ def test_context_fields_default_to_none_outside_request():
     assert record.user_id is None
     assert record.username is None
     assert record.endpoint is None
+    assert record.impersonator_id is None
+    assert record.impersonator_username is None
 
 
 def test_context_fields_populated_inside_request(test_app):
@@ -98,3 +100,23 @@ def test_context_fields_populated_inside_request(test_app):
     assert record.user_id == "42"
     assert record.username == "gm_maxime"
     assert record.endpoint is not None
+    assert record.impersonator_id is None
+    assert record.impersonator_username is None
+
+
+def test_context_fields_carry_impersonator_while_view_as(test_app):
+    """While an admin impersonates another user, both identities are captured."""
+    with test_app.test_request_context("/"):
+        from flask import session
+
+        session["user_id"] = "42"
+        session["username"] = "target_user"
+        session["impersonator_id"] = "1"
+        session["impersonator_username"] = "real_admin"
+        record = _record("action performed while impersonating")
+        ContextFilter().filter(record)
+
+    assert record.user_id == "42"
+    assert record.username == "target_user"
+    assert record.impersonator_id == "1"
+    assert record.impersonator_username == "real_admin"

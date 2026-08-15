@@ -27,6 +27,8 @@ def _record(msg, level=logging.INFO):
     record.user_id = "1234"
     record.username = "testuser"
     record.endpoint = "tests.endpoint"
+    record.impersonator_id = None
+    record.impersonator_username = None
     return record
 
 
@@ -68,7 +70,24 @@ def test_emit_persists_structured_record(cleanup_token):
     assert row.user_id == "1234"
     assert row.username == "testuser"
     assert row.endpoint == "tests.endpoint"
+    assert row.impersonator_id is None
+    assert row.impersonator_username is None
     assert row.line == 42
+
+
+def test_emit_persists_impersonator_fields(cleanup_token):
+    """A record emitted during an admin 'view-as' session carries both identities."""
+    record = _record(f"impersonated action {cleanup_token}")
+    record.impersonator_id = "9999"
+    record.impersonator_username = "real_admin"
+
+    DatabaseLogHandler().emit(record)
+
+    rows = _fetch_rows(cleanup_token)
+    assert len(rows) == 1
+    assert rows[0].user_id == "1234"
+    assert rows[0].impersonator_id == "9999"
+    assert rows[0].impersonator_username == "real_admin"
 
 
 def test_emit_does_not_disturb_db_session(cleanup_token, db_session):

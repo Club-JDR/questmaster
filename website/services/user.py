@@ -3,7 +3,7 @@
 import re
 from datetime import datetime, timezone
 
-from website.exceptions import NotFoundError
+from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import User
 from website.models.user import get_user_profile as _get_user_profile
@@ -296,6 +296,27 @@ class UserService:
         db.session.commit()
         logger.info(f"User {sanitize_log_value(user_id)} marked inactive")
         return user
+
+    def validate_impersonation_target(self, admin_id: str, target_id: str) -> User:
+        """Validate and return the user a superuser admin may impersonate.
+
+        Pure validation — does not touch the session (impersonation is a
+        session concern owned by the view layer).
+
+        Args:
+            admin_id: Discord ID of the admin starting the impersonation.
+            target_id: Discord ID of the user to impersonate.
+
+        Returns:
+            The target User instance.
+
+        Raises:
+            ValidationError: If the admin targets themselves.
+            NotFoundError: If the target user does not exist.
+        """
+        if admin_id == target_id:
+            raise ValidationError("Cannot impersonate yourself.", field="user_id")
+        return self.get_by_id(target_id)
 
     def clear_inactive(self, user_id: str) -> User:
         """Clear the inactive flag for a user (they have rejoined).

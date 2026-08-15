@@ -28,7 +28,7 @@ current session may use.
 | Section | Route | What it does |
 | --- | --- | --- |
 | Dashboard | `/admin/` | Landing page with links to every section |
-| Utilisateurs | `/admin/users/` | List users; edit display name and activity status; view a user's games and badges |
+| Utilisateurs | `/admin/users/` | List users; edit display name and activity status; view a user's games and badges; superuser admins can [view-as](#view-as-user-impersonation) any other user |
 | Annonces | `/admin/games/` | List games; full-field edit; delete |
 | Événements | `/admin/special-events/` | CRUD for special (themed) events; view an event's games |
 | Badges | `/admin/trophies/` | CRUD for trophy **definitions** |
@@ -56,6 +56,43 @@ Trophy management is split in two:
       0** (quantity never drops below 1).
     - For trophies marked `unique=True`, the +1/−1 buttons are hidden and the row shows a
       *Unique* badge instead — a unique trophy cannot be awarded more than once.
+
+## View-as (User Impersonation)
+
+Superuser admins can browse — and act on the site exactly as — another user, without
+knowing their credentials, to reproduce a bug, verify permission-gated UI, or perform an
+action on a user's behalf at their request. This is **admin-only**: delegated users holding
+individual capabilities (RBAC grants) cannot start one, no matter what they're granted.
+
+- **Start** — the eye icon on a row in `/admin/users/` (`POST /admin/view-as/<user_id>/`)
+  swaps the session to the target's identity: username, avatar, roles and permissions are
+  all replaced with theirs, **including dropping `is_admin`** if the target isn't one — the
+  point is to see exactly what they see, so no privilege is retained across the switch.
+  Impersonating yourself, or nesting a second impersonation on top of an active one, is
+  rejected.
+- **Stop** — a persistent banner is shown on every page while impersonating ("Vous incarnez
+  *{username}* — Revenir à mon compte"). Its button (`POST /admin/view-as/stop/`) restores
+  the real admin's session. This route deliberately lives outside the `/admin/` blueprint's
+  guard (which requires `is_admin`) so it stays reachable even after the impersonated
+  identity's admin flag has been dropped.
+- **Logging out** while impersonating ends the whole session (as it would for the
+  impersonated user), rather than restoring the admin — use the banner's button instead to
+  keep the admin's own session alive.
+
+### Audit trail
+
+Every action performed while impersonating is logged under the *impersonated* user's
+identity (`user_id`/`username`, as usual) **plus** the real admin's identity, carried
+separately as `impersonator_id`/`impersonator_username` — on the [`AppLog`](architecture/models.md#website.models.AppLog)
+row, the structured JSON log line, and the request-context log filter
+(`website.logging_config.filters.ContextFilter`). The start and stop of an impersonation
+session are themselves logged as explicit entries, not just inferred from the session flag.
+The **Journaux applicatifs** page (`/admin/app-logs/`) surfaces this: a row logged during
+impersonation shows a "via *{admin}*" badge next to the acting user.
+
+Implemented in `UserService.validate_impersonation_target` (validation only — target exists,
+no self-impersonation) and `website.views.view_as` (the session swap itself, which is a
+Flask-session concern the service layer never touches).
 
 ## Channel Categories
 
