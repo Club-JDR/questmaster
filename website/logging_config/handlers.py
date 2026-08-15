@@ -79,6 +79,8 @@ class DatabaseLogHandler(logging.Handler):
                         user_id=getattr(record, "user_id", None),
                         username=getattr(record, "username", None),
                         endpoint=getattr(record, "endpoint", None),
+                        impersonator_id=getattr(record, "impersonator_id", None),
+                        impersonator_username=getattr(record, "impersonator_username", None),
                         module=record.module,
                         func=record.funcName,
                         line=record.lineno,

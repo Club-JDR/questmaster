@@ -14,6 +14,7 @@ from .games import game_bp
 from .misc import misc_bp
 from .profile import profile_bp
 from .stats import stats_bp
+from .view_as import view_as_bp
 
 
 def register_blueprints(app):
@@ -25,6 +26,7 @@ def register_blueprints(app):
     app.register_blueprint(stats_bp)
     app.register_blueprint(demo_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(view_as_bp)
     app.register_blueprint(discord_bp)
     app.register_blueprint(create_api_blueprint())
 

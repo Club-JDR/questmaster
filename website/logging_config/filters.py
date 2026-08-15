@@ -37,6 +37,14 @@ class ContextFilter(logging.Filter):
     request) so formatters and the database handler can emit structured
     fields. Outside a request context the fields are set to ``None`` so
     format strings never raise.
+
+    While an admin is impersonating another user (admin "view-as"), the
+    session's ``user_id``/``username`` reflect the *impersonated* user (so
+    the app behaves exactly as it would for them) — without a separate
+    signal, that would attribute every logged action to the target with no
+    trace of the real actor. ``impersonator_id``/``impersonator_username``
+    carry the real admin's identity from the session in that case, so the
+    audit trail always shows both.
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -52,11 +60,15 @@ class ContextFilter(logging.Filter):
         record.user_id = None
         record.username = None
         record.endpoint = None
+        record.impersonator_id = None
+        record.impersonator_username = None
         if has_request_context():
             record.trace_id = getattr(g, "trace_id", None)
             record.user_id = session.get("user_id")
             record.username = session.get("username")
             record.endpoint = request.endpoint
+            record.impersonator_id = session.get("impersonator_id")
+            record.impersonator_username = session.get("impersonator_username")
         return True
 
 

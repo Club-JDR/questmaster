@@ -62,6 +62,15 @@
             <i class="ph ph-warning-octagon" aria-hidden="true"></i>
           </a>
           {% endif %}
+          {% if session.get('is_admin') and user.id != session.get('user_id') and not session.get('impersonator_id') %}
+          <form method="post" action="{{ url_for('view_as.start', user_id=user.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-xs"
+                    aria-label="Incarner {{ user.name }}" title="Incarner cet utilisateur">
+              <i class="ph ph-eye" aria-hidden="true"></i>
+            </button>
+          </form>
+          {% endif %}
           {{ ui.edit_link(url_for('admin.edit_user', user_id=user.id)) }}
         </td>
       </tr>

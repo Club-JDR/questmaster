@@ -220,6 +220,23 @@
       </div>
     </div>
   </nav>
+  {% if session.get('impersonator_id') %}
+  <div role="alert" aria-live="polite"
+    class="alert alert-warning rounded-none justify-center gap-3 flex-wrap">
+    <i class="ph ph-eye text-lg" aria-hidden="true"></i>
+    <span>
+      Vous incarnez <strong>{{ session['username'] }}</strong> —
+      les actions effectuées sont journalisées sous votre identité réelle
+      ({{ session['impersonator_username'] }}).
+    </span>
+    <form method="post" action="{{ url_for('view_as.stop') }}" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-outline">
+        Revenir à mon compte
+      </button>
+    </form>
+  </div>
+  {% endif %}
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
   <div class="container mx-auto px-4 pt-4 space-y-2">

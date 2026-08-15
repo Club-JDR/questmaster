@@ -15,7 +15,8 @@ class CustomJsonFormatter(logging.Formatter):
 
     Emitted fields: ``timestamp`` (ISO 8601 UTC), ``level``, ``name``,
     ``message``, ``trace_id``, ``user_id``, ``username``, ``endpoint``,
-    plus ``exc_info`` when an exception is attached.
+    ``impersonator_id``, ``impersonator_username``, plus ``exc_info`` when
+    an exception is attached.
     """
 
     def format(self, record: logging.LogRecord) -> str:
@@ -36,6 +37,8 @@ class CustomJsonFormatter(logging.Formatter):
             "user_id": getattr(record, "user_id", None),
             "username": getattr(record, "username", None),
             "endpoint": getattr(record, "endpoint", None),
+            "impersonator_id": getattr(record, "impersonator_id", None),
+            "impersonator_username": getattr(record, "impersonator_username", None),
         }
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)

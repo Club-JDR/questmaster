@@ -21,9 +21,15 @@ class AppLog(db.Model, SerializableMixin):
         logger: Dotted logger name.
         message: Redacted, fully interpolated log message.
         trace_id: Request trace ID, when emitted inside a request.
-        user_id: Session user ID of the acting user (no FK on purpose).
+        user_id: Session user ID of the acting user (no FK on purpose). While
+            an admin is impersonating another user (admin "view-as"), this is
+            the *impersonated* user — the app behaves exactly as it would
+            for them — and ``impersonator_id`` carries the real actor.
         username: Session username of the acting user, when available.
         endpoint: Flask endpoint handling the request, when available.
+        impersonator_id: Discord ID of the admin impersonating ``user_id``,
+            when the record was emitted during a "view-as" session.
+        impersonator_username: Session username of that admin, when available.
         module: Python module that emitted the record.
         func: Function that emitted the record.
         line: Source line number.
@@ -48,6 +54,8 @@ class AppLog(db.Model, SerializableMixin):
     user_id = db.Column(db.String(), nullable=True)
     username = db.Column(db.String(128), nullable=True)
     endpoint = db.Column(db.String(128), nullable=True)
+    impersonator_id = db.Column(db.String(), nullable=True)
+    impersonator_username = db.Column(db.String(128), nullable=True)
     module = db.Column(db.String(128), nullable=True)
     func = db.Column(db.String(128), nullable=True)
     line = db.Column(db.Integer, nullable=True)
