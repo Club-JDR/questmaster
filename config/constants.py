@@ -22,6 +22,11 @@ GAME_STATUS_LABELS = {
     GAME_STATUS_ARCHIVED: "archivée",
 }
 
+# System interests (lightweight matchmaking on system public pages)
+SYSTEM_INTEREST_ROLE_PLAYER = "player"
+SYSTEM_INTEREST_ROLE_GM = "gm"
+SYSTEM_INTEREST_ROLES = (SYSTEM_INTEREST_ROLE_PLAYER, SYSTEM_INTEREST_ROLE_GM)
+
 # Moderation infractions
 # Severity is stored as an integer so new levels can be inserted between the
 # existing ones without a database enum migration.

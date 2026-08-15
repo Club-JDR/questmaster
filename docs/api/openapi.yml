@@ -168,6 +168,15 @@ components:
           type: string
         icon:
           type: string
+        description:
+          type: string
+          nullable: true
+          description: Markdown blurb rendered on the system's public page
+        reference_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Canonical external reference page (legrog.org, official site, etc.)
 
     Vtt:
       type: object
@@ -839,6 +848,111 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/System"
+        "404":
+          description: System not found
+
+  /systems/{id}/run-history/:
+    get:
+      summary: GMs who have run this system
+      description: >-
+        Distinct GMs on non-draft games with this system — actual play
+        history, not a declared interest.
+      tags: [Reference Data]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users who have GMed this system
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "404":
+          description: System not found
+
+  /systems/{id}/interests/:
+    get:
+      summary: Users interested in playing or running this system
+      description: >-
+        Passive matchmaking signal (not a registration) — see the system
+        public page for the "who's already run it / who wants to" lists.
+      tags: [Reference Data]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: role
+          required: true
+          schema:
+            type: string
+            enum: [player, gm]
+      responses:
+        "200":
+          description: List of interested users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "400":
+          description: Missing or unrecognized role
+        "404":
+          description: System not found
+    post:
+      summary: Add or remove the current user's declared interest
+      description: >-
+        Toggles the caller's own interest for the system and role: adds it
+        if not already declared, removes it otherwise. Declaring GM
+        interest requires the caller to be GM-flagged.
+      tags: [Reference Data]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [player, gm]
+                note:
+                  type: string
+                  nullable: true
+                  description: Optional free text, used only when adding a new interest
+      responses:
+        "200":
+          description: Toggle result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: boolean
+                    description: True if interest was added, false if an existing one was removed
+        "400":
+          description: Missing or unrecognized role
+        "403":
+          description: GM interest requires GM access
         "404":
           description: System not found
 

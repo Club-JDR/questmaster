@@ -13,6 +13,7 @@ from .special_event import SpecialEvent
 from .system import System
 from .trophy import Trophy, UserTrophy
 from .user import User
+from .user_system_interest import UserSystemInterest
 from .vtt import Vtt
 
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     "Trophy",
     "UserTrophy",
     "User",
+    "UserSystemInterest",
     "Vtt",
 ]

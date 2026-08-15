@@ -1,6 +1,7 @@
 """System repository for game system data access."""
 
-from website.models import System
+from config.constants import GAME_STATUS_DRAFT
+from website.models import Game, System, User
 from website.repositories.base import BaseRepository
 
 
@@ -32,3 +33,24 @@ class SystemRepository(BaseRepository[System]):
             System instance if found, None otherwise.
         """
         return self.session.query(System).filter_by(name=name).first()
+
+    def get_gm_history(self, system_id: int) -> list[User]:
+        """Return distinct GMs who have run this system, from actual game history.
+
+        Only non-draft games count, so unpublished announcements never
+        contribute to this "who's already run it" signal.
+
+        Args:
+            system_id: System ID.
+
+        Returns:
+            List of User instances ordered by name.
+        """
+        return (
+            self.session.query(User)
+            .join(Game, Game.gm_id == User.id)
+            .filter(Game.system_id == system_id, Game.status != GAME_STATUS_DRAFT)
+            .distinct()
+            .order_by(User.name)
+            .all()
+        )

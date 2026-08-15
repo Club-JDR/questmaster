@@ -19,7 +19,8 @@ Repositories:
 | `GameEventRepository` | [`GameEvent`](models.md#website.models.GameEvent) | Game audit log entry creation |
 | `GameSessionRepository` | [`GameSession`](models.md#website.models.GameSession) | Session date range queries and conflict detection |
 | `SpecialEventRepository` | [`SpecialEvent`](models.md#website.models.SpecialEvent) | Themed event retrieval with active/inactive filtering |
-| `SystemRepository` | [`System`](models.md#website.models.System) | RPG system lookups |
+| `SystemRepository` | [`System`](models.md#website.models.System) | RPG system lookups, incl. GM run-history derived from game data |
+| `UserSystemInterestRepository` | [`UserSystemInterest`](models.md#website.models.UserSystemInterest) | Declared-interest lookups (by composite key, and per system/role) |
 | `TrophyRepository` | [`Trophy`](models.md#website.models.Trophy), [`UserTrophy`](models.md#website.models.UserTrophy) | Achievement data and leaderboard aggregations |
 | `UserRepository` | [`User`](models.md#website.models.User) | User entity retrieval |
 | `VttRepository` | [`Vtt`](models.md#website.models.Vtt) | Virtual tabletop platform lookups |

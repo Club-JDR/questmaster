@@ -14,6 +14,7 @@ from website.repositories.special_event import SpecialEventRepository
 from website.repositories.system import SystemRepository
 from website.repositories.trophy import TrophyRepository
 from website.repositories.user import UserRepository
+from website.repositories.user_system_interest import UserSystemInterestRepository
 from website.repositories.vtt import VttRepository
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "ChannelRepository",
     "GameEventRepository",
     "UserRepository",
+    "UserSystemInterestRepository",
     "GameSessionRepository",
     "InfractionRepository",
     "PermissionGrantRepository",

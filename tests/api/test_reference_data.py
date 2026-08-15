@@ -71,6 +71,118 @@ class TestGetSystem:
         assert response.status_code == 404
 
 
+class TestGetSystemRunHistory:
+    """Tests for GET /api/v1/systems/<id>/run-history/."""
+
+    def test_requires_auth(self, api_client):
+        """Endpoint requires authentication."""
+        response = api_client.get("/api/v1/systems/1/run-history/")
+        assert response.status_code == 403
+
+    @patch("website.api.reference_data.system_service")
+    def test_returns_gm_history(self, mock_service, api_client, auth_headers_user):
+        """Returns serialised users who have GMed this system."""
+        from unittest.mock import MagicMock
+
+        user = MagicMock()
+        user.to_dict.return_value = {"id": "1", "name": "Historic GM"}
+        mock_service.get_run_history.return_value = [user]
+
+        response = api_client.get("/api/v1/systems/1/run-history/", headers=auth_headers_user)
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data[0]["name"] == "Historic GM"
+        mock_service.get_run_history.assert_called_once_with(1)
+
+    @patch("website.api.reference_data.system_service")
+    def test_not_found(self, mock_service, api_client, auth_headers_user):
+        """Returns 404 for non-existent system."""
+        mock_service.get_run_history.side_effect = NotFoundError(
+            "System not found", resource_type="System", resource_id=999
+        )
+        response = api_client.get("/api/v1/systems/999/run-history/", headers=auth_headers_user)
+        assert response.status_code == 404
+
+
+class TestListSystemInterests:
+    """Tests for GET /api/v1/systems/<id>/interests/."""
+
+    def test_requires_auth(self, api_client):
+        """Endpoint requires authentication."""
+        response = api_client.get("/api/v1/systems/1/interests/?role=player")
+        assert response.status_code == 403
+
+    @patch("website.api.reference_data.system_service")
+    def test_returns_interested_users(self, mock_service, api_client, auth_headers_user):
+        """Returns serialised users interested in the given role."""
+        from unittest.mock import MagicMock
+
+        interest = MagicMock()
+        interest.user.to_dict.return_value = {"id": "1", "name": "Interested Player"}
+        mock_service.get_interested.return_value = [interest]
+
+        response = api_client.get(
+            "/api/v1/systems/1/interests/?role=player", headers=auth_headers_user
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data[0]["name"] == "Interested Player"
+        mock_service.get_interested.assert_called_once_with(1, "player")
+
+    @patch("website.api.reference_data.system_service")
+    def test_invalid_role(self, mock_service, api_client, auth_headers_user):
+        """An unrecognised role is rejected by the service and surfaces as 400."""
+        from website.exceptions import ValidationError
+
+        mock_service.get_interested.side_effect = ValidationError(
+            "Invalid interest role.", field="role"
+        )
+        response = api_client.get(
+            "/api/v1/systems/1/interests/?role=spectator", headers=auth_headers_user
+        )
+        assert response.status_code == 400
+
+
+class TestToggleSystemInterest:
+    """Tests for POST /api/v1/systems/<id>/interests/."""
+
+    def test_requires_auth(self, api_client):
+        """Endpoint requires authentication."""
+        response = api_client.post("/api/v1/systems/1/interests/", json={"role": "player"})
+        assert response.status_code == 403
+
+    @patch("website.api.reference_data.system_service")
+    def test_player_can_toggle_player_interest(self, mock_service, api_client, auth_headers_user):
+        """A regular user can toggle their own player interest."""
+        mock_service.toggle_interest.return_value = True
+
+        response = api_client.post(
+            "/api/v1/systems/1/interests/", json={"role": "player"}, headers=auth_headers_user
+        )
+        assert response.status_code == 200
+        assert response.get_json() == {"added": True}
+
+    @patch("website.api.reference_data.system_service")
+    def test_non_gm_cannot_toggle_gm_interest(self, mock_service, api_client, auth_headers_user):
+        """A non-GM user is rejected when declaring GM interest."""
+        response = api_client.post(
+            "/api/v1/systems/1/interests/", json={"role": "gm"}, headers=auth_headers_user
+        )
+        assert response.status_code == 403
+        mock_service.toggle_interest.assert_not_called()
+
+    @patch("website.api.reference_data.system_service")
+    def test_gm_can_toggle_gm_interest(self, mock_service, api_client, auth_headers_gm):
+        """A GM-flagged user can declare GM interest."""
+        mock_service.toggle_interest.return_value = False
+
+        response = api_client.post(
+            "/api/v1/systems/1/interests/", json={"role": "gm"}, headers=auth_headers_gm
+        )
+        assert response.status_code == 200
+        assert response.get_json() == {"added": False}
+
+
 class TestListVtts:
     """Tests for GET /api/v1/vtts/."""
 

@@ -4,14 +4,16 @@
 <h1 class="text-center font-black text-2xl my-4"><i class="ph {{ icon | default('ph-gear') }}"></i> {{ title }}</h1>
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
   {% for i in items|sort(attribute='name') %}
-  <div class="card bg-base-100 shadow hover:shadow-md transition-shadow text-center">
+  {% set tag = 'a' if detail_endpoint else 'div' %}
+  <{{ tag }} {% if detail_endpoint %}href="{{ url_for(detail_endpoint, system_id=i.id) }}"{% endif %}
+    class="card bg-base-100 shadow hover:shadow-md transition-shadow text-center{% if detail_endpoint %} no-underline text-inherit{% endif %}">
     <div class="card-body items-center gap-3 p-4">
       <div class="h-16 flex items-center justify-center">
         <img src="{{ i.icon }}" alt="{{ i.name }}" class="max-h-full max-w-full object-contain">
       </div>
       <h5 class="card-title text-sm font-bold">{{ i.name }}</h5>
     </div>
-  </div>
+  </{{ tag }}>
   {% endfor %}
 </div>
 {% endblock %}

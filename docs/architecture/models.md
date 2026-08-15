@@ -19,7 +19,8 @@ Models define:
 | `User` | A Discord-authenticated user |
 | `Trophy` | An achievement definition |
 | `UserTrophy` | A trophy awarded to a user |
-| `System` | A tabletop RPG system (e.g. D&D 5e, Pathfinder) |
+| `System` | A tabletop RPG system (e.g. D&D 5e, Pathfinder); optionally carries a `description` (Markdown) and/or `reference_url` for its public page |
+| `UserSystemInterest` | A user's declared interest (player or GM) in a system — passive matchmaking, not a registration |
 | `Channel` | A Discord channel category managed by the app |
 | `SpecialEvent` | A special community event (e.g. Halloween, Christmas) |
 | `Vtt` | A virtual tabletop tool (e.g. Foundry, Roll20) |
