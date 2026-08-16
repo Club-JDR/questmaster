@@ -53,4 +53,10 @@
   <span class="badge badge-neutral badge-sm">{{ player_games|length }}</span>
 </h2>
 {{ games_table(player_games, 'Aucune annonce en tant que joueur.') }}
+
+<h2 class="text-lg font-bold flex items-center gap-2 mt-8 mb-2">
+  <i class="ph ph-eye" aria-hidden="true"></i> En tant que spectateur·ice
+  <span class="badge badge-neutral badge-sm">{{ viewer_games|length }}</span>
+</h2>
+{{ games_table(viewer_games, 'Aucune annonce en tant que spectateur·ice.') }}
 {% endblock %}

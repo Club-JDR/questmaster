@@ -57,6 +57,7 @@ def _make_game(**overrides):
         "gm": SimpleNamespace(name="TestGM"),
         "system": SimpleNamespace(name="D&D 5e"),
         "special_event": None,
+        "open_to_viewers": False,
     }
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
@@ -266,6 +267,25 @@ class TestBuildEmbedFields:
         fields = _build_embed_fields(game, "OS", "restriction")
         for field in fields:
             assert not field["value"].startswith("~~")
+
+    def test_open_to_viewers_adds_spectator_field(self):
+        game = _make_game(open_to_viewers=True)
+        fields = _build_embed_fields(game, "OS", "restriction")
+        assert len(fields) == 7
+        assert fields[-1]["name"] == "Spectateur·ices"
+
+    def test_open_to_viewers_false_omits_spectator_field(self):
+        game = _make_game(open_to_viewers=False)
+        fields = _build_embed_fields(game, "OS", "restriction")
+        assert len(fields) == 6
+
+    def test_spectator_field_not_struck_through_when_closed(self):
+        """A closed (full) game can still be open to spectators — must stay legible."""
+        game = _make_game(status="closed", open_to_viewers=True)
+        fields = _build_embed_fields(game, "OS", "restriction")
+        spectator_field = fields[-1]
+        assert spectator_field["name"] == "Spectateur·ices"
+        assert not spectator_field["value"].startswith("~~")
 
 
 # ---------------------------------------------------------------------------

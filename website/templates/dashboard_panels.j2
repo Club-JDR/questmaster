@@ -28,8 +28,12 @@ the app-wide /stats page; the agenda-specific session_row stays here. #}
     </div>
   </div>
   <span
-    class="badge badge-xs shrink-0 {{ 'badge-ghost' if muted else ('badge-primary' if s.role == 'MJ' else 'badge-success') }}">
-    {% if s.role == 'MJ' %}<i class="ph ph-crown"></i>{% else %}<i class="ph ph-user"></i>{% endif %}
+    class="badge badge-xs shrink-0 {{ 'badge-ghost' if muted else (
+      'badge-primary' if s.role == 'MJ' else (
+      'badge-success' if s.role == 'Joueur·euse' else 'badge-info')) }}">
+    {% if s.role == 'MJ' %}<i class="ph ph-crown"></i>
+    {% elif s.role == 'Joueur·euse' %}<i class="ph ph-user"></i>
+    {% else %}<i class="ph ph-eye"></i>{% endif %}
     {{ s.role }}
   </span>
 </a>

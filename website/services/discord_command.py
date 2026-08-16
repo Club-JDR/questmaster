@@ -74,6 +74,7 @@ MSG_PAST_DATE = (
     "depuis le site pour confirmer."
 )
 MSG_NO_BADGES = "Aucun badge pour ce membre."
+MSG_NO_AGENDA = "Aucune session à venir."
 MSG_NO_INFRACTIONS = "Aucune infraction pour ce membre."
 MSG_EMPTY_REASON = "La raison de l'infraction est vide."
 
@@ -102,7 +103,7 @@ class DiscordCommandService:
     ephemeral Discord messages.
     """
 
-    INLINE_COMMANDS = {"info", "badges"}
+    INLINE_COMMANDS = {"info", "badges", "mon-agenda"}
 
     # Commands that also work outside a game channel (game becomes None)
     CHANNEL_OPTIONAL_COMMANDS = {"signaler", "avertir", "infractions"}
@@ -148,6 +149,8 @@ class DiscordCommandService:
         name = payload.get("data", {}).get("name")
         if name == "badges":
             return self._handle_badges(payload)
+        if name == "mon-agenda":
+            return self._handle_agenda(payload)
         if name != "info":
             return MSG_UNKNOWN_COMMAND
         game = self._resolve_game(payload)
@@ -467,6 +470,59 @@ class DiscordCommandService:
         lines = [f"**Badges de {user.name}**"]
         lines += [f"- {t['name']} ×{t['quantity']}" for t in summary]
         return "\n".join(lines)
+
+    def _handle_agenda(self, payload: dict) -> str:
+        """``/mon-agenda`` — list the caller's upcoming sessions.
+
+        Reuses the exact data behind the website's "Mon agenda" dashboard
+        panel, covering all three roles a member can hold on a game (MJ,
+        joueur·euse, spectateur·ice).
+        """
+        from website.services.setting import SettingsService
+        from website.services.stats import StatsService
+
+        member = payload.get("member") or {}
+        caller = member.get("user") or payload.get("user") or {}
+        user_id = str(caller.get("id", ""))
+        if not user_id:
+            return MSG_GENERIC_ERROR
+
+        agenda_limit = SettingsService().get_dashboard_agenda_limit()
+        upcoming = StatsService().get_dashboard_stats(user_id, agenda_limit)["agenda"]["upcoming"]
+        if not upcoming:
+            return MSG_NO_AGENDA
+
+        lines = ["**Vos prochaines sessions**"]
+        length = len(lines[0])
+        # Keep room for the "… et N de plus" note added when the list is cut.
+        budget = DISCORD_MESSAGE_MAX_LENGTH - 40
+        shown = 0
+        for row in upcoming:
+            line = self._format_agenda_row(row)
+            if length + 1 + len(line) > budget:
+                break
+            lines.append(line)
+            length += 1 + len(line)
+            shown += 1
+        if shown < len(upcoming):
+            lines.append(f"… et {len(upcoming) - shown} de plus")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_agenda_row(row: dict) -> str:
+        """Build one line of the ``/mon-agenda`` summary.
+
+        Args:
+            row: Agenda row dict from ``StatsService`` (dow/day/month/time/
+                name/role, see ``StatsService._session_row``).
+
+        Returns:
+            ``- dow day month time — name (role)``.
+        """
+        return (
+            f"- {row['dow']} {row['day']} {row['month']} {row['time']} — "
+            f"{row['name']} ({row['role']})"
+        )
 
     def _handle_warn(self, game: Game | None, user: User, payload: dict) -> str:
         """``/avertir <membre> <raison> [gravite] [article] [lien]`` — record an infraction.

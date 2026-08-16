@@ -198,6 +198,26 @@ class TestGameCreation:
         assert response.status_code == 200
         assert "CthulhuFest" in body
 
+    def test_create_open_to_viewers(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        default_system,
+        default_vtt,
+    ):
+        from website.models import Game
+
+        data = _game_form_data(
+            default_system.id, default_vtt.id, action="draft", open_to_viewers="on"
+        )
+        logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
+
+        game = db_session.query(Game).filter_by(name="Test Game").one()
+        assert game.open_to_viewers is True
+
 
 # -- Game Details ----------------------------------------------------------
 
@@ -286,6 +306,57 @@ class TestGameDetails:
         body = response.data.decode()
         assert response.status_code == 200
         assert "<script>alert(1)</script>" not in body
+
+    def test_open_to_viewers_badge_shown(
+        self, client, mock_discord_lookups, db_session, open_game
+    ):
+        open_game.open_to_viewers = True
+        db_session.flush()
+        response = client.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "Ouverte aux spectateur·ices" in body
+
+    def test_open_to_viewers_badge_hidden_by_default(
+        self, client, mock_discord_lookups, db_session, open_game
+    ):
+        response = client.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "Ouverte aux spectateur·ices" not in body
+
+    def test_follow_button_shown_to_non_participant(
+        self, logged_in_user, mock_discord_lookups, db_session, open_game
+    ):
+        open_game.open_to_viewers = True
+        db_session.flush()
+        response = logged_in_user.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "Suivre en tant que spectateur" in body
+
+    def test_follow_button_hidden_when_flag_off(
+        self, logged_in_user, mock_discord_lookups, db_session, open_game
+    ):
+        response = logged_in_user.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "Suivre en tant que spectateur" not in body
+
+    def test_follow_button_hidden_for_gm(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_game
+    ):
+        open_game.open_to_viewers = True
+        db_session.flush()
+        response = logged_in_admin.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "Suivre en tant que spectateur" not in body
+
+    def test_follow_button_hidden_for_registered_player(
+        self, logged_in_user, mock_discord_lookups, db_session, open_game, regular_user
+    ):
+        open_game.open_to_viewers = True
+        open_game.players.append(regular_user)
+        db_session.flush()
+        response = logged_in_user.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "Suivre en tant que spectateur" not in body
 
 
 # -- Game Status -----------------------------------------------------------
@@ -546,6 +617,31 @@ class TestGameEdit:
         assert response.status_code == 200
         assert "Annonce modifiée." in body
         assert "New complement text" in body
+
+    def test_edit_sets_open_to_viewers(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        draft_game,
+        default_system,
+        default_vtt,
+    ):
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name=draft_game.name,
+            open_to_viewers="on",
+        )
+        logged_in_admin.post(
+            f"/annonces/{draft_game.slug}/editer/",
+            data=data,
+            follow_redirects=True,
+        )
+        db_session.refresh(draft_game)
+        assert draft_game.open_to_viewers is True
 
     def test_edit_and_publish_draft(
         self,
@@ -1017,6 +1113,45 @@ class TestGameAlert:
         assert "Vous n'êtes pas autorisé·e" in body
 
 
+# -- Follow as viewer -------------------------------------------------------
+
+
+class TestFollowGame:
+    """POST /annonces/<slug>/suivre/ — follow/unfollow a game as a viewer."""
+
+    def test_requires_login(self, client, mock_csrf, db_session, open_game):
+        open_game.open_to_viewers = True
+        db_session.flush()
+        response = client.post(f"/annonces/{open_game.slug}/suivre/")
+        assert response.status_code in (302, 303)
+
+    def test_user_can_follow_then_unfollow(
+        self, logged_in_user, mock_discord_lookups, mock_csrf, db_session, open_game
+    ):
+        open_game.open_to_viewers = True
+        db_session.flush()
+
+        follow_response = logged_in_user.post(
+            f"/annonces/{open_game.slug}/suivre/", follow_redirects=True
+        )
+        assert "Vous suivez maintenant cette annonce." in follow_response.data.decode()
+
+        unfollow_response = logged_in_user.post(
+            f"/annonces/{open_game.slug}/suivre/", follow_redirects=True
+        )
+        assert "Vous ne suivez plus cette annonce." in unfollow_response.data.decode()
+
+    def test_cannot_follow_when_not_open_to_viewers(
+        self, logged_in_user, mock_discord_lookups, mock_csrf, db_session, open_game
+    ):
+        response = logged_in_user.post(
+            f"/annonces/{open_game.slug}/suivre/", follow_redirects=True
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Impossible de suivre cette annonce." in body
+
+
 # -- Game Form Access ------------------------------------------------------
 
 
@@ -1114,6 +1249,22 @@ class TestGameSearch:
         body = response.data.decode()
         assert response.status_code == 200
         assert open_game.name in body
+
+    def test_card_shows_open_to_viewers_indicator(
+        self, client, mock_discord_lookups, db_session, open_game
+    ):
+        open_game.open_to_viewers = True
+        db_session.flush()
+        response = client.get(f"/annonces/cards/?name={open_game.name}")
+        body = response.data.decode()
+        assert "Ouverte aux spectateur" in body
+
+    def test_card_omits_open_to_viewers_indicator_by_default(
+        self, client, mock_discord_lookups, db_session, open_game
+    ):
+        response = client.get(f"/annonces/cards/?name={open_game.name}")
+        body = response.data.decode()
+        assert "Ouverte aux spectateur" not in body
 
     def test_search_status_open_includes_open_game(
         self, client, mock_discord_lookups, db_session, open_game

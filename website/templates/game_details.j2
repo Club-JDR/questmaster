@@ -518,6 +518,35 @@
           {% elif game.characters == "pregen" %}prétirés
           {% else %}à faire seul·e ou avec le·a MJ{% endif %}
         </div>
+        {% if game.open_to_viewers %}
+        <div class="flex items-center justify-center gap-1">
+          <i class="ph ph-eye" aria-hidden="true"></i> Ouverte aux spectateur·ices
+        </div>
+        {% endif %}
+
+        {# Spectateur·ices — same avatar style as players, distinct ring color + icon badge so
+        they're never mistaken for registered players #}
+        {% if game.viewers %}
+        <div class="border-t border-base-300 mt-2 pt-2">
+          <div class="font-semibold uppercase tracking-wider flex items-center justify-center gap-1">
+            <i class="ph ph-eye"></i> Spectateur·ices ({{ game.viewers|length }})
+          </div>
+          <div class="flex flex-wrap justify-center gap-2 mt-2">
+            {% for viewer in game.viewers %}
+            <div class="tooltip z-20" data-tip="{{ viewer.name }}">
+              <div class="avatar indicator">
+                <span class="indicator-item indicator-bottom badge badge-secondary badge-xs p-1">
+                  <i class="ph ph-eye text-[0.6rem]" aria-hidden="true"></i>
+                </span>
+                <div class="w-8 rounded-full ring ring-secondary ring-offset-base-100 ring-offset-2 opacity-80">
+                  <img src="{{ viewer.avatar }}" alt="" />
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -538,6 +567,17 @@
       </div>
     </form>
     {% endif %}
+    {% endif %}
+
+    {# Follow as viewer/spectator — agenda-only, never contacts the GM #}
+    {% if game.open_to_viewers and payload.get('user_id') and payload['user_id'] != game.gm.id and not is_player %}
+    <form method="post" action="/annonces/{{ game.slug }}/suivre/">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn {{ 'btn-outline' if is_viewer else 'btn-secondary' }} btn-block gap-2">
+        <i class="ph {{ 'ph-eye-slash' if is_viewer else 'ph-eye' }}"></i>
+        {% if is_viewer %}Ne plus suivre{% else %}Suivre en tant que spectateur·ice{% endif %}
+      </button>
+    </form>
     {% endif %}
 
     {# Discord + Report buttons #}
@@ -932,7 +972,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Éditer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('editSessionForm').action =
-      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }} + btn.dataset.sessionId + '/editer';
+      {{ ('/annonces/' ~ game.slug ~ '/sessions/')| tojson }} + btn.dataset.sessionId + '/editer';
   modal.querySelector('[name="date_start"]').value = btn.dataset.start;
   modal.querySelector('[name="date_end"]').value = btn.dataset.end;
   modal.showModal();
@@ -943,7 +983,7 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('.session-modal-title').textContent = 'Supprimer la session #' + btn.dataset.sessionIndex;
     modal.querySelector('.session-modal-date').textContent = btn.dataset.display;
     document.getElementById('deleteSessionForm').action =
-      {{ ('/annonces/' ~game.slug ~ '/sessions/')| tojson }} + btn.dataset.sessionId + '/supprimer';
+      {{ ('/annonces/' ~ game.slug ~ '/sessions/')| tojson }} + btn.dataset.sessionId + '/supprimer';
   modal.showModal();
   }
 

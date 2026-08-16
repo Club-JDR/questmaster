@@ -83,6 +83,13 @@
     {{ example('/badges\n/badges membre: @Loulou') }}
     {% endcall %}
 
+    {% call command('mon-agenda', '', "Affiche vos prochaines sessions.", 'player', scope='anywhere') %}
+    <p>Fonctionne dans n'importe quel salon. Liste vos sessions à venir — MJ, joueur·euse et
+      spectateur·ice (parties suivies) confondues, mêmes données que le panneau « Mon agenda »
+      du site.</p>
+    {{ example('/mon-agenda') }}
+    {% endcall %}
+
   </div>
 
   <h2 class="font-bold text-xl mt-8"><i class="ph ph-crown" aria-hidden="true"></i> Pour les MJs</h2>

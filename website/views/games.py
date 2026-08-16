@@ -214,8 +214,16 @@ def get_game_details(slug):
     payload = who()
     game = game_service.get_by_slug_or_404(slug)
     is_player = "user_id" in payload and game_service.is_player(game, payload["user_id"])
+    is_viewer = "user_id" in payload and game_service.is_viewer(game, payload["user_id"])
+
+    game_data = game.to_dict(include_relationships=True)
+    game_data["viewers"] = [gv.user.to_dict() for gv in game_service.list_viewers(game.id)]
+
     return render_template(
-        "game_details.j2", game=game.to_dict(include_relationships=True), is_player=is_player
+        "game_details.j2",
+        game=game_data,
+        is_player=is_player,
+        is_viewer=is_viewer,
     )
 
 
@@ -570,6 +578,31 @@ def register_game(slug):
     except QuestMasterError:
         logger.exception("Registration failed")
         flash("Une erreur est survenue pendant l'inscription.", "danger")
+
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+
+@game_bp.route("/annonces/<slug>/suivre/", methods=["POST"])
+@login_required
+def toggle_follow_game(slug):
+    """Follow/unfollow a game as a viewer (spectator agenda-only signal).
+
+    Purely a personal-agenda toggle: it never notifies the GM nor adds the
+    user to the game's roster, role, or channel.
+    """
+    payload = who()
+    user_id = payload["user_id"]
+    game = game_service.get_by_slug_or_404(slug)
+
+    try:
+        if game_service.is_viewer(game, user_id):
+            game_service.unfollow(slug, user_id)
+            flash("Vous ne suivez plus cette annonce.", "success")
+        else:
+            game_service.follow(slug, user_id)
+            flash("Vous suivez maintenant cette annonce.", "success")
+    except ValidationError:
+        flash("Impossible de suivre cette annonce.", "danger")
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 

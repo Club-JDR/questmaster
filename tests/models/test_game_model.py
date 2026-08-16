@@ -38,6 +38,7 @@ def sample_game():
         role="role1",
         status="draft",
         special_event_id=None,
+        open_to_viewers=False,
     )
 
 
@@ -57,6 +58,13 @@ def test_to_dict_basic_fields(sample_game):
     }
     assert data["ambience"] == ["chill", "comic"]
     assert "player_ids" in data
+    assert data["open_to_viewers"] is False
+
+
+def test_open_to_viewers_round_trips():
+    game = Game(open_to_viewers=True)
+    assert game.open_to_viewers is True
+    assert game.to_dict()["open_to_viewers"] is True
 
 
 def test_to_json_alias(sample_game):
@@ -101,6 +109,7 @@ def test_from_dict_creates_game():
         "role": "role2",
         "status": "open",
         "special_event_id": 10,
+        "open_to_viewers": True,
     }
     game = Game.from_dict(data)
     assert isinstance(game, Game)
@@ -116,6 +125,30 @@ def test_from_dict_creates_game():
         "horror": 0,
     }
     assert game.ambience == ["serious"]
+    assert game.open_to_viewers is True
+
+
+def test_from_dict_defaults_open_to_viewers_false_when_absent():
+    data = {
+        "id": 4,
+        "slug": "third-game",
+        "name": "Third Game",
+        "type": "oneshot",
+        "length": "3h",
+        "gm_id": "gm789",
+        "system_id": 1,
+        "description": "Desc",
+        "restriction": "all",
+        "party_size": 4,
+        "party_selection": False,
+        "xp": "all",
+        "date": "2024-03-01T12:00:00",
+        "session_length": 3.0,
+        "characters": "self",
+        "status": "draft",
+    }
+    game = Game.from_dict(data)
+    assert game.open_to_viewers is False
 
 
 def test_from_json_alias():

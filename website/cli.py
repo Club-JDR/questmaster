@@ -156,6 +156,11 @@ SLASH_COMMANDS = [
         ],
     },
     {
+        "name": "mon-agenda",
+        "description": "Affiche vos prochaines sessions (MJ, joueur·euse, spectateur·ice)",
+        "type": 1,
+    },
+    {
         "name": "avertir",
         "description": "Enregistrer une infraction pour un membre (admin)",
         "type": 1,

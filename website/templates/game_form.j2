@@ -166,12 +166,20 @@
             <div class="text-sm font-semibold text-base-content/70">Joueur·euses</div>
           </div>
 
-          {# Row 2 — aligns with Type: sur sélection toggle #}
-          <label class="flex items-center justify-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="party_selection" name="party_selection" class="toggle toggle-primary toggle-sm"
-              {% if (game and game.party_selection) or (not game and defaults.party_selection) %}checked{% endif %}>
-            <span class="text-sm text-base-content/70">Sur sélection</span>
-          </label>
+          {# Row 2 — aligns with Type: sur sélection + spectateur·ices toggles #}
+          <div class="flex flex-col items-center gap-2">
+            <label class="flex items-center justify-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="party_selection" name="party_selection" class="toggle toggle-primary toggle-sm"
+                {% if (game and game.party_selection) or (not game and defaults.party_selection) %}checked{% endif %}>
+              <span class="text-sm text-base-content/70">Sur sélection</span>
+            </label>
+
+            <label class="flex items-center justify-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="open_to_viewers" name="open_to_viewers" class="toggle toggle-primary toggle-sm"
+                {% if game and game.open_to_viewers %}checked{% endif %}>
+              <span class="text-sm text-base-content/70">Ouverte aux spectateur·ices</span>
+            </label>
+          </div>
 
           {# Row 3 — aligns with Système: expérience #}
           <div class="flex flex-col gap-1">

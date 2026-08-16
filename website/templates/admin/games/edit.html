@@ -125,19 +125,106 @@
 
   {# ── Joueurs & paramètres ── #}
   <div class="card bg-base-100 shadow-md">
-    <div class="card-body p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="card-body p-4 space-y-4">
 
-      <div class="flex flex-col gap-1">
-        <label for="party_size" class="{{ lbl }}">Nombre de joueur·euses</label>
-        <input type="number" id="party_size" name="party_size" min="1" max="99"
-               class="input input-bordered w-full" value="{{ game.party_size }}" required>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <div class="flex flex-col gap-1">
+          <label for="party_size" class="{{ lbl }}">Nombre de joueur·euses</label>
+          <input type="number" id="party_size" name="party_size" min="1" max="99"
+                 class="input input-bordered w-full" value="{{ game.party_size }}" required>
+        </div>
+
+        <div class="flex flex-col gap-2 md:mt-7">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" name="party_selection" class="toggle toggle-primary toggle-sm"
+                   {% if game.party_selection %}checked{% endif %}>
+            <span class="text-sm text-base-content/60">Sur sélection</span>
+          </label>
+
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" name="open_to_viewers" class="toggle toggle-primary toggle-sm"
+                   {% if game.open_to_viewers %}checked{% endif %}>
+            <span class="text-sm text-base-content/60">Ouverte aux spectateur·ices</span>
+          </label>
+        </div>
+
       </div>
 
-      <label class="flex items-center gap-2 cursor-pointer select-none md:mt-7">
-        <input type="checkbox" name="party_selection" class="toggle toggle-primary toggle-sm"
-               {% if game.party_selection %}checked{% endif %}>
-        <span class="text-sm text-base-content/60">Sur sélection</span>
-      </label>
+      {# ── Participants ──
+           These rows live inside the main edit <form> (so they sit right below
+           the toggles, in the same block) but must NOT be nested <form>s —
+           HTML forbids nesting. Each action button instead overrides the
+           enclosing form's action/method via formaction/formmethod, and
+           formnovalidate skips the other cards' required-field validation
+           when only removing/adding a participant. #}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-base-200 pt-4">
+
+        <div>
+          <h3 class="{{ lbl }} mb-2">Joueur·euses ({{ game.players|length }})</h3>
+          {% if game.players %}
+          <ul class="space-y-1">
+            {% for player in game.players %}
+            <li class="flex items-center justify-between gap-2 text-sm">
+              <span class="truncate">{{ player.name }}
+                <span class="text-base-content/40 font-mono text-xs">({{ player.id }})</span></span>
+              <button type="submit" class="btn btn-ghost btn-xs text-error"
+                      aria-label="Retirer {{ player.name }} de la partie"
+                      formaction="{{ url_for('admin.remove_game_player', game_id=game.id, user_id=player.id) }}"
+                      formmethod="post" formnovalidate
+                      onclick="return confirm('Retirer {{ player.name }} de la partie ?');">
+                <i class="ph ph-x" aria-hidden="true"></i>
+              </button>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-sm text-base-content/40">Aucun·e joueur·euse inscrit·e.</p>
+          {% endif %}
+
+          <div class="flex items-center gap-2 mt-3">
+            <label class="sr-only" for="add_player_discord_id">ID Discord du·de la joueur·euse à ajouter</label>
+            <input type="text" id="add_player_discord_id" name="discord_id"
+                   class="input input-bordered input-sm flex-1" placeholder="ID Discord">
+            <button type="submit" class="btn btn-primary btn-sm gap-1"
+                    formaction="{{ url_for('admin.add_game_player', game_id=game.id) }}"
+                    formmethod="post" formnovalidate>
+              <i class="ph ph-user-plus" aria-hidden="true"></i> Ajouter
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="{{ lbl }} mb-2">Spectateur·ices ({{ viewers|length }})</h3>
+          {% if viewers %}
+          <ul class="space-y-1">
+            {% for gv in viewers %}
+            <li class="flex items-center justify-between gap-2 text-sm">
+              <span class="truncate">{{ gv.user.name }}
+                <span class="text-base-content/40 font-mono text-xs">({{ gv.user.id }})</span></span>
+              <button type="submit" class="btn btn-ghost btn-xs text-error"
+                      aria-label="Retirer {{ gv.user.name }} des spectateur·ices"
+                      formaction="{{ url_for('admin.remove_game_viewer', game_id=game.id, user_id=gv.user.id) }}"
+                      formmethod="post" formnovalidate
+                      onclick="return confirm('Retirer {{ gv.user.name }} des spectateur·ices ?');">
+                <i class="ph ph-x" aria-hidden="true"></i>
+              </button>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-sm text-base-content/40">Aucun·e spectateur·ice.</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Expérience & avertissement ── #}
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
 
       <div class="flex flex-col gap-1">
         <label for="xp" class="{{ lbl }}">Expérience</label>

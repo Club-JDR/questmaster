@@ -29,7 +29,7 @@ current session may use.
 | --- | --- | --- |
 | Dashboard | `/admin/` | Landing page with links to every section |
 | Utilisateurs | `/admin/users/` | List users; edit display name and activity status; view a user's games and badges; superuser admins can [view-as](#view-as-user-impersonation) any other user |
-| Annonces | `/admin/games/` | List games; full-field edit; delete |
+| Annonces | `/admin/games/` | List games; full-field edit (incl. participant roster, see below); delete |
 | Événements | `/admin/special-events/` | CRUD for special (themed) events; view an event's games |
 | Badges | `/admin/trophies/` | CRUD for trophy **definitions** |
 | Systèmes | `/admin/systems/` | CRUD for RPG systems |
@@ -56,6 +56,23 @@ Trophy management is split in two:
       0** (quantity never drops below 1).
     - For trophies marked `unique=True`, the +1/−1 buttons are hidden and the row shows a
       *Unique* badge instead — a unique trophy cannot be awarded more than once.
+
+## Game participants (players & spectators)
+
+The full-field game editor (`/admin/games/<id>/edit`) also manages a game's participants,
+right below the party-size/toggle fields:
+
+- **Ouverte aux spectateur·ices** toggle — same flag as the public game form
+  (`Game.open_to_viewers`); admins can flip it without going through the GM.
+- **Joueur·euses** — the registered roster, with a per-row remove button
+  (`GameService.unregister_player`) and an "Ajouter" field to register someone by Discord ID
+  (`GameService.register_player`, forced — mirrors the public "Gérer" modal's add-player flow).
+- **Spectateur·ices** — everyone following the game as a viewer (a personal-agenda signal,
+  not a registration — see the public game page), with a per-row remove button
+  (`GameService.unfollow`).
+
+A user's own **`/admin/users/<id>/games`** page lists their games split by role — MJ,
+joueur·euse, and spectateur·ice — each in its own table.
 
 ## View-as (User Impersonation)
 

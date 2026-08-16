@@ -11,9 +11,9 @@ from config.constants import (
     INFRACTION_SEVERITY_REMINDER,
     INFRACTION_SEVERITY_WARNING,
 )
-from tests.factories import GameFactory, GameSessionFactory
+from tests.factories import GameFactory, GameSessionFactory, UserFactory
 from website.exceptions import NotFoundError
-from website.models import GameEvent, Infraction
+from website.models import GameEvent, GameViewer, Infraction
 from website.services.discord_command import (
     MSG_ALERT_SENT,
     MSG_ALREADY_PUBLISHED,
@@ -25,6 +25,7 @@ from website.services.discord_command import (
     MSG_GAME_OPENED_OK,
     MSG_GAME_PUBLISHED,
     MSG_GM_CANNOT_REGISTER,
+    MSG_NO_AGENDA,
     MSG_NO_BADGES,
     MSG_NO_INFRACTIONS,
     MSG_NOT_A_GAME_CHANNEL,
@@ -658,6 +659,56 @@ class TestBadges:
 
     def test_badges_is_inline(self, command_service):
         assert command_service.is_inline(_payload("badges", "1"))
+
+
+class TestMonAgenda:
+    def test_lists_upcoming_sessions_across_roles(
+        self, db_session, command_service, default_system
+    ):
+        user = UserFactory(db_session)
+        other_gm = UserFactory(db_session)
+
+        gm_game = GameFactory(
+            db_session, gm_id=user.id, system_id=default_system.id, status="open"
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=gm_game.id,
+            start=datetime(2030, 1, 1, 20, 0),
+            end=datetime(2030, 1, 1, 23, 0),
+        )
+
+        watched_game = GameFactory(
+            db_session,
+            gm_id=other_gm.id,
+            system_id=default_system.id,
+            status="open",
+            open_to_viewers=True,
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=watched_game.id,
+            start=datetime(2030, 2, 1, 20, 0),
+            end=datetime(2030, 2, 1, 23, 0),
+        )
+        db_session.add(GameViewer(game_id=watched_game.id, user_id=user.id))
+        db_session.flush()
+
+        payload = _payload("mon-agenda", "000000000000000000", user_id=user.id)
+        content = command_service.handle_inline(payload)
+
+        assert "Vos prochaines sessions" in content
+        assert gm_game.name in content
+        assert watched_game.name in content
+        assert "(MJ)" in content
+        assert "(Spectateur)" in content
+
+    def test_no_upcoming_sessions_returns_notice(self, db_session, command_service):
+        payload = _payload("mon-agenda", "000000000000000000", user_id="999999999999999999")
+        assert command_service.handle_inline(payload) == MSG_NO_AGENDA
+
+    def test_is_inline(self, command_service):
+        assert command_service.is_inline(_payload("mon-agenda", "1"))
 
 
 class TestAvertir:

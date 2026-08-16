@@ -364,3 +364,42 @@ class TestGameRepository:
         repo = GameRepository()
         count = repo.count()
         assert count >= 2
+
+    def test_find_by_viewer(self, db_session, sample_game, admin_user, default_system):
+        from tests.factories import UserFactory
+        from website.models import GameViewer
+
+        repo = GameRepository()
+        viewer = UserFactory(db_session)
+        other_game = GameFactory(
+            db_session, gm_id=admin_user.id, system_id=default_system.id, status="draft"
+        )
+        db_session.add(GameViewer(game_id=sample_game.id, user_id=viewer.id))
+        db_session.flush()
+
+        games = repo.find_by_viewer(viewer.id)
+
+        assert sample_game in games
+        assert other_game not in games
+
+    def test_find_by_viewer_with_relations_excludes_drafts(
+        self, db_session, admin_user, default_system
+    ):
+        from tests.factories import UserFactory
+        from website.models import GameViewer
+
+        repo = GameRepository()
+        viewer = UserFactory(db_session)
+        draft = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            status="draft",
+            open_to_viewers=True,
+        )
+        db_session.add(GameViewer(game_id=draft.id, user_id=viewer.id))
+        db_session.flush()
+
+        games = repo.find_by_viewer_with_relations(viewer.id)
+
+        assert draft not in games

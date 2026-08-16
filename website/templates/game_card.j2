@@ -167,6 +167,12 @@
           {% if tags|length > 3 %}
           <span class="badge badge-sm bg-white/10 text-white/80 border-white/10">+{{ tags|length - 3 }}</span>
           {% endif %}
+          {% if game.open_to_viewers %}
+          <span class="badge bg-white text-black gap-1 font-semibold" title="Ouverte aux spectateur·ices">
+            <i class="ph ph-eye" aria-hidden="true"></i>
+            <span class="sr-only">Ouverte aux spectateur·ices</span>
+          </span>
+          {% endif %}
         </div>
 
       </div>
