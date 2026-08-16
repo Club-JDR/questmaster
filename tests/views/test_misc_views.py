@@ -13,6 +13,18 @@ from tests.factories import GameFactory, SpecialEventFactory
 pytestmark = pytest.mark.integration
 
 
+# -- Discord commands help --------------------------------------------------
+
+
+class TestDiscordCommandsHelp:
+    """GET /aide/commandes-discord/ — Discord slash command reference page."""
+
+    def test_lists_mon_agenda_command(self, client):
+        response = client.get("/aide/commandes-discord/")
+        assert response.status_code == 200
+        assert "/mon-agenda" in response.get_data(as_text=True)
+
+
 # -- Calendar --------------------------------------------------------------
 
 

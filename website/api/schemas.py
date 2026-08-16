@@ -37,6 +37,7 @@ class GameSchema(Schema):
     restriction_tags = fields.String(allow_none=True)
     party_size = fields.Integer(required=True, validate=validate.Range(min=1))
     party_selection = fields.Boolean(load_default=False)
+    open_to_viewers = fields.Boolean(load_default=False)
     xp = fields.String(required=True, validate=validate.OneOf(GAME_XP))
     date = fields.DateTime(required=True)
     length = fields.String(required=True, validate=validate.Length(min=1))

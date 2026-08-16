@@ -29,8 +29,9 @@ from website.exceptions import (
     ValidationError,
 )
 from website.extensions import db
-from website.models import Game, User
+from website.models import Game, GameViewer, User
 from website.repositories.game import GameRepository
+from website.repositories.game_viewer import GameViewerRepository
 from website.services.channel import ChannelService
 from website.services.game_session import GameSessionService
 from website.services.trophy import TrophyService
@@ -55,6 +56,7 @@ class GameService:
         trophy_service=None,
         discord_service=None,
         settings_service=None,
+        viewer_repository=None,
     ):
         from website.services.discord import DiscordService
         from website.services.setting import SettingsService
@@ -66,6 +68,7 @@ class GameService:
         self.trophy_service = trophy_service or TrophyService()
         self.discord = discord_service or DiscordService()
         self.settings_service = settings_service or SettingsService()
+        self.viewer_repo = viewer_repository or GameViewerRepository()
 
     def list_all(self) -> list[Game]:
         """List all games ordered by date (most recent first).
@@ -145,6 +148,17 @@ class GameService:
             List of Game instances where the user is a registered player.
         """
         return self.repo.find_by_player(player_id)
+
+    def list_by_viewer(self, user_id: str) -> list[Game]:
+        """List all games a given user follows as a viewer (spectator).
+
+        Args:
+            user_id: Viewer's user ID.
+
+        Returns:
+            List of Game instances this user follows as a spectator.
+        """
+        return self.repo.find_by_viewer(user_id)
 
     def list_by_special_event(self, event_id: int) -> list[Game]:
         """List all games linked to a given special event.
@@ -382,6 +396,7 @@ class GameService:
                 img=data.get("img"),
                 party_selection="party_selection" in data,
                 restriction_tags=parse_restriction_tags(data),
+                open_to_viewers="open_to_viewers" in data,
             )
 
             # Generate unique slug
@@ -550,6 +565,7 @@ class GameService:
             game.img = data.get("img")
             game.restriction = data["restriction"]
             game.restriction_tags = parse_restriction_tags(data)
+            game.open_to_viewers = "open_to_viewers" in data
 
             db.session.commit()
             log_game_event(
@@ -1154,6 +1170,10 @@ class GameService:
     ) -> Game:
         """Register a player to a game (concurrent-safe).
 
+        A player is a stronger relationship than a spectator follow, so any
+        existing viewer follow for this user on this game is dropped —
+        a user is never tracked as both at once.
+
         Args:
             slug: Game slug.
             user_id: User ID to register.
@@ -1199,6 +1219,13 @@ class GameService:
 
             locked_game.players.append(user)
             self._auto_close_if_full(locked_game)
+
+            # A player is a stronger relationship than a spectator follow —
+            # drop any lingering viewer follow so the user isn't tracked as
+            # both at once (mirrors the symmetric guard in ``follow()``).
+            viewer = self.viewer_repo.get(locked_game.id, user.id)
+            if viewer is not None:
+                self.viewer_repo.delete(viewer)
 
             db.session.commit()
 
@@ -1375,6 +1402,92 @@ class GameService:
             True if the user is a registered player.
         """
         return any(p.id == user_id for p in game.players)
+
+    def list_viewers(self, game_id: int) -> list[GameViewer]:
+        """List everyone following a game as a spectator (admin visibility).
+
+        Args:
+            game_id: Game ID.
+
+        Returns:
+            List of GameViewer instances with ``user`` eager-loaded, ordered
+            by the follower's name.
+        """
+        return self.viewer_repo.list_for_game(game_id)
+
+    def is_viewer(self, game: Game, user_id: str) -> bool:
+        """Check if a user follows a game as a viewer (spectator).
+
+        Args:
+            game: Game instance.
+            user_id: User ID to check.
+
+        Returns:
+            True if the user currently follows this game as a viewer.
+        """
+        return self.viewer_repo.get(game.id, user_id) is not None
+
+    def follow(self, slug: str, user_id: str) -> Game:
+        """Follow a game as a viewer (spectator agenda-only signal).
+
+        Purely feeds the follower's own dashboard agenda — it never notifies
+        the GM, nor adds the follower to the game's roster, role, or channel.
+        Idempotent: following an already-followed game is a no-op.
+
+        Args:
+            slug: Game slug.
+            user_id: User ID to follow as.
+
+        Returns:
+            The Game instance.
+
+        Raises:
+            NotFoundError: If the game doesn't exist.
+            ValidationError: If the game isn't open to viewers, or the user
+                is the GM or a registered player (both already track it).
+        """
+        game = self.get_by_slug(slug)
+
+        if not game.open_to_viewers:
+            raise ValidationError("Game is not open to viewers.", field="open_to_viewers")
+        if user_id == game.gm_id or self.is_player(game, user_id):
+            raise ValidationError(
+                "GM and registered players already track this game.", field="user_id"
+            )
+
+        if self.viewer_repo.get(game.id, user_id) is None:
+            self.viewer_repo.add(GameViewer(game_id=game.id, user_id=user_id))
+            db.session.commit()
+            logger.info(f"User {user_id} started following Game {game.id} as a viewer")
+            self._invalidate_dashboard_stats(user_id)
+
+        return game
+
+    def unfollow(self, slug: str, user_id: str) -> Game:
+        """Stop following a game as a viewer.
+
+        Idempotent: unfollowing a game not currently followed is a no-op.
+
+        Args:
+            slug: Game slug.
+            user_id: User ID to unfollow as.
+
+        Returns:
+            The Game instance.
+
+        Raises:
+            NotFoundError: If the game doesn't exist.
+        """
+        game = self.get_by_slug(slug)
+
+        viewer = self.viewer_repo.get(game.id, user_id)
+        if viewer is not None:
+            self.viewer_repo.delete(viewer)
+            db.session.commit()
+            logger.info(f"User {user_id} stopped following Game {game.id} as a viewer")
+            self._invalidate_dashboard_stats(user_id)
+
+        return game
 
     def search(
         self,

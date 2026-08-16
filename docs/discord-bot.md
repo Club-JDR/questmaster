@@ -25,6 +25,7 @@ Dates use the `JJ/MM/AAAA HH:MM` format; durations use `3h` / `2h30` forms.
 | `/fermer` | Close an open game to registrations | GM, admins |
 | `/publier` | Publish the channel's announcement if it isn't published yet (e.g. after a silent publish; pure drafts have no channel and are published from the website) | GM, admins |
 | `/badges [membre]` | Show a member's trophies (the caller's by default); works in any channel | anyone |
+| `/mon-agenda` | Show the caller's upcoming sessions (MJ, joueur·euse, spectateur·ice), same data as the website's "Mon agenda" panel; works in any channel | anyone |
 | `/avertir <membre> <raison> [gravite] [article] [lien]` | Record a moderation infraction against a member (same as the admin "Modération" page); nothing is posted publicly and the member is not notified; works in any channel | admins |
 | `/infractions <membre>` | List a member's infractions, newest first (mirrors the historical Mee6 `!infractions`); works in any channel | admins |
 

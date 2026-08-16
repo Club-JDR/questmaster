@@ -18,6 +18,7 @@ Repositories:
 | `GameRepository` | [`Game`](models.md#website.models.Game) | Game queries with filtering, search, pagination, and eager loading |
 | `GameEventRepository` | [`GameEvent`](models.md#website.models.GameEvent) | Game audit log entry creation |
 | `GameSessionRepository` | [`GameSession`](models.md#website.models.GameSession) | Session date range queries and conflict detection |
+| `GameViewerRepository` | [`GameViewer`](models.md#website.models.GameViewer) | Spectator follow-record lookups (by composite key) |
 | `SpecialEventRepository` | [`SpecialEvent`](models.md#website.models.SpecialEvent) | Themed event retrieval with active/inactive filtering |
 | `SystemRepository` | [`System`](models.md#website.models.System) | RPG system lookups, incl. GM run-history derived from game data |
 | `UserSystemInterestRepository` | [`UserSystemInterest`](models.md#website.models.UserSystemInterest) | Declared-interest lookups (by composite key, and per system/role) |

@@ -180,6 +180,43 @@ class TestGameService:
         assert game.status == "draft"
         assert game.name == "New Draft Game"
         assert game.party_size == 5
+        assert game.open_to_viewers is False
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_create_sets_open_to_viewers_from_checkbox_presence(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        admin_user,
+        default_system,
+        game_service,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+
+        data = {
+            "name": "Spectator Friendly Game",
+            "type": "oneshot",
+            "length": "4h",
+            "system": default_system.id,
+            "description": "Test game",
+            "restriction": "all",
+            "party_size": 5,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "session_length": 4.0,
+            "characters": "self",
+            "open_to_viewers": "on",  # HTML checkbox: presence means checked
+        }
+
+        game = game_service.create(data, admin_user.id, status="draft", create_resources=False)
+
+        assert game.open_to_viewers is True
 
     @patch("website.utils.form_parsers.get_classification")
     @patch("website.utils.form_parsers.get_ambience")
@@ -309,6 +346,46 @@ class TestGameService:
         assert game.description == "Updated description"
         assert game.restriction == "16+"
         assert game.party_size == 6
+        assert game.open_to_viewers is False
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_sets_open_to_viewers_from_checkbox_presence(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+        sample_game.open_to_viewers = True
+        db_session.commit()
+
+        data = {
+            "name": sample_game.name,
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "Updated description",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "4h",
+            "session_length": 4.0,
+            "characters": "self",
+            # No "open_to_viewers" key: unchecked checkboxes are absent from
+            # form data, so the field must be cleared on save.
+        }
+
+        game = game_service.update(sample_game.slug, data)
+
+        assert game.open_to_viewers is False
 
     @patch("website.utils.form_parsers.get_classification")
     @patch("website.utils.form_parsers.get_ambience")
@@ -1486,3 +1563,99 @@ class TestGetOpenPreview:
         )
         assert len(games) == limit
         assert max(total - len(games), 0) == extra
+
+
+class TestGameServiceViewers:
+    """Tests for GameService.follow/unfollow/is_viewer (spectator agenda signal)."""
+
+    def test_follow_requires_open_to_viewers(
+        self, db_session, sample_game, regular_user, game_service
+    ):
+        sample_game.open_to_viewers = False
+        db_session.commit()
+
+        with pytest.raises(ValidationError):
+            game_service.follow(sample_game.slug, regular_user.id)
+
+    def test_follow_and_is_viewer(self, db_session, sample_game, regular_user, game_service):
+        sample_game.open_to_viewers = True
+        db_session.commit()
+
+        game_service.follow(sample_game.slug, regular_user.id)
+
+        assert game_service.is_viewer(sample_game, regular_user.id) is True
+
+    def test_follow_is_idempotent(self, db_session, sample_game, regular_user, game_service):
+        sample_game.open_to_viewers = True
+        db_session.commit()
+
+        game_service.follow(sample_game.slug, regular_user.id)
+        game_service.follow(sample_game.slug, regular_user.id)  # no-op, no crash
+
+        assert game_service.is_viewer(sample_game, regular_user.id) is True
+
+    def test_gm_cannot_follow_own_game(self, db_session, sample_game, admin_user, game_service):
+        sample_game.open_to_viewers = True
+        db_session.commit()
+
+        with pytest.raises(ValidationError):
+            game_service.follow(sample_game.slug, admin_user.id)
+
+    def test_registered_player_cannot_follow(
+        self, db_session, sample_game, regular_user, mock_discord, game_service
+    ):
+        sample_game.open_to_viewers = True
+        sample_game.status = "open"
+        db_session.commit()
+        game_service.register_player(sample_game.slug, regular_user.id, force=True)
+
+        with pytest.raises(ValidationError):
+            game_service.follow(sample_game.slug, regular_user.id)
+
+    def test_registering_as_player_drops_existing_viewer_follow(
+        self, db_session, sample_game, regular_user, mock_discord, game_service
+    ):
+        """A user is never tracked as both a player and a viewer at once."""
+        sample_game.open_to_viewers = True
+        sample_game.status = "open"
+        db_session.commit()
+        game_service.follow(sample_game.slug, regular_user.id)
+        assert game_service.is_viewer(sample_game, regular_user.id) is True
+
+        game_service.register_player(sample_game.slug, regular_user.id, force=True)
+
+        assert game_service.is_viewer(sample_game, regular_user.id) is False
+
+    def test_unfollow(self, db_session, sample_game, regular_user, game_service):
+        sample_game.open_to_viewers = True
+        db_session.commit()
+        game_service.follow(sample_game.slug, regular_user.id)
+
+        game_service.unfollow(sample_game.slug, regular_user.id)
+
+        assert game_service.is_viewer(sample_game, regular_user.id) is False
+
+    def test_unfollow_is_idempotent(self, db_session, sample_game, regular_user, game_service):
+        game_service.unfollow(sample_game.slug, regular_user.id)  # never followed, no crash
+        assert game_service.is_viewer(sample_game, regular_user.id) is False
+
+    def test_is_viewer_false_by_default(self, db_session, sample_game, regular_user, game_service):
+        assert game_service.is_viewer(sample_game, regular_user.id) is False
+
+    def test_list_viewers(self, db_session, sample_game, regular_user, game_service):
+        sample_game.open_to_viewers = True
+        db_session.commit()
+        game_service.follow(sample_game.slug, regular_user.id)
+
+        viewers = game_service.list_viewers(sample_game.id)
+
+        assert [v.user_id for v in viewers] == [regular_user.id]
+
+    def test_list_by_viewer(self, db_session, sample_game, regular_user, game_service):
+        sample_game.open_to_viewers = True
+        db_session.commit()
+        game_service.follow(sample_game.slug, regular_user.id)
+
+        games = game_service.list_by_viewer(regular_user.id)
+
+        assert sample_game in games

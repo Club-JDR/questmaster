@@ -66,4 +66,5 @@ def user_games(user_id):
         user=user,
         gm_games=game_service.list_by_gm(user_id),
         player_games=game_service.list_by_player(user_id),
+        viewer_games=game_service.list_by_viewer(user_id),
     )

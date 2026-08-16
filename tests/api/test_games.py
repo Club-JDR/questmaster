@@ -334,6 +334,38 @@ class TestCreateGame:
 
     @patch("website.api.games.load_current_user")
     @patch("website.api.games.game_service")
+    def test_open_to_viewers_mapping(
+        self, mock_service, mock_load_user, api_client, auth_headers_gm
+    ):
+        """open_to_viewers only appears in the service payload when truthy."""
+        mock_load_user.return_value = _mock_user(is_gm=True)
+        mock_service.create.return_value = MagicMock(to_dict=MagicMock(return_value={"id": 1}))
+
+        payload = {**VALID_GAME_PAYLOAD, "open_to_viewers": True}
+        response = api_client.post("/api/v1/games/", json=payload, headers=auth_headers_gm)
+        assert response.status_code == 201
+
+        service_data = mock_service.create.call_args[0][0]
+        assert service_data["open_to_viewers"] is True
+
+    @patch("website.api.games.load_current_user")
+    @patch("website.api.games.game_service")
+    def test_open_to_viewers_omitted_when_falsy(
+        self, mock_service, mock_load_user, api_client, auth_headers_gm
+    ):
+        mock_load_user.return_value = _mock_user(is_gm=True)
+        mock_service.create.return_value = MagicMock(to_dict=MagicMock(return_value={"id": 1}))
+
+        response = api_client.post(
+            "/api/v1/games/", json=VALID_GAME_PAYLOAD, headers=auth_headers_gm
+        )
+        assert response.status_code == 201
+
+        service_data = mock_service.create.call_args[0][0]
+        assert "open_to_viewers" not in service_data
+
+    @patch("website.api.games.load_current_user")
+    @patch("website.api.games.game_service")
     def test_missing_required_field(
         self, mock_service, mock_load_user, api_client, auth_headers_gm
     ):

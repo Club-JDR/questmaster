@@ -5,6 +5,7 @@ delegating to the existing service layer. Admin edits are database-only
 (no Discord side effects), so these tests do not require Discord credentials.
 """
 
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -633,6 +634,23 @@ def test_user_games_lists_gm_and_player_games(admin_client, db_session, default_
     assert "Played Game" in body
 
 
+def test_user_games_lists_viewer_games(admin_client, db_session, default_system):
+    from website.models import GameViewer
+
+    user = UserFactory(db_session)
+    watched_game = GameFactory(
+        db_session, name="Watched Game", system_id=default_system.id, open_to_viewers=True
+    )
+    db_session.add(GameViewer(game_id=watched_game.id, user_id=user.id))
+    db_session.flush()
+
+    resp = admin_client.get(f"/admin/users/{user.id}/games")
+
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Watched Game" in body
+
+
 def test_user_games_unknown_user_redirects(admin_client):
     resp = admin_client.get("/admin/users/000000000000000000/games")
     assert resp.status_code == 302
@@ -657,6 +675,7 @@ def test_admin_full_field_game_edit(admin_client, db_session, mock_csrf, default
         "frequency": "weekly",
         "party_size": "6",
         "party_selection": "on",
+        "open_to_viewers": "on",
         "xp": "beginners",
         "characters": "pregen",
         "restriction": "16+",
@@ -683,6 +702,7 @@ def test_admin_full_field_game_edit(admin_client, db_session, mock_csrf, default
     assert game.status == "closed"
     assert game.party_size == 6
     assert game.party_selection is True
+    assert game.open_to_viewers is True
     assert game.restriction == "16+"
     assert game.restriction_tags == "horreur, violence"
     assert game.classification == {
@@ -700,6 +720,76 @@ def test_admin_delete_game(admin_client, db_session, mock_csrf, default_system):
     game_id = game.id
     admin_client.post(f"/admin/games/{game_id}/delete")
     assert db_session.get(Game, game_id) is None
+
+
+def test_admin_edit_game_lists_players_and_viewers(admin_client, db_session, default_system):
+    from website.models import GameViewer
+
+    game = GameFactory(db_session, system_id=default_system.id, open_to_viewers=True)
+    player = UserFactory(db_session, name="Rostered Player")
+    viewer = UserFactory(db_session, name="Following Viewer")
+    game.players.append(player)
+    db_session.add(GameViewer(game_id=game.id, user_id=viewer.id))
+    db_session.flush()
+
+    resp = admin_client.get(f"/admin/games/{game.id}/edit")
+
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Rostered Player" in body
+    assert "Following Viewer" in body
+
+
+def test_admin_add_game_player(
+    admin_client, db_session, mock_csrf, mock_discord_lookups, default_system
+):
+    game = GameFactory(db_session, system_id=default_system.id, status="open")
+    target = UserFactory(db_session)
+
+    with patch("website.views.admin.games.game_service.discord", MagicMock()):
+        response = admin_client.post(
+            f"/admin/games/{game.id}/players/add",
+            data={"discord_id": target.id},
+            follow_redirects=True,
+        )
+
+    assert response.status_code == 200
+    assert "Joueur·euse ajouté·e." in response.get_data(as_text=True)
+    db_session.refresh(game)
+    assert target in game.players
+
+
+def test_admin_remove_game_player(admin_client, db_session, mock_csrf, default_system):
+    game = GameFactory(db_session, system_id=default_system.id, status="open")
+    player = UserFactory(db_session)
+    game.players.append(player)
+    db_session.flush()
+
+    response = admin_client.post(
+        f"/admin/games/{game.id}/players/{player.id}/remove", follow_redirects=True
+    )
+
+    assert response.status_code == 200
+    assert "Joueur·euse retiré·e." in response.get_data(as_text=True)
+    db_session.refresh(game)
+    assert player not in game.players
+
+
+def test_admin_remove_game_viewer(admin_client, db_session, mock_csrf, default_system):
+    from website.models import GameViewer
+
+    game = GameFactory(db_session, system_id=default_system.id, open_to_viewers=True)
+    viewer = UserFactory(db_session)
+    db_session.add(GameViewer(game_id=game.id, user_id=viewer.id))
+    db_session.flush()
+
+    response = admin_client.post(
+        f"/admin/games/{game.id}/viewers/{viewer.id}/remove", follow_redirects=True
+    )
+
+    assert response.status_code == 200
+    assert "Spectateur·ice retiré·e." in response.get_data(as_text=True)
+    assert db_session.get(GameViewer, (game.id, viewer.id)) is None
 
 
 def test_award_game_trophies(admin_client, db_session, mock_csrf, default_system):

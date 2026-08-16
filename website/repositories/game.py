@@ -7,7 +7,7 @@ from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import joinedload, subqueryload
 
 from config.constants import GAME_STATUS_DRAFT
-from website.models import Game, User
+from website.models import Game, GameViewer, User
 from website.repositories.base import BaseRepository
 
 
@@ -99,6 +99,22 @@ class GameRepository(BaseRepository[Game]):
         """
         return self.session.query(Game).join(Game.players).filter(User.id == player_id).all()
 
+    def find_by_viewer(self, user_id: str) -> list[Game]:
+        """Find all games a user follows as a viewer (spectator).
+
+        Args:
+            user_id: Viewer's user ID.
+
+        Returns:
+            List of games this user follows as a spectator, regardless of status.
+        """
+        return (
+            self.session.query(Game)
+            .join(GameViewer, GameViewer.game_id == Game.id)
+            .filter(GameViewer.user_id == user_id)
+            .all()
+        )
+
     def find_by_gm_with_relations(self, gm_id: str) -> list[Game]:
         """Return all games GMed by a user, with stats relations eager-loaded.
 
@@ -148,6 +164,33 @@ class GameRepository(BaseRepository[Game]):
                 subqueryload(Game.players),
             )
             .filter(User.id == player_id, Game.status != GAME_STATUS_DRAFT)
+            .all()
+        )
+
+    def find_by_viewer_with_relations(self, user_id: str) -> list[Game]:
+        """Return all games a user follows as a viewer, with stats relations eager-loaded.
+
+        Loads gm, system, vtt, sessions and players to avoid N+1 queries when
+        aggregating dashboard statistics. Draft games are excluded so unpublished
+        announcements never contribute to statistics.
+
+        Args:
+            user_id: Viewer's user ID.
+
+        Returns:
+            List of non-draft games this user follows as a spectator.
+        """
+        return (
+            self.session.query(Game)
+            .join(GameViewer, GameViewer.game_id == Game.id)
+            .options(
+                joinedload(Game.gm),
+                joinedload(Game.system),
+                joinedload(Game.vtt),
+                subqueryload(Game.sessions),
+                subqueryload(Game.players),
+            )
+            .filter(GameViewer.user_id == user_id, Game.status != GAME_STATUS_DRAFT)
             .all()
         )
 

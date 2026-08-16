@@ -13,9 +13,10 @@ Models define:
 
 | Model | Description |
 | --- | --- |
-| `Game` | A tabletop RPG game (one-shot or campaign) |
+| `Game` | A tabletop RPG game (one-shot or campaign); `open_to_viewers` signals it's open to spectators (in person or via the VTT), not just registered players |
 | `GameSession` | A scheduled session belonging to a game |
 | `GameEvent` | Audit trail entry for game lifecycle events |
+| `GameViewer` | A user following a game as a spectator — a personal-agenda signal, not a registration |
 | `User` | A Discord-authenticated user |
 | `Trophy` | An achievement definition |
 | `UserTrophy` | A trophy awarded to a user |

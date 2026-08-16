@@ -11,7 +11,8 @@ from tests.factories import (
     UserTrophyFactory,
     VttFactory,
 )
-from website.services.stats import ROLE_GM, ROLE_PLAYER, StatsService
+from website.models import GameViewer
+from website.services.stats import ROLE_GM, ROLE_PLAYER, ROLE_VIEWER, StatsService
 
 PAST = (datetime(2026, 1, 10, 20, 0), datetime(2026, 1, 10, 23, 0))
 FUTURE = (datetime(2030, 1, 10, 20, 0), datetime(2030, 1, 10, 23, 0))
@@ -141,6 +142,45 @@ class TestStatsService:
         assert data["agenda"]["upcoming"] == []
         assert data["stats"]["games_count"] == 0
         assert data["stats"]["role"]["sessions"] == 0
+
+    def test_viewer_games_appear_in_agenda_as_spectateur(self, db_session, default_system):
+        viewer = UserFactory(db_session)
+        gm = UserFactory(db_session)
+        watched_game = GameFactory(
+            db_session,
+            type="oneshot",
+            status="open",
+            gm_id=gm.id,
+            system_id=default_system.id,
+            open_to_viewers=True,
+        )
+        GameSessionFactory(db_session, game_id=watched_game.id, start=FUTURE[0], end=FUTURE[1])
+        db_session.add(GameViewer(game_id=watched_game.id, user_id=viewer.id))
+        db_session.flush()
+
+        agenda = StatsService().get_dashboard_stats(viewer.id, 10)["agenda"]
+
+        assert len(agenda["upcoming"]) == 1
+        assert agenda["upcoming"][0]["role"] == ROLE_VIEWER
+
+    def test_viewer_role_deduped_against_gm_and_player(self, db_session, default_system):
+        """Following a game the user already GMs/plays never adds a redundant row."""
+        user, *_ = _build_scenario(db_session, default_system)
+        gm_game = GameFactory(
+            db_session,
+            type="oneshot",
+            status="open",
+            gm_id=user.id,
+            system_id=default_system.id,
+            open_to_viewers=True,
+        )
+        db_session.add(GameViewer(game_id=gm_game.id, user_id=user.id))
+        db_session.flush()
+
+        agenda = StatsService().get_dashboard_stats(user.id, 10)["agenda"]
+        roles = {row["role"] for row in agenda["upcoming"]}
+
+        assert ROLE_VIEWER not in roles
 
 
 def _game_with(

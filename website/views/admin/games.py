@@ -14,6 +14,7 @@ from config.constants import (
     RESTRICTIONS,
 )
 from website.exceptions import (
+    DuplicateRegistrationError,
     NotFoundError,
     TrophiesAlreadyAwardedError,
     TrophiesNotAwardedError,
@@ -33,6 +34,9 @@ system_service = SystemService()
 vtt_service = VttService()
 user_service = UserService()
 special_event_service = SpecialEventService()
+
+_GAME_NOT_FOUND_MESSAGE = "Annonce introuvable."
+_EDIT_GAME_ENDPOINT = "admin.edit_game"
 
 
 def _parse_game_form() -> dict:
@@ -54,6 +58,7 @@ def _parse_game_form() -> dict:
         "restriction_tags": parse_restriction_tags(request.form),
         "party_size": int(request.form.get("party_size") or 1),
         "party_selection": "party_selection" in request.form,
+        "open_to_viewers": "open_to_viewers" in request.form,
         "xp": request.form.get("xp") or None,
         "date": request.form.get("date"),
         "session_length": request.form.get("session_length"),
@@ -109,7 +114,7 @@ def edit_game(game_id):
     try:
         game = game_service.get_by_id(game_id)
     except NotFoundError:
-        flash("Annonce introuvable.", "danger")
+        flash(_GAME_NOT_FOUND_MESSAGE, "danger")
         return redirect(url_for("admin.list_games"))
 
     if request.method == "POST":
@@ -120,7 +125,68 @@ def edit_game(game_id):
         except ValidationError as e:
             flash(str(e), "danger")
 
-    return render_template("admin/games/edit.html", game=game, **_form_context())
+    viewers = game_service.list_viewers(game.id)
+    return render_template("admin/games/edit.html", game=game, viewers=viewers, **_form_context())
+
+
+@admin_bp.route("/games/<int:game_id>/players/add", methods=["POST"])
+@admin_only
+def add_game_player(game_id):
+    """Add a player to a game by Discord ID (admin roster management).
+
+    Mirrors the public "Gérer" modal's add-player flow: the target must hold
+    the Discord player role. The registration is forced (bypasses
+    capacity/status/schedule checks), the trusted admin override.
+    """
+    uid = request.form.get("discord_id", "").strip()
+    if not uid:
+        flash("Identifiant Discord manquant.", "danger")
+        return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
+
+    try:
+        game = game_service.get_by_id(game_id)
+        user, _created = user_service.get_or_create(uid)
+        user.refresh_roles()
+        if not user.is_player:
+            flash("Cette personne n'est pas un·e joueur·euse sur le Discord.", "danger")
+            return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
+        game_service.register_player(game.slug, user.id, force=True, skip_schedule_check=True)
+        flash("Joueur·euse ajouté·e.", "success")
+    except NotFoundError:
+        flash(_GAME_NOT_FOUND_MESSAGE, "danger")
+    except DuplicateRegistrationError:
+        flash("Cette personne est déjà inscrite à cette partie.", "danger")
+    except ValidationError as e:
+        flash(str(e), "danger")
+    return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
+
+
+@admin_bp.route("/games/<int:game_id>/players/<user_id>/remove", methods=["POST"])
+@admin_only
+def remove_game_player(game_id, user_id):
+    """Remove a registered player from a game (admin roster management)."""
+    try:
+        game = game_service.get_by_id(game_id)
+        game_service.unregister_player(game.slug, user_id)
+        flash("Joueur·euse retiré·e.", "success")
+    except NotFoundError:
+        flash(_GAME_NOT_FOUND_MESSAGE, "danger")
+    except ValidationError as e:
+        flash(str(e), "danger")
+    return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
+
+
+@admin_bp.route("/games/<int:game_id>/viewers/<user_id>/remove", methods=["POST"])
+@admin_only
+def remove_game_viewer(game_id, user_id):
+    """Remove a spectator's follow on a game (admin moderation)."""
+    try:
+        game = game_service.get_by_id(game_id)
+        game_service.unfollow(game.slug, user_id)
+        flash("Spectateur·ice retiré·e.", "success")
+    except NotFoundError:
+        flash(_GAME_NOT_FOUND_MESSAGE, "danger")
+    return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
 @admin_bp.route("/games/<int:game_id>/award-trophies", methods=["POST"])
@@ -131,10 +197,10 @@ def award_game_trophies(game_id):
         game_service.award_trophies(game_id, user_id=session.get("user_id"))
         flash("Badges distribués.", "success")
     except NotFoundError:
-        flash("Annonce introuvable.", "danger")
+        flash(_GAME_NOT_FOUND_MESSAGE, "danger")
     except (ValidationError, TrophiesAlreadyAwardedError) as e:
         flash(str(e), "danger")
-    return redirect(url_for("admin.edit_game", game_id=game_id))
+    return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
 @admin_bp.route("/games/<int:game_id>/revoke-trophies", methods=["POST"])
@@ -145,10 +211,10 @@ def revoke_game_trophies(game_id):
         game_service.revoke_trophies(game_id, user_id=session.get("user_id"))
         flash("Badges retirés.", "success")
     except NotFoundError:
-        flash("Annonce introuvable.", "danger")
+        flash(_GAME_NOT_FOUND_MESSAGE, "danger")
     except (ValidationError, TrophiesNotAwardedError) as e:
         flash(str(e), "danger")
-    return redirect(url_for("admin.edit_game", game_id=game_id))
+    return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
 @admin_bp.route("/games/<int:game_id>/delete", methods=["POST"])

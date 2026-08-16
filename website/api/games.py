@@ -68,6 +68,8 @@ def _clean_to_service_data(clean: dict) -> dict:
     data["party_size"] = clean["party_size"]
     if clean.get("party_selection"):
         data["party_selection"] = True
+    if clean.get("open_to_viewers"):
+        data["open_to_viewers"] = True
     data["xp"] = clean["xp"]
     date_value = clean["date"]
     data["date"] = date_value.isoformat() if hasattr(date_value, "isoformat") else date_value

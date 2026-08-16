@@ -99,7 +99,13 @@ def _get_session_type(game) -> str:
 
 
 def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
-    """Return list of embed fields, applying strikethrough if closed."""
+    """Return list of embed fields, applying strikethrough if closed.
+
+    The "Spectateur·ices" field (when the game is open to viewers) is added
+    after the strikethrough pass and never struck through itself: a game
+    closed to new players (full) can still be open to spectators, so that
+    field must stay legible even when every other field is crossed out.
+    """
     fields = [
         {"name": "MJ", "value": game.gm.name, "inline": True},
         {"name": "Système", "value": game.system.name, "inline": True},
@@ -112,6 +118,9 @@ def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
     if game.status == "closed":
         for field in fields:
             field["value"] = f"~~{field['value']}~~"
+
+    if game.open_to_viewers:
+        fields.append({"name": "Spectateur·ices", "value": "👀 Spectateur·ices bienvenu·es"})
 
     return fields
 

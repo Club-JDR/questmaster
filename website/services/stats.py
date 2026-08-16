@@ -35,6 +35,7 @@ from website.utils.logger import logger
 
 ROLE_GM = "MJ"
 ROLE_PLAYER = "Joueur·euse"
+ROLE_VIEWER = "Spectateur"
 
 
 class StatsService:
@@ -133,22 +134,30 @@ class StatsService:
         player_games = [
             g for g in self.repo.find_by_player_with_relations(user_id) if g.id not in gm_ids
         ]
+        # Same precedence rule again: the GM/player roles are participation,
+        # following-as-viewer is a lesser, purely informational signal. A
+        # viewer follow on a game the user already GMs or plays in (e.g. from
+        # before they registered) never shows a redundant "Spectateur" row.
+        tracked_ids = gm_ids | {g.id for g in player_games}
+        viewer_games = [
+            g for g in self.repo.find_by_viewer_with_relations(user_id) if g.id not in tracked_ids
+        ]
 
         return {
-            "agenda": self._build_agenda(gm_games, player_games, now),
+            "agenda": self._build_agenda(gm_games, player_games, viewer_games, now),
             "stats": self._build_stats(user_id, gm_games, player_games, now),
         }
 
     # ------------------------------------------------------------------ agenda
 
-    def _build_agenda(self, gm_games, player_games, now) -> dict:
+    def _build_agenda(self, gm_games, player_games, viewer_games, now) -> dict:
         """Build the chronological agenda (recent past + all upcoming sessions).
 
         The upcoming list is returned in full; the caller slices it to the
         configured display limit so the cache stays limit-independent.
         """
         rows = []
-        for game, role in self._iter_with_role(gm_games, player_games):
+        for game, role in self._iter_with_role(gm_games, player_games, viewer_games):
             for session in game.sessions:
                 rows.append((session.start, self._session_row(session, game, role)))
 
@@ -209,11 +218,13 @@ class StatsService:
         }
 
     @staticmethod
-    def _iter_with_role(gm_games, player_games):
+    def _iter_with_role(gm_games, player_games, viewer_games=()):
         for g in gm_games:
             yield g, ROLE_GM
         for g in player_games:
             yield g, ROLE_PLAYER
+        for g in viewer_games:
+            yield g, ROLE_VIEWER
 
     @staticmethod
     def _all_sessions(games) -> list:
