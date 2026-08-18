@@ -17,6 +17,7 @@ from website.exceptions import (
     GameClosedError,
     GameFullError,
     GamePostingBlockedError,
+    NotFoundError,
     PastDateError,
     QuestMasterError,
     ScheduleConflictError,
@@ -41,6 +42,8 @@ game_bp = Blueprint("annonces", __name__)
 
 # Configurables
 GAME_LIST_TEMPLATE = "games.j2"
+GAME_FORM_TEMPLATE = "game_form.j2"
+GAME_EDIT_FORM_ROUTE = "annonces.get_game_edit_form"
 
 # Flashed when publishing a draft whose start date is in the past.
 _PAST_DATE_MESSAGE = (
@@ -224,7 +227,42 @@ def get_game_details(slug):
         game=game_data,
         is_player=is_player,
         is_viewer=is_viewer,
+        branch_roster=_resolve_branch_roster(payload, game),
     )
+
+
+def _resolve_branch_roster(payload, game):
+    """Build the roster carry-over modal context after branching a one-shot.
+
+    Triggered by a ``?branch_from=<source_slug>`` query param on the new
+    one-shot's own details page — set by ``create_branch_game``'s redirect,
+    read here rather than threaded through as an extra route so landing on
+    this page is otherwise indistinguishable from any other game details
+    view. Silently ignored for anyone but the new game's GM/admin, or when
+    the source game can no longer be resolved, so a stray/forged query
+    param never surfaces someone else's roster.
+
+    Args:
+        payload: Auth payload (from ``who()``).
+        game: The (new) game whose details page is being rendered.
+
+    Returns:
+        Dict with ``source_slug`` and ``players`` (dicts) for the modal, or
+        None if the checklist shouldn't be shown.
+    """
+    source_slug = request.args.get("branch_from")
+    if not source_slug:
+        return None
+    if game.gm_id != payload.get("user_id") and not payload.get("is_admin"):
+        return None
+    try:
+        source_game = game_service.get_by_slug(source_slug)
+    except NotFoundError:
+        return None
+    return {
+        "source_slug": source_slug,
+        "players": [p.to_dict() for p in source_game.players],
+    }
 
 
 @game_bp.route("/annonce/", methods=["GET"])
@@ -240,7 +278,7 @@ def get_game_form():
     vtts = vtt_service.get_all()
     user = user_service.get_by_id(payload["user_id"])
     return render_template(
-        "game_form.j2",
+        GAME_FORM_TEMPLATE,
         systems=systems,
         vtts=vtts,
         defaults=resolve_game_form_defaults(user=user, systems=systems, vtts=vtts),
@@ -277,7 +315,7 @@ def create_game():
             except PastDateError:
                 # The draft is saved; send the GM back to fix the date or confirm.
                 flash(_PAST_DATE_MESSAGE, "warning")
-                return redirect(url_for("annonces.get_game_edit_form", slug=game.slug))
+                return redirect(url_for(GAME_EDIT_FORM_ROUTE, slug=game.slug))
             msg = f"Annonce {game.name} postée."
         else:
             msg = f"Annonce {game.name} enregistrée."
@@ -323,7 +361,7 @@ def edit_game(slug):
     except PastDateError:
         # Edits are saved (still a draft); send the GM back to fix the date or confirm.
         flash(_PAST_DATE_MESSAGE, "warning")
-        return redirect(url_for("annonces.get_game_edit_form", slug=game.slug))
+        return redirect(url_for(GAME_EDIT_FORM_ROUTE, slug=game.slug))
     except GamePostingBlockedError:
         # Edits are saved (still a draft); only the publish step was blocked.
         flash(_POSTING_BLOCKED_MESSAGE, "danger")
@@ -654,13 +692,167 @@ def get_game_edit_form(slug):
     else:
         flash("Vous êtes en train de modifier une annonce.", "primary")
     return render_template(
-        "game_form.j2",
+        GAME_FORM_TEMPLATE,
         game=game,
         systems=system_service.get_all(),
         vtts=vtt_service.get_all(),
         clone=True if "cloner" in request.path else False,
         defaults=resolve_game_form_defaults(game=game),
     )
+
+
+@game_bp.route("/annonces/<slug>/brancher/", methods=["GET"])
+@login_required
+def get_branch_form(slug):
+    """Get the form to branch a campaign into a quick replacement one-shot.
+
+    Unlike "Cloner", this does NOT reuse the campaign's own data (name,
+    description, restriction, classification, ambience, img, frequency…):
+    the form starts exactly like a brand-new game (the creating user's own
+    saved defaults, or the app-wide ones — ``game`` is simply not passed to
+    the template), except ``defaults`` is pre-seeded with the structural
+    bits worth carrying over — system, VTT (same table, same tools), type
+    forced to one-shot, and party_size defaulted to the campaign's current
+    headcount (not its own, likely larger, party_size).
+    """
+    payload = who()
+    game = _get_game_if_authorized(payload, slug)
+    if isinstance(game, Response):
+        return game
+    blocked = _redirect_unless_branchable(game, slug)
+    if blocked:
+        return blocked
+
+    systems = system_service.get_all()
+    vtts = vtt_service.get_all()
+    user = user_service.get_by_id(payload["user_id"])
+    defaults = resolve_game_form_defaults(user=user, systems=systems, vtts=vtts)
+    defaults.update(
+        type="oneshot",
+        system=game.system_id,
+        vtt=game.vtt_id,
+        # A one-off replacement table is GM-curated, not open self-registration.
+        party_selection=True,
+    )
+    # Only override the resolved party_size (the user's own saved default, or
+    # the app-wide default of 4) when the campaign actually has a headcount
+    # to carry over — an empty campaign shouldn't shrink it down to 1.
+    headcount = len(game.players)
+    if headcount:
+        defaults["party_size"] = headcount
+
+    flash("Vous êtes en train de créer un one-shot ponctuel pour cette campagne.", "primary")
+    return render_template(
+        GAME_FORM_TEMPLATE,
+        systems=systems,
+        vtts=vtts,
+        branch=True,
+        branch_source_name=game.name,
+        branch_source_slug=slug,
+        defaults=defaults,
+    )
+
+
+@game_bp.route("/annonces/<slug>/brancher/", methods=["POST"])
+@login_required
+def create_branch_game(slug):
+    """Create a quick replacement one-shot branched off a campaign.
+
+    Creates the new one-shot as a draft, then immediately publishes it
+    silently — resources (channel, role, first session) are created, but the
+    game lands ``closed`` to registration and nothing is posted to the
+    public announcements channel. This mirrors the plain creation form's
+    "Ouvrir (sans publier)" action; the GM opens registration and/or
+    publishes for real later, once ready. It matters for the roster step
+    next regardless: resources must already exist for carried-over players
+    to get real Discord channel access (``register_player`` grants it,
+    bypassing the closed status via ``force=True``) rather than just a DB
+    record.
+    """
+    payload = who()
+    game = _get_game_if_authorized(payload, slug)
+    if isinstance(game, Response):
+        return game
+    blocked = _redirect_unless_branchable(game, slug)
+    if blocked:
+        return blocked
+
+    data = request.values.to_dict()
+    gm_id = data["gm_id"]
+    allow_past_date = data.get("confirm_past_date") == "1"
+
+    try:
+        new_game = game_service.create(data, gm_id)
+    except GamePostingBlockedError:
+        flash(_POSTING_BLOCKED_MESSAGE, "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+    except QuestMasterError as e:
+        logger.error(f"Failed to branch game {slug} into a one-shot: {e}", exc_info=True)
+        flash("Une erreur est survenue pendant la création du one-shot.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+
+    try:
+        game_service.publish(
+            new_game.slug,
+            silent=True,
+            user_id=payload["user_id"],
+            allow_past_date=allow_past_date,
+        )
+    except PastDateError:
+        # The draft is already saved; send the GM back to fix the date or confirm.
+        flash(_PAST_DATE_MESSAGE, "warning")
+        return redirect(url_for(GAME_EDIT_FORM_ROUTE, slug=new_game.slug))
+    except DiscordAPIError as e:
+        logger.error(
+            f"Failed to set up resources for branched game {new_game.slug}: {e}", exc_info=True
+        )
+        flash(
+            "Le one-shot a été créé en brouillon, mais la mise en place a échoué. "
+            "Réessayez de le publier depuis sa page.",
+            "warning",
+        )
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=new_game.slug))
+
+    flash(f"One-shot « {new_game.name} » créé.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=new_game.slug, branch_from=slug))
+
+
+@game_bp.route("/annonces/<new_slug>/brancher/roster/<source_slug>/", methods=["POST"])
+@login_required
+def confirm_branch_roster(new_slug, source_slug):
+    """Carry over the checked source-game players onto the new one-shot.
+
+    Only players present in the submitted ``known_players`` snapshot are
+    considered — mirrors ``_handle_remove_players``'s race-avoidance rule,
+    reversed here: a checkbox absent from the submission is treated as
+    unchecked (skipped), not as "unknown, ignore".
+
+    Args:
+        new_slug: Slug of the freshly created one-shot.
+        source_slug: Slug of the source campaign the roster was copied from
+            (kept in the URL only to mirror the modal's origin; not otherwise
+            used — the checklist itself is entirely driven by the submitted
+            checkboxes).
+    """
+    payload = who()
+    new_game = _get_game_if_authorized(payload, new_slug)
+    if isinstance(new_game, Response):
+        return new_game
+
+    data = request.values.to_dict()
+    known_ids = {pid for pid in data.get("known_players", "").split(",") if pid}
+    kept_ids = [pid for pid in known_ids if pid in data]
+
+    for user_id in kept_ids:
+        try:
+            game_service.register_player(new_slug, user_id, force=True, skip_schedule_check=True)
+        except DuplicateRegistrationError:
+            continue
+        except QuestMasterError as e:
+            logger.warning(f"Failed to carry over player {user_id} to {new_slug}: {e}")
+
+    flash("Liste des joueur·euses reportée sur le one-shot.", "success")
+    return redirect(url_for(GAME_DETAILS_ROUTE, slug=new_slug))
 
 
 @game_bp.route("/mes_annonces/", methods=["GET"])
@@ -825,6 +1017,28 @@ def _get_game_if_authorized(payload, slug):
         flash("Seul·e le·a MJ de l'annonce peut faire cette opération.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     return game
+
+
+def _redirect_unless_branchable(game, slug):
+    """Redirect to the game details page unless the game may be branched.
+
+    Branching into a quick one-shot only makes sense for a published
+    campaign: a draft has no roster or Discord resources to branch off yet,
+    and an archived campaign is already wrapped up. Branching a one-shot into
+    another one-shot is also just "Cloner" with extra steps, hence the type
+    restriction too.
+
+    Args:
+        game: Candidate source game.
+        slug: Its slug (used as the redirect target on failure).
+
+    Returns:
+        A redirect Response if branching isn't allowed right now, else None.
+    """
+    if game.type != "campaign" or game.status in ("draft", "archived"):
+        flash("Seule une campagne publiée peut être branchée en one-shot.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+    return None
 
 
 def _get_game_if_participant(payload, slug):

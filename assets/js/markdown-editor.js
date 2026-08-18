@@ -36,9 +36,63 @@ const TOOLBAR = [
   { name: "guide", action: "https://www.markdownguide.org/basic-syntax/", className: "ph ph-question", title: "Aide Markdown", noDisable: true },
 ];
 
+// CodeMirror (which EasyMDE wraps) hides the original <textarea> via
+// `display: none` once it takes over. A `required` textarea that's hidden
+// can't be focused, so on submit the browser's native constraint validation
+// blocks the form *silently* — no error bubble, no visible feedback, the
+// click just appears to do nothing (worst on forms like game creation where
+// the description starts empty, e.g. branching a campaign into a one-shot).
+// Drop `required` from the hidden element and enforce it ourselves against
+// the visible editor instead, with a clear on-screen error when it fails.
+function guardRequiredEditor(el, editor) {
+  if (!el.required) return;
+  el.required = false;
+
+  var wrapper = editor.codemirror.getWrapperElement();
+  var form = el.closest("form");
+  if (!form) return;
+
+  // A border alone is easy to miss (and CodeMirror's own styles can mask
+  // it) — pair it with an explicit, always-legible error message, matching
+  // the app's other inline field errors (e.g. #imgError).
+  var errorMsg = document.createElement("p");
+  errorMsg.className = "hidden text-xs text-error-accent flex items-center gap-1 mt-1";
+  errorMsg.setAttribute("role", "alert");
+  errorMsg.innerHTML = '<i class="ph ph-warning" aria-hidden="true"></i> Ce champ est requis.';
+  wrapper.insertAdjacentElement("afterend", errorMsg);
+
+  // EasyMDE/CodeMirror ship their own `.CodeMirror { border: ... }` rule at
+  // the same specificity as a Tailwind utility class, loaded after
+  // main.css — so a `border-error` *class* on the wrapper silently loses
+  // the cascade. Setting the border directly as an inline style reliably
+  // wins over any non-!important stylesheet rule regardless of load order.
+  function clearError() {
+    wrapper.style.removeProperty("border-color");
+    wrapper.style.removeProperty("border-width");
+    errorMsg.classList.add("hidden");
+  }
+
+  form.addEventListener("submit", function (e) {
+    if (editor.value().trim()) {
+      clearError();
+      return;
+    }
+    e.preventDefault();
+    wrapper.style.borderColor = "var(--color-error)";
+    wrapper.style.borderWidth = "2px";
+    errorMsg.classList.remove("hidden");
+    wrapper.scrollIntoView({ behavior: "smooth", block: "center" });
+    editor.codemirror.focus();
+  });
+
+  editor.codemirror.on("change", function () {
+    if (editor.value().trim()) clearError();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll("textarea[data-markdown-editor]").forEach(function (el) {
-    new EasyMDE({
+    var editor = new EasyMDE({
       element: el,
       spellChecker: false,
       status: false,
@@ -47,5 +101,6 @@ document.addEventListener("DOMContentLoaded", function () {
       minHeight: el.dataset.minHeight || "150px",
       placeholder: el.getAttribute("placeholder") || "",
     });
+    guardRequiredEditor(el, editor);
   });
 });

@@ -1,5 +1,5 @@
 {% extends 'base.j2' %}
-{% block title %}{% if game %}{% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce{% else %}Nouvelle annonce{% endif %}{% endblock %}
+{% block title %}{% if branch %}One-shot ponctuel{% elif game %}{% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce{% else %}Nouvelle annonce{% endif %}{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -10,14 +10,20 @@
 
 {% block content %}
 <h1 class="text-center font-black text-2xl my-4">
-  {% if game %}<i class="ph ph-note-pencil" aria-hidden="true"></i> {% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce
+  {% if branch %}<i class="ph ph-flow-arrow" aria-hidden="true"></i> One-shot ponctuel pour « {{ branch_source_name }} »
+  {% elif game %}<i class="ph ph-note-pencil" aria-hidden="true"></i> {% if clone %}Cloner{% else %}Éditer{% endif %} l'annonce
   {% else %}<i class="ph ph-plus-circle" aria-hidden="true"></i> Nouvelle annonce{% endif %}
 </h1>
 
 {# Reusable label class — applied consistently to all field labels and legends #}
 {% set lbl = "text-sm font-semibold text-base-content/70 mb-0.5 block" %}
 
-<form method="post" action="{% if game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}">
+{# Branching a campaign never reuses the campaign's own data (name, description,
+   restriction, classification, ambience, img, frequency, etc.) — it's treated
+   exactly like a brand-new game below (``game`` is simply not passed), except
+   ``defaults`` is pre-seeded with the structural fields worth carrying over
+   (system, VTT, party size) plus type forced to one-shot. See get_branch_form. #}
+<form method="post" action="{% if branch %}/annonces/{{branch_source_slug}}/brancher/{% elif game and not clone %}/annonces/{{game.slug}}/editer/{% else %}/annonce/{% endif %}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="gm_id" value="{% if game and not clone %}{{ game.gm_id }}{% else %}{{ payload['user_id'] }}{% endif %}">
   {# Set to "1" by the past-date confirmation modal to publish despite a past start date. #}
@@ -353,6 +359,15 @@
       {# ── SAVE/PUBLISH ACTIONS ── #}
       <div id="gameActionButtons" class="space-y-2 sticky top-20">
 
+        {% if branch %}
+        {# Branching always lands the one-shot open-but-silent (resources created,
+           registration open, nothing posted to the public announcements channel)
+           — the GM reviews the roster next, then publishes for real when ready. #}
+        <button id="branchSubmitButton" type="submit" name="action" value="open-silent" class="btn btn-success btn-block gap-2">
+          <i class="ph ph-flow-arrow" aria-hidden="true"></i> Créer le one-shot
+        </button>
+        {% else %}
+
         <button id="saveButton" type="submit" name="action" value="draft" class="btn btn-outline btn-block gap-2">
           <i class="ph ph-floppy-disk" aria-hidden="true"></i>
           {% if game and not clone %}Enregistrer les modifications{% else %}Brouillon{% endif %}
@@ -374,6 +389,7 @@
         <a href="/annonces/{{ game.slug }}/" class="btn btn-ghost btn-block btn-sm gap-1 mt-1">
           <i class="ph ph-arrow-left" aria-hidden="true"></i> Retour à l'annonce
         </a>
+        {% endif %}
         {% endif %}
 
       </div>
