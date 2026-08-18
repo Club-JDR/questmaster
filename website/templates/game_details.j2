@@ -668,11 +668,26 @@
         </button>
         {% endif %}
 
-        {# Clone #}
+        {# Clone / Branch — while a campaign is actually running (not draft,
+           not archived), branching a quick replacement one-shot is the
+           far more common need than cloning it wholesale, so it replaces
+           "Cloner" outright rather than sharing space in a menu. A draft
+           campaign has no roster/resources to branch off yet, and an
+           archived one is already wrapped up — both fall back to "Cloner". #}
+        {% if game.type == 'campaign' and game.status not in ['draft', 'archived'] %}
+        <div class="tooltip w-full"
+          data-tip="Pour remplacer une session annulée, en reprenant tout ou partie du groupe actuel.">
+          <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/brancher/{% endif %}"
+            id="branchButton" class="btn btn-sm btn-block gap-1">
+            <i class="ph ph-flow-arrow" aria-hidden="true"></i> One-shot ponctuel
+          </a>
+        </div>
+        {% else %}
         <a href="{% if request.path == '/demo/gerer/' %}#{% else %}/annonces/{{ game.slug }}/cloner/{% endif %}"
           id="cloneButton" class="btn btn-sm btn-block gap-1">
-          <i class="ph ph-copy"></i> Cloner
+          <i class="ph ph-copy" aria-hidden="true"></i> Cloner
         </a>
+        {% endif %}
     </form>
     {% endif %}
   </div>
@@ -779,6 +794,50 @@
   </div>
   <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
 </dialog>
+
+{% if branch_roster %}
+{# ── Branch roster carry-over — shown once, right after "One-shot ponctuel"
+     creates this game, via the ?branch_from= query param set by the redirect.
+     Same avatar+checkbox pattern as "Gérer", pre-checked by default: the GM
+     unchecks whoever's unavailable for this ad-hoc table. #}
+<dialog id="branchRosterModal" class="modal" aria-modal="true">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <form method="post" action="/annonces/{{ game.slug }}/brancher/roster/{{ branch_roster.source_slug }}/">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="known_players" value="{{ branch_roster.players | map(attribute='id') | join(',') }}">
+      <h3 class="text-lg font-bold"><i class="ph ph-users text-primary" aria-hidden="true"></i> Reporter les joueur·euses</h3>
+      <p class="text-sm text-base-content/70 mt-2 mb-4">
+        Le one-shot a été créé. Choisissez qui, parmi les joueur·euses actuel·les de la campagne, rejoint cette table.
+      </p>
+      {% if branch_roster.players %}
+      <div class="flex flex-wrap gap-4 justify-center mb-4">
+        {% for player in branch_roster.players %}
+        <label class="flex flex-col items-center gap-1 cursor-pointer w-20">
+          <div class="avatar">
+            <div class="w-12 rounded-full"><img src="{{ player.avatar }}" alt="{{ player.name }}" /></div>
+          </div>
+          <span class="text-xs truncate w-full text-center" title="{{ player.name }}">{{ player.name }}</span>
+          <input class="checkbox checkbox-primary checkbox-sm" type="checkbox" name="{{ player.id }}" checked>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="modal-action">
+        <button type="button" class="btn" onclick="this.closest('dialog').close()">Passer</button>
+        <button type="submit" class="btn btn-primary gap-1">
+          <i class="ph ph-check-circle" aria-hidden="true"></i> Confirmer
+        </button>
+      </div>
+      {% else %}
+      <div class="text-center py-4 text-base-content/70">La campagne n'a aucun·e joueur·euse à reporter pour l'instant.</div>
+      <div class="modal-action">
+        <button type="button" class="btn" onclick="this.closest('dialog').close()">Fermer</button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button aria-label="Fermer"></button></form>
+</dialog>
+{% endif %}
 
 {# ── Confirm Archive ── #}
 <dialog id="confirmArchiveModal" class="modal" aria-modal="true">
@@ -1031,6 +1090,11 @@ and game.channel and game.status not in ['archived', 'draft'] %}
     modal.querySelector('[name="date_end"]').value = toLocalISO(end);
     modal.showModal();
   }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var branchRosterModal = document.getElementById('branchRosterModal');
+    if (branchRosterModal) branchRosterModal.showModal();
+  });
 
   document.addEventListener('DOMContentLoaded', function () {
     var archiveModal = document.getElementById('confirmArchiveModal');

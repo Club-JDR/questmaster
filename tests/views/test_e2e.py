@@ -111,7 +111,9 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
             "Libre",
             "statusButton",
             "archiveButton",
-            "Cloner",
+            # A live (non-draft, non-archived) campaign offers "Créer un
+            # one-shot" instead of "Cloner" — see TestGameBranch.
+            "branchButton",
         ]
     )
 
@@ -186,6 +188,7 @@ Quelques années plus tard, Jackson Elias, un reporter spécialisé dans les cul
             "statusButton",
             "archiveButton",
             "Cloner",
+            "branchButton",
         ]
     )
     assert response.data.decode().count("Libre") == 1

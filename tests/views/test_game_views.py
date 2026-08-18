@@ -670,6 +670,331 @@ class TestGameEdit:
         assert "Annonce modifiée et ouverte." in body
 
 
+# -- Branch a campaign into a quick one-shot --------------------------------
+
+
+class TestGameBranch:
+    """GET/POST /annonces/<slug>/brancher/ — branch a campaign into a one-shot."""
+
+    def test_branch_link_shown_for_open_campaign(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_campaign
+    ):
+        response = logged_in_admin.get(f"/annonces/{open_campaign.slug}/")
+        body = response.data.decode()
+        assert "branchButton" in body
+        assert "One-shot ponctuel" in body
+        assert "cloneButton" not in body
+
+    def test_branch_link_hidden_for_oneshot(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_game
+    ):
+        response = logged_in_admin.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "branchButton" not in body
+        assert "cloneButton" in body
+
+    def test_branch_link_hidden_for_draft_campaign(
+        self, logged_in_admin, mock_discord_lookups, db_session, default_system, default_vtt
+    ):
+        draft_campaign = GameFactory(
+            db_session,
+            type="campaign",
+            status="draft",
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+        )
+        response = logged_in_admin.get(f"/annonces/{draft_campaign.slug}/")
+        body = response.data.decode()
+        assert "branchButton" not in body
+        assert "cloneButton" in body
+
+    def test_get_branch_form(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_campaign
+    ):
+        response = logged_in_admin.get(f"/annonces/{open_campaign.slug}/brancher/")
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Vous êtes en train de créer un one-shot ponctuel pour cette campagne." in body
+
+    def test_branch_form_does_not_reuse_campaign_data(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_campaign
+    ):
+        """Description is blank; only system/VTT/type/party_size carry over."""
+        open_campaign.description = "Une description très spécifique à la campagne"
+        db_session.flush()
+
+        response = logged_in_admin.get(f"/annonces/{open_campaign.slug}/brancher/")
+        body = response.data.decode()
+        assert open_campaign.description not in body
+        # The name field starts empty, not pre-filled with the campaign's own name.
+        name_tag = body.split('id="game_name"')[1].split(">")[0]
+        assert 'value=""' in name_tag
+
+    def test_branch_form_defaults_party_size_to_app_default_without_players(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_campaign
+    ):
+        """An empty campaign doesn't shrink party_size down to 1 — falls back to 4."""
+        response = logged_in_admin.get(f"/annonces/{open_campaign.slug}/brancher/")
+        body = response.data.decode()
+        party_size_tag = body.split('id="party_size_input"')[1].split(">")[0]
+        assert 'value="4"' in party_size_tag
+
+    def test_branch_form_defaults_party_size_to_campaign_headcount(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_campaign, regular_user
+    ):
+        open_campaign.players.append(regular_user)
+        db_session.flush()
+
+        response = logged_in_admin.get(f"/annonces/{open_campaign.slug}/brancher/")
+        body = response.data.decode()
+        party_size_tag = body.split('id="party_size_input"')[1].split(">")[0]
+        assert 'value="1"' in party_size_tag
+
+    def test_branch_form_defaults_party_selection_checked(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_campaign
+    ):
+        """A branched table is GM-curated by default, not open self-registration."""
+        response = logged_in_admin.get(f"/annonces/{open_campaign.slug}/brancher/")
+        body = response.data.decode()
+        party_selection_tag = body.split('id="party_selection"')[1].split(">")[0]
+        assert "checked" in party_selection_tag
+
+    def test_get_branch_form_rejects_oneshot(
+        self, logged_in_admin, mock_discord_lookups, db_session, open_game
+    ):
+        response = logged_in_admin.get(
+            f"/annonces/{open_game.slug}/brancher/", follow_redirects=True
+        )
+        body = html.unescape(response.data.decode())
+        assert response.status_code == 200
+        assert "Seule une campagne publiée peut être branchée en one-shot." in body
+
+    def test_get_branch_form_rejects_draft_campaign(
+        self, logged_in_admin, mock_discord_lookups, db_session, default_system, default_vtt
+    ):
+        draft_campaign = GameFactory(
+            db_session,
+            type="campaign",
+            status="draft",
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+        )
+        response = logged_in_admin.get(
+            f"/annonces/{draft_campaign.slug}/brancher/", follow_redirects=True
+        )
+        body = html.unescape(response.data.decode())
+        assert "Seule une campagne publiée peut être branchée en one-shot." in body
+
+    def test_get_branch_form_rejects_archived_campaign(
+        self, logged_in_admin, mock_discord_lookups, db_session, default_system, default_vtt
+    ):
+        archived_campaign = GameFactory(
+            db_session,
+            type="campaign",
+            status="archived",
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+        )
+        response = logged_in_admin.get(
+            f"/annonces/{archived_campaign.slug}/brancher/", follow_redirects=True
+        )
+        body = html.unescape(response.data.decode())
+        assert "Seule une campagne publiée peut être branchée en one-shot." in body
+
+    def test_branch_creates_closed_oneshot_with_resources(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_campaign,
+        default_system,
+        default_vtt,
+    ):
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name="Session de rattrapage",
+            type="oneshot",
+            gm_id=TEST_ADMIN_USER_ID,
+        )
+        response = logged_in_admin.post(
+            f"/annonces/{open_campaign.slug}/brancher/",
+            data=data,
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "créé" in body
+        mock_discord_service.create_role.assert_called_once()
+        mock_discord_service.create_channel.assert_called_once()
+        # Silent publish: no public announcement sent.
+        assert all(
+            call.kwargs.get("embed_type") != "annonce"
+            for call in mock_discord_service.send_game_embed.call_args_list
+        )
+
+    def test_branch_post_rejects_oneshot(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        default_system,
+        default_vtt,
+    ):
+        data = _game_form_data(default_system.id, default_vtt.id, type="oneshot")
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/brancher/",
+            data=data,
+            follow_redirects=True,
+        )
+        body = html.unescape(response.data.decode())
+        assert "Seule une campagne publiée peut être branchée en one-shot." in body
+
+    def test_branch_gm_only(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_campaign,
+    ):
+        """A GM (non-admin) cannot branch another GM's campaign."""
+        response = logged_in_gm.post(
+            f"/annonces/{open_campaign.slug}/brancher/",
+            data={"csrf_token": "test"},
+            follow_redirects=True,
+        )
+        body = html.unescape(response.data.decode())
+        assert "Seul·e le·a MJ de l'annonce peut faire cette opération." in body
+
+    def test_branch_roster_modal_shown_after_creation(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_campaign,
+        regular_user,
+        default_system,
+        default_vtt,
+    ):
+        open_campaign.players.append(regular_user)
+        db_session.flush()
+
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name="Session de rattrapage",
+            type="oneshot",
+            gm_id=TEST_ADMIN_USER_ID,
+        )
+        response = logged_in_admin.post(
+            f"/annonces/{open_campaign.slug}/brancher/",
+            data=data,
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert '<dialog id="branchRosterModal"' in body
+        assert "Reporter les joueur" in body
+        assert regular_user.name in body
+
+    def test_branch_roster_not_shown_for_other_visitors(
+        self, logged_in_user, mock_discord_lookups, db_session, open_game
+    ):
+        """The ?branch_from= query param is ignored for anyone but the game's GM/admin."""
+        response = logged_in_user.get(f"/annonces/{open_game.slug}/?branch_from={open_game.slug}")
+        body = response.data.decode()
+        # The auto-open script is always present (harmless no-op via getElementById);
+        # what must be absent is the modal's own markup.
+        assert '<dialog id="branchRosterModal"' not in body
+
+    def test_confirm_branch_roster_carries_checked_players(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_campaign,
+        regular_user,
+        default_system,
+        default_vtt,
+    ):
+        open_campaign.players.append(regular_user)
+        db_session.flush()
+
+        new_game = GameFactory(
+            db_session,
+            type="oneshot",
+            status="closed",
+            gm_id=TEST_ADMIN_USER_ID,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            channel="mock_channel_id",
+        )
+
+        response = logged_in_admin.post(
+            f"/annonces/{new_game.slug}/brancher/roster/{open_campaign.slug}/",
+            data={
+                "csrf_token": "test",
+                "known_players": regular_user.id,
+                regular_user.id: "on",
+            },
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "reportée" in body
+        db_session.refresh(new_game)
+        assert regular_user in new_game.players
+
+    def test_confirm_branch_roster_skips_unchecked_players(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_campaign,
+        regular_user,
+        default_system,
+        default_vtt,
+    ):
+        open_campaign.players.append(regular_user)
+        db_session.flush()
+
+        new_game = GameFactory(
+            db_session,
+            type="oneshot",
+            status="closed",
+            gm_id=TEST_ADMIN_USER_ID,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            channel="mock_channel_id",
+        )
+
+        response = logged_in_admin.post(
+            f"/annonces/{new_game.slug}/brancher/roster/{open_campaign.slug}/",
+            data={
+                "csrf_token": "test",
+                "known_players": regular_user.id,
+                # regular_user's checkbox intentionally omitted (unchecked).
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        db_session.refresh(new_game)
+        assert regular_user not in new_game.players
+
+
 # -- Player Registration --------------------------------------------------
 
 
