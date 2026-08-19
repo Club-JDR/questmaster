@@ -8,7 +8,7 @@ GAMES_PER_PAGE = 12
 # Environment variables the app cannot safely start without. Without this
 # check, a missing FLASK_AUTH_SECRET only surfaces on the first session write
 # (deep inside Flask), and missing Postgres variables silently produce
-# "postgresql://None:None@None:5432/None" as the DB URI.
+# "postgresql+psycopg://None:None@None:5432/None" as the DB URI.
 REQUIRED_ENV_VARS = (
     "FLASK_AUTH_SECRET",
     "POSTGRES_USER",
@@ -54,7 +54,7 @@ class Settings:
     DISCORD_PLAYER_ROLE_ID = os.environ.get("DISCORD_PLAYER_ROLE_ID")
     POSTS_CHANNEL_ID = os.environ.get("POSTS_CHANNEL_ID")
     ADMIN_CHANNEL_ID = os.environ.get("ADMIN_CHANNEL_ID")
-    SQLALCHEMY_DATABASE_URI = f"""postgresql://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
+    SQLALCHEMY_DATABASE_URI = f"""postgresql+psycopg://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_HOST = os.environ.get("REDIS_HOST")
     CACHE_REDIS_PORT = 6379
