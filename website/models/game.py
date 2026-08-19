@@ -1,7 +1,8 @@
 """Game model representing a tabletop RPG announcement."""
 
 import sqlalchemy.dialects.postgresql as pg
-from schema import Schema, SchemaError
+from marshmallow import Schema, fields, validate
+from marshmallow import ValidationError as MarshmallowValidationError
 from sqlalchemy import Enum, orm
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
@@ -19,14 +20,19 @@ from config.constants import (
 from website.exceptions import ValidationError
 from website.extensions import db
 
-CLASSIFICATION_SCHEMA = Schema(
-    {
-        "action": lambda n: 0 <= n <= 2,
-        "investigation": lambda n: 0 <= n <= 2,
-        "interaction": lambda n: 0 <= n <= 2,
-        "horror": lambda n: 0 <= n <= 2,
-    }
-)
+
+class _ClassificationSchema(Schema):
+    """Validates a game's classification ratings (each axis scored 0-2)."""
+
+    action = fields.Integer(required=True, strict=True, validate=validate.Range(min=0, max=2))
+    investigation = fields.Integer(
+        required=True, strict=True, validate=validate.Range(min=0, max=2)
+    )
+    interaction = fields.Integer(required=True, strict=True, validate=validate.Range(min=0, max=2))
+    horror = fields.Integer(required=True, strict=True, validate=validate.Range(min=0, max=2))
+
+
+CLASSIFICATION_SCHEMA = _ClassificationSchema()
 
 players_table = db.Table(
     "game_players",
@@ -94,9 +100,9 @@ class Game(db.Model):
         """Validate the classification JSON against the expected schema."""
         try:
             if value:
-                CLASSIFICATION_SCHEMA.validate(value)
+                CLASSIFICATION_SCHEMA.load(value)
             return value
-        except SchemaError:
+        except MarshmallowValidationError:
             raise ValidationError(
                 "Invalid classification format.",
                 field="classification",

@@ -19,8 +19,9 @@ TEST_REGULAR_USER_USERNAME = "grew"
 TEST_ONESHOT_CHANNEL_ID = "1247613267552108696"
 TEST_CAMPAIGN_CHANNEL_ID = "1247613296870162474"
 
-# Seeded special event
-TEST_SPECIAL_EVENT_ID = "1000"
+# Seeded special event (SpecialEvent.id is an Integer PK, unlike the Discord
+# snowflake string IDs above)
+TEST_SPECIAL_EVENT_ID = 1000
 TEST_SPECIAL_EVENT_NAME = "CthulhuFest"
 
 # Seeded reference data (must match _seed_test_data in website/extensions.py)
