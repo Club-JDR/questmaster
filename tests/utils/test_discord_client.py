@@ -4,18 +4,45 @@ These mock the HTTP layer (``Discord._request``) to assert endpoint and payload
 shaping for the channel-permission and role-related helpers.
 """
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
-from config.constants import DISCORD_NAME_MAX, GM_ROLE_PERMISSION, PLAYER_ROLE_PERMISSION
+from config.constants import (
+    DISCORD_NAME_MAX,
+    DISCORD_REQUEST_TIMEOUT,
+    GM_ROLE_PERMISSION,
+    PLAYER_ROLE_PERMISSION,
+)
 from website.client.discord import Discord
+from website.exceptions import DiscordAPIError
 
 
 @pytest.fixture
 def client():
     """A Discord client with a fixed guild id and token."""
     return Discord(guild_id="guild_1", bot_token="token")
+
+
+class TestRequestTimeout:
+    def test_passes_timeout_to_requests(self, client):
+        """Every outbound call carries the (connect, read) timeout tuple."""
+        response = Mock(status_code=200, content=b"{}", ok=True)
+        response.json.return_value = {}
+        with patch("website.client.discord.requests.request", return_value=response) as req:
+            client._request("GET", "/guilds/guild_1")
+
+        assert req.call_args.kwargs["timeout"] == DISCORD_REQUEST_TIMEOUT
+
+    def test_network_failure_raises_discord_api_error(self, client):
+        """A timeout/connection error is surfaced as DiscordAPIError, not a raw 500."""
+        with patch(
+            "website.client.discord.requests.request",
+            side_effect=requests.exceptions.Timeout("timed out"),
+        ):
+            with pytest.raises(DiscordAPIError):
+                client._request("GET", "/guilds/guild_1")
 
 
 class TestCreateChannel:

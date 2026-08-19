@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from flask import Flask
 
-from config.constants import DEFAULT_AVATAR
+from config.constants import DEFAULT_AVATAR, DISCORD_REQUEST_TIMEOUT
 from website.exceptions import ValidationError
-from website.models.user import User
+from website.models.user import User, _resolve_avatar_url
 
 
 @pytest.mark.parametrize("uid", ["12345678901234567", "9876543210987654321"])
@@ -234,6 +234,27 @@ def test_from_dict_without_not_player_as_of():
     data = {"id": "12345678901234567", "name": "Alice"}
     user = User.from_dict(data)
     assert user.not_player_as_of is None
+
+
+@patch("website.models.user.requests.head")
+def test_resolve_avatar_url_passes_timeout(mock_head):
+    mock_head.return_value = MagicMock(status_code=200)
+
+    url = _resolve_avatar_url({"avatar": "somehash"}, "12345678901234567")
+
+    assert url != DEFAULT_AVATAR
+    assert mock_head.call_args.kwargs["timeout"] == DISCORD_REQUEST_TIMEOUT
+
+
+@patch("website.models.user.requests.head")
+def test_resolve_avatar_url_falls_back_on_timeout(mock_head):
+    import requests as requests_module
+
+    mock_head.side_effect = requests_module.exceptions.Timeout("timed out")
+
+    url = _resolve_avatar_url({"avatar": "somehash"}, "12345678901234567")
+
+    assert url == DEFAULT_AVATAR
 
 
 @patch("website.models.user.get_bot")

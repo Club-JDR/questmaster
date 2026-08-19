@@ -14,6 +14,7 @@ from config.constants import (
     CACHE_USER_PROFILE_404_TIMEOUT,
     CACHE_USER_PROFILE_TIMEOUT,
     DEFAULT_AVATAR,
+    DISCORD_REQUEST_TIMEOUT,
 )
 from website.bot import get_bot
 from website.exceptions import DiscordAPIError, ValidationError
@@ -28,7 +29,7 @@ def _resolve_avatar_url(user: dict, user_id: str) -> str:
         return DEFAULT_AVATAR
     potential_url = AVATAR_BASE_URL.format(user_id, avatar_hash)
     try:
-        if requests.head(potential_url).status_code == 200:
+        if requests.head(potential_url, timeout=DISCORD_REQUEST_TIMEOUT).status_code == 200:
             return potential_url
     except requests.RequestException:
         pass
