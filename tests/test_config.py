@@ -1,8 +1,8 @@
-"""Tests for `config.settings.check_required_env_vars`."""
+"""Tests for `config.settings`."""
 
 import pytest
 
-from config.settings import REQUIRED_ENV_VARS, check_required_env_vars
+from config.settings import REQUIRED_ENV_VARS, Settings, check_required_env_vars
 
 
 class TestCheckRequiredEnvVars:
@@ -39,3 +39,12 @@ class TestCheckRequiredEnvVars:
 
         for name in REQUIRED_ENV_VARS:
             assert name in str(exc_info.value)
+
+
+class TestEngineOptions:
+    """A pooled connection must be pinged/recycled, not trusted forever."""
+
+    def test_pool_pre_ping_and_recycle_are_set(self):
+        options = Settings.SQLALCHEMY_ENGINE_OPTIONS
+        assert options["pool_pre_ping"] is True
+        assert options["pool_recycle"] == 1800
