@@ -157,13 +157,31 @@ class TestGameSessionService:
         assert stats["gm_names"] == []
 
     def test_get_stats_for_period_none_uses_current_month(self, db_session, sample_game):
+        """`get_stats_for_period(None, None)` resolves to the real current month.
+
+        Asserts on the specific session created here rather than an absolute
+        `num_os` count: the shared dev DB persists between runs (no automatic
+        `--drop-db`), so unrelated real games may already have sessions this
+        month — an exact `== 0`/`== N` would be flaky depending on when/where
+        this runs.
+        """
         service = GameSessionService()
+        sample_game.status = "open"  # only published games count toward the breakdown
+        now = datetime.now()
+        start = now.replace(hour=20, minute=0, second=0, microsecond=0)
+        end = start.replace(hour=23)
+        service.create(sample_game, start, end)
+        # `_compute_stats` is cached for an hour; bust it so the freshly
+        # created session above is reflected in the next read.
+        GameSessionService.clear_cache()
 
         stats = service.get_stats_for_period(None, None)
 
+        assert stats["base_day"].year == now.year
+        assert stats["base_day"].month == now.month
         assert stats["base_day"].day == 1
-        assert stats["num_os"] == 0
-        assert stats["num_campaign"] == 0
+        assert stats["num_os"] >= 1
+        assert sample_game.slug in stats["os_games"].get(sample_game.system.name, {})
 
     def test_clear_cache_busts_every_cached_month(self, db_session):
         """Resets `_compute_stats` via the class, invalidating every cached (year, month)."""
