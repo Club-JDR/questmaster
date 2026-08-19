@@ -882,6 +882,31 @@ def test_award_game_trophies_already_awarded_flashes(
     assert "déjà été distribués" in response.data.decode()
 
 
+def test_award_game_trophies_failure_flashes_and_does_not_persist(
+    admin_client, db_session, mock_csrf, default_system
+):
+    """A trophy-award failure flashes an error and leaves trophies_awarded=False."""
+    game = GameFactory(
+        db_session,
+        system_id=default_system.id,
+        type="oneshot",
+        status="archived",
+        trophies_awarded=False,
+    )
+    mock_trophy_service = MagicMock()
+    mock_trophy_service.award.side_effect = Exception("Trophy DB error")
+
+    with patch("website.views.admin.games.game_service.trophy_service", mock_trophy_service):
+        response = admin_client.post(
+            f"/admin/games/{game.id}/award-trophies", follow_redirects=True
+        )
+
+    assert response.status_code == 200
+    assert "n&#39;ont pas pu être distribués" in response.data.decode()
+    db_session.refresh(game)
+    assert game.trophies_awarded is False
+
+
 def test_award_game_trophies_not_archived_flashes(
     admin_client, db_session, mock_csrf, default_system
 ):

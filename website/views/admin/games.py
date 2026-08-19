@@ -18,6 +18,7 @@ from website.exceptions import (
     NotFoundError,
     TrophiesAlreadyAwardedError,
     TrophiesNotAwardedError,
+    TrophyAwardFailedError,
     ValidationError,
 )
 from website.services.game import GameService
@@ -198,7 +199,7 @@ def award_game_trophies(game_id):
         flash("Badges distribués.", "success")
     except NotFoundError:
         flash(_GAME_NOT_FOUND_MESSAGE, "danger")
-    except (ValidationError, TrophiesAlreadyAwardedError) as e:
+    except (ValidationError, TrophiesAlreadyAwardedError, TrophyAwardFailedError) as e:
         flash(str(e), "danger")
     return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
