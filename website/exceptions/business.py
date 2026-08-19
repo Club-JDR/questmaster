@@ -113,6 +113,21 @@ class TrophiesNotAwardedError(GameError):
         super().__init__(message, details=details, **kwargs)
 
 
+class TrophyAwardFailedError(GameError):
+    """One or more recipients could not be awarded their trophy.
+
+    Raised instead of silently marking the game as awarded, so a failure
+    stays visible and the action can be retried.
+    """
+
+    def __init__(self, message: str, game_id=None, **kwargs):
+        kwargs.setdefault("code", "TROPHY_AWARD_FAILED")
+        details = kwargs.pop("details", {})
+        if game_id is not None:
+            details["game_id"] = game_id
+        super().__init__(message, details=details, **kwargs)
+
+
 class PastDateError(GameError):
     """Game is being published with a start date in the past.
 

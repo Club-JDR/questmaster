@@ -28,6 +28,7 @@ from website.exceptions import (
     ScheduleConflictError,
     TrophiesAlreadyAwardedError,
     TrophiesNotAwardedError,
+    TrophyAwardFailedError,
     ValidationError,
 )
 from website.models import Game, GameEvent
@@ -842,6 +843,29 @@ class TestGameService:
         game = game_service.get_by_slug(sample_game.slug)
         assert game.trophies_awarded is True
 
+    def test_archive_game_award_failure_does_not_persist_trophies_awarded(
+        self, db_session, sample_game, mock_discord
+    ):
+        """A trophy-award failure must not leave trophies_awarded=True lying about it.
+
+        Previously the flag was committed before trophy awarding even ran, so
+        a mid-award failure (or one recipient erroring) still left the game
+        marked as awarded.
+        """
+        mock_trophy_service = Mock()
+        mock_trophy_service.award.side_effect = Exception("Trophy DB error")
+        service = GameService(discord_service=mock_discord, trophy_service=mock_trophy_service)
+
+        sample_game.status = "closed"
+        sample_game.type = "oneshot"
+        db_session.commit()
+
+        service.archive(sample_game.slug, award_trophies=True)
+
+        game = service.get_by_slug(sample_game.slug)
+        assert game.status == "archived"
+        assert game.trophies_awarded is False
+
     def test_archive_open_game_without_channel_still_honors_award_trophies(
         self, db_session, sample_game, mock_discord, game_service
     ):
@@ -934,6 +958,22 @@ class TestGameService:
     def test_award_trophies_not_found_raises(self, db_session, game_service):
         with pytest.raises(NotFoundError):
             game_service.award_trophies(999999)
+
+    def test_award_trophies_failure_raises_and_does_not_persist(self, db_session, sample_game):
+        """A failed award raises instead of silently marking the game as awarded."""
+        mock_trophy_service = Mock()
+        mock_trophy_service.award.side_effect = Exception("Trophy DB error")
+        service = GameService(trophy_service=mock_trophy_service)
+
+        sample_game.status = "archived"
+        sample_game.type = "oneshot"
+        sample_game.trophies_awarded = False
+        db_session.commit()
+
+        with pytest.raises(TrophyAwardFailedError):
+            service.award_trophies(sample_game.id)
+
+        assert sample_game.trophies_awarded is False
 
     def test_revoke_trophies_manually(self, db_session, sample_game, admin_user, game_service):
         """An admin can undo trophies awarded (manually or at archive time).
@@ -1297,7 +1337,7 @@ class TestGameServicePrivateHelpers:
         mock_discord.delete_role.assert_called_once_with("role_456")
 
     def test_award_game_trophies_skips_on_error(self, db_session, sample_game):
-        """Trophy award failure is logged but doesn't propagate."""
+        """A recipient's award failure is logged, not raised, and reported via the return value."""
         mock_trophy_service = Mock()
         mock_trophy_service.award.side_effect = Exception("Trophy DB error")
 
@@ -1306,10 +1346,30 @@ class TestGameServicePrivateHelpers:
         sample_game.type = "oneshot"
         db_session.commit()
 
-        # Should not raise — error is caught inside _award_game_trophies
-        service._award_game_trophies(sample_game)
+        # Should not raise — error is caught per recipient inside _award_game_trophies
+        result = service._award_game_trophies(sample_game)
 
+        assert result is False
         mock_trophy_service.award.assert_called_once()
+
+    def test_award_game_trophies_continues_past_a_failed_recipient(
+        self, db_session, sample_game, regular_user
+    ):
+        """One recipient's failure doesn't stop the rest from being attempted."""
+        mock_trophy_service = Mock()
+        # The GM's award (first recipient) fails; the player's must still be attempted.
+        mock_trophy_service.award.side_effect = [Exception("Trophy DB error"), None]
+
+        service = GameService(trophy_service=mock_trophy_service)
+
+        sample_game.type = "oneshot"
+        sample_game.players.append(regular_user)
+        db_session.commit()
+
+        result = service._award_game_trophies(sample_game)
+
+        assert result is False
+        assert mock_trophy_service.award.call_count == 2
 
     def test_delete_game_message_logs_on_failure(self, db_session, sample_game, mock_discord):
         """Discord message deletion failure is logged but doesn't propagate."""

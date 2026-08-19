@@ -26,6 +26,7 @@ from website.exceptions import (
     ScheduleConflictError,
     TrophiesAlreadyAwardedError,
     TrophiesNotAwardedError,
+    TrophyAwardFailedError,
     ValidationError,
 )
 from website.extensions import db
@@ -788,9 +789,11 @@ class GameService:
         Note:
             Idempotent: calling on an already-archived game is a no-op, preventing
             double trophy awards on duplicate form submissions or browser retries.
-            The decision is persisted on ``game.trophies_awarded`` so downstream
-            aggregates (e.g. the special-event leaderboard) can tell which
-            archived games actually had trophies handed out.
+            ``game.trophies_awarded`` reflects what actually happened, not merely
+            what was requested: it's only set once every recipient has been
+            awarded successfully, so downstream aggregates (e.g. the
+            special-event leaderboard) never see a game marked as awarded when
+            some recipients didn't get their trophy.
         """
         game = self.get_by_slug(slug)
         if game.status == "archived":
@@ -808,7 +811,10 @@ class GameService:
             award_trophies = False
 
         game.status = "archived"
-        game.trophies_awarded = award_trophies
+        # Provisional: only flipped to True below once every recipient has
+        # actually been awarded, so a partial failure never lies about what
+        # happened.
+        game.trophies_awarded = False
 
         db.session.commit()
         log_game_event("edit", game.id, "L'annonce a été archivée.", user_id=user_id)
@@ -817,8 +823,12 @@ class GameService:
         # Award trophies
         msg = "Annonce archivée."
         if award_trophies:
-            self._award_game_trophies(game)
-            msg += " Badges distribués."
+            if self._award_game_trophies(game):
+                game.trophies_awarded = True
+                db.session.commit()
+                msg += " Badges distribués."
+            else:
+                msg += " Échec de la distribution de certains badges."
         else:
             msg += " Badges non-distribués."
 
@@ -852,6 +862,9 @@ class GameService:
             ValidationError: If the game isn't archived yet.
             TrophiesAlreadyAwardedError: If trophies were already awarded for
                 this game (at archive time or via a previous call).
+            TrophyAwardFailedError: If one or more recipients couldn't be
+                awarded their trophy; ``trophies_awarded`` stays False so the
+                admin sees the failure and can retry.
         """
         game = self.get_by_id(game_id)
         if game.status != "archived":
@@ -865,7 +878,12 @@ class GameService:
                 game_id=game.id,
             )
 
-        self._award_game_trophies(game)
+        if not self._award_game_trophies(game):
+            raise TrophyAwardFailedError(
+                "Certains badges n'ont pas pu être distribués. Veuillez réessayer.",
+                game_id=game.id,
+            )
+
         game.trophies_awarded = True
         db.session.commit()
 
@@ -875,24 +893,49 @@ class GameService:
         self._invalidate_dashboard_stats(game.gm_id, *(p.id for p in game.players))
         return game
 
-    def _award_game_trophies(self, game: Game) -> None:
+    def _award_game_trophies(self, game: Game) -> bool:
         """Award trophies to GM and players.
+
+        Each recipient is attempted independently (one failure doesn't stop
+        the rest, mirroring ``_revoke_game_trophies``), so callers can tell
+        whether *every* recipient actually got their trophy before persisting
+        ``game.trophies_awarded``.
+
+        Note:
+            Not idempotent per recipient: these are non-unique trophies
+            (quantity-counted), so retrying after a partial failure re-awards
+            — and thus double-counts — recipients who already succeeded.
+            Acceptable since failures here are rare transient DB errors; a
+            full fix would need per-(game, user, trophy) award tracking.
 
         Args:
             game: Game instance.
+
+        Returns:
+            True if every recipient was awarded successfully, False if any
+            award failed (already logged).
         """
         trophy_map = {
             "oneshot": (BADGE_OS_GM_ID, BADGE_OS_ID),
             "campaign": (BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID),
         }
         gm_trophy, player_trophy = trophy_map.get(game.type, (None, None))
-        if gm_trophy:
+        if not gm_trophy:
+            return True
+
+        recipients = [(game.gm.id, gm_trophy)]
+        recipients += [(user.id, player_trophy) for user in game.players]
+
+        all_succeeded = True
+        for user_id, trophy_id in recipients:
             try:
-                self.trophy_service.award(user_id=game.gm.id, trophy_id=gm_trophy)
-                for user in game.players:
-                    self.trophy_service.award(user_id=user.id, trophy_id=player_trophy)
+                self.trophy_service.award(user_id=user_id, trophy_id=trophy_id)
             except Exception as e:
-                logger.error(f"Failed to award trophies for game {game.id}: {e}")
+                logger.error(
+                    f"Failed to award trophy {trophy_id} to user {user_id} for game {game.id}: {e}"
+                )
+                all_succeeded = False
+        return all_succeeded
 
     def revoke_trophies(self, game_id: int, user_id: str | None = None) -> Game:
         """Manually revoke trophies previously awarded for an archived game.
