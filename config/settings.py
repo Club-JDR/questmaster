@@ -43,6 +43,11 @@ class Settings:
     LOG_RETENTION_DAYS = int(os.environ.get("QM_LOG_RETENTION_DAYS", "30"))
     DISCORD_ERROR_WEBHOOK_URL = os.environ.get("DISCORD_ERROR_WEBHOOK_URL")
 
+    # Scheduler (see website/scheduler.py). Only one process should run
+    # background jobs; opt in per-process rather than defaulting on, so the web
+    # workers never do (see the dedicated `scheduler` docker-compose service).
+    RUN_SCHEDULER = os.environ.get("QM_RUN_SCHEDULER", "0") == "1"
+
     # JWT settings
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", os.environ.get("FLASK_AUTH_SECRET"))
     JWT_ALGORITHM = "HS256"

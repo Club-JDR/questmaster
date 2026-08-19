@@ -24,6 +24,24 @@ services:
     links:
       - db
       - redis
+  scheduler:
+    build:
+      context: .
+      target: app
+    image: ghcr.io/club-jdr/questmaster:${TAG:-latest}
+    entrypoint: [ "python", "scheduler_entrypoint.py" ]
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - TAG=${TAG}
+      - QM_RUN_SCHEDULER=1
+    depends_on:
+      app:
+        condition: service_healthy
+    links:
+      - db
+      - redis
   app-test:
     build:
       context: .

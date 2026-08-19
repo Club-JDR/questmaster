@@ -53,6 +53,7 @@ COPY --chmod=555 config ./config
 COPY --chmod=555 migrations/ ./migrations
 COPY --chmod=555 website/ ./website
 COPY --chmod=555 questmaster.py ./
+COPY --chmod=555 scheduler_entrypoint.py ./
 COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/static/dist/
 
 FROM base AS app-test

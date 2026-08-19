@@ -1,6 +1,7 @@
 """QuestMaster application factory and configuration."""
 
 import os
+import sys
 import uuid
 
 from flask import Flask, g
@@ -14,6 +15,22 @@ from website.logging_config import configure_logging
 from website.scheduler import start_scheduler
 from website.utils import get_app_version
 from website.views import register_blueprints, register_filters
+
+
+def _is_one_off_cli_command() -> bool:
+    """Whether this process is running a one-off ``flask`` CLI command.
+
+    True for maintenance commands like ``flask db upgrade`` or
+    ``flask seed-trophies`` (run once per deploy from ``entrypoint.sh``), so
+    they never start a background scheduler of their own even if
+    ``QM_RUN_SCHEDULER`` leaks into their environment. False for the
+    long-running ``flask run`` dev server, so local development keeps working
+    as before.
+
+    Returns:
+        True if the app was loaded for a one-off `flask` CLI command.
+    """
+    return os.environ.get("FLASK_RUN_FROM_CLI") == "true" and "run" not in sys.argv[1:]
 
 
 def create_app():
@@ -107,8 +124,12 @@ def create_app():
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-    # Scheduled jobs
-    with app.app_context():
-        start_scheduler(app)
+    # Scheduled jobs — only the dedicated `scheduler` service (QM_RUN_SCHEDULER=1)
+    # runs background jobs; the web workers never do, and one-off `flask` CLI
+    # invocations (migrations, seeding) are skipped even if the flag leaks into
+    # their environment (see improvements/AUDIT.md §1.5).
+    if app.config["RUN_SCHEDULER"] and not _is_one_off_cli_command():
+        with app.app_context():
+            start_scheduler(app)
 
     return app
