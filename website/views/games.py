@@ -266,6 +266,29 @@ def _resolve_branch_roster(payload, game):
     }
 
 
+def _resolve_gm_id(payload, data):
+    """Resolve the GM a new game should be attributed to.
+
+    The creation form carries a ``gm_id`` field, but it is only ever a
+    hidden input pre-filled with the requester's own id — never a real
+    picker — so it can't be trusted: a tampered submission could otherwise
+    attribute the game to an arbitrary user and dodge that user's own
+    ``can_post_games`` block. Regular GMs are therefore always attributed as
+    themselves. Admins are trusted to post on behalf of another user, so
+    their submitted ``gm_id`` is honored when present.
+
+    Args:
+        payload: Auth payload (from ``who()``).
+        data: Submitted form data.
+
+    Returns:
+        The GM id to attribute the new game to.
+    """
+    if payload["is_admin"] and data.get("gm_id"):
+        return data["gm_id"]
+    return payload["user_id"]
+
+
 @game_bp.route("/annonce/", methods=["GET"])
 @login_required
 def get_game_form():
@@ -299,7 +322,7 @@ def create_game():
         return redirect(url_for(SEARCH_GAMES_ROUTE))
 
     data = request.values.to_dict()
-    gm_id = data["gm_id"]
+    gm_id = _resolve_gm_id(payload, data)
     action = data["action"]
     allow_past_date = data.get("confirm_past_date") == "1"
 
@@ -769,7 +792,7 @@ def create_branch_game(slug):
         return blocked
 
     data = request.values.to_dict()
-    gm_id = data["gm_id"]
+    gm_id = _resolve_gm_id(payload, data)
     allow_past_date = data.get("confirm_past_date") == "1"
 
     try:
