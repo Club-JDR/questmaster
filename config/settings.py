@@ -55,6 +55,12 @@ class Settings:
     POSTS_CHANNEL_ID = os.environ.get("POSTS_CHANNEL_ID")
     ADMIN_CHANNEL_ID = os.environ.get("ADMIN_CHANNEL_ID")
     SQLALCHEMY_DATABASE_URI = f"""postgresql+psycopg://{os.environ.get("POSTGRES_USER")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:5432/{os.environ.get("POSTGRES_DB")}"""
+    # pool_pre_ping: check a pooled connection is still alive before reusing it,
+    # so a Postgres restart or idle-connection timeout surfaces as one extra
+    # reconnect instead of a burst of 500s on every worker's next query.
+    # pool_recycle: recycle connections older than 30 min, ahead of Postgres's
+    # or any intermediate proxy's own idle/lifetime timeout.
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 1800}
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_HOST = os.environ.get("REDIS_HOST")
     CACHE_REDIS_PORT = 6379
