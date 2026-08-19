@@ -3,7 +3,7 @@
 import locale
 from datetime import datetime
 
-from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 
 from config.constants import (
     GAME_DETAILS_ROUTE,
@@ -509,7 +509,7 @@ def edit_game_session(slug, session_id):
     """Edit game session and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    session = session_service.get_by_id_or_404(session_id)
+    session = _get_session_for_game_or_404(game, session_id)
 
     new_start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
     new_end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
@@ -559,7 +559,7 @@ def remove_game_session(slug, session_id):
     """Remove session from a game and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    session = session_service.get_by_id_or_404(session_id)
+    session = _get_session_for_game_or_404(game, session_id)
     start = session.start.strftime(HUMAN_TIMEFORMAT)
     end = session.end.strftime(HUMAN_TIMEFORMAT)
 
@@ -1019,6 +1019,28 @@ def _get_game_if_authorized(payload, slug):
             action="game_authorized",
         )
     return game
+
+
+def _get_session_for_game_or_404(game, session_id):
+    """Return the session if it belongs to ``game``, else 404.
+
+    Being authorized on ``game`` (GM/admin) only grants control over that
+    game's own sessions — without this check, a foreign ``session_id`` in
+    the URL would let a GM edit or delete another game's session (IDOR).
+    404, not 403: from the caller's perspective a foreign session simply
+    doesn't exist under this game.
+
+    Args:
+        game: The (already-authorized) game the session must belong to.
+        session_id: Session ID from the route.
+
+    Returns:
+        The GameSession instance.
+    """
+    session = session_service.get_by_id_or_404(session_id)
+    if session.game_id != game.id:
+        abort(404)
+    return session
 
 
 def _redirect_unless_branchable(game, slug):

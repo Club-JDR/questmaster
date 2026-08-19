@@ -1454,6 +1454,70 @@ class TestGameSessions:
         assert response.status_code == 403
         assert db_session.get(type(gs), gs.id) is not None
 
+    def test_cannot_edit_another_games_session_via_own_slug(
+        self,
+        logged_in_gm,
+        gm_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        default_system,
+        default_vtt,
+    ):
+        """A GM authorized on their own game can't edit another game's session (IDOR).
+
+        Even though the GM is authorized on ``own_game``, passing the
+        ``session_id`` of a session belonging to ``open_game`` (someone
+        else's game) must 404, not silently edit it.
+        """
+        own_game = GameFactory(
+            db_session,
+            status="open",
+            gm_id=gm_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+        )
+        foreign_gs = GameSessionFactory(db_session, game_id=open_game.id)
+        original_start = foreign_gs.start
+
+        response = logged_in_gm.post(
+            f"/annonces/{own_game.slug}/sessions/{foreign_gs.id}/editer/",
+            data={"date_start": "2025-08-01 20:00", "date_end": "2025-08-01 23:00"},
+        )
+        assert response.status_code == 404
+        db_session.refresh(foreign_gs)
+        assert foreign_gs.start == original_start
+
+    def test_cannot_remove_another_games_session_via_own_slug(
+        self,
+        logged_in_gm,
+        gm_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+        default_system,
+        default_vtt,
+    ):
+        """A GM authorized on their own game can't delete another game's session (IDOR)."""
+        own_game = GameFactory(
+            db_session,
+            status="open",
+            gm_id=gm_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+        )
+        foreign_gs = GameSessionFactory(db_session, game_id=open_game.id)
+
+        response = logged_in_gm.post(
+            f"/annonces/{own_game.slug}/sessions/{foreign_gs.id}/supprimer/",
+        )
+        assert response.status_code == 404
+        assert db_session.get(type(foreign_gs), foreign_gs.id) is not None
+
 
 # -- Game Alert ------------------------------------------------------------
 
