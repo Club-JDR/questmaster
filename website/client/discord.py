@@ -7,12 +7,14 @@ rate limiting, and retry logic. Business logic should use DiscordService instead
 import time
 
 import requests
+from requests.adapters import HTTPAdapter
 from unidecode import unidecode
 
 from config.constants import (
     DISCORD_API_BASE_URL,
     DISCORD_CHANNEL_TYPE_CATEGORY,
     DISCORD_NAME_MAX,
+    DISCORD_POOL_MAXSIZE,
     DISCORD_REQUEST_TIMEOUT,
     GM_ROLE_PERMISSION,
     PLAYER_ROLE_PERMISSION,
@@ -37,6 +39,12 @@ class Discord:
         self.guild_id = guild_id
         self.authorization = bot_token
         self.headers = self._make_headers(self.authorization)
+        # One pooled connection kept alive across calls instead of a fresh
+        # TCP+TLS handshake (~100-300ms) per request.
+        self._session = requests.Session()
+        adapter = HTTPAdapter(pool_maxsize=DISCORD_POOL_MAXSIZE)
+        self._session.mount("https://", adapter)
+        self._session.mount("http://", adapter)
 
     def _make_headers(self, authorization=""):
         headers = {
@@ -83,7 +91,7 @@ class Discord:
 
         for _ in range(max_retries):
             try:
-                r = requests.request(
+                r = self._session.request(
                     method,
                     url,
                     headers=headers,

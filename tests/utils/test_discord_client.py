@@ -11,6 +11,7 @@ import requests
 
 from config.constants import (
     DISCORD_NAME_MAX,
+    DISCORD_POOL_MAXSIZE,
     DISCORD_REQUEST_TIMEOUT,
     GM_ROLE_PERMISSION,
     PLAYER_ROLE_PERMISSION,
@@ -25,20 +26,38 @@ def client():
     return Discord(guild_id="guild_1", bot_token="token")
 
 
+class TestConnectionPooling:
+    def test_session_is_pooled_and_reused_across_calls(self, client):
+        """One Session (with a bounded connection pool) is reused, not recreated per call."""
+        assert isinstance(client._session, requests.Session)
+        adapter = client._session.get_adapter("https://discord.com")
+        assert adapter.poolmanager.connection_pool_kw.get("maxsize") == DISCORD_POOL_MAXSIZE
+
+        response = Mock(status_code=200, content=b"{}", ok=True)
+        response.json.return_value = {}
+        with patch.object(client._session, "request", return_value=response):
+            client._request("GET", "/guilds/guild_1")
+            same_session = client._session
+            client._request("GET", "/guilds/guild_1")
+
+        assert client._session is same_session
+
+
 class TestRequestTimeout:
     def test_passes_timeout_to_requests(self, client):
         """Every outbound call carries the (connect, read) timeout tuple."""
         response = Mock(status_code=200, content=b"{}", ok=True)
         response.json.return_value = {}
-        with patch("website.client.discord.requests.request", return_value=response) as req:
+        with patch.object(client._session, "request", return_value=response) as req:
             client._request("GET", "/guilds/guild_1")
 
         assert req.call_args.kwargs["timeout"] == DISCORD_REQUEST_TIMEOUT
 
     def test_network_failure_raises_discord_api_error(self, client):
         """A timeout/connection error is surfaced as DiscordAPIError, not a raw 500."""
-        with patch(
-            "website.client.discord.requests.request",
+        with patch.object(
+            client._session,
+            "request",
             side_effect=requests.exceptions.Timeout("timed out"),
         ):
             with pytest.raises(DiscordAPIError):
