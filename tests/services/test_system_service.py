@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from tests.factories import GameFactory, SystemFactory, UserFactory
@@ -82,6 +84,17 @@ class TestSystemService:
         system_id = system.id
         service.delete(system_id)
         assert db_session.get(System, system_id) is None
+
+    def test_clear_cache_uses_class_level_reference(self, db_session):
+        """Busts the cache for every SystemService instance, not just the caller's.
+
+        ``get_all`` is memoized per-``self``; delete_memoized must be called with
+        the class attribute (not a bound ``self.get_all``) so the app's several
+        module-level SystemService singletons all get invalidated together.
+        """
+        with patch("website.services.system.cache.delete_memoized") as mock_delete:
+            SystemService.clear_cache()
+        mock_delete.assert_called_once_with(SystemService.get_all)
 
 
 class TestSystemRunHistory:

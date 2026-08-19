@@ -26,6 +26,18 @@ class VttService:
         """
         return self.repo.get_all_ordered()
 
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Drop the cached VTT list.
+
+        Uses the class (not a specific instance) so this busts the cache for
+        every ``VttService`` instance across the app, not just the one that
+        happens to call it — several modules keep their own module-level
+        instance. Called on every mutation, and by ``flask clear-cache vtts``
+        for out-of-band fixes.
+        """
+        cache.delete_memoized(cls.get_all)
+
     def list_paginated(
         self, page: int = 1, per_page: int = 25, search: str | None = None
     ) -> Pagination:
@@ -80,7 +92,7 @@ class VttService:
         vtt = Vtt(name=name, icon=icon)
         self.repo.add(vtt)
         db.session.commit()
-        cache.delete_memoized(self.get_all)
+        self.clear_cache()
         logger.info(f"VTT {vtt.id} created: {sanitize_log_value(name)}")
         return vtt
 
@@ -97,7 +109,7 @@ class VttService:
         vtt = self.repo.get_by_id_or_404(id)
         vtt.update_from_dict(data)
         db.session.commit()
-        cache.delete_memoized(self.get_all)
+        self.clear_cache()
         logger.info(f"VTT {id} updated")
         return vtt
 
@@ -110,5 +122,5 @@ class VttService:
         vtt = self.repo.get_by_id_or_404(id)
         self.repo.delete(vtt)
         db.session.commit()
-        cache.delete_memoized(self.get_all)
+        self.clear_cache()
         logger.info(f"VTT {id} deleted")

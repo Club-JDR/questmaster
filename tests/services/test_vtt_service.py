@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from website.exceptions import NotFoundError, ValidationError
@@ -51,3 +53,9 @@ class TestVttService:
         vtt_id = vtt.id
         service.delete(vtt_id)
         assert db_session.get(Vtt, vtt_id) is None
+
+    def test_clear_cache_uses_class_level_reference(self, db_session):
+        """Busts the cache for every VttService instance, not just the caller's."""
+        with patch("website.services.vtt.cache.delete_memoized") as mock_delete:
+            VttService.clear_cache()
+        mock_delete.assert_called_once_with(VttService.get_all)

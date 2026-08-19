@@ -224,6 +224,17 @@ MSG_ADMIN_ACCESS_REQUIRED = "Admin access required."
 CACHE_USER_PROFILE_TIMEOUT = 60 * 60 * 24  # 24 hours
 CACHE_USER_PROFILE_404_TIMEOUT = 60 * 60 * 24 * 7  # 7 days
 
+# Cache-clearing targets (admin settings page + `flask clear-cache`); keys
+# match website.cli.CACHE_TARGETS.
+CACHE_TARGET_LABELS = {
+    "systems": "Systèmes",
+    "vtts": "VTT",
+    "calendar": "Calendrier",
+    "badges": "Badges",
+    "stats": "Statistiques",
+    "discord": "Discord",
+}
+
 # Error Templates
 TEMPLATE_403 = "403.html"
 TEMPLATE_404 = "404.html"
