@@ -424,10 +424,9 @@ class TestGameStatus:
         response = logged_in_gm.post(
             f"/annonces/{open_game.slug}/notifier/",
             data={"notifyMessage": "Coucou"},
-            follow_redirects=True,
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 403
         mock_discord_service.send_message.assert_not_called()
 
     def test_reopen_game(
@@ -566,11 +565,8 @@ class TestGameStatus:
         response = logged_in_gm.post(
             f"/annonces/{open_game.slug}/statut/",
             data={"status": "closed"},
-            follow_redirects=True,
         )
-        body = html.unescape(response.data.decode())
-        assert response.status_code == 200
-        assert "Seul·e le·a MJ de l'annonce peut faire cette opération." in body
+        assert response.status_code == 403
 
 
 # -- Game Edit -------------------------------------------------------------
@@ -668,6 +664,39 @@ class TestGameEdit:
         body = response.data.decode()
         assert response.status_code == 200
         assert "Annonce modifiée et ouverte." in body
+
+    def test_non_owner_gm_cannot_edit_game(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        draft_game,
+        default_system,
+        default_vtt,
+    ):
+        """A GM (non-admin, non-owner) cannot edit another GM's game."""
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name=draft_game.name,
+            complement="Sneaky edit",
+        )
+        response = logged_in_gm.post(
+            f"/annonces/{draft_game.slug}/editer/",
+            data=data,
+        )
+        assert response.status_code == 403
+        db_session.refresh(draft_game)
+        assert draft_game.complement != "Sneaky edit"
+
+    def test_non_owner_gm_cannot_get_edit_form(
+        self, logged_in_gm, mock_discord_lookups, db_session, draft_game
+    ):
+        """A GM (non-admin, non-owner) cannot open another GM's edit form."""
+        response = logged_in_gm.get(f"/annonces/{draft_game.slug}/editer/")
+        assert response.status_code == 403
 
 
 # -- Branch a campaign into a quick one-shot --------------------------------
@@ -868,10 +897,8 @@ class TestGameBranch:
         response = logged_in_gm.post(
             f"/annonces/{open_campaign.slug}/brancher/",
             data={"csrf_token": "test"},
-            follow_redirects=True,
         )
-        body = html.unescape(response.data.decode())
-        assert "Seul·e le·a MJ de l'annonce peut faire cette opération." in body
+        assert response.status_code == 403
 
     def test_branch_roster_modal_shown_after_creation(
         self,
@@ -1389,6 +1416,43 @@ class TestGameSessions:
         body = response.data.decode()
         assert response.status_code == 200
         assert "Session supprimée." in body
+
+    def test_non_owner_gm_cannot_edit_session(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A GM (non-admin, non-owner) cannot edit another GM's game session."""
+        gs = GameSessionFactory(db_session, game_id=open_game.id)
+        original_start = gs.start
+        response = logged_in_gm.post(
+            f"/annonces/{open_game.slug}/sessions/{gs.id}/editer/",
+            data={"date_start": "2025-08-01 20:00", "date_end": "2025-08-01 23:00"},
+        )
+        assert response.status_code == 403
+        db_session.refresh(gs)
+        assert gs.start == original_start
+
+    def test_non_owner_gm_cannot_remove_session(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A GM (non-admin, non-owner) cannot remove another GM's game session."""
+        gs = GameSessionFactory(db_session, game_id=open_game.id)
+        response = logged_in_gm.post(
+            f"/annonces/{open_game.slug}/sessions/{gs.id}/supprimer/",
+        )
+        assert response.status_code == 403
+        assert db_session.get(type(gs), gs.id) is not None
 
 
 # -- Game Alert ------------------------------------------------------------

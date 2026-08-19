@@ -22,6 +22,7 @@ from website.exceptions import (
     QuestMasterError,
     ScheduleConflictError,
     SessionConflictError,
+    UnauthorizedError,
     ValidationError,
 )
 from website.services import DiscordService
@@ -385,8 +386,6 @@ def change_game_status(slug):
     """Change game status and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    if isinstance(game, Response):
-        return game
     status = request.values.get("status")
     award_trophies = "award_trophies" in request.form
 
@@ -432,9 +431,7 @@ def send_alert(slug):
 def notify_players(slug):
     """Notify a game's players by posting a message in its Discord channel."""
     payload = who()
-    game = _get_game_if_authorized(payload, slug)
-    if isinstance(game, Response):
-        return game
+    _get_game_if_authorized(payload, slug)
 
     message = request.form.get("notifyMessage")
     try:
@@ -463,8 +460,6 @@ def add_game_session(slug):
     """Add session to a game and redirect to the game details."""
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    if isinstance(game, Response):
-        return game
 
     # Drafts have no Discord channel yet; sessions are created when the game is
     # published. Block adding sessions until then.
@@ -717,8 +712,6 @@ def get_branch_form(slug):
     """
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    if isinstance(game, Response):
-        return game
     blocked = _redirect_unless_branchable(game, slug)
     if blocked:
         return blocked
@@ -771,8 +764,6 @@ def create_branch_game(slug):
     """
     payload = who()
     game = _get_game_if_authorized(payload, slug)
-    if isinstance(game, Response):
-        return game
     blocked = _redirect_unless_branchable(game, slug)
     if blocked:
         return blocked
@@ -835,9 +826,7 @@ def confirm_branch_roster(new_slug, source_slug):
             checkboxes).
     """
     payload = who()
-    new_game = _get_game_if_authorized(payload, new_slug)
-    if isinstance(new_game, Response):
-        return new_game
+    _get_game_if_authorized(payload, new_slug)
 
     data = request.values.to_dict()
     known_ids = {pid for pid in data.get("known_players", "").split(",") if pid}
@@ -1011,11 +1000,24 @@ def _handle_add_player(game, slug, data, payload):
 
 
 def _get_game_if_authorized(payload, slug):
-    """Return game if user is the game's GM or an admin, else redirect."""
+    """Return game if user is the game's GM or an admin, else raise.
+
+    Args:
+        payload: Auth payload (from ``who()``).
+        slug: Slug of the game to load.
+
+    Returns:
+        The authorized Game instance.
+
+    Raises:
+        UnauthorizedError: If the caller is neither the game's GM nor an admin.
+    """
     game = game_service.get_by_slug_or_404(slug)
     if game.gm_id != payload["user_id"] and not payload["is_admin"]:
-        flash("Seul·e le·a MJ de l'annonce peut faire cette opération.", "danger")
-        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
+        raise UnauthorizedError(
+            "Only the game's GM or an admin may perform this operation.",
+            action="game_authorized",
+        )
     return game
 
 
