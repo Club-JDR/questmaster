@@ -74,6 +74,15 @@ Logs always go to stdout; records at `QM_DB_LOG_LEVEL` and above are also persis
 database and browsable from the admin **Journaux applicatifs** page (filterable by date
 range and level). Known secrets are redacted from every log output.
 
+### Scheduler
+
+Background jobs (Discord profile refresh, category capacity checks, log pruning, …) only run
+in a process with `QM_RUN_SCHEDULER=1`. Exactly one process should set it — running it in more
+than one (e.g. every gunicorn worker) causes jobs to fire multiple times, which can
+double-provision Discord resources. The `docker-compose.yml` `scheduler` service sets it for
+you; if you run the app outside Docker Compose, set it on exactly one long-lived process and
+leave it unset (or `0`) everywhere else.
+
 ## Using Docker Compose (recommended)
 
 Build and start the complete stack:
@@ -81,6 +90,11 @@ Build and start the complete stack:
 ```sh
 docker compose up -d --build
 ```
+
+This starts `app` (the web workers) alongside a dedicated `scheduler` service that runs the
+background jobs — see [Scheduler](#scheduler) above. `scheduler` waits for `app`'s healthcheck
+(migrations applied, server up) before starting, and reuses the same image with a different
+entrypoint, so no separate build step is needed.
 
 On the first start, run the migrations to initialize the database:
 
