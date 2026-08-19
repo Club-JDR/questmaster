@@ -56,7 +56,7 @@ def create_app():
     app.config.from_object("config.settings.Settings")
 
     # Logging
-    configure_logging()
+    configure_logging(app)
 
     @app.before_request
     def assign_trace_id():
