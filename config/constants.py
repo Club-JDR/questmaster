@@ -114,6 +114,9 @@ GM_ROLE_PERMISSION = "2815265163693120"
 # (connect, read) timeout for every outbound Discord/CDN call, so a stalled
 # connection can never pin a gunicorn worker thread forever.
 DISCORD_REQUEST_TIMEOUT = (3.05, 10)
+# Max pooled connections to discord.com kept alive by the shared requests.Session,
+# reused across calls instead of paying a fresh TCP+TLS handshake every time.
+DISCORD_POOL_MAXSIZE = 10
 
 # Discord role limits
 # A Discord guild is hard-capped at 250 roles. When the count nears this limit,
