@@ -13,6 +13,7 @@ from config.constants import (
     DISCORD_API_BASE_URL,
     DISCORD_CHANNEL_TYPE_CATEGORY,
     DISCORD_NAME_MAX,
+    DISCORD_REQUEST_TIMEOUT,
     GM_ROLE_PERMISSION,
     PLAYER_ROLE_PERMISSION,
 )
@@ -81,7 +82,20 @@ class Discord:
             headers["X-Audit-Log-Reason"] = reason
 
         for _ in range(max_retries):
-            r = requests.request(method, url, headers=headers, json=json, params=params)
+            try:
+                r = requests.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=json,
+                    params=params,
+                    timeout=DISCORD_REQUEST_TIMEOUT,
+                )
+            except requests.RequestException as exc:
+                # Network-level failure (timeout, connection refused, DNS...): surface
+                # it as the same DiscordAPIError callers already catch, instead of an
+                # unhandled 500.
+                raise DiscordAPIError(f"Discord request failed: {exc}", status_code=503) from exc
 
             # Handle rate limiting (HTTP 429)
             if r.status_code == 429:

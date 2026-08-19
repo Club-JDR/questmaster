@@ -111,6 +111,9 @@ EVENT_ACTIONS = (
 DISCORD_API_BASE_URL = "https://discord.com/api/v10"
 PLAYER_ROLE_PERMISSION = "563362270661696"
 GM_ROLE_PERMISSION = "2815265163693120"
+# (connect, read) timeout for every outbound Discord/CDN call, so a stalled
+# connection can never pin a gunicorn worker thread forever.
+DISCORD_REQUEST_TIMEOUT = (3.05, 10)
 
 # Discord role limits
 # A Discord guild is hard-capped at 250 roles. When the count nears this limit,
