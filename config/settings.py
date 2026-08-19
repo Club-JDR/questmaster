@@ -5,10 +5,9 @@ from datetime import timedelta
 
 GAMES_PER_PAGE = 12
 
-# Environment variables the app cannot safely start without (see
-# improvements/AUDIT.md §1.14). Without this check, a missing
-# FLASK_AUTH_SECRET only surfaces on the first session write (deep inside
-# Flask), and missing Postgres variables silently produce
+# Environment variables the app cannot safely start without. Without this
+# check, a missing FLASK_AUTH_SECRET only surfaces on the first session write
+# (deep inside Flask), and missing Postgres variables silently produce
 # "postgresql://None:None@None:5432/None" as the DB URI.
 REQUIRED_ENV_VARS = (
     "FLASK_AUTH_SECRET",
@@ -64,10 +63,10 @@ class Settings:
     CACHE_KEY_PREFIX = "QuestMaster:"
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
-    # Session cookie hardening (see improvements/AUDIT.md §1.13). The app sits
-    # behind a TLS-terminating proxy (see ProxyFix in website/__init__.py), so
-    # SECURE defaults on; only local `flask run`/docker dev over plain HTTP
-    # needs to opt out via QM_SESSION_COOKIE_SECURE=0.
+    # Session cookie hardening. The app sits behind a TLS-terminating proxy
+    # (see ProxyFix in website/__init__.py), so SECURE defaults on; only
+    # local `flask run`/docker dev over plain HTTP needs to opt out via
+    # QM_SESSION_COOKIE_SECURE=0.
     SESSION_COOKIE_SECURE = os.environ.get("QM_SESSION_COOKIE_SECURE", "1") == "1"
     SESSION_COOKIE_SAMESITE = "Lax"
 
