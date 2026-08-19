@@ -193,6 +193,17 @@ class DiscordService:
         """
         return self.count_roles()
 
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Drop the cached guild role count.
+
+        Uses the class (not a specific instance) so this busts the cache
+        regardless of which ``DiscordService`` instance populated it — several
+        modules keep their own module-level instance. Used by ``flask
+        clear-cache discord`` when roles changed directly in Discord.
+        """
+        cache.delete_memoized(cls.count_roles_cached)
+
     def delete_role(self, role_id: str) -> dict:
         """Delete a Discord role.
 

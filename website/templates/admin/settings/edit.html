@@ -110,6 +110,27 @@
   </div>
 </form>
 
+{# ── Cache maintenance: bulk or per-surface invalidation ── #}
+<div class="rounded-box border border-base-300 p-4 space-y-4 mb-6">
+  <h2 class="font-semibold text-base">Cache</h2>
+  <p class="text-sm text-base-content/70">
+    Vide les données mises en cache par l'application. Utile après une correction manuelle en
+    base qui aurait contourné l'invalidation automatique d'un service, ou pendant du débogage.
+    Chaque bouton ne cible que la donnée indiquée&nbsp;; « Tout vider » vide entièrement le cache.
+  </p>
+  <form method="post" action="{{ url_for('admin.clear_cache') }}" class="flex flex-wrap gap-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for target, label in cache_target_labels.items() %}
+    <button type="submit" name="target" value="{{ target }}" class="btn btn-sm btn-outline">
+      {{ label }}
+    </button>
+    {% endfor %}
+    <button type="submit" name="target" value="all" class="btn btn-sm btn-outline btn-error">
+      Tout vider
+    </button>
+  </form>
+</div>
+
 {# ── Environment-backed overrides (dangerous) — fenced in a red box ── #}
 <form method="post" action="{{ url_for('admin.edit_settings') }}"
       class="rounded-box border-2 border-error p-4 space-y-4">

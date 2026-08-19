@@ -200,6 +200,17 @@ class GameSessionService:
             "gm_names": gm_names,
         }
 
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Drop every cached month of calendar stats.
+
+        ``_compute_stats`` is memoized per (year, month); resetting via the
+        class rather than an instance clears every cached month at once, for
+        every instance. Used by ``flask clear-cache calendar`` after a manual
+        DB fix that bypassed :meth:`create`/:meth:`update`/:meth:`delete`.
+        """
+        cache.delete_memoized(cls._compute_stats)
+
     @staticmethod
     def _accumulate_game(bucket: dict[str, dict], game) -> None:
         """Tally one session's game into a system-keyed breakdown bucket.

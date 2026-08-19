@@ -110,6 +110,21 @@ def get_campaign_gm_leaderboard():
     return trophy_service.get_leaderboard(BADGE_CAMPAIGN_GM_ID, limit=10)
 
 
+def clear_leaderboard_cache() -> None:
+    """Drop every cached badge leaderboard (global tabs + per-event).
+
+    The four global leaderboards are plain view functions cached under a
+    fixed ``key_prefix``, not memoized service methods, so they're cleared by
+    exact key rather than ``delete_memoized``. Used by ``flask clear-cache
+    badges`` and after an admin manually awards/revokes a trophy.
+    """
+    cache.delete("leaderboard_os")
+    cache.delete("leaderboard_campaign")
+    cache.delete("leaderboard_os_gm")
+    cache.delete("leaderboard_campaign_gm")
+    cache.delete_memoized(get_event_leaderboard)
+
+
 def _serialize_leaderboard(entries):
     """Convert (User, count) tuples to (dict, count) tuples."""
     return [(user.to_dict(), count) for user, count in entries]

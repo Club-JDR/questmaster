@@ -89,6 +89,12 @@ class TestDiscordService:
         assert discord_service.count_roles() == 3
         mock_bot.list_roles.assert_called_once_with()
 
+    def test_clear_cache_uses_class_level_reference(self):
+        """Busts the cached role count for every DiscordService instance."""
+        with patch("website.services.discord.cache.delete_memoized") as mock_delete:
+            DiscordService.clear_cache()
+        mock_delete.assert_called_once_with(DiscordService.count_roles_cached)
+
     def test_set_channel_permission(self, discord_service, mock_bot):
         """set_channel_permission forwards to the client with member type."""
         mock_bot.set_channel_permission.return_value = {}

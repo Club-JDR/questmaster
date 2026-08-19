@@ -1,6 +1,7 @@
 """Tests for StatsService (per-user dashboard agenda + statistics)."""
 
 from datetime import datetime
+from unittest.mock import patch
 
 from config.constants import BADGE_CAMPAIGN_ID, BADGE_OS_ID, RESTRICTION_LABELS
 from tests.factories import (
@@ -181,6 +182,12 @@ class TestStatsService:
         roles = {row["role"] for row in agenda["upcoming"]}
 
         assert ROLE_VIEWER not in roles
+
+    def test_invalidate_all_busts_every_user_at_once(self, db_session):
+        """Bulk counterpart to `invalidate`: resets `_compute_data` for all users."""
+        with patch("website.services.stats.cache.delete_memoized") as mock_delete:
+            StatsService.invalidate_all()
+        mock_delete.assert_called_once_with(StatsService._compute_data)
 
 
 def _game_with(

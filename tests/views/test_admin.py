@@ -587,6 +587,52 @@ def test_permissions_save_rejects_out_of_bounds_games_per_page(
     assert db_session.get(AppSetting, "games_per_page").value == "12"
 
 
+# -- Cache maintenance --------------------------------------------------------
+
+
+def test_settings_page_shows_cache_panel(admin_client, db_session):
+    response = admin_client.get("/admin/settings/")
+    body = response.data.decode()
+    assert 'action="/admin/settings/cache/"' in body
+    assert 'value="all"' in body
+    assert 'value="systems"' in body
+
+
+def test_clear_cache_all(admin_client, db_session, mock_csrf):
+    with patch("website.views.admin.settings.clear_cache_target") as mock_clear:
+        response = admin_client.post("/admin/settings/cache/", data={"target": "all"})
+    assert response.status_code == 302
+    mock_clear.assert_called_once_with("all")
+
+
+def test_clear_cache_named_target(admin_client, db_session, mock_csrf):
+    with patch("website.views.admin.settings.clear_cache_target") as mock_clear:
+        response = admin_client.post("/admin/settings/cache/", data={"target": "systems"})
+    assert response.status_code == 302
+    mock_clear.assert_called_once_with("systems")
+
+
+def test_clear_cache_defaults_to_all_without_target(admin_client, db_session, mock_csrf):
+    with patch("website.views.admin.settings.clear_cache_target") as mock_clear:
+        admin_client.post("/admin/settings/cache/")
+    mock_clear.assert_called_once_with("all")
+
+
+def test_clear_cache_unknown_target_flashes_error(admin_client, db_session, mock_csrf):
+    """An unknown target flashes a French error instead of raising or leaking English."""
+    response = admin_client.post(
+        "/admin/settings/cache/", data={"target": "bogus"}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert "Cible de cache inconnue." in response.data.decode()
+
+
+def test_clear_cache_requires_admin(client, mock_csrf):
+    with client.session_transaction() as sess:
+        sess["user_id"] = "test_user"
+    assert client.post("/admin/settings/cache/", data={"target": "all"}).status_code == 403
+
+
 # -- Users -------------------------------------------------------------------
 
 

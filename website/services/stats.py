@@ -123,6 +123,17 @@ class StatsService:
         for player in game.players:
             self.invalidate(player.id)
 
+    @classmethod
+    def invalidate_all(cls) -> None:
+        """Drop the cached dashboard data for every user at once.
+
+        Bulk counterpart to :meth:`invalidate`/:meth:`invalidate_for_game`,
+        which target a single user's entry after a normal write. This exists
+        for out-of-band fixes — e.g. ``flask clear-cache stats`` — where the
+        affected users aren't known individually.
+        """
+        cache.delete_memoized(cls._compute_data)
+
     @cache.memoize(timeout=DASHBOARD_STATS_CACHE_TIMEOUT)
     def _compute_data(self, user_id: str) -> dict:
         now = datetime.now()

@@ -1,6 +1,7 @@
 """Tests for GameSessionService."""
 
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 
@@ -163,3 +164,9 @@ class TestGameSessionService:
         assert stats["base_day"].day == 1
         assert stats["num_os"] == 0
         assert stats["num_campaign"] == 0
+
+    def test_clear_cache_busts_every_cached_month(self, db_session):
+        """Resets `_compute_stats` via the class, invalidating every cached (year, month)."""
+        with patch("website.services.game_session.cache.delete_memoized") as mock_delete:
+            GameSessionService.clear_cache()
+        mock_delete.assert_called_once_with(GameSessionService._compute_stats)

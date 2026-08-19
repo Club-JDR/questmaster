@@ -5,11 +5,13 @@ from flask import flash, redirect, render_template, request, session, url_for
 
 # Local imports
 from config.constants import (
+    CACHE_TARGET_LABELS,
     DASHBOARD_LIMIT_MAX,
     DISCORD_ROLE_LIMIT,
     GAMES_PER_PAGE_MAX,
     PROFILE_REFRESH_BATCH_SIZE_MAX,
 )
+from website.cli import clear_cache_target
 from website.exceptions import DiscordAPIError, ValidationError
 from website.services.discord import DiscordService
 from website.services.setting import OVERRIDABLE_KEYS, SettingsService
@@ -61,6 +63,7 @@ def edit_settings():
         games_per_page_max=GAMES_PER_PAGE_MAX,
         profile_refresh_batch_size=settings_service.get_profile_refresh_batch_size(),
         profile_refresh_batch_size_max=PROFILE_REFRESH_BATCH_SIZE_MAX,
+        cache_target_labels=CACHE_TARGET_LABELS,
     )
 
 
@@ -90,4 +93,25 @@ def update_permissions_settings():
         flash("Paramètres mis à jour.", "success")
     except ValidationError as e:
         flash(str(e), "danger")
+    return redirect(url_for("admin.edit_settings"))
+
+
+@admin_bp.route("/settings/cache/", methods=["POST"])
+@admin_only
+def clear_cache():
+    """Clear a single cached surface, or the whole cache, from the admin UI.
+
+    ``target`` is one of ``"all"`` or ``config.constants.CACHE_TARGET_LABELS``'
+    keys, submitted by one of the cache panel's buttons; reuses the same
+    dispatch as ``flask clear-cache`` (:func:`website.cli.clear_cache_target`).
+    """
+    target = request.form.get("target", "all")
+    try:
+        clear_cache_target(target)
+        label = "Tout le cache" if target == "all" else CACHE_TARGET_LABELS.get(target, target)
+        flash(f"{label} : cache vidé.", "success")
+    except ValidationError:
+        # clear_cache_target raises an English domain message (also used verbatim
+        # by `flask clear-cache`'s CLI output) — never leak it to the admin UI.
+        flash("Cible de cache inconnue.", "danger")
     return redirect(url_for("admin.edit_settings"))

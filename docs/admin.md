@@ -272,3 +272,12 @@ default when unset:
 The Discord **category** auto-provisioning settings (auto-create threshold and per-type name
 templates) are also DB-managed by `SettingsService`, but their admin form lives on the
 [Channel Categories](#channel-categories) page rather than here.
+
+### Cache maintenance
+
+A **Cache** panel lets an admin clear cached `Flask-Caching` data without shelling into
+Redis: one button per named target (`systems`, `vtts`, `calendar`, `badges`, `stats`,
+`discord`) plus a **Tout vider** button that flushes the whole backend. Useful after a manual
+DB fix that bypassed a service's own invalidation, or during debugging. Backed by the same
+dispatch table as `flask clear-cache` — see [CLI Commands](architecture/cli.md#clear-cache-targets)
+for what each target clears.

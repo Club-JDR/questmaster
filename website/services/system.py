@@ -52,6 +52,18 @@ class SystemService:
         """
         return self.repo.get_all_ordered()
 
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Drop the cached systems list.
+
+        Uses the class (not a specific instance) so this busts the cache for
+        every ``SystemService`` instance across the app, not just the one that
+        happens to call it — several modules keep their own module-level
+        instance. Called on every mutation, and by ``flask clear-cache
+        systems`` for out-of-band fixes.
+        """
+        cache.delete_memoized(cls.get_all)
+
     def list_paginated(
         self, page: int = 1, per_page: int = 25, search: str | None = None
     ) -> Pagination:
@@ -115,7 +127,7 @@ class SystemService:
         system = System(name=name, icon=icon, description=description, reference_url=reference_url)
         self.repo.add(system)
         db.session.commit()
-        cache.delete_memoized(self.get_all)
+        self.clear_cache()
         logger.info(f"System {system.id} created: {sanitize_log_value(name)}")
         return system
 
@@ -137,7 +149,7 @@ class SystemService:
             self._validate_reference_url(data["reference_url"])
         system.update_from_dict(data)
         db.session.commit()
-        cache.delete_memoized(self.get_all)
+        self.clear_cache()
         logger.info(f"System {id} updated")
         return system
 
@@ -150,7 +162,7 @@ class SystemService:
         system = self.repo.get_by_id_or_404(id)
         self.repo.delete(system)
         db.session.commit()
-        cache.delete_memoized(self.get_all)
+        self.clear_cache()
         logger.info(f"System {id} deleted")
 
     # -------------------------------------------------------------------
