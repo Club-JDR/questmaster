@@ -7,6 +7,7 @@ import uuid
 from flask import Flask, g
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from config.settings import check_required_env_vars
 from website.bot import set_bot
 from website.cli import clear_cache, sync_discord_commands
 from website.client.discord import Discord
@@ -39,6 +40,10 @@ def create_app():
     Returns:
         Configured Flask application instance.
     """
+    # Fail fast on missing config instead of a confusing failure deep inside
+    # Flask/SQLAlchemy later (see improvements/AUDIT.md §1.14).
+    check_required_env_vars()
+
     app = Flask(__name__)
     app.url_map.strict_slashes = False
 

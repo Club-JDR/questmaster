@@ -5,6 +5,34 @@ from datetime import timedelta
 
 GAMES_PER_PAGE = 12
 
+# Environment variables the app cannot safely start without (see
+# improvements/AUDIT.md §1.14). Without this check, a missing
+# FLASK_AUTH_SECRET only surfaces on the first session write (deep inside
+# Flask), and missing Postgres variables silently produce
+# "postgresql://None:None@None:5432/None" as the DB URI.
+REQUIRED_ENV_VARS = (
+    "FLASK_AUTH_SECRET",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_HOST",
+    "POSTGRES_DB",
+)
+
+
+def check_required_env_vars() -> None:
+    """Fail fast if required environment variables are missing.
+
+    Raises:
+        RuntimeError: If one or more variables in `REQUIRED_ENV_VARS` are
+            unset or empty, naming each missing variable.
+    """
+    missing = [name for name in REQUIRED_ENV_VARS if not os.environ.get(name)]
+    if missing:
+        raise RuntimeError(
+            "Missing required environment variable(s): "
+            f"{', '.join(missing)}. Set them before starting the app."
+        )
+
 
 class Settings:
     """Flask configuration class.
