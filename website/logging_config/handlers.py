@@ -5,6 +5,7 @@ import logging
 import threading
 import traceback
 from datetime import datetime, timezone
+from logging.handlers import QueueHandler, QueueListener
 
 # Third-party imports
 import requests
@@ -31,6 +32,53 @@ class SafeStreamHandler(logging.StreamHandler):
         super().emit(record)
 
 
+class PassthroughQueueHandler(QueueHandler):
+    """QueueHandler that hands records to the listener thread unmodified.
+
+    The stdlib default ``prepare()`` eagerly formats the message (merging any
+    traceback into it) and clears ``args``/``exc_info`` — needed so a record
+    can be pickled across a process boundary. This app only ever threads
+    records within a single process, and ``DatabaseLogHandler`` relies on the
+    original ``exc_info`` being intact to append its own traceback, so this
+    passes the record through exactly as emitted.
+    """
+
+    def prepare(self, record: logging.LogRecord) -> logging.LogRecord:
+        """Return the record unchanged (see class docstring).
+
+        Args:
+            record: Log record about to be queued for the listener thread.
+
+        Returns:
+            The same record, untouched.
+        """
+        return record
+
+
+class AppContextQueueListener(QueueListener):
+    """QueueListener whose worker thread runs inside a persistent Flask app context.
+
+    ``DatabaseLogHandler`` resolves ``current_app`` (via ``db.engine``) on
+    whichever thread it runs on; its dedicated listener thread never has one
+    pushed onto it otherwise, so every write would silently no-op behind
+    ``has_app_context()``. One context is pushed for the thread's entire
+    lifetime — cheap, and safe since the handler never touches ``db.session``
+    (only ``db.engine``, which is thread-safe).
+    """
+
+    def __init__(self, log_queue, *handlers, app=None, **kwargs):
+        super().__init__(log_queue, *handlers, **kwargs)
+        self._app = app
+
+    def _monitor(self) -> None:
+        """Run the inherited listener loop inside the app context, if any."""
+        if self._app is None:
+            super()._monitor()
+            return
+        with self._app.app_context():
+            super()._monitor()
+
+
 class DatabaseLogHandler(logging.Handler):
     """Persist log records to the ``app_log`` table.
 
@@ -39,9 +87,13 @@ class DatabaseLogHandler(logging.Handler):
     otherwise break the request's transaction boundary owned by the service
     layer.
 
-    ``emit()`` is guarded by ``has_app_context()`` (no engine outside an app
-    context) and a thread-local reentrancy flag (a log emitted while writing
-    a log is dropped instead of recursing). It never raises.
+    In production this only ever runs on the ``AppContextQueueListener``
+    background thread (see ``configure_logging()``), never on the thread
+    that emitted the record, so a slow write never adds latency to the
+    request/job that triggered it. ``emit()`` is guarded by
+    ``has_app_context()`` (no engine outside an app context) and a
+    thread-local reentrancy flag (a log emitted while writing a log is
+    dropped instead of recursing). It never raises.
     """
 
     def __init__(self, level: int | str = logging.INFO):

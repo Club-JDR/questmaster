@@ -2,6 +2,7 @@
 
 import logging
 import threading
+import time
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -143,3 +144,43 @@ def test_webhook_never_raises():
         with patch.object(DiscordWebhookHandler, "handleError") as handle_error:
             handler.emit(_record("meltdown", level=logging.CRITICAL))
     handle_error.assert_called_once()
+
+
+# -- Queued end-to-end wiring (configure_logging) -------------------------------
+#
+# These go through the real root logger set up by create_app()'s
+# configure_logging(app) call (via the module-scoped test_app fixture), not
+# DatabaseLogHandler.emit() directly — proving the actual
+# QueueHandler -> AppContextQueueListener -> DatabaseLogHandler pipeline
+# works end to end, including the persistent app context on the listener
+# thread.
+
+
+def _wait_for_rows(token, timeout=2.0, interval=0.02):
+    """Poll for app_log rows matching token, now that the write is asynchronous."""
+    deadline = time.monotonic() + timeout
+    rows = []
+    while time.monotonic() < deadline and not rows:
+        rows = _fetch_rows(token)
+        if not rows:
+            time.sleep(interval)
+    return rows
+
+
+def test_logger_call_reaches_the_database_through_the_queue(test_app, cleanup_token):
+    """A real logger.info() call lands in app_log via the background listener."""
+    logging.getLogger("tests.queued_logging").info(f"queued row {cleanup_token}")
+
+    rows = _wait_for_rows(cleanup_token)
+    assert len(rows) == 1
+    assert rows[0].logger == "tests.queued_logging"
+
+
+def test_logger_call_does_not_block_the_calling_thread(test_app, cleanup_token):
+    """The calling thread returns immediately; only the listener thread pays for I/O."""
+    with patch.object(DatabaseLogHandler, "emit", side_effect=lambda record: time.sleep(0.3)):
+        start = time.monotonic()
+        logging.getLogger("tests.queued_logging").info(f"slow row {cleanup_token}")
+        elapsed = time.monotonic() - start
+
+    assert elapsed < 0.1
