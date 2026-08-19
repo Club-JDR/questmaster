@@ -795,6 +795,18 @@ class GameService:
         game = self.get_by_slug(slug)
         if game.status == "archived":
             return
+
+        # Trophies are for games that were actually run. A draft never left
+        # planning/review — regardless of who was force-added as a player,
+        # it can't have been played — so never honor award_trophies for one,
+        # even if the caller (a tampered form submission, since the UI hides
+        # this toggle for drafts) asked for it. A published game (open or
+        # closed) is trusted as-is even without a Discord channel (e.g. one
+        # promoted directly via the admin panel).
+        if award_trophies and game.status == "draft":
+            logger.warning(f"Ignoring award_trophies=True for game {game.id}: still a draft.")
+            award_trophies = False
+
         game.status = "archived"
         game.trophies_awarded = award_trophies
 

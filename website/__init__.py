@@ -41,7 +41,7 @@ def create_app():
         Configured Flask application instance.
     """
     # Fail fast on missing config instead of a confusing failure deep inside
-    # Flask/SQLAlchemy later (see improvements/AUDIT.md §1.14).
+    # Flask/SQLAlchemy later.
     check_required_env_vars()
 
     app = Flask(__name__)
@@ -132,7 +132,7 @@ def create_app():
     # Scheduled jobs — only the dedicated `scheduler` service (QM_RUN_SCHEDULER=1)
     # runs background jobs; the web workers never do, and one-off `flask` CLI
     # invocations (migrations, seeding) are skipped even if the flag leaks into
-    # their environment (see improvements/AUDIT.md §1.5).
+    # their environment.
     if app.config["RUN_SCHEDULER"] and not _is_one_off_cli_command():
         with app.app_context():
             start_scheduler(app)

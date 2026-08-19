@@ -842,6 +842,42 @@ class TestGameService:
         game = game_service.get_by_slug(sample_game.slug)
         assert game.trophies_awarded is True
 
+    def test_archive_open_game_without_channel_still_honors_award_trophies(
+        self, db_session, sample_game, mock_discord, game_service
+    ):
+        """A published (non-draft) game is trusted even without a Discord channel.
+
+        `admin_update()` can promote a game straight to "open" without going
+        through `publish()` (e.g. onboarding a pre-existing game), so a
+        missing channel alone must not be treated as "never played".
+        """
+        sample_game.status = "open"
+        assert sample_game.channel is None
+        db_session.commit()
+
+        game_service.archive(sample_game.slug, award_trophies=True)
+
+        game = game_service.get_by_slug(sample_game.slug)
+        assert game.trophies_awarded is True
+
+    def test_archive_draft_game_ignores_award_trophies(
+        self, db_session, sample_game, mock_discord, game_service
+    ):
+        """A draft never left planning/review, so it can't have been played.
+
+        Even if the caller asks for trophies (e.g. an admin force-added a
+        player to the draft, or a tampered form submission — the UI hides
+        this toggle for drafts), archiving it must not honor award_trophies.
+        """
+        sample_game.status = "draft"
+        db_session.commit()
+
+        game_service.archive(sample_game.slug, award_trophies=True)
+
+        game = game_service.get_by_slug(sample_game.slug)
+        assert game.status == "archived"
+        assert game.trophies_awarded is False
+
     def test_archive_game_already_archived_is_noop(
         self, db_session, sample_game, mock_discord, game_service
     ):

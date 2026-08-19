@@ -1,4 +1,4 @@
-"""Tests for `config.settings.check_required_env_vars` (AUDIT.md §1.14)."""
+"""Tests for `config.settings.check_required_env_vars`."""
 
 import pytest
 
