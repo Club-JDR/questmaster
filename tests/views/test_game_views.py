@@ -198,6 +198,58 @@ class TestGameCreation:
         assert response.status_code == 200
         assert "CthulhuFest" in body
 
+    def test_gm_cannot_spoof_gm_id(
+        self,
+        logged_in_gm,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        default_system,
+        default_vtt,
+    ):
+        """A tampered gm_id form field can't attribute the game to someone else."""
+        from website.models import Game
+
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name="Spoofed GM Game",
+            gm_id=TEST_ADMIN_USER_ID,
+            action="draft",
+        )
+        response = logged_in_gm.post("/annonce/", data=data, follow_redirects=True)
+        assert response.status_code == 200
+
+        game = db_session.query(Game).filter_by(name="Spoofed GM Game").one()
+        assert game.gm_id == TEST_GM_USER_ID
+
+    def test_admin_can_create_game_for_another_gm(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        default_system,
+        default_vtt,
+    ):
+        """Unlike a regular GM, an admin may post a game on someone else's behalf."""
+        from website.models import Game
+
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name="Admin Posted For GM",
+            gm_id=TEST_GM_USER_ID,
+            action="draft",
+        )
+        response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
+        assert response.status_code == 200
+
+        game = db_session.query(Game).filter_by(name="Admin Posted For GM").one()
+        assert game.gm_id == TEST_GM_USER_ID
+
     def test_create_open_to_viewers(
         self,
         logged_in_admin,
@@ -899,6 +951,45 @@ class TestGameBranch:
             data={"csrf_token": "test"},
         )
         assert response.status_code == 403
+
+    def test_branch_gm_cannot_spoof_gm_id(
+        self,
+        logged_in_gm,
+        gm_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        default_system,
+        default_vtt,
+    ):
+        """Branching a GM's own campaign can't attribute the one-shot to someone else."""
+        from website.models import Game
+
+        own_campaign = GameFactory(
+            db_session,
+            type="campaign",
+            status="open",
+            gm_id=gm_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+        )
+        data = _game_form_data(
+            default_system.id,
+            default_vtt.id,
+            name="Spoofed Branch",
+            type="oneshot",
+            gm_id=TEST_ADMIN_USER_ID,
+        )
+        response = logged_in_gm.post(
+            f"/annonces/{own_campaign.slug}/brancher/",
+            data=data,
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+        game = db_session.query(Game).filter_by(name="Spoofed Branch").one()
+        assert game.gm_id == TEST_GM_USER_ID
 
     def test_branch_roster_modal_shown_after_creation(
         self,
