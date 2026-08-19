@@ -36,6 +36,13 @@ class Settings:
     CACHE_KEY_PREFIX = "QuestMaster:"
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
+    # Session cookie hardening (see improvements/AUDIT.md §1.13). The app sits
+    # behind a TLS-terminating proxy (see ProxyFix in website/__init__.py), so
+    # SECURE defaults on; only local `flask run`/docker dev over plain HTTP
+    # needs to opt out via QM_SESSION_COOKIE_SECURE=0.
+    SESSION_COOKIE_SECURE = os.environ.get("QM_SESSION_COOKIE_SECURE", "1") == "1"
+    SESSION_COOKIE_SAMESITE = "Lax"
+
     # Logging (see website/logging_config/)
     LOG_FORMAT = os.environ.get("QM_LOG_FORMAT", "human")  # "human" or "json"
     LOG_LEVEL = os.environ.get("QM_LOG_LEVEL", "INFO")
