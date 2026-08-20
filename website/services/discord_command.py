@@ -6,6 +6,7 @@ duplicated. The caller's identity comes from the Ed25519-signed interaction
 payload; the game is resolved from the channel the command was run in.
 """
 
+import logging
 import re
 import threading
 from datetime import datetime, timedelta
@@ -33,7 +34,9 @@ from website.services.game import GameService
 from website.services.game_session import GameSessionService
 from website.services.moderation import ModerationService
 from website.services.user import UserService
-from website.utils.logger import log_game_event, logger
+from website.utils.logger import log_game_event
+
+logger = logging.getLogger(__name__)
 
 # User-facing strings (French — service exceptions never leak to Discord)
 MSG_NOT_A_GAME_CHANNEL = "Ce salon n'est pas associé à une partie."

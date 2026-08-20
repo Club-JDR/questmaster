@@ -1,18 +1,10 @@
-"""Request-aware logging utilities."""
+"""Logging utility helpers.
 
-import logging
-
-
-class RequestLoggerAdapter(logging.LoggerAdapter):
-    """Logger adapter kept for backward compatibility.
-
-    Request context (trace_id, user_id, endpoint) is injected on every
-    handler by ``website.logging_config.ContextFilter``, so messages no
-    longer need a per-call prefix.
-    """
-
-    def process(self, msg, kwargs):
-        return msg, kwargs
+Request context (trace_id, user_id, endpoint) is injected on every handler by
+``website.logging_config.ContextFilter``, so callers just use a plain
+``logging.getLogger(__name__)`` module logger — no adapter or shared logger
+instance needed.
+"""
 
 
 def sanitize_log_value(value: object) -> str:
@@ -28,9 +20,6 @@ def sanitize_log_value(value: object) -> str:
         A single-line string safe to embed in a log message.
     """
     return "".join(c for c in str(value) if c.isprintable())
-
-
-logger = RequestLoggerAdapter(logging.getLogger(__name__), {})
 
 
 def log_game_event(action, game_id, description=None, user_id=None):

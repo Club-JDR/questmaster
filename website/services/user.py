@@ -1,5 +1,6 @@
 """User service for user-related business logic."""
 
+import logging
 import re
 from datetime import datetime, timezone
 
@@ -9,7 +10,9 @@ from website.models import User
 from website.models.user import get_user_profile as _get_user_profile
 from website.repositories.base import Pagination
 from website.repositories.user import UserRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:

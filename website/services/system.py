@@ -1,5 +1,6 @@
 """System service for game system business logic."""
 
+import logging
 from urllib.parse import urlparse
 
 from config.constants import SYSTEM_INTEREST_ROLES
@@ -9,7 +10,9 @@ from website.models import System, User, UserSystemInterest
 from website.repositories.base import Pagination
 from website.repositories.system import SystemRepository
 from website.repositories.user_system_interest import UserSystemInterestRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 
 class SystemService:

@@ -8,6 +8,8 @@ Target channels are resolved from the settings allowlist (see
 
 from __future__ import annotations
 
+import logging
+
 from config.constants import DISCORD_EMBED_LIMIT
 from website.exceptions import DiscordAPIError, NotFoundError, ValidationError
 from website.extensions import db
@@ -17,7 +19,8 @@ from website.repositories.discord_message import DiscordMessageRepository
 from website.services.discord import DiscordService
 from website.services.setting import SettingsService
 from website.utils.discord_components import build_link_button_rows, clean_link_buttons
-from website.utils.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 class DiscordMessageService:

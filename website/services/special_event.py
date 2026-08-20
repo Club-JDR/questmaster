@@ -1,12 +1,16 @@
 """SpecialEvent service for themed event business logic."""
 
+import logging
+
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import SpecialEvent
 from website.repositories.base import Pagination
 from website.repositories.game import GameRepository
 from website.repositories.special_event import SpecialEventRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 # Number of entries shown per leaderboard table.
 _LEADERBOARD_SIZE = 10

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import calendar
+import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -11,11 +12,12 @@ from website.exceptions import SessionConflictError, ValidationError
 from website.extensions import cache, db
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
-from website.utils.logger import logger
 from website.utils.scheduling import intervals_overlap
 
 if TYPE_CHECKING:
     from website.models import Game
+
+logger = logging.getLogger(__name__)
 
 
 class GameSessionService:
