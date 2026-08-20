@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from website.exceptions import UnauthorizedError
-from website.views.auth import admin_only, require_permission
+from website.views.auth import admin_only, require_permission, who
 
 
 def _dummy_view(**kwargs):
@@ -62,6 +62,16 @@ def test_login_redirect_sets_next_url(client):
     response = client.get("/login/")
     assert response.status_code in (302, 303)
     assert "Location" in response.headers
+
+
+def test_who_clears_session_for_deleted_user(test_app):
+    """A session pointing at a user row that no longer exists is cleared, not
+    left to raise NotFoundError on every subsequent page load."""
+    with test_app.test_request_context():
+        with patch("website.views.auth.session", {"user_id": "nonexistent_deleted_user"}) as sess:
+            with pytest.raises(UnauthorizedError):
+                who()
+            assert sess == {}
 
 
 def test_logout_clears_session_and_redirects(client):
