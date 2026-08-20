@@ -202,13 +202,12 @@ def get_filtered_user_games(request_args_source, user_id, user_payload, role="gm
         Tuple of (pagination object, request_args dict for URL generation).
 
     Raises:
+        NotFoundError: If the user does not exist.
         ValidationError: If role is invalid.
     """
     from website.services.user import UserService
 
-    user = UserService().repo.get_by_id(user_id)
-    if not user:
-        return [], {}
+    user = UserService().get_by_id(user_id)
 
     if role == "gm":
         base_query = Game.query.filter(Game.gm_id == user_id)
