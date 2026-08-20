@@ -1,11 +1,15 @@
 """VTT service for virtual tabletop business logic."""
 
+import logging
+
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import cache, db
 from website.models import Vtt
 from website.repositories.base import Pagination
 from website.repositories.vtt import VttRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 
 class VttService:

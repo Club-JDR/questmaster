@@ -1,5 +1,6 @@
 """Moderation service for in-app infractions (warnings)."""
 
+import logging
 from datetime import datetime
 
 from config.constants import INFRACTION_SEVERITY_LABELS, INFRACTION_SEVERITY_REMINDER
@@ -9,7 +10,9 @@ from website.models import Infraction
 from website.repositories.base import Pagination
 from website.repositories.infraction import InfractionRepository
 from website.repositories.user import UserRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 
 class ModerationService:

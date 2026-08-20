@@ -10,6 +10,7 @@ overridable and always come from the environment.
 from __future__ import annotations
 
 import json
+import logging
 
 from flask import current_app, g, has_app_context
 from sqlalchemy.exc import SQLAlchemyError
@@ -30,7 +31,9 @@ from config.constants import (
 from website.exceptions import ValidationError
 from website.extensions import db
 from website.repositories.setting import SettingRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 # Key under which the admin-managed list of postable Discord channels is stored.
 # Distinct from OVERRIDABLE_SETTINGS (env-backed overrides): this is a fully

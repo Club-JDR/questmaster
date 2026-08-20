@@ -8,11 +8,15 @@ permission set (cached, mirroring ``get_user_roles``).
 
 from __future__ import annotations
 
+import logging
+
 from website.extensions import cache, db
 from website.models import PermissionGrant
 from website.permissions import PERMISSION_KEYS, PERMISSIONS, Permission
 from website.repositories.permission_grant import PermissionGrantRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
+
+logger = logging.getLogger(__name__)
 
 # Cache timeout for a user's resolved permission set (mirrors get_user_roles).
 PERMISSIONS_CACHE_TIMEOUT = 300  # 5 minutes

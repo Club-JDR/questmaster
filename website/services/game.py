@@ -1,5 +1,6 @@
 """Game service for business logic."""
 
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -37,8 +38,10 @@ from website.services.channel import ChannelService
 from website.services.game_session import GameSessionService
 from website.services.trophy import TrophyService
 from website.services.user import UserService
-from website.utils.logger import log_game_event, logger
+from website.utils.logger import log_game_event
 from website.utils.scheduling import intervals_overlap
+
+logger = logging.getLogger(__name__)
 
 
 class GameService:

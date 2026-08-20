@@ -7,14 +7,19 @@ retention), which would otherwise be rejected by ``admin_bp``'s blanket
 ``require_admin`` guard.
 """
 
+# Standard library imports
+import logging
+
 # Third-party imports
 from flask import Blueprint, flash, redirect, request, session, url_for
 
 # Local imports
 from website.exceptions import NotFoundError, ValidationError
 from website.services.user import UserService
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
 from website.views.auth import admin_only, login_required, session_fields
+
+logger = logging.getLogger(__name__)
 
 view_as_bp = Blueprint("view_as", __name__, url_prefix="/admin/view-as")
 

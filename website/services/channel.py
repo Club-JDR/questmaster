@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,11 +13,13 @@ from website.extensions import db
 from website.models import Channel
 from website.repositories.base import Pagination
 from website.repositories.channel import ChannelRepository
-from website.utils.logger import logger, sanitize_log_value
+from website.utils.logger import sanitize_log_value
 
 if TYPE_CHECKING:
     from website.models import Game
     from website.services.discord import DiscordService
+
+logger = logging.getLogger(__name__)
 
 
 class ChannelService:

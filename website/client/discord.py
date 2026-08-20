@@ -4,6 +4,7 @@ This module provides the low-level Discord API client with HTTP request handling
 rate limiting, and retry logic. Business logic should use DiscordService instead.
 """
 
+import logging
 import time
 
 import requests
@@ -21,7 +22,8 @@ from config.constants import (
     PLAYER_ROLE_PERMISSION,
 )
 from website.exceptions import DiscordAPIError
-from website.utils.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 class Discord:

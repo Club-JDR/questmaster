@@ -1,6 +1,7 @@
 """Game announcement views."""
 
 import locale
+import logging
 from datetime import datetime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -36,8 +37,10 @@ from website.services.user import UserService
 from website.services.vtt import VttService
 from website.utils.game_filters import get_filtered_games, get_filtered_user_games
 from website.utils.game_form_defaults import resolve_game_form_defaults
-from website.utils.logger import log_game_event, logger
+from website.utils.logger import log_game_event
 from website.views.auth import abort_if_not_gm, login_required, who
+
+logger = logging.getLogger(__name__)
 
 game_bp = Blueprint("annonces", __name__)
 

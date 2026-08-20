@@ -8,6 +8,7 @@ keyed by user — repeated dashboard loads do not re-hit the database.
 
 from __future__ import annotations
 
+import logging
 from collections import Counter
 from datetime import datetime
 
@@ -31,7 +32,8 @@ from website.repositories.system import SystemRepository
 from website.repositories.trophy import TrophyRepository
 from website.repositories.user import UserRepository
 from website.repositories.vtt import VttRepository
-from website.utils.logger import logger
+
+logger = logging.getLogger(__name__)
 
 ROLE_GM = "MJ"
 ROLE_PLAYER = "Joueur·euse"

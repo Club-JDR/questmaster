@@ -1,5 +1,8 @@
 """Admin routes for managing runtime configuration overrides."""
 
+# Standard library imports
+import logging
+
 # Third-party imports
 from flask import flash, redirect, render_template, request, session, url_for
 
@@ -15,9 +18,10 @@ from website.cli import clear_cache_target
 from website.exceptions import DiscordAPIError, ValidationError
 from website.services.discord import DiscordService
 from website.services.setting import OVERRIDABLE_KEYS, SettingsService
-from website.utils.logger import logger
 from website.views.admin import admin_bp
 from website.views.auth import admin_only
+
+logger = logging.getLogger(__name__)
 
 settings_service = SettingsService()
 discord_service = DiscordService()
