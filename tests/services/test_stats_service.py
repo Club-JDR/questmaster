@@ -1,6 +1,6 @@
 """Tests for StatsService (per-user dashboard agenda + statistics)."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from config.constants import BADGE_CAMPAIGN_ID, BADGE_OS_ID, RESTRICTION_LABELS
@@ -262,7 +262,7 @@ class TestGlobalStats:
 
     def test_play_hours_sum_ended_sessions(self, db_session, default_system):
         game = _game_with(db_session, default_system, sessions=2)  # two ended 3h sessions
-        play = StatsService()._global_play_hours([game], datetime(2027, 1, 1))
+        play = StatsService()._global_play_hours([game], datetime(2027, 1, 1, tzinfo=timezone.utc))
         assert play == {"hours": 6, "sessions": 2}
 
     def test_restriction_split(self, db_session, default_system):

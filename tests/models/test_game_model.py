@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
@@ -25,7 +25,7 @@ def sample_game():
         party_size=4,
         party_selection=False,
         xp="all",
-        date=datetime(2024, 1, 1, 18, 0),
+        date=datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc),
         session_length=Decimal("3.5"),
         frequency="weekly",
         characters="with_gm",
@@ -116,7 +116,8 @@ def test_from_dict_creates_game():
     assert game.id == 2
     assert game.slug == "another-game"
     assert game.type == "campaign"
-    assert game.date == datetime.fromisoformat("2024-02-01T12:00:00")
+    # "12:00" with no offset is Europe/Paris wall time (winter -> UTC+1).
+    assert game.date == datetime(2024, 2, 1, 11, 0, tzinfo=timezone.utc)
     assert game.session_length == Decimal("4.0")
     assert game.classification == {
         "action": 0,
@@ -185,7 +186,8 @@ def test_update_from_dict_updates_fields(sample_game):
     sample_game.update_from_dict(update)
     assert sample_game.name == "Updated Game"
     assert sample_game.party_size == 6
-    assert sample_game.date == datetime.fromisoformat("2024-04-01T15:00:00")
+    # "15:00" with no offset is Europe/Paris wall time (spring -> UTC+2).
+    assert sample_game.date == datetime(2024, 4, 1, 13, 0, tzinfo=timezone.utc)
     assert sample_game.session_length == Decimal("5.0")
     assert sample_game.status == "open"
     assert sample_game.slug == "game-slug"  # unchanged

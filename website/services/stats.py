@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 
@@ -32,6 +31,7 @@ from website.repositories.system import SystemRepository
 from website.repositories.trophy import TrophyRepository
 from website.repositories.user import UserRepository
 from website.repositories.vtt import VttRepository
+from website.utils.timezone import now_utc, to_local
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class StatsService:
             Dict with ``catalogue``, ``type``, ``role``, ``top_systems``,
             ``top_vtts``, ``rythme`` and ``restriction`` entries.
         """
-        now = datetime.now()
+        now = now_utc()
         games = self.repo.find_all_with_relations()
         tagged = [(g, None) for g in games]
         return {
@@ -138,7 +138,7 @@ class StatsService:
 
     @cache.memoize(timeout=DASHBOARD_STATS_CACHE_TIMEOUT)
     def _compute_data(self, user_id: str) -> dict:
-        now = datetime.now()
+        now = now_utc()
         gm_games = self.repo.find_by_gm_with_relations(user_id)
         # A game the user GMs must count once, under the GM role only. Drop any
         # game already in the GM list so a user registered as a player in their
@@ -187,11 +187,12 @@ class StatsService:
         """Serialise a single agenda row for the template."""
         vtt = game.vtt.name if game.vtt else None
         meta = f"{game.system.name} · {vtt}" if vtt else game.system.name
+        start = to_local(session.start)
         return {
-            "dow": session.start.strftime("%a"),
-            "day": session.start.strftime("%d"),
-            "month": session.start.strftime("%b"),
-            "time": session.start.strftime("%Hh%M"),
+            "dow": start.strftime("%a"),
+            "day": start.strftime("%d"),
+            "month": start.strftime("%b"),
+            "time": start.strftime("%Hh%M"),
             "name": game.name,
             "slug": game.slug,
             "meta": meta,
@@ -269,9 +270,16 @@ class StatsService:
         }
 
     def _rythme(self, all_games, now) -> dict:
-        """Sessions and distinct games per month over the last N months."""
+        """Sessions and distinct games per month over the last N months.
+
+        Bucketed by Europe/Paris calendar month, not the UTC date a session's
+        (aware) start happens to fall on — a session just after midnight
+        Paris time can be the previous UTC calendar day, which would
+        otherwise misfile it into the wrong month near a boundary.
+        """
         months_meta = []
-        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        local_now = to_local(now)
+        start = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         for i in range(DASHBOARD_RYTHME_MONTHS - 1, -1, -1):
             d = start - relativedelta(months=i)
             months_meta.append((d.year, d.month))
@@ -282,7 +290,8 @@ class StatsService:
 
         for game, _ in all_games:
             for s in game.sessions:
-                key = (s.start.year, s.start.month)
+                local_start = to_local(s.start)
+                key = (local_start.year, local_start.month)
                 i = index.get(key)
                 if i is not None:
                     sessions[i] += 1

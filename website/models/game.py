@@ -68,7 +68,7 @@ class Game(db.Model):
     party_selection = db.Column(db.Boolean(), nullable=False, default=False)
     players = db.relationship("User", secondary=players_table, backref="games")
     xp = db.Column("experience", Enum(*GAME_XP, name="game_xp_enum"), default="all")
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime(timezone=True), nullable=False)
     session_length = db.Column(db.DECIMAL(2, 1), nullable=False)
     frequency = db.Column("frequency", Enum(*GAME_FREQUENCIES, name="game_frequency_enum"))
     characters = db.Column("characters", Enum(*GAME_CHAR, name="game_char_enum"))
@@ -232,13 +232,15 @@ class Game(db.Model):
         Note: This does not handle relationships (gm, players, sessions, etc.).
         Those should be set separately after creation.
         """
-        from datetime import datetime
         from decimal import Decimal
 
-        # Convert date string to datetime if needed
+        from website.utils.timezone import parse_wall_clock_datetime
+
+        # Convert date string to datetime if needed. Naive/offset-less strings
+        # are treated as Europe/Paris wall-clock time, matching form input.
         date_value = data.get("date")
         if isinstance(date_value, str):
-            date_value = datetime.fromisoformat(date_value)
+            date_value = parse_wall_clock_datetime(date_value)
 
         # Convert session_length to Decimal if needed
         session_length_value = data.get("session_length")
@@ -290,8 +292,9 @@ class Game(db.Model):
         Protected fields (id, slug) are excluded from updates.
         Relationships must be handled separately.
         """
-        from datetime import datetime
         from decimal import Decimal
+
+        from website.utils.timezone import parse_wall_clock_datetime
 
         # Fields that should not be updated via this method
         protected_fields = {"id", "slug"}
@@ -307,9 +310,11 @@ class Game(db.Model):
                 "vtt",
                 "special_event",
             ]:
-                # Handle special conversions
+                # Handle special conversions. Naive/offset-less date strings are
+                # treated as Europe/Paris wall-clock time, matching form input
+                # (this is the admin panel's raw field editor's write path).
                 if key == "date" and isinstance(value, str):
-                    value = datetime.fromisoformat(value)
+                    value = parse_wall_clock_datetime(value)
                 elif (
                     key == "session_length"
                     and value is not None

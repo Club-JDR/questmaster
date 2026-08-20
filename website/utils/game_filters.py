@@ -3,13 +3,12 @@
 Extracted from views to enable reuse across views and future API endpoints.
 """
 
-from datetime import datetime, timezone
-
 from sqlalchemy import case
 from sqlalchemy.sql import and_, func, or_
 
 from website.exceptions import ValidationError
 from website.models import Game
+from website.utils.timezone import now_utc
 
 
 def parse_multi_checkbox_filter(source, keys):
@@ -131,7 +130,7 @@ def get_filtered_games(
         Tuple of (pagination object, request_args dict for URL generation).
     """
     request_args = {}
-    now = datetime.now(timezone.utc)
+    now = now_utc()
 
     status, status_args = parse_multi_checkbox_filter(
         request_args_source, ["open", "closed", "archived", "draft"]

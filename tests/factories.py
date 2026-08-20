@@ -32,6 +32,7 @@ from website.models import (
     UserTrophy,
     Vtt,
 )
+from website.utils.timezone import APP_TIMEZONE
 
 
 def _unique_id():
@@ -41,6 +42,28 @@ def _unique_id():
 def _unique_discord_id():
     """Generate a unique 18-digit Discord-style ID."""
     return str(uuid4().int)[:18]
+
+
+def _localize(value):
+    """Coerce a naive datetime to aware Europe/Paris, pass aware values through.
+
+    Game.date / GameSession.start / end are aware ``DateTime(timezone=True)``
+    columns; a naive value would otherwise reach the DB and be silently
+    reinterpreted per the session's timezone (typically UTC), which is
+    exactly the naive/aware mixing the app tries to avoid. Localizing (not
+    just tagging as UTC) matches "how production builds dates from form
+    input" — the displayed wall-clock hour of a factory default stays what
+    it looks like.
+
+    Args:
+        value: A datetime (naive or aware), or None.
+
+    Returns:
+        The aware equivalent, or None unchanged.
+    """
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=APP_TIMEZONE)
+    return value
 
 
 def GameFactory(session, **overrides):
@@ -65,8 +88,6 @@ def GameFactory(session, **overrides):
         "restriction": "all",
         "party_size": 4,
         "xp": "all",
-        # Naive to match the Game.date column (TIMESTAMP WITHOUT TIME ZONE) and
-        # how production builds dates from form input.
         "date": datetime(2025, 6, 15, 20, 0),
         "session_length": Decimal("3.0"),
         "characters": "self",
@@ -80,6 +101,7 @@ def GameFactory(session, **overrides):
         "status": "draft",
     }
     defaults.update(overrides)
+    defaults["date"] = _localize(defaults.get("date"))
     game = Game(**defaults)
     session.add(game)
     session.flush()
@@ -171,6 +193,8 @@ def GameSessionFactory(session, **overrides):
         "end": datetime(2025, 9, 1, 23, 0),
     }
     defaults.update(overrides)
+    defaults["start"] = _localize(defaults.get("start"))
+    defaults["end"] = _localize(defaults.get("end"))
     game_session = GameSession(**defaults)
     session.add(game_session)
     session.flush()

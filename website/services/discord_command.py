@@ -35,6 +35,7 @@ from website.services.game_session import GameSessionService
 from website.services.moderation import ModerationService
 from website.services.user import UserService
 from website.utils.logger import log_game_event
+from website.utils.timezone import format_local, now_utc, to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -292,8 +293,8 @@ class DiscordCommandService:
         except _CommandInputError as exc:
             return exc.message
 
-        start_fmt = start.strftime(HUMAN_TIMEFORMAT)
-        end_fmt = end.strftime(HUMAN_TIMEFORMAT)
+        start_fmt = format_local(start, HUMAN_TIMEFORMAT)
+        end_fmt = format_local(end, HUMAN_TIMEFORMAT)
         try:
             self.sessions.create(game, start, end)
         except ValidationError:
@@ -337,8 +338,8 @@ class DiscordCommandService:
         except _CommandInputError as exc:
             return exc.message
 
-        old_start = session.start.strftime(HUMAN_TIMEFORMAT)
-        old_end = session.end.strftime(HUMAN_TIMEFORMAT)
+        old_start = format_local(session.start, HUMAN_TIMEFORMAT)
+        old_end = format_local(session.end, HUMAN_TIMEFORMAT)
         try:
             self.sessions.update(session, new_start, new_end)
         except ValidationError:
@@ -357,8 +358,8 @@ class DiscordCommandService:
         self.discord.send_game_embed(
             game,
             embed_type="edit-session",
-            start=session.start.strftime(HUMAN_TIMEFORMAT),
-            end=session.end.strftime(HUMAN_TIMEFORMAT),
+            start=format_local(session.start, HUMAN_TIMEFORMAT),
+            end=format_local(session.end, HUMAN_TIMEFORMAT),
             old_start=old_start,
             old_end=old_end,
         )
@@ -377,8 +378,8 @@ class DiscordCommandService:
         if session is None:
             return MSG_SESSION_NOT_FOUND
 
-        start_fmt = session.start.strftime(HUMAN_TIMEFORMAT)
-        end_fmt = session.end.strftime(HUMAN_TIMEFORMAT)
+        start_fmt = format_local(session.start, HUMAN_TIMEFORMAT)
+        end_fmt = format_local(session.end, HUMAN_TIMEFORMAT)
         self.sessions.delete(session)
         log_game_event(
             "delete-session",
@@ -688,21 +689,25 @@ class DiscordCommandService:
 
     @staticmethod
     def _parse_datetime(raw: str) -> datetime:
-        """Parse a ``JJ/MM/AAAA HH:MM`` option value.
+        """Parse a ``JJ/MM/AAAA HH:MM`` option value as aware UTC.
+
+        The option value is entered as Europe/Paris wall-clock time (same
+        convention as the web form), so it's localized before conversion.
 
         Args:
             raw: Raw option string.
 
         Returns:
-            The parsed datetime.
+            The parsed, timezone-aware UTC datetime.
 
         Raises:
             _CommandInputError: If the value doesn't match the format.
         """
         try:
-            return datetime.strptime(raw, SLASH_DATE_FORMAT)
+            naive = datetime.strptime(raw, SLASH_DATE_FORMAT)
         except ValueError:
             raise _CommandInputError(MSG_BAD_DATE_FORMAT)
+        return to_utc(naive)
 
     @staticmethod
     def _parse_duration(raw: str) -> timedelta:
@@ -814,9 +819,9 @@ class DiscordCommandService:
         else:
             mentions = player_mentions(game)
             lines.append(f"Joueur·euses : {mentions}" if mentions else "Joueur·euses : aucun·e")
-        upcoming = [s.start for s in game.sessions if s.start >= datetime.now()]
+        upcoming = [s.start for s in game.sessions if s.start >= now_utc()]
         lines.append(
-            f"Prochaine session : {min(upcoming).strftime(HUMAN_TIMEFORMAT)}"
+            f"Prochaine session : {format_local(min(upcoming), HUMAN_TIMEFORMAT)}"
             if upcoming
             else "Prochaine session : aucune"
         )
