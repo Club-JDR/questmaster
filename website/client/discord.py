@@ -16,6 +16,7 @@ from config.constants import (
     DISCORD_CHANNEL_TYPE_CATEGORY,
     DISCORD_NAME_MAX,
     DISCORD_POOL_MAXSIZE,
+    DISCORD_RATE_LIMIT_MAX_RETRIES,
     DISCORD_RATE_LIMIT_MAX_WAIT,
     DISCORD_REQUEST_TIMEOUT,
     GM_ROLE_PERMISSION,
@@ -84,15 +85,26 @@ class Discord:
         json=None,
         params=None,
         reason=None,
-        max_retries=3,
+        max_rate_limit_retries=DISCORD_RATE_LIMIT_MAX_RETRIES,
     ):
-        """Generic helper for all HTTP requests with retry + error handling."""
+        """Generic helper for all HTTP requests with retry + error handling.
+
+        A 429 response is waited out and retried, up to ``max_rate_limit_retries``
+        times — its own budget, independent of anything else, since rate limiting
+        is expected/routine rather than a failure. Any other outcome (success,
+        network error, non-429 error status) is settled on the one real attempt;
+        those are not retried (a persistent 5xx or connection error surfaces
+        immediately as ``DiscordAPIError`` rather than being silently absorbed
+        into the rate-limit budget or vice versa).
+        """
         url = f"{DISCORD_API_BASE_URL}{endpoint}"
         headers = dict(self.headers)
         if reason:
             headers["X-Audit-Log-Reason"] = reason
 
-        for _ in range(max_retries):
+        rate_limit_retries_left = max_rate_limit_retries
+
+        while True:
             try:
                 r = self._session.request(
                     method,
@@ -118,6 +130,13 @@ class Discord:
                         f"{DISCORD_RATE_LIMIT_MAX_WAIT}s cap",
                         status_code=429,
                     )
+                if rate_limit_retries_left <= 0:
+                    raise DiscordAPIError(
+                        f"Discord rate-limited the request {max_rate_limit_retries} times "
+                        "in a row",
+                        status_code=429,
+                    )
+                rate_limit_retries_left -= 1
                 logger.warning("Rate limited by Discord. Retrying after %.2f s...", retry_after)
                 time.sleep(retry_after)
                 continue
@@ -139,8 +158,6 @@ class Discord:
                 return {}
 
             return r.json()
-
-        raise DiscordAPIError("Exceeded retry attempts", status_code=429)
 
     def get_user(self, user_id: str) -> dict:
         """Fetch a guild member's data from Discord.

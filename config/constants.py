@@ -123,6 +123,11 @@ DISCORD_POOL_MAXSIZE = 10
 # instead of failing the call, so a `retry_after` past this cap raises DiscordAPIError
 # rather than blocking.
 DISCORD_RATE_LIMIT_MAX_WAIT = 5
+# Max consecutive 429s a single Discord._request call will wait out before giving up.
+# Its own budget, independent of any real-attempt retry count: rate limiting is
+# expected/routine, not a failure, so it must never crowd out (or be miscounted
+# against) retries reserved for actual request/response handling.
+DISCORD_RATE_LIMIT_MAX_RETRIES = 3
 
 # Discord role limits
 # A Discord guild is hard-capped at 250 roles. When the count nears this limit,
