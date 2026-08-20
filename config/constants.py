@@ -117,6 +117,12 @@ DISCORD_REQUEST_TIMEOUT = (3.05, 10)
 # Max pooled connections to discord.com kept alive by the shared requests.Session,
 # reused across calls instead of paying a fresh TCP+TLS handshake every time.
 DISCORD_POOL_MAXSIZE = 10
+# Upper bound (seconds) on how long a 429 response's `retry_after` is honored by
+# sleeping the request thread. Discord's global rate limit can return a value well
+# above gunicorn's 30 s worker timeout; sleeping that long would kill the worker
+# instead of failing the call, so a `retry_after` past this cap raises DiscordAPIError
+# rather than blocking.
+DISCORD_RATE_LIMIT_MAX_WAIT = 5
 
 # Discord role limits
 # A Discord guild is hard-capped at 250 roles. When the count nears this limit,

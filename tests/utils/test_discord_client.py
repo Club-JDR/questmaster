@@ -64,6 +64,37 @@ class TestRequestTimeout:
                 client._request("GET", "/guilds/guild_1")
 
 
+class TestRateLimit:
+    def test_retries_after_rate_limit_within_cap(self, client):
+        """A 429 with retry_after under the cap is waited out and the call retried."""
+        rate_limited = Mock(status_code=429, ok=False)
+        rate_limited.json.return_value = {"retry_after": 1.5}
+        ok = Mock(status_code=200, content=b"{}", ok=True)
+        ok.json.return_value = {}
+
+        with (
+            patch.object(client._session, "request", side_effect=[rate_limited, ok]),
+            patch("website.client.discord.time.sleep") as sleep,
+        ):
+            client._request("GET", "/guilds/guild_1")
+
+        sleep.assert_called_once_with(1.5)
+
+    def test_raises_instead_of_sleeping_past_the_cap(self, client):
+        """A retry_after above the cap fails fast instead of blocking the worker."""
+        rate_limited = Mock(status_code=429, ok=False)
+        rate_limited.json.return_value = {"retry_after": 45}
+
+        with (
+            patch.object(client._session, "request", return_value=rate_limited),
+            patch("website.client.discord.time.sleep") as sleep,
+        ):
+            with pytest.raises(DiscordAPIError):
+                client._request("GET", "/guilds/guild_1")
+
+        sleep.assert_not_called()
+
+
 class TestCreateChannel:
     def test_includes_role_overwrite_when_role_given(self, client):
         """Role mode adds a player-role overwrite alongside @everyone and GM."""
@@ -133,6 +164,22 @@ class TestRolesAndMessages:
             assert client.list_roles() == [{"id": "1"}]
 
         assert req.call_args.kwargs["endpoint"] == "/guilds/guild_1/roles"
+
+    def test_get_role_returns_matching_role(self, client):
+        """get_role returns the role dict matching the requested id."""
+        roles = [{"id": "1", "name": "GM"}, {"id": "2", "name": "Player"}]
+        with patch.object(Discord, "_request", return_value=roles):
+            assert client.get_role("2") == {"id": "2", "name": "Player"}
+
+    def test_get_role_raises_for_unknown_role(self, client):
+        """get_role raises DiscordAPIError instead of a silent fallback dict.
+
+        Callers can't tell success from failure on a magic {"message": ...}
+        value; raising lets them use the normal DiscordAPIError handling.
+        """
+        with patch.object(Discord, "_request", return_value=[{"id": "1"}]):
+            with pytest.raises(DiscordAPIError):
+                client.get_role("unknown_id")
 
     def test_update_role_color(self, client):
         """update_role_color PATCHes the role with the new color."""
