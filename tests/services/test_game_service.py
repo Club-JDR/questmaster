@@ -34,6 +34,7 @@ from website.exceptions import (
 from website.models import Game, GameEvent
 from website.models.trophy import UserTrophy
 from website.services.game import GameService
+from website.utils.timezone import now_utc
 
 
 class TestGameService:
@@ -796,6 +797,36 @@ class TestGameService:
 
         assert game.status == "open"
         assert game.msg_id == "msg_future"
+
+    def test_publish_near_now_date_judged_consistently(
+        self, db_session, sample_game, mock_discord, game_service, oneshot_channel
+    ):
+        """A date a few minutes away from "now" is judged correctly either way.
+
+        Regression test for AUDIT.md §1.1: "now" used to be computed three
+        different ways across the codebase (naive container-local, aware
+        UTC, Europe/Paris wall time), which could disagree by 1-2h depending
+        on DST. A 5-minute margin is far smaller than that discrepancy, so a
+        reintroduced naive/aware mix would flip the verdict and fail this
+        test — a days-wide margin (see the two tests above) would not catch
+        that class of bug.
+        """
+        sample_game.date = now_utc() - timedelta(minutes=5)
+        db_session.commit()
+
+        with pytest.raises(PastDateError):
+            game_service.publish(sample_game.slug)
+        assert sample_game.status == "draft"
+        assert sample_game.channel is None
+
+        sample_game.date = now_utc() + timedelta(minutes=5)
+        db_session.commit()
+        mock_discord.send_game_embed.return_value = "msg_boundary"
+
+        game = game_service.publish(sample_game.slug, silent=False)
+
+        assert game.status == "open"
+        assert game.msg_id == "msg_boundary"
 
     def test_close_game(self, db_session, sample_game, game_service):
         sample_game.status = "open"

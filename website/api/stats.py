@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request
 from website.api.auth import api_login_optional, api_login_required
 from website.exceptions import ValidationError
 from website.services.game_session import GameSessionService
+from website.utils.timezone import to_local, to_utc
 
 stats_bp = Blueprint("api_stats", __name__)
 
@@ -78,8 +79,11 @@ def get_calendar_events():
         )
 
     try:
-        start = parse_date(start_str)
-        end = parse_date(end_str)
+        # A date-only value (the common case) parses naive; treat it as
+        # Europe/Paris wall time — the calendar's natural frame — before it's
+        # used as a bound against the aware GameSession.start/end columns.
+        start = to_utc(parse_date(start_str))
+        end = to_utc(parse_date(end_str))
     except (ValueError, TypeError):
         raise ValidationError(
             "Invalid date format. Use ISO 8601 (e.g. 2026-01-01).",
@@ -90,8 +94,11 @@ def get_calendar_events():
 
     events = []
     for session in sessions:
-        session_start = session.start
-        session_end = session.end
+        # Displayed (and midnight-crossing-capped) in Europe/Paris wall time —
+        # a session stored as aware UTC can fall on a different calendar day
+        # in UTC than the one it actually runs on locally.
+        session_start = to_local(session.start).replace(tzinfo=None)
+        session_end = to_local(session.end).replace(tzinfo=None)
 
         # If it crosses midnight, force the end to same day
         if session_end.date() > session_start.date():

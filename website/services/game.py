@@ -40,6 +40,7 @@ from website.services.trophy import TrophyService
 from website.services.user import UserService
 from website.utils.logger import log_game_event
 from website.utils.scheduling import intervals_overlap
+from website.utils.timezone import now_utc, parse_wall_clock_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -389,7 +390,7 @@ class GameService:
                 restriction=data["restriction"],
                 party_size=data["party_size"],
                 xp=data["xp"],
-                date=datetime.fromisoformat(data["date"].replace("T", " ")[:16]),
+                date=parse_wall_clock_datetime(data["date"]),
                 session_length=data["session_length"],
                 frequency=data.get("frequency") or None,
                 characters=data["characters"],
@@ -555,7 +556,7 @@ class GameService:
             game.system_id = data["system"]
             game.vtt_id = data.get("vtt") or None
             game.description = data["description"]
-            game.date = datetime.fromisoformat(data["date"].replace("T", " ")[:16])
+            game.date = parse_wall_clock_datetime(data["date"])
             game.length = data["length"]
             game.party_size = data["party_size"]
             game.party_selection = "party_selection" in data
@@ -658,7 +659,7 @@ class GameService:
         # in the past unless the caller has explicitly confirmed. Skip the check
         # when resources already exist (the session was created on the prior
         # silent publish, so nothing new is scheduled in the past here).
-        if not resources_preexist and not allow_past_date and game.date < datetime.now():
+        if not resources_preexist and not allow_past_date and game.date < now_utc():
             raise PastDateError(
                 "Game start date is in the past.",
                 game_id=game.id,

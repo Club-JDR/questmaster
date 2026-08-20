@@ -13,6 +13,7 @@ from website.extensions import cache, db
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
 from website.utils.scheduling import intervals_overlap
+from website.utils.timezone import APP_TIMEZONE
 
 if TYPE_CHECKING:
     from website.models import Game
@@ -150,15 +151,15 @@ class GameSessionService:
             os_games, campaign_games, gm_names.
         """
         if year and month:
-            base_day = datetime(year, month, 1)
+            base_day = datetime(year, month, 1, tzinfo=APP_TIMEZONE)
         else:
-            today = datetime.today()
+            today = datetime.now(APP_TIMEZONE)
             base_day = today.replace(day=1)
         return self._compute_stats(base_day.year, base_day.month)
 
     @cache.memoize(timeout=3600)
     def _compute_stats(self, year: int, month: int) -> dict:
-        base_day = datetime(year, month, 1)
+        base_day = datetime(year, month, 1, tzinfo=APP_TIMEZONE)
         last_day = datetime(
             year,
             month,
@@ -167,6 +168,7 @@ class GameSessionService:
             59,
             59,
             999999,
+            tzinfo=APP_TIMEZONE,
         )
 
         sessions = self.find_in_range(base_day, last_day)

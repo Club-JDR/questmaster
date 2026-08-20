@@ -20,6 +20,7 @@ from config.constants import (
     SITE_BASE_URL,
 )
 from website.models import Game
+from website.utils.timezone import format_local
 
 # -----------------------------------------------------------------------------
 # Internal helper functions
@@ -110,7 +111,7 @@ def _build_embed_fields(game, session_type: str, restriction_msg: str) -> list:
         {"name": "MJ", "value": game.gm.name, "inline": True},
         {"name": "Système", "value": game.system.name, "inline": True},
         {"name": "Type de session", "value": session_type, "inline": True},
-        {"name": "Date", "value": game.date.strftime(HUMAN_TIMEFORMAT), "inline": True},
+        {"name": "Date", "value": format_local(game.date, HUMAN_TIMEFORMAT), "inline": True},
         {"name": "Durée", "value": game.length, "inline": True},
         {"name": "Avertissement", "value": restriction_msg},
     ]

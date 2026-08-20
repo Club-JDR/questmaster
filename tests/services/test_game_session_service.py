@@ -1,6 +1,6 @@
 """Tests for GameSessionService."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
@@ -8,36 +8,37 @@ import pytest
 from website.exceptions import SessionConflictError, ValidationError
 from website.models import GameSession
 from website.services.game_session import GameSessionService
+from website.utils.timezone import APP_TIMEZONE
 
 
 class TestGameSessionService:
     def test_create(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 9, 1, 20, 0)
-        end = datetime(2025, 9, 1, 23, 0)
+        start = datetime(2025, 9, 1, 20, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 9, 1, 23, 0, tzinfo=timezone.utc)
         session = service.create(sample_game, start, end)
         assert session.id is not None
         assert session.game_id == sample_game.id
 
     def test_create_invalid_times(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 9, 1, 23, 0)
-        end = datetime(2025, 9, 1, 20, 0)
+        start = datetime(2025, 9, 1, 23, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 9, 1, 20, 0, tzinfo=timezone.utc)
         with pytest.raises(ValidationError):
             service.create(sample_game, start, end)
 
     def test_create_rejects_implausibly_long_session(self, db_session, sample_game):
         """A session spanning more than the allowed max (e.g. an end-year typo) is rejected."""
         service = GameSessionService()
-        start = datetime(2024, 7, 31, 20, 30)
-        end = datetime(2025, 7, 31, 23, 0)  # one-year typo -> ~8762h
+        start = datetime(2024, 7, 31, 20, 30, tzinfo=timezone.utc)
+        end = datetime(2025, 7, 31, 23, 0, tzinfo=timezone.utc)  # one-year typo -> ~8762h
         with pytest.raises(ValidationError):
             service.create(sample_game, start, end)
 
     def test_create_conflict(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 9, 1, 20, 0)
-        end = datetime(2025, 9, 1, 23, 0)
+        start = datetime(2025, 9, 1, 20, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 9, 1, 23, 0, tzinfo=timezone.utc)
         service.create(sample_game, start, end)
         # Overlapping session
         with pytest.raises(SessionConflictError):
@@ -45,8 +46,8 @@ class TestGameSessionService:
 
     def test_delete(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 9, 2, 20, 0)
-        end = datetime(2025, 9, 2, 23, 0)
+        start = datetime(2025, 9, 2, 20, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 9, 2, 23, 0, tzinfo=timezone.utc)
         session = service.create(sample_game, start, end)
         session_id = session.id
         service.delete(session)
@@ -54,20 +55,23 @@ class TestGameSessionService:
 
     def test_find_in_range(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 9, 3, 20, 0)
-        end = datetime(2025, 9, 3, 23, 0)
+        start = datetime(2025, 9, 3, 20, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 9, 3, 23, 0, tzinfo=timezone.utc)
         service.create(sample_game, start, end)
-        results = service.find_in_range(datetime(2025, 9, 1, 0, 0), datetime(2025, 9, 30, 23, 59))
+        results = service.find_in_range(
+            datetime(2025, 9, 1, 0, 0, tzinfo=timezone.utc),
+            datetime(2025, 9, 30, 23, 59, tzinfo=timezone.utc),
+        )
         assert len(results) >= 1
 
     def test_update_valid_times(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 10, 1, 20, 0)
-        end = datetime(2025, 10, 1, 23, 0)
+        start = datetime(2025, 10, 1, 20, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 10, 1, 23, 0, tzinfo=timezone.utc)
         session = service.create(sample_game, start, end)
 
-        new_start = datetime(2025, 10, 1, 19, 0)
-        new_end = datetime(2025, 10, 1, 22, 0)
+        new_start = datetime(2025, 10, 1, 19, 0, tzinfo=timezone.utc)
+        new_end = datetime(2025, 10, 1, 22, 0, tzinfo=timezone.utc)
         updated = service.update(session, new_start, new_end)
 
         assert updated.start == new_start
@@ -77,45 +81,63 @@ class TestGameSessionService:
     def test_update_invalid_times(self, db_session, sample_game):
         service = GameSessionService()
         session = service.create(
-            sample_game, datetime(2025, 10, 2, 20, 0), datetime(2025, 10, 2, 23, 0)
+            sample_game,
+            datetime(2025, 10, 2, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 10, 2, 23, 0, tzinfo=timezone.utc),
         )
 
         with pytest.raises(ValidationError):
-            service.update(session, datetime(2025, 10, 2, 23, 0), datetime(2025, 10, 2, 20, 0))
+            service.update(
+                session,
+                datetime(2025, 10, 2, 23, 0, tzinfo=timezone.utc),
+                datetime(2025, 10, 2, 20, 0, tzinfo=timezone.utc),
+            )
 
     def test_update_rejects_implausibly_long_session(self, db_session, sample_game):
         """Editing a session to an out-of-range duration is rejected."""
         service = GameSessionService()
         session = service.create(
-            sample_game, datetime(2025, 10, 2, 20, 0), datetime(2025, 10, 2, 23, 0)
+            sample_game,
+            datetime(2025, 10, 2, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 10, 2, 23, 0, tzinfo=timezone.utc),
         )
         with pytest.raises(ValidationError):
-            service.update(session, datetime(2025, 10, 2, 20, 0), datetime(2025, 10, 30, 23, 0))
+            service.update(
+                session,
+                datetime(2025, 10, 2, 20, 0, tzinfo=timezone.utc),
+                datetime(2025, 10, 30, 23, 0, tzinfo=timezone.utc),
+            )
 
     def test_update_conflict_with_other_session(self, db_session, sample_game):
         service = GameSessionService()
-        service.create(sample_game, datetime(2025, 10, 3, 20, 0), datetime(2025, 10, 3, 23, 0))
+        service.create(
+            sample_game,
+            datetime(2025, 10, 3, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 10, 3, 23, 0, tzinfo=timezone.utc),
+        )
         session_b = service.create(
-            sample_game, datetime(2025, 10, 4, 20, 0), datetime(2025, 10, 4, 23, 0)
+            sample_game,
+            datetime(2025, 10, 4, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 10, 4, 23, 0, tzinfo=timezone.utc),
         )
 
         # Try to move session_b into session_a's time slot
         with pytest.raises(SessionConflictError):
             service.update(
                 session_b,
-                datetime(2025, 10, 3, 21, 0),
-                datetime(2025, 10, 3, 22, 0),
+                datetime(2025, 10, 3, 21, 0, tzinfo=timezone.utc),
+                datetime(2025, 10, 3, 22, 0, tzinfo=timezone.utc),
             )
 
     def test_update_no_self_conflict(self, db_session, sample_game):
         service = GameSessionService()
-        start = datetime(2025, 10, 5, 20, 0)
-        end = datetime(2025, 10, 5, 23, 0)
+        start = datetime(2025, 10, 5, 20, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 10, 5, 23, 0, tzinfo=timezone.utc)
         session = service.create(sample_game, start, end)
 
         # Updating a session to overlap with its own original times should succeed
-        new_start = datetime(2025, 10, 5, 19, 0)
-        new_end = datetime(2025, 10, 5, 22, 0)
+        new_start = datetime(2025, 10, 5, 19, 0, tzinfo=timezone.utc)
+        new_end = datetime(2025, 10, 5, 22, 0, tzinfo=timezone.utc)
         updated = service.update(session, new_start, new_end)
 
         assert updated.start == new_start
@@ -124,11 +146,15 @@ class TestGameSessionService:
     def test_get_stats_for_period(self, db_session, sample_game):
         service = GameSessionService()
         sample_game.status = "open"  # only published games count toward the breakdown
-        service.create(sample_game, datetime(2025, 11, 10, 20, 0), datetime(2025, 11, 10, 23, 0))
+        service.create(
+            sample_game,
+            datetime(2025, 11, 10, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 11, 10, 23, 0, tzinfo=timezone.utc),
+        )
 
         stats = service.get_stats_for_period(2025, 11)
 
-        assert stats["base_day"] == datetime(2025, 11, 1)
+        assert stats["base_day"] == datetime(2025, 11, 1, tzinfo=APP_TIMEZONE)
         assert stats["num_os"] == 1
         assert stats["num_campaign"] == 0
         assert len(stats["gm_names"]) == 1
@@ -136,7 +162,11 @@ class TestGameSessionService:
     def test_get_stats_for_period_excludes_draft_games(self, db_session, sample_game):
         """Sessions belonging to draft games must not appear in the monthly breakdown."""
         service = GameSessionService()
-        service.create(sample_game, datetime(2029, 4, 10, 20, 0), datetime(2029, 4, 10, 23, 0))
+        service.create(
+            sample_game,
+            datetime(2029, 4, 10, 20, 0, tzinfo=timezone.utc),
+            datetime(2029, 4, 10, 23, 0, tzinfo=timezone.utc),
+        )
         sample_game.status = "draft"
         db_session.flush()
 
@@ -167,7 +197,7 @@ class TestGameSessionService:
         """
         service = GameSessionService()
         sample_game.status = "open"  # only published games count toward the breakdown
-        now = datetime.now()
+        now = datetime.now(APP_TIMEZONE)
         start = now.replace(hour=20, minute=0, second=0, microsecond=0)
         end = start.replace(hour=23)
         service.create(sample_game, start, end)

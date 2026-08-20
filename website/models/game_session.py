@@ -21,8 +21,8 @@ class GameSession(db.Model, SerializableMixin):
 
     id = db.Column(db.BigInteger, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey("game.id"), index=True)
-    start = db.Column(db.DateTime, nullable=False)
-    end = db.Column(db.DateTime, nullable=False)
+    start = db.Column(db.DateTime(timezone=True), nullable=False)
+    end = db.Column(db.DateTime(timezone=True), nullable=False)
 
     @classmethod
     def from_dict(cls, data):

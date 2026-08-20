@@ -1,6 +1,5 @@
 """Game repository for data access."""
 
-from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import and_, case, func, or_
@@ -9,6 +8,7 @@ from sqlalchemy.orm import joinedload, subqueryload
 from config.constants import GAME_STATUS_DRAFT
 from website.models import Game, GameViewer, User
 from website.repositories.base import BaseRepository
+from website.utils.timezone import now_utc
 
 
 class GameRepository(BaseRepository[Game]):
@@ -431,7 +431,7 @@ class GameRepository(BaseRepository[Game]):
         Returns:
             Tuple of (games list, total count).
         """
-        now = datetime.now(timezone.utc)
+        now = now_utc()
         query = self.session.query(Game)
 
         # Status filter with permission check

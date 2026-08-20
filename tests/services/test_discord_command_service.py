@@ -1,6 +1,6 @@
 """Tests for DiscordCommandService (Discord slash-command dispatch)."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock
 from uuid import uuid4
 
@@ -50,6 +50,7 @@ from website.services.discord_command import (
 from website.services.game import GameService
 from website.services.game_session import GameSessionService
 from website.services.user import UserService
+from website.utils.timezone import to_utc
 
 
 def _make_user(user_id, is_admin=False):
@@ -258,7 +259,7 @@ class TestAjouterSession:
 
         assert content == MSG_SESSION_ADDED
         assert len(channel_game.sessions) == 1
-        assert channel_game.sessions[0].start == datetime(2030, 9, 1, 20, 0)
+        assert channel_game.sessions[0].start == to_utc(datetime(2030, 9, 1, 20, 0))
         mock_discord.send_game_embed.assert_called_once()
         assert mock_discord.send_game_embed.call_args.kwargs["embed_type"] == "add-session"
 
@@ -271,7 +272,7 @@ class TestAjouterSession:
         )
 
         assert command_service._execute(payload) == MSG_SESSION_ADDED
-        assert channel_game.sessions[0].end == datetime(2030, 9, 1, 22, 30)
+        assert channel_game.sessions[0].end == to_utc(datetime(2030, 9, 1, 22, 30))
 
     def test_add_session_defaults_to_game_session_length(
         self, db_session, command_service, channel_game
@@ -285,7 +286,7 @@ class TestAjouterSession:
         )
 
         assert command_service._execute(payload) == MSG_SESSION_ADDED
-        assert channel_game.sessions[0].end == datetime(2030, 9, 1, 23, 0)
+        assert channel_game.sessions[0].end == to_utc(datetime(2030, 9, 1, 23, 0))
 
     def test_add_session_bad_duration_returns_format_error(
         self, db_session, command_service, channel_game
@@ -366,8 +367,8 @@ class TestEditerSession:
         content = command_service._execute(payload)
 
         assert content == MSG_SESSION_EDITED
-        assert session.start == datetime(2030, 9, 2, 20, 0)
-        assert session.end == datetime(2030, 9, 2, 23, 0)
+        assert session.start == to_utc(datetime(2030, 9, 2, 20, 0))
+        assert session.end == to_utc(datetime(2030, 9, 2, 23, 0))
         mock_discord.send_game_embed.assert_called_once()
         assert mock_discord.send_game_embed.call_args.kwargs["embed_type"] == "edit-session"
 
@@ -391,9 +392,9 @@ class TestEditerSession:
         )
 
         assert command_service._execute(payload) == MSG_SESSION_EDITED
-        assert session.start == datetime(2030, 9, 2, 19, 0)
+        assert session.start == to_utc(datetime(2030, 9, 2, 19, 0))
         # The 3-hour duration is preserved
-        assert session.end == datetime(2030, 9, 2, 22, 0)
+        assert session.end == to_utc(datetime(2030, 9, 2, 22, 0))
 
     def test_edit_session_with_duration(self, db_session, command_service, channel_game):
         session = GameSessionFactory(
@@ -414,7 +415,7 @@ class TestEditerSession:
         )
 
         assert command_service._execute(payload) == MSG_SESSION_EDITED
-        assert session.end == datetime(2030, 9, 2, 23, 0)
+        assert session.end == to_utc(datetime(2030, 9, 2, 23, 0))
 
     def test_edit_session_unknown_start_returns_not_found(
         self, db_session, command_service, channel_game
@@ -592,7 +593,7 @@ class TestPublier:
         # Silent-publish situation: channel exists, no announcement yet.
         channel_game.status = "closed"
         channel_game.msg_id = None
-        channel_game.date = datetime(2030, 9, 1, 20, 0)
+        channel_game.date = datetime(2030, 9, 1, 20, 0, tzinfo=timezone.utc)
         db_session.flush()
         _resolve_as(command_service, _make_user(channel_game.gm_id))
 
