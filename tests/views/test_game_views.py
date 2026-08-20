@@ -1711,11 +1711,8 @@ class TestGameAlert:
         response = logged_in_user.post(
             f"/annonces/{open_game.slug}/alert/",
             data={"alertMessage": "Spam alert"},
-            follow_redirects=True,
         )
-        body = html.unescape(response.data.decode())
-        assert response.status_code == 200
-        assert "Vous n'êtes pas autorisé·e" in body
+        assert response.status_code == 403
 
 
 # -- Follow as viewer -------------------------------------------------------
