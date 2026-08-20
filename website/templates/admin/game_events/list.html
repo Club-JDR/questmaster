@@ -21,7 +21,7 @@
       {% for event in pagination.items %}
       <tr>
         <td class="whitespace-nowrap font-mono text-xs">{{ event.timestamp|format_datetime('%Y-%m-%d %H:%M') }}</td>
-        <td><span class="badge badge-outline badge-sm">{{ event.action }}</span></td>
+        <td class="whitespace-nowrap"><span class="badge badge-outline badge-sm">{{ event.action }}</span></td>
         <td>{{ event.user.name if event.user else '—' }}</td>
         <td class="text-xs">{{ event.game.slug if event.game else '—' }}</td>
         <td class="text-sm">{{ event.description or '' }}</td>
