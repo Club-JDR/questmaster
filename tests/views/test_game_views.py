@@ -110,6 +110,24 @@ class TestGameCreation:
         assert response.status_code == 200
         assert "Brouillon" in body
 
+    def test_create_game_missing_action_defaults_to_draft(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        default_system,
+        default_vtt,
+    ):
+        """A malformed submission missing the `action` field doesn't 500."""
+        data = _game_form_data(default_system.id, default_vtt.id)
+        del data["action"]
+        response = logged_in_admin.post("/annonce/", data=data, follow_redirects=True)
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Brouillon" in body
+
     def test_create_and_publish_game(
         self,
         logged_in_admin,
@@ -1431,6 +1449,26 @@ class TestGameSessions:
         assert response.status_code == 200
         assert "Dates de session invalides" in body
 
+    def test_add_session_rejects_malformed_date(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A malformed date string doesn't 500 — it flashes and redirects."""
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/sessions/ajouter/",
+            data={"date_start": "not-a-date", "date_end": "2025-07-07 23:00"},
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Dates de session invalides" in body
+        assert [s for s in db_session.get(type(open_game), open_game.id).sessions] == []
+
     def test_add_session_rejects_over_max_duration(
         self,
         logged_in_admin,
@@ -1489,6 +1527,29 @@ class TestGameSessions:
         body = response.data.decode()
         assert response.status_code == 200
         assert "Dates de session invalides" in body
+
+    def test_edit_session_rejects_malformed_date(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """A malformed date string doesn't 500 — it flashes and redirects."""
+        gs = GameSessionFactory(db_session, game_id=open_game.id)
+        original_start = gs.start
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/sessions/{gs.id}/editer/",
+            data={"date_start": "not-a-date", "date_end": "2025-08-01 23:00"},
+            follow_redirects=True,
+        )
+        body = response.data.decode()
+        assert response.status_code == 200
+        assert "Dates de session invalides" in body
+        db_session.refresh(gs)
+        assert gs.start == original_start
 
     def test_remove_session(
         self,

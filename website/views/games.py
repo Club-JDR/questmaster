@@ -289,6 +289,21 @@ def _resolve_gm_id(payload, data):
     return payload["user_id"]
 
 
+def _parse_session_datetime(raw: str) -> datetime:
+    """Parse a session date/time value submitted via a ``datetime-local`` input.
+
+    Args:
+        raw: Raw form value (e.g. ``"2026-08-20T19:00"``).
+
+    Returns:
+        Parsed naive datetime.
+
+    Raises:
+        ValueError: If the value is missing or not a valid ISO datetime.
+    """
+    return datetime.fromisoformat(raw.replace("T", " ")[:16])
+
+
 @game_bp.route("/annonce/", methods=["GET"])
 @login_required
 def get_game_form():
@@ -323,7 +338,7 @@ def create_game():
 
     data = request.values.to_dict()
     gm_id = _resolve_gm_id(payload, data)
-    action = data["action"]
+    action = data.get("action")
     allow_past_date = data.get("confirm_past_date") == "1"
 
     try:
@@ -493,8 +508,12 @@ def add_game_session(slug):
         )
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
-    start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
-    end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
+    try:
+        start = _parse_session_datetime(request.values.get("date_start", ""))
+        end = _parse_session_datetime(request.values.get("date_end", ""))
+    except ValueError:
+        flash("Dates de session invalides.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     start_fmt = start.strftime(HUMAN_TIMEFORMAT)
     end_fmt = end.strftime(HUMAN_TIMEFORMAT)
 
@@ -534,8 +553,12 @@ def edit_game_session(slug, session_id):
     game = _get_game_if_authorized(payload, slug)
     session = _get_session_for_game_or_404(game, session_id)
 
-    new_start = datetime.fromisoformat(request.values.get("date_start", "").replace("T", " ")[:16])
-    new_end = datetime.fromisoformat(request.values.get("date_end", "").replace("T", " ")[:16])
+    try:
+        new_start = _parse_session_datetime(request.values.get("date_start", ""))
+        new_end = _parse_session_datetime(request.values.get("date_end", ""))
+    except ValueError:
+        flash("Dates de session invalides.", "danger")
+        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
     old_start = session.start.strftime(HUMAN_TIMEFORMAT)
     old_end = session.end.strftime(HUMAN_TIMEFORMAT)
