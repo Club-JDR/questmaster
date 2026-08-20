@@ -1,6 +1,7 @@
 import pytest
 
 from tests.constants import TEST_ADMIN_USER_ID
+from website.exceptions import DiscordAPIError
 
 pytestmark = pytest.mark.integration
 
@@ -114,8 +115,8 @@ def test_role_workflow(discord_session, bot_user_id):
     response = discord_session.delete_role(role_id)
     assert response == {}
     # Role should not exist
-    response = discord_session.get_role(role_id)
-    assert response["message"] == "Unknown Role"
+    with pytest.raises(DiscordAPIError):
+        discord_session.get_role(role_id)
 
 
 def test_channel_workflow(discord_session, oneshot_channel):

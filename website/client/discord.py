@@ -15,6 +15,7 @@ from config.constants import (
     DISCORD_CHANNEL_TYPE_CATEGORY,
     DISCORD_NAME_MAX,
     DISCORD_POOL_MAXSIZE,
+    DISCORD_RATE_LIMIT_MAX_WAIT,
     DISCORD_REQUEST_TIMEOUT,
     GM_ROLE_PERMISSION,
     PLAYER_ROLE_PERMISSION,
@@ -108,9 +109,15 @@ class Discord:
             # Handle rate limiting (HTTP 429)
             if r.status_code == 429:
                 data = r.json()
-                retry_after = data.get("retry_after", 1)
+                retry_after = float(data.get("retry_after", 1))
+                if retry_after > DISCORD_RATE_LIMIT_MAX_WAIT:
+                    raise DiscordAPIError(
+                        f"Discord rate limit retry_after ({retry_after:.2f}s) exceeds the "
+                        f"{DISCORD_RATE_LIMIT_MAX_WAIT}s cap",
+                        status_code=429,
+                    )
                 logger.warning("Rate limited by Discord. Retrying after %.2f s...", retry_after)
-                time.sleep(float(retry_after))
+                time.sleep(retry_after)
                 continue
 
             # Handle non-success codes
@@ -522,12 +529,15 @@ class Discord:
             role_id: Role ID to look up.
 
         Returns:
-            Dict with role data, or a fallback dict if not found.
+            Dict with role data.
+
+        Raises:
+            DiscordAPIError: If no role with that ID exists in the guild.
         """
         for role in self.list_roles():
             if role["id"] == role_id:
                 return role
-        return {"message": "Unknown Role"}
+        raise DiscordAPIError(f"Unknown role: {role_id}", status_code=404)
 
     def delete_role(self, role_id: str) -> dict:
         """Delete a guild role.
