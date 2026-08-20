@@ -3,7 +3,7 @@
 import locale
 from datetime import datetime
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from config.constants import (
     GAME_DETAILS_ROUTE,
@@ -444,8 +444,6 @@ def send_alert(slug):
     """Send an alert message to the Discord channel and register a game event."""
     payload = who()
     game = _get_game_if_participant(payload, slug)
-    if isinstance(game, Response):
-        return game
 
     alert_message = request.form.get("alertMessage")
     try:
@@ -1112,10 +1110,21 @@ def _redirect_unless_branchable(game, slug):
 
 
 def _get_game_if_participant(payload, slug):
-    """Return game if user is GM, admin, or a registered player, else redirect.
+    """Return game if user is GM, admin, or a registered player, else raise.
 
     Unlike ``_get_game_if_authorized`` (GM/admin only), this also grants
     access to players registered for the game.
+
+    Args:
+        payload: Auth payload (from ``who()``).
+        slug: Slug of the game to load.
+
+    Returns:
+        The authorized Game instance.
+
+    Raises:
+        UnauthorizedError: If the caller is neither the game's GM/an admin
+            nor a registered player.
     """
     game = game_service.get_by_slug_or_404(slug)
     if (
@@ -1123,9 +1132,8 @@ def _get_game_if_participant(payload, slug):
         and not payload["is_admin"]
         and not game_service.is_player(game, payload["user_id"])
     ):
-        flash(
-            "Vous n'êtes pas autorisé·e à effectuer cette action pour cette partie.",
-            "danger",
+        raise UnauthorizedError(
+            "Only the game's GM, an admin, or a registered player may perform this operation.",
+            action="game_participant",
         )
-        return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
     return game
