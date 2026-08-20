@@ -94,6 +94,49 @@ class TestRateLimit:
 
         sleep.assert_not_called()
 
+    def test_exhausts_rate_limit_budget_then_raises(self, client):
+        """A run of 429s past the retry budget gives up instead of looping forever.
+
+        The rate-limit retry budget is its own counter, so this also pins that
+        a persistent run of 429s can't be misreported as a generic failure —
+        it still raises DiscordAPIError(status_code=429).
+        """
+        rate_limited = Mock(status_code=429, ok=False)
+        rate_limited.json.return_value = {"retry_after": 1}
+
+        with (
+            patch.object(client._session, "request", return_value=rate_limited) as req,
+            patch("website.client.discord.time.sleep") as sleep,
+        ):
+            with pytest.raises(DiscordAPIError) as exc_info:
+                client._request("GET", "/guilds/guild_1", max_rate_limit_retries=3)
+
+        assert exc_info.value.status_code == 429
+        # 1 initial attempt + 3 retries, all rate limited.
+        assert req.call_count == 4
+        assert sleep.call_count == 3
+
+    def test_rate_limit_retries_dont_consume_a_real_attempt(self, client):
+        """A single rate limit followed by a real failure surfaces that failure.
+
+        The 429 branch and the real-attempt handling are independent: a 429
+        never counts against (or gets confused with) whatever happens on the
+        actual request that eventually goes through.
+        """
+        rate_limited = Mock(status_code=429, ok=False)
+        rate_limited.json.return_value = {"retry_after": 1}
+        server_error = Mock(status_code=500, ok=False)
+        server_error.json.return_value = {"message": "Internal Server Error"}
+
+        with (
+            patch.object(client._session, "request", side_effect=[rate_limited, server_error]),
+            patch("website.client.discord.time.sleep"),
+        ):
+            with pytest.raises(DiscordAPIError) as exc_info:
+                client._request("GET", "/guilds/guild_1")
+
+        assert exc_info.value.status_code == 500
+
 
 class TestCreateChannel:
     def test_includes_role_overwrite_when_role_given(self, client):
