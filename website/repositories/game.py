@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload, subqueryload
 
 from config.constants import GAME_STATUS_DRAFT
 from website.models import Game, GameViewer, User
-from website.repositories.base import BaseRepository
+from website.repositories.base import BaseRepository, Pagination, paginate_query
 from website.utils.timezone import now_utc
 
 
@@ -408,10 +408,14 @@ class GameRepository(BaseRepository[Game]):
         page: int = 1,
         per_page: int = 20,
         user_payload: Optional[dict] = None,
-    ) -> tuple[list[Game], int]:
+    ) -> Pagination[Game]:
         """Search games with complex filters and pagination.
 
-        Replaces the complex get_filtered_games logic from helpers.
+        The single query-building implementation for game search: status
+        visibility, filtering, and ordering all live here so views and the API
+        can't drift apart (both go through this method — see
+        ``website.utils.game_filters`` for the checkbox-args-to-filters
+        translation views use).
 
         Args:
             filters: Dict containing:
@@ -429,7 +433,7 @@ class GameRepository(BaseRepository[Game]):
             user_payload: Optional user auth payload for permission filtering.
 
         Returns:
-            Tuple of (games list, total count).
+            Pagination of matching games.
         """
         now = now_utc()
         query = self.session.query(Game)
@@ -487,11 +491,4 @@ class GameRepository(BaseRepository[Game]):
 
         query = query.order_by(status_order, is_future, time_distance)
 
-        # Get total count before pagination
-        total = query.count()
-
-        # Pagination
-        offset = (page - 1) * per_page
-        games = query.limit(per_page).offset(offset).all()
-
-        return games, total
+        return paginate_query(query, page, per_page)

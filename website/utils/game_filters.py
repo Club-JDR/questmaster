@@ -1,14 +1,14 @@
-"""Game filtering and search query helpers.
+"""Checkbox/query-string filter translation for game search views.
 
-Extracted from views to enable reuse across views and future API endpoints.
+All query-building (status visibility, ordering) lives in
+``GameRepository.search()`` — this module's only job is translating a
+request's checkbox-style args into the ``filters`` dict that
+``GameService.search()`` expects, so views and the API share one search
+implementation.
 """
 
-from sqlalchemy import case
-from sqlalchemy.sql import and_, func, or_
-
 from website.exceptions import ValidationError
-from website.models import Game
-from website.utils.timezone import now_utc
+from website.repositories.base import Pagination
 
 
 def parse_multi_checkbox_filter(source, keys):
@@ -28,54 +28,6 @@ def parse_multi_checkbox_filter(source, keys):
             filters.append(key)
             args[key] = "on"
     return filters, args
-
-
-def build_base_filters(request_args, name, system, vtt):
-    """Build base SQLAlchemy filter conditions for name, system, and VTT.
-
-    Args:
-        request_args: Mutable dict to store active filter args for pagination URLs.
-        name: Game name search string (or None).
-        system: System ID filter (or None).
-        vtt: VTT ID filter (or None).
-
-    Returns:
-        List of SQLAlchemy filter expressions.
-    """
-    filters = []
-    if name:
-        request_args["name"] = name
-        filters.append(Game.name.ilike(f"%{name}%"))
-    if system:
-        request_args["system"] = system
-        filters.append(Game.system_id == system)
-    if vtt:
-        request_args["vtt"] = vtt
-        filters.append(Game.vtt_id == vtt)
-    return filters
-
-
-def build_status_filters(statuses, user_payload):
-    """Build status filter with draft visibility rules.
-
-    Draft games are only visible to their GM (or to admins).
-
-    Args:
-        statuses: List of status strings to include.
-        user_payload: Dict with 'user_id' and 'is_admin' keys.
-
-    Returns:
-        SQLAlchemy OR expression combining status filters.
-    """
-    filters = []
-    for s in statuses:
-        if s != "draft":
-            filters.append(Game.status == s)
-        elif user_payload.get("is_admin"):
-            filters.append(Game.status == "draft")
-        else:
-            filters.append(and_(Game.status == "draft", Game.gm_id == user_payload.get("user_id")))
-    return or_(*filters)
 
 
 def normalize_search_defaults(
@@ -111,26 +63,31 @@ def normalize_search_defaults(
 def get_filtered_games(
     request_args_source,
     user_payload,
-    base_query=None,
+    extra_filters=None,
     default_status=None,
     default_type=None,
     default_restriction=None,
-):
-    """Build and execute a paginated, filtered game query.
+) -> tuple[Pagination, dict]:
+    """Build a GameService.search() filters dict from request args and run it.
 
     Args:
         request_args_source: Flask request.args or similar mapping.
         user_payload: Auth payload dict with 'user_id' and 'is_admin'.
-        base_query: Optional base SQLAlchemy query to extend.
+        extra_filters: Optional dict merged into the filters verbatim (e.g.
+            ``{"special_event_id": ...}``, ``{"gm_id": ...}``,
+            ``{"player_id": ...}``) — for views scoping the search beyond
+            what checkboxes express.
         default_status: Default status filter if none selected.
         default_type: Default game type filter if none selected.
         default_restriction: Default restriction filter if none selected.
 
     Returns:
-        Tuple of (pagination object, request_args dict for URL generation).
+        Tuple of (Pagination, request_args dict for URL generation).
     """
+    from website.services.game import GameService
+    from website.services.setting import SettingsService
+
     request_args = {}
-    now = now_utc()
 
     status, status_args = parse_multi_checkbox_filter(
         request_args_source, ["open", "closed", "archived", "draft"]
@@ -154,36 +111,30 @@ def get_filtered_games(
         default_restriction=default_restriction,
     )
 
+    filters = {"status": status, "game_type": game_type, "restriction": restriction}
+
     name = request_args_source.get("name", type=str)
+    if name:
+        request_args["name"] = name
+        filters["name"] = name
+
     system = request_args_source.get("system", type=int)
+    if system:
+        request_args["system"] = system
+        filters["system_id"] = system
+
     vtt = request_args_source.get("vtt", type=int)
+    if vtt:
+        request_args["vtt"] = vtt
+        filters["vtt_id"] = vtt
 
-    queries = [
-        Game.restriction.in_(restriction),
-        Game.type.in_(game_type),
-    ]
-    queries += build_base_filters(request_args, name, system, vtt)
-    queries.append(build_status_filters(status, user_payload))
-
-    status_order = case(
-        (Game.status == "draft", 0),
-        (Game.status == "open", 1),
-        (Game.status == "closed", 2),
-        (Game.status == "archived", 3),
-    )
-    is_future = case((Game.date >= now, 0), else_=1)
-    time_distance = func.abs(func.extract("epoch", Game.date - now))
-
-    from website.services.setting import SettingsService
+    if extra_filters:
+        filters.update(extra_filters)
 
     per_page = SettingsService().get_games_per_page()
     page = request_args_source.get("page", 1, type=int)
-    query = base_query or Game.query
-    games = (
-        query.filter(*queries)
-        .order_by(status_order, is_future, time_distance)
-        .paginate(page=page, per_page=per_page, error_out=False)
-    )
+
+    games = GameService().search(filters, page=page, per_page=per_page, user_payload=user_payload)
 
     return games, request_args
 
@@ -198,7 +149,7 @@ def get_filtered_user_games(request_args_source, user_id, user_payload, role="gm
         role: Filter role - 'gm' for games as GM, 'player' for games as player.
 
     Returns:
-        Tuple of (pagination object, request_args dict for URL generation).
+        Tuple of (Pagination, request_args dict for URL generation).
 
     Raises:
         NotFoundError: If the user does not exist.
@@ -206,19 +157,18 @@ def get_filtered_user_games(request_args_source, user_id, user_payload, role="gm
     """
     from website.services.user import UserService
 
-    user = UserService().get_by_id(user_id)
+    UserService().get_by_id(user_id)
 
     if role == "gm":
-        base_query = Game.query.filter(Game.gm_id == user_id)
+        extra_filters = {"gm_id": user_id}
     elif role == "player":
-        game_ids = [game.id for game in user.games]
-        base_query = Game.query.filter(Game.id.in_(game_ids))
+        extra_filters = {"player_id": user_id}
     else:
         raise ValidationError("Invalid role.", field="role")
 
     return get_filtered_games(
         request_args_source,
         user_payload,
-        base_query,
+        extra_filters=extra_filters,
         default_status=["draft", "open", "closed", "archived"],
     )

@@ -151,8 +151,10 @@ def list_games():
         "is_admin": g.current_user.get("is_admin", False),
     }
 
-    games, total = game_service.search(filters, page, per_page, user_payload)
-    return paginated_response([game.to_dict() for game in games], total, page, per_page)
+    result = game_service.search(filters, page, per_page, user_payload)
+    return paginated_response(
+        [game.to_dict() for game in result.items], result.total, page, per_page
+    )
 
 
 @games_bp.route("/games/<slug>/", methods=["GET"])

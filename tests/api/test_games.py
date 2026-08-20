@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 from website.exceptions import GamePostingBlockedError, NotFoundError
+from website.repositories.base import Pagination
 
 VALID_GAME_PAYLOAD = {
     "name": "Test Game",
@@ -68,7 +69,7 @@ class TestListGames:
         """Returns paginated list of games."""
         game = MagicMock()
         game.to_dict.return_value = {"id": 1, "name": "Test Game", "slug": "test-game"}
-        mock_service.search.return_value = ([game], 1)
+        mock_service.search.return_value = Pagination(items=[game], total=1, page=1, per_page=20)
 
         response = api_client.get("/api/v1/games/", headers=auth_headers_user)
         assert response.status_code == 200
@@ -86,7 +87,7 @@ class TestListGames:
     @patch("website.api.games.game_service")
     def test_passes_filters_to_service(self, mock_service, api_client, auth_headers_user):
         """Query parameters are passed as filters to the service."""
-        mock_service.search.return_value = ([], 0)
+        mock_service.search.return_value = Pagination(items=[], total=0, page=1, per_page=20)
 
         api_client.get(
             "/api/v1/games/?status=open&type=oneshot&name=dragon&system_id=1",
@@ -103,7 +104,7 @@ class TestListGames:
     @patch("website.api.games.game_service")
     def test_default_pagination(self, mock_service, api_client, auth_headers_user):
         """Default pagination is page=1, per_page=20."""
-        mock_service.search.return_value = ([], 0)
+        mock_service.search.return_value = Pagination(items=[], total=0, page=1, per_page=20)
 
         api_client.get("/api/v1/games/", headers=auth_headers_user)
 
@@ -114,7 +115,7 @@ class TestListGames:
     @patch("website.api.games.game_service")
     def test_custom_pagination(self, mock_service, api_client, auth_headers_user):
         """Custom page and per_page are forwarded."""
-        mock_service.search.return_value = ([], 0)
+        mock_service.search.return_value = Pagination(items=[], total=0, page=1, per_page=20)
 
         api_client.get("/api/v1/games/?page=3&per_page=50", headers=auth_headers_user)
 
@@ -125,7 +126,7 @@ class TestListGames:
     @patch("website.api.games.game_service")
     def test_user_payload_from_jwt(self, mock_service, api_client, auth_headers_user):
         """User payload is derived from JWT claims."""
-        mock_service.search.return_value = ([], 0)
+        mock_service.search.return_value = Pagination(items=[], total=0, page=1, per_page=20)
 
         api_client.get("/api/v1/games/", headers=auth_headers_user)
 

@@ -32,6 +32,7 @@ from website.exceptions import (
 )
 from website.extensions import db
 from website.models import Game, GameViewer, User
+from website.repositories.base import Pagination
 from website.repositories.game import GameRepository
 from website.repositories.game_viewer import GameViewerRepository
 from website.services.channel import ChannelService
@@ -101,12 +102,12 @@ class GameService:
             (int count of open games beyond the preview).
         """
         open_limit = self.settings_service.get_dashboard_open_limit()
-        open_games, open_total = self.repo.search(
+        result = self.repo.search(
             {"status": ["open"]}, page=1, per_page=open_limit, user_payload=user_payload
         )
         return {
-            "open_games": open_games,
-            "open_hidden": max(open_total - len(open_games), 0),
+            "open_games": result.items,
+            "open_hidden": max(result.total - len(result.items), 0),
         }
 
     @staticmethod
@@ -1554,7 +1555,7 @@ class GameService:
         page: int = 1,
         per_page: int = 20,
         user_payload: Optional[dict] = None,
-    ) -> tuple[list[Game], int]:
+    ) -> Pagination[Game]:
         """Search games with filters.
 
         Args:
@@ -1564,6 +1565,6 @@ class GameService:
             user_payload: User auth payload.
 
         Returns:
-            Tuple of (games list, total count).
+            Pagination of matching games.
         """
         return self.repo.search(filters, page, per_page, user_payload)

@@ -114,10 +114,10 @@ def get_my_games():
         "is_admin": g.current_user.get("is_admin", False),
     }
 
-    games, total = game_service.search(filters, page, per_page, user_payload)
+    result = game_service.search(filters, page, per_page, user_payload)
     return paginated_response(
-        [game.to_dict(include_relationships=True) for game in games],
-        total,
+        [game.to_dict(include_relationships=True) for game in result.items],
+        result.total,
         page,
         per_page,
     )
@@ -153,10 +153,10 @@ def get_my_gm_games():
         "is_admin": g.current_user.get("is_admin", False),
     }
 
-    games, total = game_service.search(filters, page, per_page, user_payload)
+    result = game_service.search(filters, page, per_page, user_payload)
     return paginated_response(
-        [game.to_dict(include_relationships=True) for game in games],
-        total,
+        [game.to_dict(include_relationships=True) for game in result.items],
+        result.total,
         page,
         per_page,
     )
