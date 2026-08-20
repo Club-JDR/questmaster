@@ -266,60 +266,60 @@ class TestGameRepository:
 
     def test_search_basic(self, db_session, sample_game, published_game):
         repo = GameRepository()
-        games, total = repo.search(
+        result = repo.search(
             filters={"status": ["open"], "game_type": ["oneshot", "campaign"]},
             page=1,
             per_page=20,
         )
-        assert total >= 1
-        assert len(games) >= 1
+        assert result.total >= 1
+        assert len(result.items) >= 1
 
     def test_search_by_status(self, db_session, sample_game, published_game):
         repo = GameRepository()
         user_payload = {"user_id": sample_game.gm_id, "is_admin": True}
-        games, _ = repo.search(
+        result = repo.search(
             filters={"status": ["draft"]},
             page=1,
             per_page=20,
             user_payload=user_payload,
         )
-        assert any(g.status == "draft" for g in games)
+        assert any(g.status == "draft" for g in result.items)
 
     def test_search_by_type(self, db_session, published_game):
         repo = GameRepository()
-        games, _ = repo.search(
+        result = repo.search(
             filters={"game_type": ["campaign"], "status": ["open"]},
             page=1,
             per_page=20,
         )
-        assert all(g.type == "campaign" for g in games)
+        assert all(g.type == "campaign" for g in result.items)
 
     def test_search_by_name(self, db_session, published_game):
         repo = GameRepository()
-        games, _ = repo.search(
+        result = repo.search(
             filters={"name": "Published"},
             page=1,
             per_page=20,
         )
-        assert any(g.slug == published_game.slug for g in games)
+        assert any(g.slug == published_game.slug for g in result.items)
 
     def test_search_by_system(self, db_session, sample_game, default_system):
         repo = GameRepository()
-        games, _ = repo.search(
+        result = repo.search(
             filters={"system_id": default_system.id},
             page=1,
             per_page=20,
         )
-        assert all(g.system_id == default_system.id for g in games)
+        assert all(g.system_id == default_system.id for g in result.items)
 
     def test_search_by_gm(self, db_session, sample_game, admin_user):
         repo = GameRepository()
-        games, _ = repo.search(
+        result = repo.search(
             filters={"gm_id": admin_user.id},
             page=1,
             per_page=20,
         )
-        assert all(g.gm_id == admin_user.id for g in games)
+        assert all(g.gm_id == admin_user.id for g in result.items)
 
     def test_search_pagination(self, db_session, admin_user, default_system):
         for i in range(5):
@@ -332,20 +332,20 @@ class TestGameRepository:
             )
 
         repo = GameRepository()
-        games_p1, total = repo.search(
+        result_p1 = repo.search(
             filters={"status": ["open"]},
             page=1,
             per_page=3,
         )
-        assert len(games_p1) <= 3
-        assert total >= 5
+        assert len(result_p1.items) <= 3
+        assert result_p1.total >= 5
 
-        games_p2, total = repo.search(
+        result_p2 = repo.search(
             filters={"status": ["open"]},
             page=2,
             per_page=3,
         )
-        assert len(games_p2) >= 1
+        assert len(result_p2.items) >= 1
 
     def test_add_and_commit(self, db_session, admin_user, default_system):
         repo = GameRepository()

@@ -1309,15 +1309,15 @@ class TestGameService:
         assert "slug" in game_data
 
     def test_search(self, db_session, sample_game, game_service):
-        games, total = game_service.search(
+        result = game_service.search(
             filters={"status": ["draft"], "game_type": ["oneshot"]},
             page=1,
             per_page=20,
             user_payload={"user_id": sample_game.gm_id, "is_admin": True},
         )
 
-        assert total >= 1
-        assert len(games) >= 1
+        assert result.total >= 1
+        assert len(result.items) >= 1
 
 
 class TestGameServicePrivateHelpers:
@@ -1685,11 +1685,11 @@ class TestGetOpenPreview:
             GameFactory(db_session, status="open", gm_id=gm.id, system_id=default_system.id)
 
         # Restrict the count to this GM's games by filtering on gm in the search payload.
-        games, total = game_service.repo.search(
+        result = game_service.repo.search(
             {"status": ["open"], "gm_id": gm.id}, page=1, per_page=limit
         )
-        assert len(games) == limit
-        assert max(total - len(games), 0) == extra
+        assert len(result.items) == limit
+        assert max(result.total - len(result.items), 0) == extra
 
 
 class TestGameServiceViewers:

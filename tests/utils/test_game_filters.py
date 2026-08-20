@@ -1,7 +1,8 @@
 """Unit tests for website.utils.game_filters module.
 
-Tests filter-building functions in isolation (pure logic and SQLAlchemy
-filter construction) and integration tests for the paginated query helpers.
+Tests the checkbox-args translation helpers in isolation (pure logic) and
+integration tests for the paginated query helpers, which delegate all
+query-building to ``GameRepository.search()``.
 """
 
 import pytest
@@ -18,8 +19,6 @@ from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
 from tests.factories import GameFactory
 from website.exceptions import NotFoundError, ValidationError
 from website.utils.game_filters import (
-    build_base_filters,
-    build_status_filters,
     get_filtered_games,
     get_filtered_user_games,
     normalize_search_defaults,
@@ -55,70 +54,6 @@ class TestParseMultiCheckboxFilter:
         filters, args = parse_multi_checkbox_filter(source, ["open", "closed"])
         assert filters == ["open"]
         assert args == {"open": "on"}
-
-
-# ---------------------------------------------------------------------------
-# build_base_filters
-# ---------------------------------------------------------------------------
-
-
-class TestBuildBaseFilters:
-    def test_no_filters(self):
-        request_args = {}
-        filters = build_base_filters(request_args, None, None, None)
-        assert filters == []
-        assert request_args == {}
-
-    def test_name_filter(self):
-        request_args = {}
-        filters = build_base_filters(request_args, "Cthulhu", None, None)
-        assert len(filters) == 1
-        assert request_args == {"name": "Cthulhu"}
-
-    def test_system_filter(self):
-        request_args = {}
-        filters = build_base_filters(request_args, None, 5, None)
-        assert len(filters) == 1
-        assert request_args == {"system": 5}
-
-    def test_vtt_filter(self):
-        request_args = {}
-        filters = build_base_filters(request_args, None, None, 3)
-        assert len(filters) == 1
-        assert request_args == {"vtt": 3}
-
-    def test_all_filters(self):
-        request_args = {}
-        filters = build_base_filters(request_args, "test", 1, 2)
-        assert len(filters) == 3
-        assert request_args == {"name": "test", "system": 1, "vtt": 2}
-
-
-# ---------------------------------------------------------------------------
-# build_status_filters
-# ---------------------------------------------------------------------------
-
-
-class TestBuildStatusFilters:
-    def test_non_draft_status(self):
-        user_payload = {"user_id": "123", "is_admin": False}
-        result = build_status_filters(["open"], user_payload)
-        assert result is not None
-
-    def test_draft_for_admin(self):
-        user_payload = {"user_id": "123", "is_admin": True}
-        result = build_status_filters(["draft"], user_payload)
-        assert result is not None
-
-    def test_draft_for_non_admin(self):
-        user_payload = {"user_id": "123", "is_admin": False}
-        result = build_status_filters(["draft"], user_payload)
-        assert result is not None
-
-    def test_multiple_statuses(self):
-        user_payload = {"user_id": "123", "is_admin": False}
-        result = build_status_filters(["open", "closed", "draft"], user_payload)
-        assert result is not None
 
 
 # ---------------------------------------------------------------------------
@@ -299,6 +234,38 @@ class TestGetFilteredGames:
         games, _ = get_filtered_games(source, user_payload, default_status=["archived"])
         statuses = [g.status for g in games.items]
         assert all(s == GAME_STATUS_ARCHIVED for s in statuses)
+
+    def test_extra_filters_scope_the_search(
+        self, db_session, admin_user, default_system, default_vtt
+    ):
+        """``extra_filters`` merges straight into the GameRepository.search() filters dict.
+
+        Used by ``search_games_by_event`` (special_event_id) and
+        ``get_filtered_user_games`` (gm_id/player_id) instead of a base query.
+        """
+        GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            status=GAME_STATUS_OPEN,
+            name="Other Game",
+        )
+        target = GameFactory(
+            db_session,
+            gm_id=admin_user.id,
+            system_id=default_system.id,
+            vtt_id=default_vtt.id,
+            status=GAME_STATUS_OPEN,
+            name="Target Game",
+        )
+        source = MultiDict({"open": "on"})
+        user_payload = {"user_id": TEST_ADMIN_USER_ID, "is_admin": True}
+        games, _ = get_filtered_games(
+            source, user_payload, extra_filters={"gm_id": admin_user.id, "name": "Target"}
+        )
+        names = {g.name for g in games.items}
+        assert names == {target.name}
 
 
 # ---------------------------------------------------------------------------

@@ -166,12 +166,10 @@ def search_games_by_event(event_id):
         flash("L'événement demandé n'existe pas.", "warning")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
 
-    base_query = game_service.repo.query_by_special_event(event_id)
-
     games, request_args = get_filtered_games(
         request.args,
         who(),
-        base_query=base_query,
+        extra_filters={"special_event_id": event_id},
         default_status=["open"],
         default_type=["oneshot"],
     )
