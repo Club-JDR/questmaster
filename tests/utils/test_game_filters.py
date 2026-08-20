@@ -16,7 +16,7 @@ from config.constants import (
 )
 from tests.constants import TEST_ADMIN_USER_ID, TEST_REGULAR_USER_ID
 from tests.factories import GameFactory
-from website.exceptions import ValidationError
+from website.exceptions import NotFoundError, ValidationError
 from website.utils.game_filters import (
     build_base_filters,
     build_status_filters,
@@ -354,11 +354,9 @@ class TestGetFilteredUserGames:
             get_filtered_user_games(source, TEST_ADMIN_USER_ID, user_payload, role="invalid")
         assert exc_info.value.field == "role"
 
-    def test_nonexistent_user_returns_empty(self, db_session):
+    def test_nonexistent_user_raises_not_found(self, db_session):
+        """A missing user raises NotFoundError instead of an unusable ([], {}) shape."""
         source = MultiDict({})
         user_payload = {"user_id": "nonexistent", "is_admin": False}
-        result, args = get_filtered_user_games(
-            source, "nonexistent_user_999", user_payload, role="gm"
-        )
-        assert result == []
-        assert args == {}
+        with pytest.raises(NotFoundError):
+            get_filtered_user_games(source, "nonexistent_user_999", user_payload, role="gm")
