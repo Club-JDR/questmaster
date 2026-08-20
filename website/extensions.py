@@ -80,11 +80,17 @@ def _seed_test_data():
 
 
 def _setup_test_database():
-    """Seed default trophy records into the database."""
+    """Create tables and seed reference data (test fixtures + trophies) for tests.
+
+    The ``setval`` calls push the id sequences past the hardcoded reference
+    ids (trophies 1-4, special event 1000) so factory-created rows can never
+    collide with them, even on a long-lived dev database.
+    """
     db.create_all()
     _seed_test_data()
     _seed_trophies()
     db.session.execute(db.text("SELECT setval('trophy_id_seq', 100, false);"))
+    db.session.execute(db.text("SELECT setval('special_event_id_seq', 1000, true);"))
     db.session.commit()
 
 
