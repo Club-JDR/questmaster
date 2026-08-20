@@ -1,15 +1,18 @@
 """Authentication views and helpers for Discord OAuth2."""
 
 import functools
+import logging
 from urllib.parse import urljoin, urlparse
 
 import requests as http_requests
 from flask import Blueprint, current_app, redirect, request, session, url_for
 
 from config.constants import MSG_ADMIN_ACCESS_REQUIRED, SEARCH_GAMES_ROUTE
-from website.exceptions import UnauthorizedError
+from website.exceptions import NotFoundError, UnauthorizedError
 from website.extensions import oauth
 from website.services.user import UserService
+
+logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -43,9 +46,30 @@ def session_fields(user) -> dict:
 
 
 def who():
-    """Initialize session with user information from Discord API."""
+    """Initialize session with user information from Discord API.
+
+    Raises:
+        UnauthorizedError: If the session's user id no longer has a matching
+            DB row (e.g. the account was deleted while the browser still held
+            a valid session cookie). The stale session is cleared first, so
+            the current request ends in a clean 403 instead of callers
+            indexing a payload that's now missing its usual keys — and every
+            following request is treated as logged-out rather than repeating
+            this same error until the cookie expires.
+
+    Returns:
+        The session, refreshed from the current user's DB row and Discord profile.
+    """
     if "user_id" in session:
-        user = UserService().get_by_id(str(session["user_id"]))
+        user_id = session["user_id"]
+        try:
+            user = UserService().get_by_id(str(user_id))
+        except NotFoundError:
+            session.clear()
+            logger.info("Cleared session for deleted user %s", user_id)
+            raise UnauthorizedError(
+                "Session user no longer exists.", user_id=user_id, action="session"
+            ) from None
         user.refresh_roles()
         session.update(session_fields(user))
     return session
