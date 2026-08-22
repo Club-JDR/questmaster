@@ -48,7 +48,6 @@ class Discord:
         self._session = requests.Session()
         adapter = HTTPAdapter(pool_maxsize=DISCORD_POOL_MAXSIZE)
         self._session.mount("https://", adapter)
-        self._session.mount("http://", adapter)
 
     def _make_headers(self, authorization=""):
         headers = {
@@ -105,59 +104,108 @@ class Discord:
         rate_limit_retries_left = max_rate_limit_retries
 
         while True:
-            try:
-                r = self._session.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=json,
-                    params=params,
-                    timeout=DISCORD_REQUEST_TIMEOUT,
-                )
-            except requests.RequestException as exc:
-                # Network-level failure (timeout, connection refused, DNS...): surface
-                # it as the same DiscordAPIError callers already catch, instead of an
-                # unhandled 500.
-                raise DiscordAPIError(f"Discord request failed: {exc}", status_code=503) from exc
+            r = self._send(method, url, headers, json, params)
 
-            # Handle rate limiting (HTTP 429)
             if r.status_code == 429:
-                data = r.json()
-                retry_after = float(data.get("retry_after", 1))
-                if retry_after > DISCORD_RATE_LIMIT_MAX_WAIT:
-                    raise DiscordAPIError(
-                        f"Discord rate limit retry_after ({retry_after:.2f}s) exceeds the "
-                        f"{DISCORD_RATE_LIMIT_MAX_WAIT}s cap",
-                        status_code=429,
-                    )
-                if rate_limit_retries_left <= 0:
-                    raise DiscordAPIError(
-                        f"Discord rate-limited the request {max_rate_limit_retries} times "
-                        "in a row",
-                        status_code=429,
-                    )
+                retry_after = self._resolve_retry_after(
+                    r, rate_limit_retries_left, max_rate_limit_retries
+                )
                 rate_limit_retries_left -= 1
                 logger.warning("Rate limited by Discord. Retrying after %.2f s...", retry_after)
                 time.sleep(retry_after)
                 continue
 
-            # Handle non-success codes
-            if not r.ok:
-                try:
-                    err_json = r.json()
-                except Exception:
-                    err_json = {"message": r.text}
-                raise DiscordAPIError(
-                    err_json.get("message", "Unknown error"),
-                    status_code=r.status_code,
-                    response=err_json,
-                )
+            return self._parse_response(r)
 
-            # Some endpoints return 204 No Content
-            if r.status_code == 204 or not r.content:
-                return {}
+    def _send(self, method, url, headers, json, params):
+        """Issue the one real HTTP attempt, translating network failures.
 
-            return r.json()
+        Args:
+            method: HTTP method.
+            url: Full request URL.
+            headers: Request headers.
+            json: JSON body, or None.
+            params: Query params, or None.
+
+        Returns:
+            The raw ``requests.Response``.
+
+        Raises:
+            DiscordAPIError: If the request fails at the network level
+                (timeout, connection refused, DNS...).
+        """
+        try:
+            return self._session.request(
+                method,
+                url,
+                headers=headers,
+                json=json,
+                params=params,
+                timeout=DISCORD_REQUEST_TIMEOUT,
+            )
+        except requests.RequestException as exc:
+            # Surface it as the same DiscordAPIError callers already catch,
+            # instead of an unhandled 500.
+            raise DiscordAPIError(f"Discord request failed: {exc}", status_code=503) from exc
+
+    def _resolve_retry_after(self, r, retries_left, max_retries) -> float:
+        """Validate a 429 response and return how long to wait before retrying.
+
+        Args:
+            r: The 429 ``requests.Response``.
+            retries_left: Rate-limit retries remaining before this attempt.
+            max_retries: The budget's configured ceiling (for the error message).
+
+        Returns:
+            Seconds to sleep before retrying.
+
+        Raises:
+            DiscordAPIError: If the requested wait exceeds the configured cap,
+                or the retry budget is exhausted.
+        """
+        data = r.json()
+        retry_after = float(data.get("retry_after", 1))
+        if retry_after > DISCORD_RATE_LIMIT_MAX_WAIT:
+            raise DiscordAPIError(
+                f"Discord rate limit retry_after ({retry_after:.2f}s) exceeds the "
+                f"{DISCORD_RATE_LIMIT_MAX_WAIT}s cap",
+                status_code=429,
+            )
+        if retries_left <= 0:
+            raise DiscordAPIError(
+                f"Discord rate-limited the request {max_retries} times in a row",
+                status_code=429,
+            )
+        return retry_after
+
+    def _parse_response(self, r):
+        """Turn a non-429 response into the decoded payload, or raise on failure.
+
+        Args:
+            r: The ``requests.Response`` to parse.
+
+        Returns:
+            The decoded JSON body, or ``{}`` for a 204/empty response.
+
+        Raises:
+            DiscordAPIError: If the response status is not a success code.
+        """
+        if not r.ok:
+            try:
+                err_json = r.json()
+            except Exception:
+                err_json = {"message": r.text}
+            raise DiscordAPIError(
+                err_json.get("message", "Unknown error"),
+                status_code=r.status_code,
+                response=err_json,
+            )
+
+        # Some endpoints return 204 No Content
+        if r.status_code == 204 or not r.content:
+            return {}
+
+        return r.json()
 
     def get_user(self, user_id: str) -> dict:
         """Fetch a guild member's data from Discord.

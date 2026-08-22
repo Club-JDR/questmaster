@@ -18,6 +18,8 @@ systems_bp = Blueprint("systems", __name__, url_prefix="/systemes")
 
 system_service = SystemService()
 
+GET_SYSTEM_ROUTE = "systems.get_system"
+
 
 @systems_bp.route("/", methods=["GET"])
 def list_systems():
@@ -28,7 +30,7 @@ def list_systems():
         items=systems,
         title="Systèmes",
         icon="ph-cube",
-        detail_endpoint="systems.get_system",
+        detail_endpoint=GET_SYSTEM_ROUTE,
     )
 
 
@@ -68,7 +70,7 @@ def toggle_interest(system_id):
         )
     except ValidationError:
         flash("Rôle d'intérêt invalide.", "danger")
-        return redirect(url_for("systems.get_system", system_id=system_id))
+        return redirect(url_for(GET_SYSTEM_ROUTE, system_id=system_id))
 
     flash("Intérêt enregistré." if added else "Intérêt retiré.", "success")
-    return redirect(url_for("systems.get_system", system_id=system_id))
+    return redirect(url_for(GET_SYSTEM_ROUTE, system_id=system_id))

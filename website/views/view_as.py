@@ -25,6 +25,8 @@ view_as_bp = Blueprint("view_as", __name__, url_prefix="/admin/view-as")
 
 user_service = UserService()
 
+DASHBOARD_ROUTE = "annonces.dashboard"
+
 
 @view_as_bp.route("/<user_id>/", methods=["POST"])
 @admin_only
@@ -32,7 +34,7 @@ def start(user_id):
     """Start impersonating another user as a superuser admin."""
     if "impersonator_id" in session:
         flash("Vous incarnez déjà un autre utilisateur.", "warning")
-        return redirect(url_for("annonces.dashboard"))
+        return redirect(url_for(DASHBOARD_ROUTE))
 
     try:
         target = user_service.validate_impersonation_target(session["user_id"], user_id)
@@ -54,7 +56,7 @@ def start(user_id):
         f"{sanitize_log_value(target.id)}"
     )
     flash(f"Vous incarnez maintenant {target.name}.", "success")
-    return redirect(url_for("annonces.dashboard"))
+    return redirect(url_for(DASHBOARD_ROUTE))
 
 
 @view_as_bp.route("/stop/", methods=["POST"])
@@ -63,7 +65,7 @@ def stop():
     """Stop impersonating and restore the real admin's session."""
     impersonator_id = session.get("impersonator_id")
     if not impersonator_id:
-        return redirect(url_for("annonces.dashboard"))
+        return redirect(url_for(DASHBOARD_ROUTE))
 
     impersonated_id = session.get("user_id")
     logger.info(
@@ -78,11 +80,11 @@ def stop():
         # session entirely rather than leaving a half-restored state.
         session.clear()
         flash("Compte administrateur introuvable, session réinitialisée.", "danger")
-        return redirect(url_for("annonces.dashboard"))
+        return redirect(url_for(DASHBOARD_ROUTE))
 
     admin.refresh_roles()
     session.pop("impersonator_id", None)
     session.pop("impersonator_username", None)
     session.update(session_fields(admin))
     flash("Vous avez repris votre propre compte.", "success")
-    return redirect(url_for("annonces.dashboard"))
+    return redirect(url_for(DASHBOARD_ROUTE))
