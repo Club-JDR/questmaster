@@ -48,3 +48,20 @@ class TestEngineOptions:
         options = Settings.SQLALCHEMY_ENGINE_OPTIONS
         assert options["pool_pre_ping"] is True
         assert options["pool_recycle"] == 1800
+
+
+class TestMaxContentLength:
+    """An unbounded request body is a resource-exhaustion vector."""
+
+    def test_max_content_length_is_set(self):
+        assert Settings.MAX_CONTENT_LENGTH is not None
+        assert Settings.MAX_CONTENT_LENGTH > 0
+
+    def test_oversized_request_is_rejected(self, client):
+        oversized = b"x" * (Settings.MAX_CONTENT_LENGTH + 1)
+        response = client.post(
+            "/annonce/",
+            data=oversized,
+            content_type="application/x-www-form-urlencoded",
+        )
+        assert response.status_code == 413
