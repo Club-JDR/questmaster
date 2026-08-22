@@ -31,6 +31,12 @@ services:
     image: ghcr.io/club-jdr/questmaster:${TAG:-latest}
     entrypoint: [ "python", "scheduler_entrypoint.py" ]
     restart: always
+    # Disable the image's baked-in HEALTHCHECK (curl localhost:8000/): this
+    # service never starts a web server, so that check can never succeed.
+    # Nothing depends on this service's health, so this is purely cosmetic —
+    # docker/compose just shouldn't report a false "unhealthy".
+    healthcheck:
+      disable: true
     env_file:
       - .env
     environment:
