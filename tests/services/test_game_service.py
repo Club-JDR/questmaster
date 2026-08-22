@@ -298,6 +298,42 @@ class TestGameService:
         with pytest.raises(GamePostingBlockedError):
             game_service.create(data, admin_user.id)
 
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_create_rejects_malformed_img_url(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        admin_user,
+        default_system,
+        game_service,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+
+        data = {
+            "name": "Bad Img Game",
+            "type": "oneshot",
+            "length": "4h",
+            "system": default_system.id,
+            "description": "Test",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "session_length": 4.0,
+            "characters": "self",
+            "img": "not-a-url",
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            game_service.create(data, admin_user.id)
+        assert exc_info.value.field == "img"
+
     def test_publish_blocked_gm_raises(self, db_session, admin_user, default_system, game_service):
         """Publishing is blocked when the game's GM has been flagged."""
         game = GameFactory(
@@ -349,6 +385,42 @@ class TestGameService:
         assert game.restriction == "16+"
         assert game.party_size == 6
         assert game.open_to_viewers is False
+
+    @patch("website.utils.form_parsers.get_classification")
+    @patch("website.utils.form_parsers.get_ambience")
+    @patch("website.utils.form_parsers.parse_restriction_tags")
+    def test_update_rejects_malformed_img_url(
+        self,
+        mock_tags,
+        mock_ambience,
+        mock_class,
+        db_session,
+        sample_game,
+        default_system,
+        game_service,
+    ):
+        mock_class.return_value = {}
+        mock_ambience.return_value = []
+        mock_tags.return_value = None
+
+        data = {
+            "name": sample_game.name,
+            "type": "oneshot",
+            "system": default_system.id,
+            "description": "Updated description",
+            "restriction": "all",
+            "party_size": 4,
+            "xp": "all",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "length": "4h",
+            "session_length": 4.0,
+            "characters": "self",
+            "img": "javascript:alert(1)",
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            game_service.update(sample_game.slug, data)
+        assert exc_info.value.field == "img"
 
     @patch("website.utils.form_parsers.get_classification")
     @patch("website.utils.form_parsers.get_ambience")

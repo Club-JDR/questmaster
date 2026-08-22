@@ -3,6 +3,7 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
+from urllib.parse import urlparse
 
 from slugify import slugify
 from sqlalchemy.exc import SQLAlchemyError
@@ -341,6 +342,26 @@ class GameService:
                 user_id=gm.id,
             )
 
+    @staticmethod
+    def _validate_img_url(url: str | None) -> None:
+        """Ensure a game's cover image URL, if set, is a well-formed http(s) URL.
+
+        Args:
+            url: URL to validate, or None/empty (always valid).
+
+        Raises:
+            ValidationError: If set but not an absolute http(s) URL.
+        """
+        if not url:
+            return
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValidationError(
+                "img must be an absolute http(s) URL.",
+                field="img",
+                details={"value": url},
+            )
+
     def create(
         self,
         data: dict,
@@ -377,6 +398,7 @@ class GameService:
         try:
             # Parse special fields
             game_type, special_event_id = self.parse_game_type(data["type"])
+            self._validate_img_url(data.get("img"))
 
             # Create game instance
             game = Game(
@@ -527,6 +549,8 @@ class GameService:
 
         type_changed = False
         try:
+            self._validate_img_url(data.get("img"))
+
             # Only allow type/name changes if game is draft
             if game.status == "draft":
                 game_type, special_event_id = self.parse_game_type(data["type"])

@@ -69,6 +69,11 @@ class Settings:
     CACHE_KEY_PREFIX = "QuestMaster:"
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
+    # No endpoint accepts file uploads (the game form's "img" field is a URL, not
+    # a file), so this only needs to be generous enough for the largest legitimate
+    # form/JSON body (a long markdown description) while capping abuse.
+    MAX_CONTENT_LENGTH = int(os.environ.get("QM_MAX_CONTENT_LENGTH", 1 * 1024 * 1024))  # 1 MB
+
     # Session cookie hardening. The app sits behind a TLS-terminating proxy
     # (see ProxyFix in website/__init__.py), so SECURE defaults on; only
     # local `flask run`/docker dev over plain HTTP needs to opt out via
