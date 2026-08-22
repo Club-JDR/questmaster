@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 settings_service = SettingsService()
 discord_service = DiscordService()
 
+EDIT_SETTINGS_ROUTE = "admin.edit_settings"
+
 
 def _current_role_count() -> int | None:
     """Best-effort current guild role count for display, or None on failure."""
@@ -49,7 +51,7 @@ def edit_settings():
         try:
             settings_service.set_many(values, updated_by_id=session.get("user_id"))
             flash("Paramètres mis à jour.", "success")
-            return redirect(url_for("admin.edit_settings"))
+            return redirect(url_for(EDIT_SETTINGS_ROUTE))
         except ValidationError as e:
             flash(str(e), "danger")
 
@@ -97,7 +99,7 @@ def update_permissions_settings():
         flash("Paramètres mis à jour.", "success")
     except ValidationError as e:
         flash(str(e), "danger")
-    return redirect(url_for("admin.edit_settings"))
+    return redirect(url_for(EDIT_SETTINGS_ROUTE))
 
 
 @admin_bp.route("/settings/cache/", methods=["POST"])
@@ -118,4 +120,4 @@ def clear_cache():
         # clear_cache_target raises an English domain message (also used verbatim
         # by `flask clear-cache`'s CLI output) — never leak it to the admin UI.
         flash("Cible de cache inconnue.", "danger")
-    return redirect(url_for("admin.edit_settings"))
+    return redirect(url_for(EDIT_SETTINGS_ROUTE))

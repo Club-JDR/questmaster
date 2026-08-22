@@ -347,8 +347,8 @@ def create_game():
     except GamePostingBlockedError:
         flash(_POSTING_BLOCKED_MESSAGE, "danger")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
-    except QuestMasterError as e:
-        logger.error(f"Failed to save game: {e}", exc_info=True)
+    except QuestMasterError:
+        logger.exception("Failed to save game")
         flash("Une erreur est survenue pendant la création de l'annonce.", "danger")
         return redirect(url_for(SEARCH_GAMES_ROUTE))
 
@@ -391,12 +391,12 @@ def edit_game(slug):
         # Edits are saved (still a draft); only the publish step was blocked.
         flash(_POSTING_BLOCKED_MESSAGE, "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    except DiscordAPIError as e:
-        logger.error(f"Discord error while editing game {slug}: {e}", exc_info=True)
+    except DiscordAPIError:
+        logger.exception(f"Discord error while editing game {slug}")
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    except QuestMasterError as e:
-        logger.error(f"Failed to edit game {slug}: {e}", exc_info=True)
+    except QuestMasterError:
+        logger.exception(f"Failed to edit game {slug}")
         flash("Une erreur est survenue pendant l'enregistrement.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -441,9 +441,9 @@ def send_alert(slug):
         )
         flash("Signalement effectué.", "success")
         log_game_event("alert", game.id, "Un signalement a été fait.")
-    except DiscordAPIError as e:
+    except DiscordAPIError:
         flash("Une erreur est survenue lors du signalement.", "danger")
-        logger.error(f"Failed to send alert: {e}", exc_info=True)
+        logger.exception("Failed to send alert")
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -471,9 +471,9 @@ def notify_players(slug):
             flash("Cette annonce n'a pas de salon Discord associé.", "danger")
         else:
             flash("Le message de notification est vide.", "danger")
-    except DiscordAPIError as e:
+    except DiscordAPIError:
         flash("Une erreur est survenue lors de la notification.", "danger")
-        logger.error(f"Failed to notify players for game {slug}: {e}", exc_info=True)
+        logger.exception(f"Failed to notify players for game {slug}")
 
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -809,8 +809,8 @@ def create_branch_game(slug):
     except GamePostingBlockedError:
         flash(_POSTING_BLOCKED_MESSAGE, "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
-    except QuestMasterError as e:
-        logger.error(f"Failed to branch game {slug} into a one-shot: {e}", exc_info=True)
+    except QuestMasterError:
+        logger.exception(f"Failed to branch game {slug} into a one-shot")
         flash("Une erreur est survenue pendant la création du one-shot.", "danger")
         return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 
@@ -825,10 +825,8 @@ def create_branch_game(slug):
         # The draft is already saved; send the GM back to fix the date or confirm.
         flash(_PAST_DATE_MESSAGE, "warning")
         return redirect(url_for(GAME_EDIT_FORM_ROUTE, slug=new_game.slug))
-    except DiscordAPIError as e:
-        logger.error(
-            f"Failed to set up resources for branched game {new_game.slug}: {e}", exc_info=True
-        )
+    except DiscordAPIError:
+        logger.exception(f"Failed to set up resources for branched game {new_game.slug}")
         flash(
             "Le one-shot a été créé en brouillon, mais la mise en place a échoué. "
             "Réessayez de le publier depuis sa page.",
@@ -957,8 +955,8 @@ def _handle_publish(slug, user_id=None):
         flash(_POSTING_BLOCKED_MESSAGE, "danger")
     except ValidationError as e:
         flash(e.message, "danger")
-    except DiscordAPIError as e:
-        logger.error(f"Failed to publish game {slug}: {e}")
+    except DiscordAPIError:
+        logger.exception(f"Failed to publish game {slug}")
         flash("Une erreur est survenue pendant la publication.", "danger")
     return redirect(url_for(GAME_DETAILS_ROUTE, slug=slug))
 

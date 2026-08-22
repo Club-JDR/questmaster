@@ -22,6 +22,9 @@ from website.views.auth import require_permission
 moderation_service = ModerationService()
 user_service = UserService()
 
+LIST_INFRACTIONS_ROUTE = "admin.list_infractions"
+USER_INFRACTIONS_ROUTE = "admin.user_infractions"
+
 
 def _parse_created_at(raw: str | None) -> datetime | None:
     """Parse a ``datetime-local`` form value as aware UTC, or None.
@@ -95,7 +98,7 @@ def user_infractions(user_id):
         user = user_service.get_by_id(user_id)
     except NotFoundError:
         flash("Utilisateur introuvable.", "danger")
-        return redirect(url_for("admin.list_infractions"))
+        return redirect(url_for(LIST_INFRACTIONS_ROUTE))
 
     if request.method == "POST":
         try:
@@ -111,7 +114,7 @@ def user_infractions(user_id):
                 },
             )
             flash("Infraction enregistrée.", "success")
-            return redirect(url_for("admin.user_infractions", user_id=user.id))
+            return redirect(url_for(USER_INFRACTIONS_ROUTE, user_id=user.id))
         except ValidationError as e:
             _flash_validation_error(e)
 
@@ -131,7 +134,7 @@ def edit_infraction(infraction_id):
         infraction = moderation_service.get_by_id(infraction_id)
     except NotFoundError:
         flash("Infraction introuvable.", "danger")
-        return redirect(url_for("admin.list_infractions"))
+        return redirect(url_for(LIST_INFRACTIONS_ROUTE))
 
     if request.method == "POST":
         try:
@@ -146,7 +149,7 @@ def edit_infraction(infraction_id):
                 },
             )
             flash("Infraction mise à jour.", "success")
-            return redirect(url_for("admin.user_infractions", user_id=infraction.user_id))
+            return redirect(url_for(USER_INFRACTIONS_ROUTE, user_id=infraction.user_id))
         except ValidationError as e:
             _flash_validation_error(e)
 
@@ -165,9 +168,9 @@ def delete_infraction(infraction_id):
         infraction = moderation_service.get_by_id(infraction_id)
     except NotFoundError:
         flash("Infraction introuvable.", "danger")
-        return redirect(url_for("admin.list_infractions"))
+        return redirect(url_for(LIST_INFRACTIONS_ROUTE))
 
     user_id = infraction.user_id
     moderation_service.delete(infraction_id)
     flash("Infraction supprimée.", "success")
-    return redirect(url_for("admin.user_infractions", user_id=user_id))
+    return redirect(url_for(USER_INFRACTIONS_ROUTE, user_id=user_id))

@@ -252,28 +252,58 @@ def resolve_game_form_defaults(game=None, user=None, systems=None, vtts=None) ->
         Dict covering every field in :data:`ALL_FIELDS`, ready to plug into
         ``game_form.j2`` as e.g. ``defaults.description``.
     """
-    resolved = {field: APP_DEFAULTS.get(field) for field in ALL_FIELDS}
-
     if game is not None:
-        for field in ALL_FIELDS:
-            resolved[field] = _game_field_value(game, field)
-        return resolved
+        return {field: _game_field_value(game, field) for field in ALL_FIELDS}
 
-    valid_ids = {
+    resolved = {field: APP_DEFAULTS.get(field) for field in ALL_FIELDS}
+    valid_ids = _valid_fk_ids(systems, vtts)
+    user_defaults = getattr(user, "game_defaults", None) or {} if user is not None else {}
+    for field, validate in USER_DEFAULT_FIELDS.items():
+        value = _resolve_user_default(field, validate, user_defaults, valid_ids)
+        if value is not None:
+            resolved[field] = value
+
+    return resolved
+
+
+def _valid_fk_ids(systems, vtts) -> dict:
+    """Build the set of currently valid IDs for each FK-backed default field.
+
+    Args:
+        systems: Currently available System instances/dicts (with an ``id``),
+            or None.
+        vtts: Currently available Vtt instances/dicts (with an ``id``), or None.
+
+    Returns:
+        Dict mapping "system"/"vtt" to their valid-ID set, or None per field
+        if the corresponding collection wasn't supplied.
+    """
+    return {
         "system": {s.id for s in systems} if systems is not None else None,
         "vtt": {v.id for v in vtts} if vtts is not None else None,
     }
-    user_defaults = getattr(user, "game_defaults", None) or {} if user is not None else {}
-    for field, validate in USER_DEFAULT_FIELDS.items():
-        if field not in user_defaults:
-            continue
-        value = validate(user_defaults[field])
-        if value is None:
-            continue
-        if field in _FK_FIELDS:
-            allowed = valid_ids.get(field)
-            if allowed is not None and value not in allowed:
-                continue
-        resolved[field] = value
 
-    return resolved
+
+def _resolve_user_default(field, validate, user_defaults, valid_ids):
+    """Validate one field's saved user default, cross-checking FK freshness.
+
+    Args:
+        field: Form field name.
+        validate: The field's validator, from :data:`USER_DEFAULT_FIELDS`.
+        user_defaults: Raw ``user.game_defaults`` mapping (possibly empty).
+        valid_ids: Currently valid FK IDs, as returned by :func:`_valid_fk_ids`.
+
+    Returns:
+        The validated value to use, or None if unset, invalid, or a stale
+        FK reference.
+    """
+    if field not in user_defaults:
+        return None
+    value = validate(user_defaults[field])
+    if value is None:
+        return None
+    if field in _FK_FIELDS:
+        allowed = valid_ids.get(field)
+        if allowed is not None and value not in allowed:
+            return None
+    return value

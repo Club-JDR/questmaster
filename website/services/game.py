@@ -217,9 +217,9 @@ class GameService:
         except ValidationError:
             db.session.rollback()
             raise
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Failed to admin-update game {game_id}: {e}", exc_info=True)
+            logger.exception(f"Failed to admin-update game {game_id}")
             raise
 
     def get_by_id(self, game_id: int) -> Game:
@@ -463,9 +463,9 @@ class GameService:
         except ValidationError:
             db.session.rollback()
             raise
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Failed to create game: {e}", exc_info=True)
+            logger.exception("Failed to create game")
             # Rollback Discord resources if they were created
             if create_resources and hasattr(game, "role"):
                 self._rollback_discord_resources(game)
@@ -546,63 +546,12 @@ class GameService:
             NotFoundError: If game doesn't exist.
             ValidationError: If data is invalid.
         """
-        from website.utils.form_parsers import (
-            get_ambience,
-            get_classification,
-            parse_restriction_tags,
-        )
-
         game = self.get_by_slug(slug)
 
-        type_changed = False
         try:
             self._validate_img_url(data.get("img"))
-
-            # Only allow type/name changes if game is draft
-            if game.status == "draft":
-                game_type, special_event_id = self.parse_game_type(data["type"])
-                game.type = game_type
-                game.special_event_id = special_event_id
-                if data["name"] != game.name:
-                    gm = self.user_service.get_by_id(game.gm_id)
-                    game.slug = self.generate_slug(
-                        data["name"], gm.slug_name, exclude_slug=game.slug
-                    )
-                game.name = data["name"]
-            elif "type" in data:
-                # Once published, the game may still be switched between one-shot
-                # and campaign (a session growing beyond its planned scope, or a
-                # campaign trimmed down to a single session), but never into/out
-                # of a special event. Name/slug stay locked outside draft.
-                game_type, special_event_id = self.parse_game_type(data["type"])
-                if (
-                    game_type in ("oneshot", "campaign")
-                    and game_type != game.type
-                    and special_event_id is None
-                    and game.special_event_id is None
-                ):
-                    game.type = game_type
-                    type_changed = True
-
-            # Update fields
-            game.system_id = data["system"]
-            game.vtt_id = data.get("vtt") or None
-            game.description = data["description"]
-            game.date = parse_wall_clock_datetime(data["date"])
-            game.length = data["length"]
-            game.party_size = data["party_size"]
-            game.party_selection = "party_selection" in data
-            game.xp = data["xp"]
-            game.session_length = data["session_length"]
-            game.frequency = data.get("frequency") or None
-            game.characters = data["characters"]
-            game.classification = get_classification(data)
-            game.ambience = get_ambience(data)
-            game.complement = data.get("complement")
-            game.img = data.get("img")
-            game.restriction = data["restriction"]
-            game.restriction_tags = parse_restriction_tags(data)
-            game.open_to_viewers = "open_to_viewers" in data
+            type_changed = self._apply_type_and_name(game, data)
+            self._apply_updatable_fields(game, data)
 
             db.session.commit()
             log_game_event(
@@ -610,39 +559,121 @@ class GameService:
             )
             logger.info(f"Game {game.id} changes saved")
 
-            # Update Discord embed if message exists
-            if game.msg_id:
-                try:
-                    self.discord.send_game_embed(game, embed_type="annonce")
-                    logger.info(f"Embed updated for game {game.id}")
-                except DiscordAPIError as e:
-                    logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
-
-            # Relocate the Discord channel to match the new type's category, and
-            # recolor the player role accordingly. Each is independent: a failure
-            # in one is logged and does not roll back the already-saved type or
-            # block the other.
-            if type_changed:
-                try:
-                    self.channel_service.move_game_channel(self.discord, game, game.type)
-                except (DiscordAPIError, NotFoundError, SQLAlchemyError) as e:
-                    logger.warning(f"Failed to move channel for game {game.id}: {e}")
-
-                if game.role:
-                    try:
-                        self.discord.update_role_color(game.role, Game.COLORS[game.type])
-                    except DiscordAPIError as e:
-                        logger.warning(f"Failed to update role color for game {game.id}: {e}")
-
+            self._sync_discord_after_update(game, type_changed)
             return game
 
         except ValidationError:
             db.session.rollback()
             raise
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Failed to update game {game.id}: {e}", exc_info=True)
+            logger.exception(f"Failed to update game {game.id}")
             raise
+
+    def _apply_type_and_name(self, game: Game, data: dict) -> bool:
+        """Apply the requested type/name change, respecting draft-only restrictions.
+
+        While a game is a draft, its type and name (and thus slug) may be freely
+        edited. Once published, the name/slug are locked, but the game may still
+        be switched between one-shot and campaign (a session growing beyond its
+        planned scope, or a campaign trimmed down to a single session) — never
+        into/out of a special event.
+
+        Args:
+            game: Game instance being updated (mutated in place).
+            data: Submitted form data.
+
+        Returns:
+            True if the game's type changed post-publish, meaning its Discord
+            channel/role need to be resynced.
+        """
+        if game.status == "draft":
+            game_type, special_event_id = self.parse_game_type(data["type"])
+            game.type = game_type
+            game.special_event_id = special_event_id
+            if data["name"] != game.name:
+                gm = self.user_service.get_by_id(game.gm_id)
+                game.slug = self.generate_slug(data["name"], gm.slug_name, exclude_slug=game.slug)
+            game.name = data["name"]
+            return False
+
+        if "type" not in data:
+            return False
+
+        game_type, special_event_id = self.parse_game_type(data["type"])
+        if (
+            game_type in ("oneshot", "campaign")
+            and game_type != game.type
+            and special_event_id is None
+            and game.special_event_id is None
+        ):
+            game.type = game_type
+            return True
+        return False
+
+    def _apply_updatable_fields(self, game: Game, data: dict) -> None:
+        """Assign the flat set of always-editable fields from submitted form data.
+
+        Args:
+            game: Game instance being updated (mutated in place).
+            data: Submitted form data.
+        """
+        from website.utils.form_parsers import (
+            get_ambience,
+            get_classification,
+            parse_restriction_tags,
+        )
+
+        game.system_id = data["system"]
+        game.vtt_id = data.get("vtt") or None
+        game.description = data["description"]
+        game.date = parse_wall_clock_datetime(data["date"])
+        game.length = data["length"]
+        game.party_size = data["party_size"]
+        game.party_selection = "party_selection" in data
+        game.xp = data["xp"]
+        game.session_length = data["session_length"]
+        game.frequency = data.get("frequency") or None
+        game.characters = data["characters"]
+        game.classification = get_classification(data)
+        game.ambience = get_ambience(data)
+        game.complement = data.get("complement")
+        game.img = data.get("img")
+        game.restriction = data["restriction"]
+        game.restriction_tags = parse_restriction_tags(data)
+        game.open_to_viewers = "open_to_viewers" in data
+
+    def _sync_discord_after_update(self, game: Game, type_changed: bool) -> None:
+        """Best-effort Discord sync after an update commit (embed, channel, role).
+
+        Each step is independent: a failure is logged and does not roll back
+        the already-saved changes or block the others.
+
+        Args:
+            game: Updated Game instance.
+            type_changed: Whether the game's type changed post-publish,
+                requiring its Discord channel/role to be resynced.
+        """
+        if game.msg_id:
+            try:
+                self.discord.send_game_embed(game, embed_type="annonce")
+                logger.info(f"Embed updated for game {game.id}")
+            except DiscordAPIError as e:
+                logger.warning(f"Failed to update Discord embed for game {game.id}: {e}")
+
+        if not type_changed:
+            return
+
+        try:
+            self.channel_service.move_game_channel(self.discord, game, game.type)
+        except (DiscordAPIError, NotFoundError, SQLAlchemyError) as e:
+            logger.warning(f"Failed to move channel for game {game.id}: {e}")
+
+        if game.role:
+            try:
+                self.discord.update_role_color(game.role, Game.COLORS[game.type])
+            except DiscordAPIError as e:
+                logger.warning(f"Failed to update role color for game {game.id}: {e}")
 
     def publish(
         self,
@@ -735,9 +766,9 @@ class GameService:
 
             return game
 
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Failed to publish game {game.id}: {e}", exc_info=True)
+            logger.exception(f"Failed to publish game {game.id}")
             # Only undo Discord resources created during THIS publish. Resources
             # from a prior silent publish must survive a failed re-publish —
             # deleting them here is what previously wiped users' game channels.
@@ -973,9 +1004,9 @@ class GameService:
         for user_id, trophy_id in recipients:
             try:
                 self.trophy_service.award(user_id=user_id, trophy_id=trophy_id)
-            except Exception as e:
-                logger.error(
-                    f"Failed to award trophy {trophy_id} to user {user_id} for game {game.id}: {e}"
+            except Exception:
+                logger.exception(
+                    f"Failed to award trophy {trophy_id} to user {user_id} for game {game.id}"
                 )
                 all_succeeded = False
         return all_succeeded
@@ -1038,8 +1069,8 @@ class GameService:
                 self.trophy_service.decrement_user_trophy(user_id=user_id, trophy_id=trophy_id)
             except NotFoundError:
                 logger.debug(f"User {user_id} had no trophy {trophy_id} to revoke")
-            except Exception as e:
-                logger.error(f"Failed to revoke trophies for game {game.id}: {e}")
+            except Exception:
+                logger.exception(f"Failed to revoke trophies for game {game.id}")
 
     def _cleanup_discord_resources(self, game: Game) -> None:
         """Clean up Discord resources for a game.
