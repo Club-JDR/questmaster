@@ -49,6 +49,15 @@ class TestEngineOptions:
         assert options["pool_pre_ping"] is True
         assert options["pool_recycle"] == 1800
 
+    def test_pool_size_is_capped(self):
+        """Each gunicorn worker/scheduler process gets its own pool, so this
+        must be a small, explicit number rather than SQLAlchemy's default
+        (5 + 10 overflow), which lets connection count scale with thread
+        count instead of staying predictable."""
+        options = Settings.SQLALCHEMY_ENGINE_OPTIONS
+        assert options["pool_size"] == 3
+        assert options["max_overflow"] == 2
+
 
 class TestMaxContentLength:
     """An unbounded request body is a resource-exhaustion vector."""

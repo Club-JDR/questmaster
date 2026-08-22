@@ -60,7 +60,12 @@ class Settings:
     # reconnect instead of a burst of 500s on every worker's next query.
     # pool_recycle: recycle connections older than 30 min, ahead of Postgres's
     # or any intermediate proxy's own idle/lifetime timeout.
-    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 1800}
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+        "pool_size": 3,
+        "max_overflow": 2,
+    }
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_HOST = os.environ.get("REDIS_HOST")
     CACHE_REDIS_PORT = 6379
