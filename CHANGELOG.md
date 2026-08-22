@@ -1,5 +1,79 @@
 # Changelog
 
+## [1.8.0](https://github.com/Club-JDR/questmaster/compare/v1.7.1...v1.8.0) (2026-08-22)
+
+
+### Features
+
+* **admin:** add cache-clearing CLI command and admin settings panel ([d199cee](https://github.com/Club-JDR/questmaster/commit/d199cee6d98fee41cdf7523d5b53bd65c02fe069))
+* **admin:** let a superuser admin view-as another user ([e8f1757](https://github.com/Club-JDR/questmaster/commit/e8f175748aaf346bc188a5cbe9ecd16266d34603))
+* **admin:** let an admin manually award or revoke trophies for an archived game ([b983480](https://github.com/Club-JDR/questmaster/commit/b9834806c25509b03b0b6feffa7fa34c026de028))
+* **badges:** add per-event leaderboard tab to the badge classement page ([f9f4662](https://github.com/Club-JDR/questmaster/commit/f9f4662d559e23587a10d7ef51876c3ab5373319))
+* **ci:** skip lint and tests when only docs, templates or workflows change ([71e13b3](https://github.com/Club-JDR/questmaster/commit/71e13b3d20b5404b09655276c716faba70165de8))
+* **discord:** /avertir and /infractions moderation slash commands ([d97e8c7](https://github.com/Club-JDR/questmaster/commit/d97e8c7f0bdca9f77bf62e3df7db29e2f2de0010))
+* **discord:** sidekick bot to run QuestMaster actions via slash commands ([0cdaea3](https://github.com/Club-JDR/questmaster/commit/0cdaea3be69b20c8bda747d3395dfbea00e909a6))
+* **games:** add a placeholder for additional info in the game form ([8c13c9d](https://github.com/Club-JDR/questmaster/commit/8c13c9d864d8bbff0883ff7766968f45fae740d5))
+* **games:** add open-to-viewers flag with spectator follow + agenda ([9334ec7](https://github.com/Club-JDR/questmaster/commit/9334ec7fb99ff73ab016944217547191b66bdc10))
+* **games:** allow switching a published game between one-shot and campaign ([d090817](https://github.com/Club-JDR/questmaster/commit/d0908176cc80f9f56f9d78e73754742ba9f330a4))
+* **games:** block self-registration on a schedule conflict ([baf15fb](https://github.com/Club-JDR/questmaster/commit/baf15fbfa2938b4711ddd256822f9ca5df5bc4b0))
+* **games:** let a GM branch a campaign into a quick replacement one-shot ([81cff83](https://github.com/Club-JDR/questmaster/commit/81cff8364ccb658c1783fcf91bb9933c0ba6543b))
+* **games:** per-user defaults for the game creation form ([7e53aa9](https://github.com/Club-JDR/questmaster/commit/7e53aa9a292a05dae248abed94a539aa5a120b99))
+* **games:** persist whether trophies were awarded on archive ([dfe55f4](https://github.com/Club-JDR/questmaster/commit/dfe55f45663d0976a8b1c279b6769f59c395ed78))
+* **games:** render description/complement as sanitized Markdown ([1599a4f](https://github.com/Club-JDR/questmaster/commit/1599a4fb0e6c570b19b608208bfd4631a701b20d))
+* **moderation:** in-app infractions to replace Mee6 !warn / !infractions ([39fdcf5](https://github.com/Club-JDR/questmaster/commit/39fdcf56b47540d7674f5f0573d31cbe1df267fc))
+* **systems:** add public system pages with lightweight matchmaking ([84c66e0](https://github.com/Club-JDR/questmaster/commit/84c66e08550ee80356c1cf4e6847abd619185aa2))
+* **users:** let admins block a GM from posting games ([1af7c93](https://github.com/Club-JDR/questmaster/commit/1af7c93a523b71ece9331e0b3e623fbe882b9b6c))
+
+
+### Bug Fixes
+
+* **admin:** move discord_message.sent_at to a DB-side default ([b79c058](https://github.com/Club-JDR/questmaster/commit/b79c05881fb6e8fac492a1a0da7581759654d269))
+* **admin:** prevent game-event action badges from wrapping and overflowing ([dc7f8d3](https://github.com/Club-JDR/questmaster/commit/dc7f8d34111bab4e72a4980431ee1f52256e8c05))
+* **api:** make the health endpoint reflect actual DB/cache connectivity ([b3791df](https://github.com/Club-JDR/questmaster/commit/b3791dfd213a8fb48ebee2aa5f4e65312645ffa5))
+* **auth:** harden session cookie flags (secure + samesite) ([50afc76](https://github.com/Club-JDR/questmaster/commit/50afc76ac84b8ad14429a92e650b6052734ef65c))
+* **auth:** stop looping deleted-but-logged-in users into repeated 404s ([8ce1b49](https://github.com/Club-JDR/questmaster/commit/8ce1b49ee89537aa3cee0214cbccbfeb1e79f43d))
+* **ci:** stop release job being skipped via transitive changes-job dependency ([c926001](https://github.com/Club-JDR/questmaster/commit/c926001da3075ac6822922c1ba5ec42562876bbd))
+* **ci:** tolerate slow Postgres first boot in compose healthchecks ([4cdd3af](https://github.com/Club-JDR/questmaster/commit/4cdd3afa4b5bab596377768f71461686b68c7798))
+* **config:** fail fast when required env vars are missing ([a53b9d3](https://github.com/Club-JDR/questmaster/commit/a53b9d3f0a862ea48d176e956df18c90a2ea6e75))
+* **db:** set pool_pre_ping and pool_recycle on the SQLAlchemy engine ([3a8cfbc](https://github.com/Club-JDR/questmaster/commit/3a8cfbc99b3c22af72c455e951d2fcf1f126aae1))
+* **demo:** stop baking demo game dates in at import time ([a2dd41f](https://github.com/Club-JDR/questmaster/commit/a2dd41f876d69a6111d04b73849f93074463cafd))
+* **deps:** update dependency marshmallow to v4.3.1 ([902f3f4](https://github.com/Club-JDR/questmaster/commit/902f3f4ac4e95e43604941b9c892f4bc3d24bcf8))
+* **deps:** update dependency nh3 to v0.3.6 ([45da806](https://github.com/Club-JDR/questmaster/commit/45da806cda6b48f5920dc2d2f9a13a5dec186121))
+* **deps:** update dependency python-dotenv to v1.2.3 ([9734e9e](https://github.com/Club-JDR/questmaster/commit/9734e9e8748baa826a92793ff448efd69de1d388))
+* **deps:** update dependency redis to v8.1.0 ([427830c](https://github.com/Club-JDR/questmaster/commit/427830ca48b1298edaeaa101be951ffe18e2e280))
+* **discord:** add timeouts to all outbound Discord/CDN calls ([7af5919](https://github.com/Club-JDR/questmaster/commit/7af59192aaa5afda748d66534637b0136b37744e))
+* **discord:** cap the 429 retry sleep and make get_role() raise on miss ([dc0e9ac](https://github.com/Club-JDR/questmaster/commit/dc0e9ac4c1f6a957301fbb1e7c50a561d35ccd91))
+* **discord:** give rate-limit retries their own budget, separate from real attempts ([a275582](https://github.com/Club-JDR/questmaster/commit/a275582a0b5e38ceadd009a2e7f58d7fd222084c))
+* event leaderboard color for players top 10 ([470d21d](https://github.com/Club-JDR/questmaster/commit/470d21d5784f37b83407f4942f8e1b22cd9d9dc4))
+* **games:** address category-size drift and error-handling review findings ([9965312](https://github.com/Club-JDR/questmaster/commit/996531288eae753f168822cbf9e22c2d1b239410))
+* **games:** allow managing registrations on open games without race ([9aac205](https://github.com/Club-JDR/questmaster/commit/9aac205bcf5d2edd1894a8bd601151c960502dd5))
+* **games:** cap Discord notify message length ([6e6dbcb](https://github.com/Club-JDR/questmaster/commit/6e6dbcb1cf61b700c9b560bf1ccb05cc7157c4ae))
+* **games:** cap request body size and validate the game img URL ([b70b913](https://github.com/Club-JDR/questmaster/commit/b70b9131b47ab3d1f7175f41b069a0046720db91))
+* **games:** close gaps in the schedule-conflict check ([9a86e98](https://github.com/Club-JDR/questmaster/commit/9a86e989ee5a7f7a02d04b7aa3ca728c1eb3713e))
+* **games:** convert _get_game_if_participant to raise instead of returning a Response ([f5ff6d6](https://github.com/Club-JDR/questmaster/commit/f5ff6d69ee7b9776a67d7aaa0fa85e49d9bcd42b))
+* **games:** correct blueprint prefix in special-event search pagination ([c227a97](https://github.com/Club-JDR/questmaster/commit/c227a97b45bd8519b50a504b4339bca51e77b688))
+* **games:** don't lie about trophies_awarded when awarding fails ([a39e2d9](https://github.com/Club-JDR/questmaster/commit/a39e2d9b9d52be973331d1832d71a548a928d289))
+* **games:** guard against Discord role/channel names over 100 chars ([29c3bbe](https://github.com/Club-JDR/questmaster/commit/29c3bbec35667e30a5fa42e06e6f7a02fb8002be))
+* **games:** guard session-date parsing and action lookup against malformed input ([e91c439](https://github.com/Club-JDR/questmaster/commit/e91c439ee1bd9cb1b45789fab6c7e045cf3f866a))
+* **games:** migrate Game.date and GameSession.start/end to aware UTC ([72d5bc1](https://github.com/Club-JDR/questmaster/commit/72d5bc1aabcacd70a15ee0b92e44efe114963713))
+* **games:** never award trophies for a draft game ([7440060](https://github.com/Club-JDR/questmaster/commit/7440060bfb0712115c2c6ef871ca447066ce3d12))
+* **games:** raise instead of redirect on unauthorized game access ([a6e42a0](https://github.com/Club-JDR/questmaster/commit/a6e42a0f5ac13d17c7efb639f26c4dcd02fc69c7))
+* **games:** raise NotFoundError from get_filtered_user_games on missing user ([1284632](https://github.com/Club-JDR/questmaster/commit/1284632e9a8bc9833e3dbe2d73d2dcc6ac76229f))
+* **games:** stop trusting gm_id from the creation form ([9d2241e](https://github.com/Club-JDR/questmaster/commit/9d2241ed97ba875dbde3107b187c80a756adf8fd))
+* **games:** validate session belongs to game before edit/delete ([1bb81b9](https://github.com/Club-JDR/questmaster/commit/1bb81b95a3af678b931f4125057f2c0d013caa36))
+* **ops:** cap the DB pool and recycle gunicorn workers for small prod host ([82db29c](https://github.com/Club-JDR/questmaster/commit/82db29cd379055bbc94b8e8ffcae2c15cbf12a16))
+* **scheduler:** run APScheduler in one dedicated compose service ([62b4eb2](https://github.com/Club-JDR/questmaster/commit/62b4eb2fd2d43402ee53117727838ac82c9740a0))
+* **security:** autoescape .j2 templates to prevent stored XSS ([9cd641e](https://github.com/Club-JDR/questmaster/commit/9cd641ecf44a82735124df12575b8f99aa1d64b9))
+* **tests:** make current-month stats test resist shared-DB pollution ([7a6343a](https://github.com/Club-JDR/questmaster/commit/7a6343a530b9113684bb8f3024d90e3beba81355))
+* **tests:** reset the special_event id sequence past its reserved fixture id ([8035a71](https://github.com/Club-JDR/questmaster/commit/8035a71c3706385c4031d3e1ab8085650d9821d6))
+* timezone, error-handling, and duplication issues from code review ([f865b13](https://github.com/Club-JDR/questmaster/commit/f865b13e8028a9f2b8705f256784da43adecd2a1))
+
+
+### Performance Improvements
+
+* **discord:** reuse a pooled requests.Session in the Discord client ([fd96d3e](https://github.com/Club-JDR/questmaster/commit/fd96d3e917d6cc14522289633c18d4104cc76cd7))
+* **logging:** move DB/webhook log writes off the request thread ([e4fa8cf](https://github.com/Club-JDR/questmaster/commit/e4fa8cff5155c3a22f749af84385379d7628d3df))
+
 ## [1.7.1](https://github.com/Club-JDR/questmaster/compare/v1.7.0...v1.7.1) (2026-07-14)
 
 
