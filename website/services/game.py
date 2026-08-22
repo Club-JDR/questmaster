@@ -46,6 +46,13 @@ from website.utils.timezone import now_utc, parse_wall_clock_datetime
 
 logger = logging.getLogger(__name__)
 
+# GM/player trophy pair awarded (and revoked) per game type; game types with
+# no entry here (e.g. special events) have no configured trophy.
+_TROPHY_MAP_BY_GAME_TYPE = {
+    "oneshot": (BADGE_OS_GM_ID, BADGE_OS_ID),
+    "campaign": (BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID),
+}
+
 
 class GameService:
     """Service layer for Game business logic.
@@ -898,18 +905,18 @@ class GameService:
         game = self.get_by_id(game_id)
         if game.status != "archived":
             raise ValidationError(
-                "L'annonce doit être archivée avant de distribuer les badges.",
+                "Game must be archived before trophies can be awarded.",
                 field="status",
             )
         if game.trophies_awarded:
             raise TrophiesAlreadyAwardedError(
-                "Les badges ont déjà été distribués pour cette annonce.",
+                "Trophies have already been awarded for this game.",
                 game_id=game.id,
             )
 
         if not self._award_game_trophies(game):
             raise TrophyAwardFailedError(
-                "Certains badges n'ont pas pu être distribués. Veuillez réessayer.",
+                "Some trophies could not be awarded. Please try again.",
                 game_id=game.id,
             )
 
@@ -921,6 +928,23 @@ class GameService:
 
         self._invalidate_dashboard_stats(game.gm_id, *(p.id for p in game.players))
         return game
+
+    def _trophy_recipients(self, game: Game) -> list[tuple[str, int]]:
+        """Build the (user_id, trophy_id) pairs for a game's GM and players.
+
+        Args:
+            game: Game instance.
+
+        Returns:
+            List of (user_id, trophy_id) pairs, or an empty list if the
+            game's type has no configured trophy.
+        """
+        gm_trophy, player_trophy = _TROPHY_MAP_BY_GAME_TYPE.get(game.type, (None, None))
+        if not gm_trophy:
+            return []
+        recipients = [(game.gm.id, gm_trophy)]
+        recipients += [(user.id, player_trophy) for user in game.players]
+        return recipients
 
     def _award_game_trophies(self, game: Game) -> bool:
         """Award trophies to GM and players.
@@ -944,17 +968,7 @@ class GameService:
             True if every recipient was awarded successfully, False if any
             award failed (already logged).
         """
-        trophy_map = {
-            "oneshot": (BADGE_OS_GM_ID, BADGE_OS_ID),
-            "campaign": (BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID),
-        }
-        gm_trophy, player_trophy = trophy_map.get(game.type, (None, None))
-        if not gm_trophy:
-            return True
-
-        recipients = [(game.gm.id, gm_trophy)]
-        recipients += [(user.id, player_trophy) for user in game.players]
-
+        recipients = self._trophy_recipients(game)
         all_succeeded = True
         for user_id, trophy_id in recipients:
             try:
@@ -990,12 +1004,12 @@ class GameService:
         game = self.get_by_id(game_id)
         if game.status != "archived":
             raise ValidationError(
-                "L'annonce doit être archivée avant de retirer les badges.",
+                "Game must be archived before trophies can be revoked.",
                 field="status",
             )
         if not game.trophies_awarded:
             raise TrophiesNotAwardedError(
-                "Les badges n'ont pas été distribués pour cette annonce.",
+                "Trophies have not been awarded for this game.",
                 game_id=game.id,
             )
 
@@ -1019,17 +1033,7 @@ class GameService:
         Args:
             game: Game instance.
         """
-        trophy_map = {
-            "oneshot": (BADGE_OS_GM_ID, BADGE_OS_ID),
-            "campaign": (BADGE_CAMPAIGN_GM_ID, BADGE_CAMPAIGN_ID),
-        }
-        gm_trophy, player_trophy = trophy_map.get(game.type, (None, None))
-        if not gm_trophy:
-            return
-
-        recipients = [(game.gm.id, gm_trophy)]
-        recipients += [(user.id, player_trophy) for user in game.players]
-        for user_id, trophy_id in recipients:
+        for user_id, trophy_id in self._trophy_recipients(game):
             try:
                 self.trophy_service.decrement_user_trophy(user_id=user_id, trophy_id=trophy_id)
             except NotFoundError:

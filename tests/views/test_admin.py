@@ -130,6 +130,24 @@ def test_delete_system(admin_client, db_session, mock_csrf):
     assert db_session.get(System, system.id) is None
 
 
+def test_edit_system_invalid_reference_url_flashes_french_message(
+    admin_client, db_session, mock_csrf
+):
+    """A malformed reference_url flashes French text, not the raw English error."""
+    system = SystemFactory(db_session)
+    response = admin_client.post(
+        f"/admin/systems/{system.id}/edit",
+        data={"name": system.name, "icon": "", "reference_url": "pas-une-url"},
+        follow_redirects=True,
+    )
+    body = response.data.decode()
+    assert response.status_code == 200
+    assert "doit être une URL http(s) absolue" in body
+    assert "must be an absolute" not in body
+    db_session.refresh(system)
+    assert system.reference_url is None
+
+
 # -- VTTs --------------------------------------------------------------------
 
 
@@ -354,8 +372,11 @@ def test_create_infraction_empty_reason_flashes(admin_client, db_session, mock_c
         data={"reason": "   ", "severity": "1"},
         follow_redirects=True,
     )
+    body = response.data.decode()
     assert response.status_code == 200
     assert db_session.query(Infraction).filter_by(user_id=user.id).count() == 0
+    assert "Une raison est requise." in body
+    assert "A reason is required." not in body
 
 
 def test_user_infractions_lists_only_that_user(admin_client, db_session):
@@ -819,6 +840,23 @@ def test_admin_remove_game_player(admin_client, db_session, mock_csrf, default_s
     assert "Joueur·euse retiré·e." in response.get_data(as_text=True)
     db_session.refresh(game)
     assert player not in game.players
+
+
+def test_admin_remove_game_player_not_registered_flashes_french_message(
+    admin_client, db_session, mock_csrf, default_system
+):
+    """Removing a non-registered player flashes French text, not raw English."""
+    game = GameFactory(db_session, system_id=default_system.id, status="open")
+    stranger = UserFactory(db_session)
+
+    response = admin_client.post(
+        f"/admin/games/{game.id}/players/{stranger.id}/remove", follow_redirects=True
+    )
+
+    body = response.data.decode()
+    assert response.status_code == 200
+    assert "est pas inscrite à cette partie" in body
+    assert "is not registered" not in body
 
 
 def test_admin_remove_game_viewer(admin_client, db_session, mock_csrf, default_system):

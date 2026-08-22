@@ -12,6 +12,23 @@ from website.views.auth import require_permission
 
 system_service = SystemService()
 
+_VALIDATION_MESSAGES_BY_FIELD = {
+    "name": "Ce nom de système existe déjà.",
+    "reference_url": "Le lien de référence doit être une URL http(s) absolue.",
+}
+
+
+def _flash_validation_error(error: ValidationError) -> None:
+    """Flash a French message for a ``SystemService`` validation failure.
+
+    Args:
+        error: The English domain exception raised by the service.
+    """
+    message = _VALIDATION_MESSAGES_BY_FIELD.get(
+        error.field, "Les informations saisies sont invalides."
+    )
+    flash(message, "danger")
+
 
 @admin_bp.route("/systems/", methods=["GET"])
 @require_permission("system.manage")
@@ -37,7 +54,7 @@ def create_system():
             flash("Système créé.", "success")
             return redirect(url_for("admin.list_systems"))
         except ValidationError as e:
-            flash(str(e), "danger")
+            _flash_validation_error(e)
 
     return render_template("admin/systems/form.html", system=None)
 
@@ -66,7 +83,7 @@ def edit_system(system_id):
             flash("Système mis à jour.", "success")
             return redirect(url_for("admin.list_systems"))
         except ValidationError as e:
-            flash(str(e), "danger")
+            _flash_validation_error(e)
 
     return render_template("admin/systems/form.html", system=system)
 

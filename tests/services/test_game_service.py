@@ -875,13 +875,13 @@ class TestGameService:
     ):
         """A date a few minutes away from "now" is judged correctly either way.
 
-        Regression test for AUDIT.md §1.1: "now" used to be computed three
-        different ways across the codebase (naive container-local, aware
-        UTC, Europe/Paris wall time), which could disagree by 1-2h depending
-        on DST. A 5-minute margin is far smaller than that discrepancy, so a
-        reintroduced naive/aware mix would flip the verdict and fail this
-        test — a days-wide margin (see the two tests above) would not catch
-        that class of bug.
+        Regression test: "now" used to be computed three different ways
+        across the codebase (naive container-local, aware UTC, Europe/Paris
+        wall time), which could disagree by 1-2h depending on DST. A 5-minute
+        margin is far smaller than that discrepancy, so a reintroduced
+        naive/aware mix would flip the verdict and fail this test — a
+        days-wide margin (see the two tests above) would not catch that
+        class of bug.
         """
         sample_game.date = now_utc() - timedelta(minutes=5)
         db_session.commit()

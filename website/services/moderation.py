@@ -1,7 +1,6 @@
 """Moderation service for in-app infractions (warnings)."""
 
 import logging
-from datetime import datetime
 
 from config.constants import INFRACTION_SEVERITY_LABELS, INFRACTION_SEVERITY_REMINDER
 from website.exceptions import NotFoundError, ValidationError
@@ -73,26 +72,15 @@ class ModerationService:
             )
         return infraction
 
-    def create(
-        self,
-        user_id: str,
-        reason: str,
-        severity: int = INFRACTION_SEVERITY_REMINDER,
-        rule_article: str | None = None,
-        message_link: str | None = None,
-        admin_id: str | None = None,
-        created_at: datetime | None = None,
-    ) -> Infraction:
+    def create(self, user_id: str, data: dict) -> Infraction:
         """Create an infraction against a user.
 
         Args:
             user_id: Discord ID of the warned user (must exist).
-            reason: Free-text detail describing the infraction (required).
-            severity: Integer severity level (defaults to a reminder).
-            rule_article: Optional rule/article violated.
-            message_link: Optional link to the Discord moderation post.
-            admin_id: Discord ID of the admin issuing the infraction.
-            created_at: Optional issue date (to backfill history); defaults to now.
+            data: Infraction fields — ``reason`` (required), ``severity``
+                (defaults to a reminder), ``rule_article``, ``message_link``,
+                ``admin_id``, and ``created_at`` (optional issue date to
+                backfill history; defaults to now).
 
         Returns:
             The created Infraction instance.
@@ -101,9 +89,10 @@ class ModerationService:
             ValidationError: If the reason is empty or the severity is unknown.
             NotFoundError: If the warned user does not exist.
         """
-        reason = (reason or "").strip()
+        reason = (data.get("reason") or "").strip()
         if not reason:
             raise ValidationError("A reason is required.", field="reason")
+        severity = data.get("severity", INFRACTION_SEVERITY_REMINDER)
         if severity not in INFRACTION_SEVERITY_LABELS:
             raise ValidationError("Unknown severity level.", field="severity")
         if not self.user_repo.get_by_id(user_id):
@@ -117,12 +106,12 @@ class ModerationService:
             user_id=user_id,
             reason=reason,
             severity=severity,
-            rule_article=(rule_article or "").strip() or None,
-            message_link=(message_link or "").strip() or None,
-            admin_id=admin_id,
+            rule_article=(data.get("rule_article") or "").strip() or None,
+            message_link=(data.get("message_link") or "").strip() or None,
+            admin_id=data.get("admin_id"),
         )
-        if created_at is not None:
-            infraction.created_at = created_at
+        if data.get("created_at") is not None:
+            infraction.created_at = data["created_at"]
 
         self.repo.add(infraction)
         db.session.commit()

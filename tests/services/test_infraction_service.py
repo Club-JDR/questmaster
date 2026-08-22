@@ -22,12 +22,14 @@ class TestModerationService:
         admin = UserFactory(db_session)
 
         infraction = service.create(
-            user_id=user.id,
-            reason="  Comportement inapproprié  ",
-            severity=INFRACTION_SEVERITY_WARNING,
-            rule_article=" Art. 3 ",
-            message_link=" https://discord.com/channels/1/2/3 ",
-            admin_id=admin.id,
+            user.id,
+            {
+                "reason": "  Comportement inapproprié  ",
+                "severity": INFRACTION_SEVERITY_WARNING,
+                "rule_article": " Art. 3 ",
+                "message_link": " https://discord.com/channels/1/2/3 ",
+                "admin_id": admin.id,
+            },
         )
 
         assert infraction.id is not None
@@ -43,7 +45,7 @@ class TestModerationService:
         service = ModerationService()
         user = UserFactory(db_session)
 
-        infraction = service.create(user_id=user.id, reason="Test")
+        infraction = service.create(user.id, {"reason": "Test"})
 
         assert infraction.severity == INFRACTION_SEVERITY_REMINDER
 
@@ -53,7 +55,7 @@ class TestModerationService:
         user = UserFactory(db_session)
         past = datetime(2020, 1, 1, 12, 0, tzinfo=timezone.utc)
 
-        infraction = service.create(user_id=user.id, reason="Old", created_at=past)
+        infraction = service.create(user.id, {"reason": "Old", "created_at": past})
 
         assert infraction.created_at == past
 
@@ -63,7 +65,7 @@ class TestModerationService:
         user = UserFactory(db_session)
 
         with pytest.raises(ValidationError):
-            service.create(user_id=user.id, reason="   ")
+            service.create(user.id, {"reason": "   "})
 
     def test_create_unknown_severity_raises(self, db_session):
         """create rejects a severity outside the catalog."""
@@ -71,14 +73,14 @@ class TestModerationService:
         user = UserFactory(db_session)
 
         with pytest.raises(ValidationError):
-            service.create(user_id=user.id, reason="Test", severity=99)
+            service.create(user.id, {"reason": "Test", "severity": 99})
 
     def test_create_unknown_user_raises(self, db_session):
         """create rejects a infraction for a non-existent user."""
         service = ModerationService()
 
         with pytest.raises(NotFoundError):
-            service.create(user_id="000000000000000000", reason="Test")
+            service.create("000000000000000000", {"reason": "Test"})
 
     def test_list_for_user(self, db_session):
         """list_for_user returns a user's infractions, newest first."""

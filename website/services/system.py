@@ -3,7 +3,11 @@
 import logging
 from urllib.parse import urlparse
 
-from config.constants import SYSTEM_INTEREST_ROLES
+from config.constants import (
+    SYSTEM_INTEREST_ROLE_GM,
+    SYSTEM_INTEREST_ROLE_PLAYER,
+    SYSTEM_INTEREST_ROLES,
+)
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import cache, db
 from website.models import System, User, UserSystemInterest
@@ -219,6 +223,37 @@ class SystemService:
         return {
             role: self.interest_repo.get(user_id, system_id, role) is not None
             for role in SYSTEM_INTEREST_ROLES
+        }
+
+    def get_public_page(self, system_id: int, user_id: str | None = None) -> dict:
+        """Assemble everything the system's public detail page needs.
+
+        Validates the system exists once and reuses that check for the
+        run-history and interest lists, instead of each one independently
+        re-querying to confirm the system is still there.
+
+        Args:
+            system_id: System ID.
+            user_id: Logged-in user's ID, or None for anonymous visitors.
+
+        Returns:
+            Dict with ``system``, ``gm_history``, ``gms_interested``,
+            ``players_interested``, and ``my_interests`` keys.
+
+        Raises:
+            NotFoundError: If the system does not exist.
+        """
+        system = self.get_by_id(system_id)
+        return {
+            "system": system,
+            "gm_history": self.repo.get_gm_history(system_id),
+            "gms_interested": self.interest_repo.list_by_system_and_role(
+                system_id, SYSTEM_INTEREST_ROLE_GM
+            ),
+            "players_interested": self.interest_repo.list_by_system_and_role(
+                system_id, SYSTEM_INTEREST_ROLE_PLAYER
+            ),
+            "my_interests": self.get_user_interests(system_id, user_id) if user_id else {},
         }
 
     def toggle_interest(

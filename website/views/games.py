@@ -467,6 +467,8 @@ def notify_players(slug):
                 "des joueur·euses ajoutées. Raccourcissez-le et réessayez.",
                 "danger",
             )
+        elif e.field == "channel":
+            flash("Cette annonce n'a pas de salon Discord associé.", "danger")
         else:
             flash("Le message de notification est vide.", "danger")
     except DiscordAPIError as e:
@@ -951,6 +953,8 @@ def _handle_publish(slug, user_id=None):
         flash("Annonce publiée avec succès.", "success")
     except PastDateError:
         flash(_PAST_DATE_MESSAGE, "warning")
+    except GamePostingBlockedError:
+        flash(_POSTING_BLOCKED_MESSAGE, "danger")
     except ValidationError as e:
         flash(e.message, "danger")
     except DiscordAPIError as e:

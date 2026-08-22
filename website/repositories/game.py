@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from sqlalchemy import and_, case, func, or_
+from sqlalchemy import and_, case, false, func, or_
 from sqlalchemy.orm import joinedload, subqueryload
 
 from config.constants import GAME_STATUS_DRAFT
@@ -438,12 +438,17 @@ class GameRepository(BaseRepository[Game]):
         now = now_utc()
         query = self.session.query(Game)
 
-        # Status filter with permission check
+        # Status filter with permission check. Every requested status the
+        # caller isn't allowed to see (e.g. an anonymous visitor requesting
+        # "draft") is simply dropped by _build_status_conditions rather than
+        # raising, so an empty result here means "nothing requested is
+        # visible" and must still filter to zero rows — never skip the
+        # filter entirely, or an unauthorized request returns every game
+        # regardless of status.
         status = filters.get("status", ["open"])
         if status:
             status_conditions = self._build_status_conditions(status, user_payload)
-            if status_conditions:
-                query = query.filter(or_(*status_conditions))
+            query = query.filter(or_(*status_conditions) if status_conditions else false())
 
         # Type filter
         game_type = filters.get("game_type", ["oneshot", "campaign"])

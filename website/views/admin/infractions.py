@@ -15,6 +15,7 @@ from config.constants import (
 from website.exceptions import NotFoundError, ValidationError
 from website.services.moderation import ModerationService
 from website.services.user import UserService
+from website.utils.timezone import parse_wall_clock_datetime
 from website.views.admin import admin_bp, get_list_params
 from website.views.auth import require_permission
 
@@ -23,18 +24,18 @@ user_service = UserService()
 
 
 def _parse_created_at(raw: str | None) -> datetime | None:
-    """Parse an ISO datetime/date string from the form, or None.
+    """Parse a ``datetime-local`` form value as aware UTC, or None.
 
     Args:
-        raw: Raw value from the form (``datetime-local`` or date), or None.
+        raw: Raw value from the form (``datetime-local``), or None.
 
     Returns:
-        Parsed datetime, or None if no value was provided.
+        Timezone-aware UTC datetime, or None if no value was provided.
     """
     raw = (raw or "").strip()
     if not raw:
         return None
-    return datetime.fromisoformat(raw)
+    return parse_wall_clock_datetime(raw)
 
 
 def _parse_severity(raw: str | None) -> int:
@@ -50,6 +51,24 @@ def _parse_severity(raw: str | None) -> int:
         return int(raw)
     except (TypeError, ValueError):
         return INFRACTION_SEVERITY_REMINDER
+
+
+_VALIDATION_MESSAGES_BY_FIELD = {
+    "reason": "Une raison est requise.",
+    "severity": "Niveau de gravité inconnu.",
+}
+
+
+def _flash_validation_error(error: ValidationError) -> None:
+    """Flash a French message for a ``ModerationService`` validation failure.
+
+    Args:
+        error: The English domain exception raised by the service.
+    """
+    message = _VALIDATION_MESSAGES_BY_FIELD.get(
+        error.field, "Les informations saisies sont invalides."
+    )
+    flash(message, "danger")
 
 
 @admin_bp.route("/infractions/", methods=["GET"])
@@ -81,18 +100,20 @@ def user_infractions(user_id):
     if request.method == "POST":
         try:
             moderation_service.create(
-                user_id=user.id,
-                reason=request.form.get("reason", ""),
-                severity=_parse_severity(request.form.get("severity")),
-                rule_article=request.form.get("rule_article"),
-                message_link=request.form.get("message_link"),
-                admin_id=session.get("user_id"),
-                created_at=_parse_created_at(request.form.get("created_at")),
+                user.id,
+                {
+                    "reason": request.form.get("reason", ""),
+                    "severity": _parse_severity(request.form.get("severity")),
+                    "rule_article": request.form.get("rule_article"),
+                    "message_link": request.form.get("message_link"),
+                    "admin_id": session.get("user_id"),
+                    "created_at": _parse_created_at(request.form.get("created_at")),
+                },
             )
             flash("Infraction enregistrée.", "success")
             return redirect(url_for("admin.user_infractions", user_id=user.id))
         except ValidationError as e:
-            flash(str(e), "danger")
+            _flash_validation_error(e)
 
     return render_template(
         "admin/infractions/user.html",
@@ -127,7 +148,7 @@ def edit_infraction(infraction_id):
             flash("Infraction mise à jour.", "success")
             return redirect(url_for("admin.user_infractions", user_id=infraction.user_id))
         except ValidationError as e:
-            flash(str(e), "danger")
+            _flash_validation_error(e)
 
     return render_template(
         "admin/infractions/form.html",

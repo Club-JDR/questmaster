@@ -39,6 +39,22 @@ special_event_service = SpecialEventService()
 _GAME_NOT_FOUND_MESSAGE = "Annonce introuvable."
 _EDIT_GAME_ENDPOINT = "admin.edit_game"
 
+_VALIDATION_MESSAGES_BY_FIELD = {
+    "user_id": "Cette personne n'est pas inscrite à cette partie.",
+}
+
+
+def _flash_validation_error(error: ValidationError) -> None:
+    """Flash a French message for a ``GameService`` validation failure.
+
+    Args:
+        error: The English domain exception raised by the service.
+    """
+    message = _VALIDATION_MESSAGES_BY_FIELD.get(
+        error.field, "Les informations saisies sont invalides."
+    )
+    flash(message, "danger")
+
 
 def _parse_game_form() -> dict:
     """Build a game-update dict from the submitted admin form.
@@ -124,7 +140,7 @@ def edit_game(game_id):
             flash("Annonce mise à jour.", "success")
             return redirect(url_for("admin.list_games"))
         except ValidationError as e:
-            flash(str(e), "danger")
+            _flash_validation_error(e)
 
     viewers = game_service.list_viewers(game.id)
     return render_template("admin/games/edit.html", game=game, viewers=viewers, **_form_context())
@@ -158,7 +174,7 @@ def add_game_player(game_id):
     except DuplicateRegistrationError:
         flash("Cette personne est déjà inscrite à cette partie.", "danger")
     except ValidationError as e:
-        flash(str(e), "danger")
+        _flash_validation_error(e)
     return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
@@ -173,7 +189,7 @@ def remove_game_player(game_id, user_id):
     except NotFoundError:
         flash(_GAME_NOT_FOUND_MESSAGE, "danger")
     except ValidationError as e:
-        flash(str(e), "danger")
+        _flash_validation_error(e)
     return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
@@ -199,8 +215,12 @@ def award_game_trophies(game_id):
         flash("Badges distribués.", "success")
     except NotFoundError:
         flash(_GAME_NOT_FOUND_MESSAGE, "danger")
-    except (ValidationError, TrophiesAlreadyAwardedError, TrophyAwardFailedError) as e:
-        flash(str(e), "danger")
+    except ValidationError:
+        flash("L'annonce doit être archivée avant de distribuer les badges.", "danger")
+    except TrophiesAlreadyAwardedError:
+        flash("Les badges ont déjà été distribués pour cette annonce.", "danger")
+    except TrophyAwardFailedError:
+        flash("Certains badges n'ont pas pu être distribués. Veuillez réessayer.", "danger")
     return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
@@ -213,8 +233,10 @@ def revoke_game_trophies(game_id):
         flash("Badges retirés.", "success")
     except NotFoundError:
         flash(_GAME_NOT_FOUND_MESSAGE, "danger")
-    except (ValidationError, TrophiesNotAwardedError) as e:
-        flash(str(e), "danger")
+    except ValidationError:
+        flash("L'annonce doit être archivée avant de retirer les badges.", "danger")
+    except TrophiesNotAwardedError:
+        flash("Les badges n'ont pas été distribués pour cette annonce.", "danger")
     return redirect(url_for(_EDIT_GAME_ENDPOINT, game_id=game_id))
 
 
