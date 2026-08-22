@@ -5,23 +5,32 @@
 {% macro leaderboard_table(title, entries, accent_class, unit_label='Badges') %}
 <div class="card bg-base-100 shadow-md">
   <div class="card-body">
-    <h2 class="card-title justify-center {{ accent_class }}"><i class="ph ph-medal" aria-hidden="true"></i> {{ title }}</h2>
+    <h2 class="card-title justify-center {{ accent_class }}"><i class="ph ph-medal" aria-hidden="true"></i> {{ title }}
+    </h2>
     <div class="overflow-x-auto">
       <table class="table table-sm table-zebra">
         <thead>
-          <tr><th>#</th><th>Nom</th><th>{{ unit_label }}</th></tr>
+          <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>{{ unit_label }}</th>
+          </tr>
         </thead>
         <tbody>
           {% set ns = namespace(rank=1) %}
           {% for player, total in entries %}
           <tr>
-            <td>{{ ns.rank }}</td><td>{{ player.name }}</td><td>{{ total }}</td>
+            <td>{{ ns.rank }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ total }}</td>
           </tr>
           {% set ns.rank = ns.rank + 1 %}
           {% endfor %}
           {% for i in range(10 - entries|length) %}
           <tr class="opacity-30">
-            <td>{{ ns.rank }}</td><td>—</td><td>—</td>
+            <td>{{ ns.rank }}</td>
+            <td>—</td>
+            <td>—</td>
           </tr>
           {% set ns.rank = ns.rank + 1 %}
           {% endfor %}
@@ -41,8 +50,10 @@
   {# ---------- Global / Événements toggle ---------- #}
   <div class="flex justify-center mb-4">
     <div class="join" role="group" aria-label="Portée du classement">
-      <button type="button" class="join-item btn btn-sm {{ 'btn-primary btn-active' if not selected_event_id }}" data-lb-toggle="global">Global</button>
-      <button type="button" class="join-item btn btn-sm {{ 'btn-primary btn-active' if selected_event_id }}" data-lb-toggle="events">Événements</button>
+      <button type="button" class="join-item btn btn-sm {{ 'btn-primary btn-active' if not selected_event_id }}"
+        data-lb-toggle="global">Global</button>
+      <button type="button" class="join-item btn btn-sm {{ 'btn-primary btn-active' if selected_event_id }}"
+        data-lb-toggle="events">Événements</button>
     </div>
   </div>
 
@@ -60,13 +71,14 @@
   </div>
 
   <div data-lbpane="events" class="{{ '' if selected_event_id else 'hidden' }}">
-    <form method="get" action="{{ url_for('misc.trophies_leaderboard') }}" class="flex flex-wrap items-end justify-center gap-3 mb-6">
+    <form method="get" action="{{ url_for('misc.trophies_leaderboard') }}"
+      class="flex flex-wrap items-end justify-center gap-3 mb-6">
       <label class="form-control">
         <span class="label-text" id="event-select-label">Évènement</span>
         <select class="select select-bordered" name="event" aria-labelledby="event-select-label">
           <option value="">— Choisir un évènement —</option>
           {% for e in special_events %}
-          <option value="{{ e.id }}" {% if selected_event_id == e.id %}selected{% endif %}>
+          <option value="{{ e.id }}" {% if selected_event_id==e.id %}selected{% endif %}>
             {{ e.emoji ~ ' ' if e.emoji }}{{ e.name }}{% if not e.active %} (terminé){% endif %}
           </option>
           {% endfor %}
@@ -79,13 +91,13 @@
 
     {% if event_leaderboard %}
     {% set event = event_leaderboard.event %}
-    <h2 class="text-center font-bold text-lg mb-4"
-      {% if event.color is not none %}style="color: {{ hex_color(event.color) }};"{% endif %}>
+    <h2 class="text-center font-bold text-lg mb-4" {% if event.color is not none
+      %}style="color: {{ hex_color(event.color) }};" {% endif %}>
       {{ event.emoji ~ ' ' if event.emoji }}{{ event.name }}
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {{ leaderboard_table('Top 10 joueurs', event_leaderboard.player_leaderboard, 'text-primary', 'Annonces') }}
-      {{ leaderboard_table('Top 10 MJs', event_leaderboard.gm_leaderboard, 'text-primary', 'Annonces') }}
+      {{ leaderboard_table('Top 10 joueurs', event_leaderboard.player_leaderboard, 'text-oneshot-accent', 'Annonces') }}
+      {{ leaderboard_table('Top 10 MJs', event_leaderboard.gm_leaderboard, 'text-campaign-accent', 'Annonces') }}
     </div>
     {% elif special_events|length == 0 %}
     <div role="alert" class="alert alert-info">
