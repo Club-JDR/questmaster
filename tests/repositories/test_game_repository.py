@@ -285,6 +285,27 @@ class TestGameRepository:
         )
         assert any(g.status == "draft" for g in result.items)
 
+    def test_search_draft_status_anonymous_sees_nothing(
+        self, db_session, sample_game, published_game
+    ):
+        """An unauthenticated request for drafts must return zero rows.
+
+        Regression test: when none of the requested statuses are visible to
+        the caller, ``_build_status_conditions`` returns an empty condition
+        list. That must still filter the query down to zero rows — not skip
+        the status filter altogether, which would leak every game
+        (including other GMs' drafts) to an anonymous visitor.
+        """
+        repo = GameRepository()
+        result = repo.search(
+            filters={"status": ["draft"]},
+            page=1,
+            per_page=20,
+            user_payload=None,
+        )
+        assert result.total == 0
+        assert result.items == []
+
     def test_search_by_type(self, db_session, published_game):
         repo = GameRepository()
         result = repo.search(

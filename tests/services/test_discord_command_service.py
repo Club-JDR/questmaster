@@ -35,6 +35,8 @@ from website.services.discord_command import (
     MSG_NOT_GM,
     MSG_NOT_OPEN,
     MSG_NOT_PARTICIPANT,
+    MSG_NOTIFICATION_NO_CHANNEL,
+    MSG_NOTIFICATION_TOO_LONG,
     MSG_PLAYER_NOT_REGISTERED,
     MSG_PLAYER_REGISTERED,
     MSG_PLAYER_UNREGISTERED,
@@ -244,6 +246,34 @@ class TestNotifier:
         payload = _payload("notifier", channel_game.channel, options=[_opt("message", "x")])
 
         assert command_service._execute(payload) == MSG_NOT_GM
+
+    def test_notifier_too_long_message_returns_specific_error(
+        self, db_session, command_service, channel_game
+    ):
+        _resolve_as(command_service, _make_user(channel_game.gm_id))
+        payload = _payload("notifier", channel_game.channel, options=[_opt("message", "x" * 2000)])
+
+        assert command_service._execute(payload) == MSG_NOTIFICATION_TOO_LONG
+
+    def test_notifier_no_channel_returns_specific_error(
+        self, db_session, command_service, channel_game
+    ):
+        """Calling the handler directly with a channel-less game.
+
+        This state can't be reached through ``_execute`` (routing itself
+        resolves the game by its Discord channel, so a game with no channel
+        is never found), but the handler's field-based branching should
+        still return the right message if it were ever called this way.
+        """
+        channel_game.channel = None
+        user = _make_user(channel_game.gm_id)
+
+        assert (
+            command_service._handle_notify(
+                channel_game, user, {"data": {"options": [_opt("message", "x")]}}
+            )
+            == MSG_NOTIFICATION_NO_CHANNEL
+        )
 
 
 class TestAjouterSession:

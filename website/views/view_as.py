@@ -36,8 +36,8 @@ def start(user_id):
 
     try:
         target = user_service.validate_impersonation_target(session["user_id"], user_id)
-    except ValidationError as e:
-        flash(str(e), "danger")
+    except ValidationError:
+        flash("Vous ne pouvez pas vous incarner vous-même.", "danger")
         return redirect(request.referrer or url_for("admin.list_users"))
     except NotFoundError:
         flash("Utilisateur introuvable.", "danger")

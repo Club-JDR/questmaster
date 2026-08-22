@@ -478,6 +478,34 @@ class TestGameStatus:
         assert "Joueur·euses notifié·es." in response.data.decode()
         mock_discord_service.send_message.assert_called_once()
 
+    def test_notify_without_channel_flashes_specific_error(
+        self,
+        logged_in_admin,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        open_game,
+    ):
+        """Notifying a game with no Discord channel gives its own message.
+
+        Regression test: this ``ValidationError`` (field="channel") used to
+        be indistinguishable from an empty message and always flashed "Le
+        message de notification est vide.", which was misleading here.
+        """
+        assert open_game.channel is None
+
+        response = logged_in_admin.post(
+            f"/annonces/{open_game.slug}/notifier/",
+            data={"notifyMessage": "Rendez-vous ce soir !"},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        body = html.unescape(response.data.decode())
+        assert "n'a pas de salon Discord associé" in body
+        assert "Le message de notification est vide." not in body
+
     def test_non_owner_cannot_notify(
         self,
         logged_in_gm,
@@ -593,6 +621,39 @@ class TestGameStatus:
         body = response.data.decode()
         assert response.status_code == 200
         assert "Annonce publiée avec succès." in body
+
+    def test_publish_draft_game_blocked_by_can_post_games(
+        self,
+        logged_in_admin,
+        admin_user,
+        mock_discord_lookups,
+        mock_csrf,
+        mock_discord_service,
+        db_session,
+        draft_game,
+    ):
+        """Publishing via the status-change route flashes, not 500s, when blocked.
+
+        Regression test: unlike the other ``publish()`` call sites in this
+        module, ``_handle_publish`` didn't used to catch
+        ``GamePostingBlockedError``, so this specific route (draft → open via
+        POST /annonces/<slug>/statut/) would 500 instead of flashing the
+        usual French message.
+        """
+        admin_user.can_post_games = False
+        draft_game.date = datetime.now() + timedelta(days=30)
+        db_session.commit()
+
+        response = logged_in_admin.post(
+            f"/annonces/{draft_game.slug}/statut/",
+            data={"status": "publish"},
+            follow_redirects=True,
+        )
+        body = html.unescape(response.data.decode())
+        assert response.status_code == 200
+        assert "n'êtes pas autorisé" in body
+        db_session.refresh(draft_game)
+        assert draft_game.status == "draft"
 
     def test_gm_can_close_own_game(
         self,

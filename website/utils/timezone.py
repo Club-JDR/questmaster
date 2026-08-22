@@ -30,6 +30,12 @@ def now_utc() -> datetime:
 def to_utc(value: datetime) -> datetime:
     """Convert a datetime to aware UTC, treating naive input as Europe/Paris wall time.
 
+    During the one-hour DST fall-back window (the last Sunday of October, when
+    02:00-03:00 wall-clock time occurs twice), a naive value is deliberately
+    resolved to its first occurrence — ``fold=0``, the CEST/summer-time
+    instant — since plain ``datetime-local`` form inputs and Discord command
+    options carry no way to disambiguate which occurrence the user meant.
+
     Args:
         value: A naive datetime (assumed Europe/Paris wall-clock, e.g. parsed
             from a form or Discord command) or an already-aware datetime in
@@ -39,7 +45,7 @@ def to_utc(value: datetime) -> datetime:
         The equivalent timezone-aware datetime in UTC.
     """
     if value.tzinfo is None:
-        value = value.replace(tzinfo=APP_TIMEZONE)
+        value = value.replace(tzinfo=APP_TIMEZONE, fold=0)
     return value.astimezone(timezone.utc)
 
 
@@ -77,11 +83,17 @@ def format_local(value: datetime, fmt: str) -> str:
 
 
 def parse_wall_clock_datetime(raw: str) -> datetime:
-    """Parse a ``datetime-local``-style form value as aware UTC.
+    """Parse a ``datetime-local`` form value or an offset-aware ISO string as UTC.
+
+    A bare ``datetime-local`` value (e.g. ``"2026-08-20T19:00"``) has no
+    timezone info and is interpreted as Europe/Paris wall-clock time, same as
+    :func:`to_utc`. A string that already carries a UTC offset (e.g.
+    ``"2026-08-20T19:00:00+00:00"`` from an API client) is trusted as-is and
+    converted precisely, instead of being truncated and reinterpreted as
+    local time.
 
     Args:
-        raw: Raw form value (e.g. ``"2026-08-20T19:00"``), interpreted as
-            Europe/Paris wall-clock time.
+        raw: Raw form value or ISO 8601 datetime string.
 
     Returns:
         Timezone-aware UTC datetime.
@@ -89,5 +101,9 @@ def parse_wall_clock_datetime(raw: str) -> datetime:
     Raises:
         ValueError: If the value is missing or not a valid ISO datetime.
     """
-    naive = datetime.fromisoformat(raw.replace("T", " ")[:16])
-    return to_utc(naive)
+    normalized = raw.replace("T", " ").strip()
+    try:
+        value = datetime.fromisoformat(normalized)
+    except ValueError:
+        value = datetime.fromisoformat(normalized[:16])
+    return to_utc(value)

@@ -8,7 +8,7 @@ payload; the game is resolved from the channel the command was run in.
 
 import logging
 import re
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 from config.constants import (
@@ -39,6 +39,20 @@ from website.utils.timezone import format_local, now_utc, to_utc
 
 logger = logging.getLogger(__name__)
 
+# Bounded worker pool for async command execution — each worker holds one DB
+# connection for the duration of a command, and runs in the same gunicorn
+# worker process as regular HTTP request threads. entrypoint.sh runs
+# --threads=4 (gthread) against SQLALCHEMY_ENGINE_OPTIONS's pool_size=3 +
+# max_overflow=2 (5 connections/process) on the small prod host, so request
+# threads alone can already claim 4 of those 5; kept at 1 so a slash-command
+# burst queues instead of adding meaningful extra contention on top of that.
+# An unbounded thread-per-command approach would be worse still — no cap at
+# all on how many connections a burst could try to claim at once.
+_MAX_CONCURRENT_COMMANDS = 1
+_command_executor = ThreadPoolExecutor(
+    max_workers=_MAX_CONCURRENT_COMMANDS, thread_name_prefix="discord-command"
+)
+
 # User-facing strings (French — service exceptions never leak to Discord)
 MSG_NOT_A_GAME_CHANNEL = "Ce salon n'est pas associé à une partie."
 MSG_NOT_PARTICIPANT = "Vous n'êtes pas autorisé·e à effectuer cette action pour cette partie."
@@ -53,6 +67,11 @@ MSG_SESSION_EDITED = "Session modifiée."
 MSG_SESSION_DELETED = "Session supprimée."
 MSG_SESSION_NOT_FOUND = "Aucune session ne commence à cette date."
 MSG_EMPTY_NOTIFICATION = "Le message de notification est vide."
+MSG_NOTIFICATION_NO_CHANNEL = "Cette annonce n'a pas de salon Discord associé."
+MSG_NOTIFICATION_TOO_LONG = (
+    "Le message est trop long une fois les mentions des joueur·euses ajoutées. "
+    "Raccourcissez-le et réessayez."
+)
 MSG_BAD_DATE_FORMAT = "Format de date invalide. Utilisez JJ/MM/AAAA HH:MM."
 MSG_BAD_DURATION_FORMAT = "Format de durée invalide. Utilisez par exemple 3h ou 2h30."
 MSG_INVALID_SESSION_DATES = (
@@ -163,14 +182,14 @@ class DiscordCommandService:
         return self._game_summary(game)
 
     def dispatch_async(self, app, payload: dict) -> None:
-        """Run a mutating command in a background thread, then follow up.
+        """Queue a mutating command onto the bounded worker pool, then follow up.
 
         Args:
             app: The real Flask app object (not a proxy) whose context the
-                background thread pushes for DB and config access.
+                background worker pushes for DB and config access.
             payload: The interaction payload from Discord.
         """
-        threading.Thread(target=self._run_in_context, args=(app, payload), daemon=True).start()
+        _command_executor.submit(self._run_in_context, app, payload)
 
     def _run_in_context(self, app, payload: dict) -> None:
         """Execute a command inside an app context and send the follow-up."""
@@ -275,7 +294,11 @@ class DiscordCommandService:
         message = self._option(payload, "message")
         try:
             self.games.notify_players(game.slug, message, user_id=user.id)
-        except ValidationError:
+        except ValidationError as e:
+            if e.code == "MESSAGE_TOO_LONG":
+                return MSG_NOTIFICATION_TOO_LONG
+            if e.field == "channel":
+                return MSG_NOTIFICATION_NO_CHANNEL
             return MSG_EMPTY_NOTIFICATION
         return MSG_PLAYERS_NOTIFIED
 
@@ -347,19 +370,21 @@ class DiscordCommandService:
         except SessionConflictError:
             return MSG_SESSION_CONFLICT
 
+        new_start_fmt = format_local(session.start, HUMAN_TIMEFORMAT)
+        new_end_fmt = format_local(session.end, HUMAN_TIMEFORMAT)
         log_game_event(
             "edit-session",
             game.id,
             f"Une session a été éditée : {old_start} → {old_end}, "
-            f"remplacée par {new_start} → {new_end}.",
+            f"remplacée par {new_start_fmt} → {new_end_fmt}.",
             user_id=user.id,
         )
         logger.info(f"Session {old_start}/{old_end} of Game {game.id} updated via slash command")
         self.discord.send_game_embed(
             game,
             embed_type="edit-session",
-            start=format_local(session.start, HUMAN_TIMEFORMAT),
-            end=format_local(session.end, HUMAN_TIMEFORMAT),
+            start=new_start_fmt,
+            end=new_end_fmt,
             old_start=old_start,
             old_end=old_end,
         )
@@ -538,14 +563,17 @@ class DiscordCommandService:
         if not user.is_admin:
             return MSG_NOT_ADMIN
         target = self._resolve_target_member(payload)
+        severity = int(self._option(payload, "gravite", INFRACTION_SEVERITY_REMINDER))
         try:
             infraction = self.moderation.create(
-                user_id=target.id,
-                reason=self._option(payload, "raison", ""),
-                severity=int(self._option(payload, "gravite", INFRACTION_SEVERITY_REMINDER)),
-                rule_article=self._option(payload, "article"),
-                message_link=self._option(payload, "lien"),
-                admin_id=user.id,
+                target.id,
+                {
+                    "reason": self._option(payload, "raison", ""),
+                    "severity": severity,
+                    "rule_article": self._option(payload, "article"),
+                    "message_link": self._option(payload, "lien"),
+                    "admin_id": user.id,
+                },
             )
         except ValidationError as exc:
             return MSG_EMPTY_REASON if exc.field == "reason" else MSG_GENERIC_ERROR
@@ -596,7 +624,7 @@ class DiscordCommandService:
             ``- date — gravité — article — raison — par admin (lien)`` with the
             optional parts omitted when absent.
         """
-        parts = [infraction.created_at.strftime("%d/%m/%Y"), infraction.severity_label]
+        parts = [format_local(infraction.created_at, "%d/%m/%Y"), infraction.severity_label]
         if infraction.rule_article:
             parts.append(infraction.rule_article)
         parts.append(infraction.reason)

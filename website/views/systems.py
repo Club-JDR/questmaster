@@ -35,19 +35,17 @@ def list_systems():
 @systems_bp.route("/<int:system_id>/", methods=["GET"])
 def get_system(system_id):
     """Display a system's public page: description/link + matchmaking lists."""
-    system = system_service.get_by_id(system_id)
     payload = who()
     user_id = payload.get("user_id")
+    page = system_service.get_public_page(system_id, user_id)
 
     return render_template(
         "system_details.j2",
-        system=system.to_dict(),
-        gm_history=[u.to_dict() for u in system_service.get_run_history(system_id)],
-        gms_interested=[i.user.to_dict() for i in system_service.get_interested(system_id, "gm")],
-        players_interested=[
-            i.user.to_dict() for i in system_service.get_interested(system_id, "player")
-        ],
-        my_interests=(system_service.get_user_interests(system_id, user_id) if user_id else {}),
+        system=page["system"].to_dict(),
+        gm_history=[u.to_dict() for u in page["gm_history"]],
+        gms_interested=[i.user.to_dict() for i in page["gms_interested"]],
+        players_interested=[i.user.to_dict() for i in page["players_interested"]],
+        my_interests=page["my_interests"],
     )
 
 
