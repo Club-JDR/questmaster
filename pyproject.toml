@@ -19,7 +19,7 @@ dependencies = [
     "redis==8.1.0",
     "gunicorn==26.0.0",
     "psutil==7.2.2",
-    "psycopg[binary]==3.2.10",
+    "psycopg[binary]==3.3.4",
     "Werkzeug==3.1.8",
     "wtforms==3.2.2",
     "python-dateutil==2.9.0.post0",
