@@ -30,7 +30,7 @@ dependencies = [
     "marshmallow==4.3.1",
     "pynacl>=1.5",
     "markdown-it-py[linkify]==4.2.0",
-    "nh3==0.3.6",
+    "nh3==0.3.7",
 ]
 
 [project.optional-dependencies]
