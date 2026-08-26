@@ -940,6 +940,7 @@ class TestGameService:
         """
         sample_game.status = "closed"
         db_session.commit()
+        GameSessionFactory(db_session, game_id=sample_game.id)
 
         game_service.archive(sample_game.slug, award_trophies=True)
 
@@ -962,6 +963,7 @@ class TestGameService:
         sample_game.status = "closed"
         sample_game.type = "oneshot"
         db_session.commit()
+        GameSessionFactory(db_session, game_id=sample_game.id)
 
         service.archive(sample_game.slug, award_trophies=True)
 
@@ -981,11 +983,31 @@ class TestGameService:
         sample_game.status = "open"
         assert sample_game.channel is None
         db_session.commit()
+        GameSessionFactory(db_session, game_id=sample_game.id)
 
         game_service.archive(sample_game.slug, award_trophies=True)
 
         game = game_service.get_by_slug(sample_game.slug)
         assert game.trophies_awarded is True
+
+    def test_archive_game_without_sessions_ignores_award_trophies(
+        self, db_session, sample_game, mock_discord, game_service
+    ):
+        """A published game that never had a single session isn't "actually run".
+
+        Covers a game cancelled before its first session, or archived right
+        after publishing: trophies must not be awarded even if requested,
+        mirroring the draft guard above.
+        """
+        sample_game.status = "closed"
+        assert sample_game.sessions == []
+        db_session.commit()
+
+        game_service.archive(sample_game.slug, award_trophies=True)
+
+        game = game_service.get_by_slug(sample_game.slug)
+        assert game.status == "archived"
+        assert game.trophies_awarded is False
 
     def test_archive_draft_game_ignores_award_trophies(
         self, db_session, sample_game, mock_discord, game_service
