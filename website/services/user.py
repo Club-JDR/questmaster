@@ -4,6 +4,7 @@ import logging
 import re
 from datetime import datetime, timezone
 
+from config.constants import USER_PLACEHOLDER_NAME
 from website.exceptions import NotFoundError, ValidationError
 from website.extensions import db
 from website.models import User
@@ -72,13 +73,13 @@ class UserService:
         return user
 
     def get_or_create(
-        self, user_id: str, name: str = "Inconnu", username: str | None = None
+        self, user_id: str, name: str = USER_PLACEHOLDER_NAME, username: str | None = None
     ) -> tuple[User, bool]:
         """Get an existing user or create a new one.
 
         Args:
             user_id: Discord user ID.
-            name: Display name for new users. Defaults to 'Inconnu'.
+            name: Display name for new users. Defaults to USER_PLACEHOLDER_NAME.
             username: Stable Discord username (optional).
 
         Returns:

@@ -11,7 +11,7 @@ import jwt
 import requests
 from flask import Blueprint, current_app, g, jsonify, request, session
 
-from config.constants import DISCORD_API_BASE_URL
+from config.constants import DISCORD_API_BASE_URL, USER_PLACEHOLDER_NAME
 from website.exceptions import UnauthorizedError, ValidationError
 from website.services.user import UserService
 
@@ -316,7 +316,8 @@ def exchange_token():
     user_service = UserService()
     user, _ = user_service.get_or_create(
         user_id=str(discord_user["id"]),
-        name=discord_user.get("global_name") or discord_user.get("username", "Inconnu"),
+        name=discord_user.get("global_name")
+        or discord_user.get("username", USER_PLACEHOLDER_NAME),
         username=discord_user.get("username"),
     )
     user.refresh_roles()

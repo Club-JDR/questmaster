@@ -15,6 +15,7 @@ from config.constants import (
     CACHE_USER_PROFILE_TIMEOUT,
     DEFAULT_AVATAR,
     DISCORD_REQUEST_TIMEOUT,
+    USER_PLACEHOLDER_NAME,
 )
 from website.bot import get_bot
 from website.exceptions import DiscordAPIError, ValidationError
@@ -64,7 +65,7 @@ def get_user_profile(user_id, force_refresh=False):
         if user_data.get("nick"):
             name = user_data["nick"]
         else:
-            name = user.get("global_name") or user.get("username") or "Inconnu"
+            name = user.get("global_name") or user.get("username") or USER_PLACEHOLDER_NAME
 
         avatar_url = _resolve_avatar_url(user, user_id)
 
@@ -75,7 +76,7 @@ def get_user_profile(user_id, force_refresh=False):
     except DiscordAPIError as e:
         current_app.logger.warning(f"[get_user_profile] Discord API error for user {user_id}: {e}")
         fallback = {
-            "name": "Inconnu",
+            "name": USER_PLACEHOLDER_NAME,
             "avatar": DEFAULT_AVATAR,
             "username": None,
             "raw": None,
@@ -89,7 +90,7 @@ def get_user_profile(user_id, force_refresh=False):
     except Exception as e:
         current_app.logger.warning(f"[get_user_profile] Failed for user {user_id}: {e}")
         return {
-            "name": "Inconnu",
+            "name": USER_PLACEHOLDER_NAME,
             "avatar": DEFAULT_AVATAR,
             "username": None,
             "raw": None,
@@ -148,7 +149,7 @@ class User(db.Model, SerializableMixin):
     games_gm = db.relationship("Game", back_populates="gm")
     trophies = db.relationship("UserTrophy", back_populates="user", cascade="all, delete-orphan")
 
-    def __init__(self, id, name="Inconnu", username=None):
+    def __init__(self, id, name=USER_PLACEHOLDER_NAME, username=None):
         if not re.fullmatch(r"\d{17,21}", id):
             raise ValidationError("Invalid Discord UID.", field="id", details={"value": id})
         self.id = id
@@ -168,7 +169,7 @@ class User(db.Model, SerializableMixin):
     @property
     def display_name(self):
         """Display-friendly name, fetching from Discord if necessary."""
-        if not self.name or self.name == "Inconnu":
+        if not self.name or self.name == USER_PLACEHOLDER_NAME:
             try:
                 profile = get_user_profile(self.id)
                 self.name = profile["name"]
@@ -212,7 +213,7 @@ class User(db.Model, SerializableMixin):
 
         if request.path.startswith("/admin"):
             if not getattr(self, "name", None):
-                self.name = "Inconnu"
+                self.name = USER_PLACEHOLDER_NAME
             return
 
         try:
@@ -223,7 +224,7 @@ class User(db.Model, SerializableMixin):
                 self.username = profile["username"]
         except Exception:
             if not getattr(self, "name", None):
-                self.name = "Inconnu"
+                self.name = USER_PLACEHOLDER_NAME
             self.avatar = DEFAULT_AVATAR
 
     def refresh_roles(self):
@@ -320,7 +321,7 @@ class User(db.Model, SerializableMixin):
             raise ValidationError("Missing id when creating User from dict.", field="id")
         user = cls(
             id=str(data["id"]),
-            name=data.get("name", "Inconnu"),
+            name=data.get("name", USER_PLACEHOLDER_NAME),
             username=data.get("username"),
         )
 
