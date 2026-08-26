@@ -217,6 +217,10 @@ DASHBOARD_STATS_CACHE_TIMEOUT = 300  # Seconds to cache a user's computed dashbo
 # Upper bound (hours) for a single play session. Guards against date-entry typos
 # (e.g. an "end" a day/month/year off) that would otherwise poison play-time stats.
 MAX_SESSION_DURATION_HOURS = 24
+# How far ahead (hours) of a session's start the scheduler sends a Discord
+# reminder in the game channel. GameSession.reminder_sent guards against
+# sending it more than once.
+SESSION_REMINDER_HORIZON_HOURS = 24
 
 # Global statistics (app-wide /stats page).
 STATS_TOP_GLOBAL = 10  # Items listed in each global "Top systèmes / VTTs" ranking.

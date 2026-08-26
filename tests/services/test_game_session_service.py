@@ -1,6 +1,6 @@
 """Tests for GameSessionService."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -143,6 +143,25 @@ class TestGameSessionService:
         assert updated.start == new_start
         assert updated.end == new_end
 
+    def test_update_resets_reminder_sent(self, db_session, sample_game):
+        """A rescheduled session's prior reminder decision is no longer valid."""
+        service = GameSessionService()
+        session = service.create(
+            sample_game,
+            datetime(2025, 10, 6, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 10, 6, 23, 0, tzinfo=timezone.utc),
+        )
+        session.reminder_sent = True
+        db_session.commit()
+
+        updated = service.update(
+            session,
+            datetime(2025, 10, 7, 20, 0, tzinfo=timezone.utc),
+            datetime(2025, 10, 7, 23, 0, tzinfo=timezone.utc),
+        )
+
+        assert updated.reminder_sent is False
+
     def test_get_stats_for_period(self, db_session, sample_game):
         service = GameSessionService()
         sample_game.status = "open"  # only published games count toward the breakdown
@@ -218,3 +237,51 @@ class TestGameSessionService:
         with patch("website.services.game_session.cache.delete_memoized") as mock_delete:
             GameSessionService.clear_cache()
         mock_delete.assert_called_once_with(GameSessionService._compute_stats)
+
+
+class TestGetSessionsNeedingReminder:
+    def test_returns_session_due_within_horizon(self, db_session, sample_game):
+        service = GameSessionService()
+        sample_game.status = "open"
+        now = datetime.now(timezone.utc)
+        session = service.create(sample_game, now + timedelta(hours=1), now + timedelta(hours=4))
+
+        due = service.get_sessions_needing_reminder()
+
+        assert any(s.id == session.id for s in due)
+
+    def test_excludes_session_outside_horizon(self, db_session, sample_game):
+        service = GameSessionService()
+        sample_game.status = "open"
+        now = datetime.now(timezone.utc)
+        session = service.create(
+            sample_game, now + timedelta(days=5), now + timedelta(days=5, hours=3)
+        )
+
+        due = service.get_sessions_needing_reminder()
+
+        assert not any(s.id == session.id for s in due)
+
+    def test_excludes_already_reminded_session(self, db_session, sample_game):
+        service = GameSessionService()
+        sample_game.status = "open"
+        now = datetime.now(timezone.utc)
+        session = service.create(sample_game, now + timedelta(hours=1), now + timedelta(hours=4))
+        session.reminder_sent = True
+        db_session.commit()
+
+        due = service.get_sessions_needing_reminder()
+
+        assert not any(s.id == session.id for s in due)
+
+
+class TestMarkReminderSent:
+    def test_persists_reminder_sent(self, db_session, sample_game):
+        service = GameSessionService()
+        sample_game.status = "open"
+        now = datetime.now(timezone.utc)
+        session = service.create(sample_game, now + timedelta(hours=1), now + timedelta(hours=4))
+
+        service.mark_reminder_sent(session)
+
+        assert db_session.get(GameSession, session.id).reminder_sent is True
