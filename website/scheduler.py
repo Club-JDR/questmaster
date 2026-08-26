@@ -11,6 +11,10 @@ from website.services.user import UserService
 FREQUENCY = 5
 INACTIVE_CHECK_BATCH_SIZE = 10
 ROLE_MONITOR_FREQUENCY_HOURS = 12
+# How often (minutes) to check for sessions entering the reminder window.
+# Frequent enough that no session starting near the ~24h horizon slips through
+# between two runs, without hammering the DB/Discord API.
+SESSION_REMINDER_CHECK_FREQUENCY = 15
 # Per-fire random drift (seconds) applied to the long-running jobs so repeated
 # runs do not realign on the same instant. ±1h.
 DAILY_JOB_JITTER = 3600
@@ -182,6 +186,50 @@ def monitor_category_capacity(app):
             app.logger.warning(f"[Scheduler] Category capacity check failed: {e}")
 
 
+def send_session_reminders(app):
+    """Post a Discord reminder for sessions starting within the reminder horizon.
+
+    Each session is handled independently (one Discord failure does not stop
+    the rest) and `GameSession.reminder_sent` is only flipped after a
+    successful send, so a failed one is retried on the next run instead of
+    being silently skipped forever.
+
+    Args:
+        app: Flask application instance for context.
+    """
+    from config.constants import HUMAN_TIMEFORMAT
+    from website.services.discord import DiscordService
+    from website.services.game_session import GameSessionService
+    from website.utils.timezone import format_local
+
+    with app.app_context():
+        service = GameSessionService()
+        sessions = service.get_sessions_needing_reminder()
+        if not sessions:
+            app.logger.info("[Scheduler] No sessions due for a reminder")
+            return
+
+        discord = DiscordService()
+        sent = 0
+        for session in sessions:
+            game = session.game
+            try:
+                discord.send_game_embed(
+                    game,
+                    embed_type="session-reminder",
+                    start=format_local(session.start, HUMAN_TIMEFORMAT),
+                    end=format_local(session.end, HUMAN_TIMEFORMAT),
+                )
+                service.mark_reminder_sent(session)
+                sent += 1
+            except Exception as e:
+                app.logger.warning(
+                    f"[Scheduler] Failed to send session reminder for game {game.id}: {e}"
+                )
+
+        app.logger.info(f"[Scheduler] Sent {sent}/{len(sessions)} session reminders")
+
+
 def prune_app_logs(app):
     """Daily: delete application log rows older than the retention window.
 
@@ -224,6 +272,16 @@ def start_scheduler(app):
         minutes=FREQUENCY,
         id="refresh_user_profiles",
         name="refresh_user_profiles",
+        replace_existing=True,
+    )
+
+    scheduler.add_job(
+        func=send_session_reminders,
+        args=[app],
+        trigger="interval",
+        minutes=SESSION_REMINDER_CHECK_FREQUENCY,
+        id="send_session_reminders",
+        name="send_session_reminders",
         replace_existing=True,
     )
 
