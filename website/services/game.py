@@ -847,7 +847,9 @@ class GameService:
 
         Args:
             slug: Game slug.
-            award_trophies: Whether to award trophies to participants.
+            award_trophies: Whether to award trophies to participants. Forced
+                to False if the game is still a draft or never had a single
+                session scheduled — see Note.
             user_id: ID of the user performing the archive.
 
         Raises:
@@ -861,6 +863,12 @@ class GameService:
             awarded successfully, so downstream aggregates (e.g. the
             special-event leaderboard) never see a game marked as awarded when
             some recipients didn't get their trophy.
+
+            "Actually run" is approximated as "has at least one GameSession
+            row", counting every session ever scheduled for the game
+            regardless of whether its date has passed — not just those that
+            started before the archive call. A GM archiving right after a
+            session starts (before its scheduled ``end``) still counts as run.
         """
         game = self.get_by_slug(slug)
         if game.status == "archived":
@@ -872,9 +880,14 @@ class GameService:
         # even if the caller (a tampered form submission, since the UI hides
         # this toggle for drafts) asked for it. A published game (open or
         # closed) is trusted as-is even without a Discord channel (e.g. one
-        # promoted directly via the admin panel).
+        # promoted directly via the admin panel). But a published game that
+        # was cancelled before its first session (or archived right after
+        # publishing) never got that far either, so it needs the same guard.
         if award_trophies and game.status == "draft":
             logger.warning(f"Ignoring award_trophies=True for game {game.id}: still a draft.")
+            award_trophies = False
+        elif award_trophies and not game.sessions:
+            logger.warning(f"Ignoring award_trophies=True for game {game.id}: no sessions held.")
             award_trophies = False
 
         game.status = "archived"
