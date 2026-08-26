@@ -190,6 +190,11 @@ BADGE_CAMPAIGN_GM_ID = 4
 DEFAULT_AVATAR = "/static/img/avatar.webp"
 AVATAR_BASE_URL = "https://cdn.discordapp.com/avatars/{}/{}"
 
+# Fallback display name for a User whose Discord profile can no longer be
+# resolved (left the server, deleted account, etc.). Never a real, contactable
+# person, so it must be excluded from any "who can I ask" recommendation list.
+USER_PLACEHOLDER_NAME = "Inconnu"
+
 # Pagination
 GAMES_PER_PAGE = 12  # Default card-grid page size; admin-overridable at runtime.
 GAMES_PER_PAGE_MAX = 60  # Upper bound for the admin-configurable card-grid page size.

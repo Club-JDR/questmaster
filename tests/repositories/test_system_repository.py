@@ -81,3 +81,15 @@ class TestSystemRepository:
         GameFactory(db_session, system_id=other_system.id, gm_id=gm.id, status="open")
 
         assert repo.get_gm_history(system.id) == []
+
+    def test_get_gm_history_excludes_placeholder_user(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session, name="AAA Real GM")
+        placeholder = UserFactory(db_session, name="Inconnu")
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="open")
+        GameFactory(db_session, system_id=system.id, gm_id=placeholder.id, status="open")
+
+        history = repo.get_gm_history(system.id)
+
+        assert [u.id for u in history] == [gm.id]

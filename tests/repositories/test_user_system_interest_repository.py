@@ -57,6 +57,18 @@ class TestUserSystemInterestRepository:
 
         assert [i.user_id for i in interests] == [aaa.id, zzz.id]
 
+    def test_list_by_system_and_role_excludes_placeholder_user(self, db_session):
+        repo = UserSystemInterestRepository()
+        system = SystemFactory(db_session)
+        real = UserFactory(db_session, name="AAA Real Player")
+        placeholder = UserFactory(db_session, name="Inconnu")
+        repo.add(UserSystemInterest(user_id=real.id, system_id=system.id, role="player"))
+        repo.add(UserSystemInterest(user_id=placeholder.id, system_id=system.id, role="player"))
+
+        players = repo.list_by_system_and_role(system.id, "player")
+
+        assert [i.user_id for i in players] == [real.id]
+
     def test_inherits_delete(self, db_session):
         repo = UserSystemInterestRepository()
         system = SystemFactory(db_session)

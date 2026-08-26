@@ -18,6 +18,7 @@ from config.constants import (
     HUMAN_TIMEFORMAT,
     INFRACTION_SEVERITY_REMINDER,
     SITE_BASE_URL,
+    USER_PLACEHOLDER_NAME,
 )
 from website.exceptions import (
     DiscordAPIError,
@@ -652,7 +653,8 @@ class DiscordCommandService:
         discord_user = member.get("user") or payload.get("user") or {}
         user, created = self.users.get_or_create(
             user_id=str(discord_user["id"]),
-            name=discord_user.get("global_name") or discord_user.get("username", "Inconnu"),
+            name=discord_user.get("global_name")
+            or discord_user.get("username", USER_PLACEHOLDER_NAME),
             username=discord_user.get("username"),
         )
         if created:
