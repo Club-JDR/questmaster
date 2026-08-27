@@ -113,6 +113,53 @@ class TestSystemRunHistory:
         with pytest.raises(NotFoundError):
             service.get_run_history(-999)
 
+    def test_get_gm_stats_counts_games_and_sessions(self, db_session):
+        service = SystemService()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, type="oneshot", status="open")
+
+        stats = service.get_gm_stats(system.id, gm.id)
+
+        assert stats == {"oneshots": 1, "campaigns": 0, "sessions": 0}
+
+    def test_get_gm_stats_no_history_returns_zeros(self, db_session):
+        service = SystemService()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+
+        assert service.get_gm_stats(system.id, gm.id) == {
+            "oneshots": 0,
+            "campaigns": 0,
+            "sessions": 0,
+        }
+
+    def test_get_player_stats_counts_games_and_sessions(self, db_session):
+        service = SystemService()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+        player = UserFactory(db_session)
+        game = GameFactory(
+            db_session, system_id=system.id, gm_id=gm.id, type="campaign", status="open"
+        )
+        game.players.append(player)
+        db_session.flush()
+
+        stats = service.get_player_stats(system.id, player.id)
+
+        assert stats == {"oneshots": 0, "campaigns": 1, "sessions": 0}
+
+    def test_get_player_stats_no_history_returns_zeros(self, db_session):
+        service = SystemService()
+        system = SystemFactory(db_session)
+        player = UserFactory(db_session)
+
+        assert service.get_player_stats(system.id, player.id) == {
+            "oneshots": 0,
+            "campaigns": 0,
+            "sessions": 0,
+        }
+
 
 class TestSystemInterests:
     def test_get_interested_empty_by_default(self, db_session):
