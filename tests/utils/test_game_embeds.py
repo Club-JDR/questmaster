@@ -437,6 +437,16 @@ class TestBuildAnnonceDetailsEmbed:
         embed, _ = build_annonce_details_embed(game)
         assert "/ajouter-session" in embed["description"]
 
+    def test_description_mentions_ajouter_session_button(self):
+        game = _make_game()
+        embed, _ = build_annonce_details_embed(game)
+        assert "Ajouter une session" in embed["description"]
+
+    def test_description_mentions_signaler_command(self):
+        game = _make_game()
+        embed, _ = build_annonce_details_embed(game)
+        assert "/signaler" in embed["description"]
+
 
 # ---------------------------------------------------------------------------
 # player_mentions
