@@ -202,9 +202,16 @@ class GameService:
 
         Raises:
             NotFoundError: If the game doesn't exist.
-            ValidationError: If a field value is invalid.
+            ValidationError: If a field value is invalid, including a
+                ``gm_id`` that doesn't match an existing user.
         """
         game = self.get_by_id(game_id)
+
+        if "gm_id" in data:
+            try:
+                self.user_service.get_by_id(data["gm_id"])
+            except NotFoundError:
+                raise ValidationError("GM user does not exist.", field="gm_id") from None
 
         try:
             # Slug is protected by update_from_dict; the admin may edit it explicitly.

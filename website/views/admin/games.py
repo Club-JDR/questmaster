@@ -41,6 +41,7 @@ _EDIT_GAME_ENDPOINT = "admin.edit_game"
 
 _VALIDATION_MESSAGES_BY_FIELD = {
     "user_id": "Cette personne n'est pas inscrite à cette partie.",
+    "gm_id": "Cette personne n'existe pas.",
 }
 
 
@@ -104,7 +105,6 @@ def _form_context() -> dict:
     return {
         "systems": system_service.get_all(),
         "vtts": vtt_service.get_all(),
-        "users": user_service.get_all(),
         "special_events": special_event_service.get_all(),
         "game_types": GAME_TYPES,
         "restrictions": RESTRICTIONS,

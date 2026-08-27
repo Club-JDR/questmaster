@@ -4,14 +4,22 @@
  * backend is unchanged. A raw Discord ID typed by hand is still accepted as a
  * fallback.
  *
- * Markup contract (see game_details.j2, trophies.j2):
+ * Markup contract (see game_details.j2, trophies.j2, admin/games/edit.html):
  *   [data-user-typeahead]
  *     input[role=combobox]            visible search box
  *     ul[role=listbox]                suggestions dropdown
  *     input[type=hidden]              carries the resolved user id (any name —
  *                                     "discord_id" for add-player, "user_id"
- *                                     for the badges lookup)
- *     button[type=submit]             submits the enclosing form
+ *                                     for the badges lookup, "gm_id" for the
+ *                                     admin game editor)
+ *     button[type=submit]             optional, scoped to the widget: submits
+ *                                     the enclosing form (used by small
+ *                                     search-and-add widgets). When absent,
+ *                                     the same pick-or-raw-ID validation runs
+ *                                     on the enclosing <form>'s submit instead
+ *                                     (used when the field is one of many in
+ *                                     a larger form with its own submit button
+ *                                     elsewhere, e.g. the admin game editor).
  *     [data-typeahead-error]          inline error message (role=alert)
  *
  * Accessibility: WAI-ARIA combobox pattern — aria-expanded, aria-controls,
@@ -192,23 +200,42 @@
       window.setTimeout(close, 150);
     });
 
-    // On submit via the "add" button, ensure the hidden id is populated. If the
-    // user typed a raw Discord ID without picking a suggestion, accept it
+    // Ensure the hidden id is populated before the enclosing form submits. If
+    // the user typed a raw Discord ID without picking a suggestion, accept it
     // directly; otherwise require an explicit pick to avoid the wrong person.
+    // Returns false (and shows an error) when submission should be blocked.
+    function resolveBeforeSubmit() {
+      if (hidden.value) return true; // a suggestion was already selected
+      const term = input.value.trim().replace(/^@/, "");
+      if (ID_RE.test(term)) {
+        hidden.value = term;
+        return true;
+      }
+      showError("Choisissez une personne dans la liste ou saisissez un ID Discord.");
+      return false;
+    }
+
     // Skipped in navigate-on-select mode (no hidden field / form submit).
-    if (addBtn && hidden) {
-      addBtn.addEventListener("click", function (e) {
-        if (hidden.value) return; // a suggestion was already selected
-        const term = input.value.trim().replace(/^@/, "");
-        if (ID_RE.test(term)) {
-          hidden.value = term;
-          return;
+    if (hidden) {
+      if (addBtn) {
+        // Widget owns its own submit button (small search-and-add forms).
+        addBtn.addEventListener("click", function (e) {
+          if (!resolveBeforeSubmit()) e.preventDefault();
+        });
+      } else {
+        // The field is one of several in a larger form submitted elsewhere
+        // (e.g. the admin game editor's single "Enregistrer" button). Other
+        // formnovalidate-marked buttons in that same form (e.g. the
+        // add/remove-player rows) intentionally bypass the other fields'
+        // validation and must not be blocked by this field either.
+        const form = root.closest("form");
+        if (form) {
+          form.addEventListener("submit", function (e) {
+            if (e.submitter && e.submitter.formNoValidate) return;
+            if (!resolveBeforeSubmit()) e.preventDefault();
+          });
         }
-        e.preventDefault();
-        showError(
-          "Choisissez une personne dans la liste ou saisissez un ID Discord."
-        );
-      });
+      }
     }
   }
 
