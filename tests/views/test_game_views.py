@@ -554,6 +554,11 @@ class TestGameStatus:
         db_session,
         open_game,
     ):
+        # A published game with no session held yet has award_trophies forced
+        # off (see GameService.archive) — give it one so this "with trophies"
+        # case actually exercises the awarding path.
+        GameSessionFactory(db_session, game_id=open_game.id)
+
         response = logged_in_admin.post(
             f"/annonces/{open_game.slug}/statut/",
             data={"status": "archived", "award_trophies": "on"},

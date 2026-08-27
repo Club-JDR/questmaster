@@ -45,12 +45,20 @@
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="gm_id" class="{{ lbl }}">MJ</label>
-        <select id="gm_id" name="gm_id" class="select select-bordered w-full" required>
-          {% for u in users %}
-          <option value="{{ u.id }}" {% if game.gm_id == u.id %}selected{% endif %}>{{ u.name }} ({{ u.id }})</option>
-          {% endfor %}
-        </select>
+        <label for="gm_search" class="{{ lbl }}">MJ</label>
+        <div data-user-typeahead>
+          <div class="relative">
+            <input type="text" id="gm_search" class="input input-bordered w-full"
+                   value="{{ game.gm.name }} ({{ game.gm.username or game.gm.id }})"
+                   placeholder="Nom d'utilisateur·rice ou ID Discord"
+                   role="combobox" aria-expanded="false" aria-autocomplete="list"
+                   aria-controls="gm_search_list" autocomplete="off">
+            <ul id="gm_search_list" role="listbox" aria-label="Suggestions"
+                class="menu menu-sm bg-base-100 rounded-box shadow-lg border border-base-300 absolute z-10 mt-1 w-full max-h-60 overflow-y-auto flex-nowrap hidden"></ul>
+          </div>
+          <input type="hidden" name="gm_id" value="{{ game.gm_id }}">
+          <p class="text-error text-xs mt-1 hidden" data-typeahead-error role="alert"></p>
+        </div>
       </div>
 
       <div class="flex flex-col gap-1">
@@ -353,4 +361,9 @@
     <button type="submit" class="btn btn-primary">Enregistrer</button>
   </div>
 </form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="/static/js/user-typeahead.js" defer></script>
 {% endblock %}

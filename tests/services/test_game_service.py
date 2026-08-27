@@ -1880,3 +1880,32 @@ class TestGameServiceViewers:
         games = game_service.list_by_viewer(regular_user.id)
 
         assert sample_game in games
+
+
+class TestAdminUpdate:
+    """Tests for GameService.admin_update()."""
+
+    def test_admin_update_changes_gm(self, db_session, sample_game, regular_user, game_service):
+        game_service.admin_update(sample_game.id, {"gm_id": regular_user.id})
+
+        db_session.refresh(sample_game)
+        assert sample_game.gm_id == regular_user.id
+
+    def test_admin_update_rejects_unknown_gm_id(self, db_session, sample_game, game_service):
+        """A gm_id with no matching user must raise a friendly ValidationError.
+
+        Regression test: the admin GM picker used to be a <select> populated
+        only with existing users, guaranteeing referential integrity. It is
+        now a typeahead search that also accepts a raw Discord-ID fallback,
+        so admin_update() must validate the id itself instead of letting an
+        unresolved id hit the gm_id NOT NULL foreign key as an unhandled
+        IntegrityError.
+        """
+        original_gm_id = sample_game.gm_id
+
+        with pytest.raises(ValidationError) as exc_info:
+            game_service.admin_update(sample_game.id, {"gm_id": "000000000000000000"})
+
+        assert exc_info.value.field == "gm_id"
+        db_session.refresh(sample_game)
+        assert sample_game.gm_id == original_gm_id
