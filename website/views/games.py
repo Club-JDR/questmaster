@@ -229,7 +229,34 @@ def get_game_details(slug):
         game=game_data,
         is_player=is_player,
         is_viewer=is_viewer,
+        gm_system_stats=_format_system_stats(
+            system_service.get_gm_stats(game.system_id, game.gm_id), game.system.name
+        ),
+        player_system_stats={
+            p.id: _format_system_stats(
+                system_service.get_player_stats(game.system_id, p.id), game.system.name
+            )
+            for p in game.players
+        },
         branch_roster=_resolve_branch_roster(payload, game),
+    )
+
+
+def _format_system_stats(stats: dict, system_name: str) -> str:
+    """Format a user's oneshot/campaign/session tally for a system into a label.
+
+    Args:
+        stats: Dict with "oneshots", "campaigns" and "sessions" counts, as
+            returned by ``SystemService.get_gm_stats``/``get_player_stats``.
+        system_name: Name of the system the tally is for.
+
+    Returns:
+        A short human-readable summary, e.g. "3 OS · 1 campagne(s) · 12
+        session(s) sur D&D 5e".
+    """
+    return (
+        f"{stats['oneshots']} OS · {stats['campaigns']} campagne(s) · "
+        f"{stats['sessions']} session(s) sur {system_name}"
     )
 
 

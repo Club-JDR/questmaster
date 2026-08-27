@@ -1,4 +1,6 @@
-from tests.factories import GameFactory, SystemFactory, UserFactory
+from datetime import datetime
+
+from tests.factories import GameFactory, GameSessionFactory, SystemFactory, UserFactory
 from website.models import System
 from website.repositories.system import SystemRepository
 
@@ -93,3 +95,107 @@ class TestSystemRepository:
         history = repo.get_gm_history(system.id)
 
         assert [u.id for u in history] == [gm.id]
+
+    def test_get_gm_stats_tallies_by_type_and_sessions(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+        os_game = GameFactory(
+            db_session, system_id=system.id, gm_id=gm.id, type="oneshot", status="open"
+        )
+        campaign_game = GameFactory(
+            db_session, system_id=system.id, gm_id=gm.id, type="campaign", status="closed"
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=os_game.id,
+            start=datetime(2025, 9, 1, 20, 0),
+            end=datetime(2025, 9, 1, 23, 0),
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=campaign_game.id,
+            start=datetime(2025, 9, 8, 20, 0),
+            end=datetime(2025, 9, 8, 23, 0),
+        )
+        GameSessionFactory(
+            db_session,
+            game_id=campaign_game.id,
+            start=datetime(2025, 9, 15, 20, 0),
+            end=datetime(2025, 9, 15, 23, 0),
+        )
+
+        stats = repo.get_gm_stats(gm.id, system.id)
+
+        assert stats == {"oneshots": 1, "campaigns": 1, "sessions": 3}
+
+    def test_get_gm_stats_excludes_drafts_and_other_systems(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        other_system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+        GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="draft")
+        GameFactory(db_session, system_id=other_system.id, gm_id=gm.id, status="open")
+
+        stats = repo.get_gm_stats(gm.id, system.id)
+
+        assert stats == {"oneshots": 0, "campaigns": 0, "sessions": 0}
+
+    def test_get_gm_stats_no_history_returns_zeros(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        gm = UserFactory(db_session)
+
+        assert repo.get_gm_stats(gm.id, system.id) == {
+            "oneshots": 0,
+            "campaigns": 0,
+            "sessions": 0,
+        }
+
+    def test_get_player_stats_tallies_by_type_and_sessions(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        player = UserFactory(db_session)
+        gm = UserFactory(db_session)
+        game = GameFactory(
+            db_session, system_id=system.id, gm_id=gm.id, type="oneshot", status="open"
+        )
+        game.players.append(player)
+        db_session.flush()
+        GameSessionFactory(
+            db_session,
+            game_id=game.id,
+            start=datetime(2025, 9, 1, 20, 0),
+            end=datetime(2025, 9, 1, 23, 0),
+        )
+
+        stats = repo.get_player_stats(player.id, system.id)
+
+        assert stats == {"oneshots": 1, "campaigns": 0, "sessions": 1}
+
+    def test_get_player_stats_excludes_drafts_and_other_systems(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        other_system = SystemFactory(db_session)
+        player = UserFactory(db_session)
+        gm = UserFactory(db_session)
+        draft_game = GameFactory(db_session, system_id=system.id, gm_id=gm.id, status="draft")
+        draft_game.players.append(player)
+        other_game = GameFactory(db_session, system_id=other_system.id, gm_id=gm.id, status="open")
+        other_game.players.append(player)
+        db_session.flush()
+
+        stats = repo.get_player_stats(player.id, system.id)
+
+        assert stats == {"oneshots": 0, "campaigns": 0, "sessions": 0}
+
+    def test_get_player_stats_not_registered_returns_zeros(self, db_session):
+        repo = SystemRepository()
+        system = SystemFactory(db_session)
+        player = UserFactory(db_session)
+
+        assert repo.get_player_stats(player.id, system.id) == {
+            "oneshots": 0,
+            "campaigns": 0,
+            "sessions": 0,
+        }
