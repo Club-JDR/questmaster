@@ -52,7 +52,7 @@ def _validate_id_default(value) -> int | None:
     """
     try:
         value = int(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return value if value > 0 else None
 
@@ -68,7 +68,7 @@ def _validate_session_length_default(value) -> float | None:
     """
     try:
         value = float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return value if 0.5 <= value <= 24 else None
 
@@ -84,7 +84,7 @@ def _validate_party_size_default(value) -> int | None:
     """
     try:
         value = int(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return value if 1 <= value <= 99 else None
 

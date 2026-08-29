@@ -84,7 +84,7 @@ def get_calendar_events():
         # used as a bound against the aware GameSession.start/end columns.
         start = to_utc(parse_date(start_str))
         end = to_utc(parse_date(end_str))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         raise ValidationError(
             "Invalid date format. Use ISO 8601 (e.g. 2026-01-01).",
             field="start,end",

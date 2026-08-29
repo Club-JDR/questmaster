@@ -46,7 +46,7 @@ def _verify_signature() -> bool:
             timestamp.encode() + request.data, bytes.fromhex(signature)
         )
         return True
-    except (BadSignatureError, ValueError):
+    except BadSignatureError, ValueError:
         return False
 
 

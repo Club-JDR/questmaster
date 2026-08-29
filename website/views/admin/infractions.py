@@ -52,7 +52,7 @@ def _parse_severity(raw: str | None) -> int:
     """
     try:
         return int(raw)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return INFRACTION_SEVERITY_REMINDER
 
 
