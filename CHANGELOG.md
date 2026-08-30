@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.8.1](https://github.com/Club-JDR/questmaster/compare/v1.8.0...v1.8.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **admin:** replace GM select with searchable typeahead ([d7d924c](https://github.com/Club-JDR/questmaster/commit/d7d924c9357729e30125bc1638ec2a25bade9d79))
+* **deps:** update dependency flask-caching to v2.5.0 ([#220](https://github.com/Club-JDR/questmaster/issues/220)) ([be14935](https://github.com/Club-JDR/questmaster/commit/be1493524632800ab1ac8db34d1415ad1306676a))
+* **deps:** update dependency gunicorn to v26.2.0 ([#212](https://github.com/Club-JDR/questmaster/issues/212)) ([7edf9e7](https://github.com/Club-JDR/questmaster/commit/7edf9e7a38646f1b1b216a95e31c1d0f76d3d044))
+* **deps:** update dependency markdown-it-py to v4 ([#216](https://github.com/Club-JDR/questmaster/issues/216)) ([1f23bbd](https://github.com/Club-JDR/questmaster/commit/1f23bbda00b4a79354d277b18c3138bebc5266f8))
+* **deps:** update dependency nh3 to v0.3.7 ([#217](https://github.com/Club-JDR/questmaster/issues/217)) ([d4de8b9](https://github.com/Club-JDR/questmaster/commit/d4de8b9547b7316ecbe68fcb359f7382093453ee))
+* **deps:** update dependency psycopg to v3.3.4 ([#213](https://github.com/Club-JDR/questmaster/issues/213)) ([ae235b0](https://github.com/Club-JDR/questmaster/commit/ae235b0042e9731bd5f5019400d5b910738c9972))
+* don't award trophies for games with no sessions held ([0ba3640](https://github.com/Club-JDR/questmaster/commit/0ba364091cb007e109321d6fe879c082df34d1f8)), closes [#223](https://github.com/Club-JDR/questmaster/issues/223)
+* exclude placeholder "Inconnu" user from GM history and interest lists ([4d67477](https://github.com/Club-JDR/questmaster/commit/4d67477a6f0cf8de298c27d0fc580b08e45870c1)), closes [#222](https://github.com/Club-JDR/questmaster/issues/222)
+* **scheduler:** remove healthcheck from scheduler ([6d6c351](https://github.com/Club-JDR/questmaster/commit/6d6c3519b77ef27aebc1b08976e6ad90788447f9))
+* **stats:** keep monthly tab active when paging through months ([9fae7bb](https://github.com/Club-JDR/questmaster/commit/9fae7bb1c8fe14a24e4c8ef812a58ed21e53a5e8))
+
 ## [1.8.0](https://github.com/Club-JDR/questmaster/compare/v1.7.1...v1.8.0) (2026-08-22)
 
 
