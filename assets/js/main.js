@@ -8,6 +8,18 @@ import { themeChange } from "theme-change";
 
 themeChange();
 
+// Mirror `data-theme` onto `data-color-scheme`, which FullCalendar's stock
+// themes (see calendar.js) key their dark-mode palette off.
+function syncColorScheme() {
+  document.documentElement.dataset.colorScheme =
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+syncColorScheme();
+new MutationObserver(syncColorScheme).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["data-theme"],
+});
+
 document.addEventListener("click", (e) => {
   document.querySelectorAll(".menu details[open]").forEach((details) => {
     if (!details.contains(/** @type {Node} */ (e.target))) {

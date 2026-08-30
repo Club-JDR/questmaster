@@ -1,25 +1,30 @@
-import { Calendar } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import listPlugin from '@fullcalendar/list';
+import { Calendar } from 'fullcalendar';
+import dayGridPlugin from 'fullcalendar/daygrid';
+import listPlugin from 'fullcalendar/list';
+import classicThemePlugin from 'fullcalendar/themes/classic';
+import frLocale from 'fullcalendar/locales/fr';
+
+import 'fullcalendar/skeleton.css';
+import 'fullcalendar/themes/classic/theme.css';
+import 'fullcalendar/themes/classic/palette.css';
+import '../css/calendar-theme.css';
 
 document.addEventListener('DOMContentLoaded', function () {
   let isMobile = window.innerWidth < 768;
   const calendarEl = document.getElementById('month-games-calendar');
 
   const calendar = new Calendar(calendarEl, {
-    plugins: [dayGridPlugin, listPlugin],
+    plugins: [dayGridPlugin, listPlugin, classicThemePlugin],
     initialView: isMobile ? 'listMonth' : 'dayGridMonth',
     headerToolbar: isMobile
       ? { left: 'prev,next', center: 'title', right: 'listMonth' }
       : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
-    buttonText: {
-      today: "Aujourd'hui",
-      month: 'Mois',
-      week: 'Semaine',
-      day: 'Jour',
-      list: 'Liste',
+    buttons: {
+      today: { text: "Aujourd'hui" },
+      dayGridMonth: { text: 'Mois' },
+      listMonth: { text: 'Liste' },
     },
-    locale: 'fr',
+    locale: frLocale,
     timeZone: 'local',
     contentHeight: 'auto',
     events: function (fetchInfo, successCallback, failureCallback) {

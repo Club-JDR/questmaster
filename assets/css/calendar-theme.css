@@ -1,0 +1,9 @@
+/* Rebrand the stock Classic theme's buttons to the site's DaisyUI primary
+   color, via the theme's own CSS custom properties. */
+:root {
+  --fc-classic-button: var(--color-primary);
+  --fc-classic-button-border: var(--color-primary);
+  --fc-classic-button-foreground: var(--color-primary-content);
+  --fc-classic-button-strong: color-mix(in oklab, var(--color-primary) 85%, black);
+  --fc-classic-button-strong-border: color-mix(in oklab, var(--color-primary) 85%, black);
+}
