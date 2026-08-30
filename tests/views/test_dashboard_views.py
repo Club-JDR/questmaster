@@ -134,3 +134,21 @@ class TestStatsPage:
         assert "Temps de jeu" in body
         assert "Avertissements" in body
         assert "data-top-type-select" in body
+
+    def test_overview_tab_active_by_default(self, client, db_session):
+        """With no period in the query string, the overview tab is pre-selected."""
+        body = client.get("/stats/").data.decode()
+
+        assert 'aria-label="Vue d\'ensemble" checked' in body
+        assert 'aria-label="Détail mensuel" checked' not in body
+
+    def test_monthly_tab_active_when_period_given(self, client, db_session):
+        """Navigating with ?year=&month= keeps the monthly breakdown tab active.
+
+        Regression: the prev/next-month links reload the page, which previously
+        reset the CSS-only radio tabs back to the overview.
+        """
+        body = client.get("/stats/?year=2025&month=7").data.decode()
+
+        assert 'aria-label="Détail mensuel" checked' in body
+        assert 'aria-label="Vue d\'ensemble" checked' not in body

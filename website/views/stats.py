@@ -21,6 +21,9 @@ def get_stats():
     """Render the statistics page (app-wide overview + monthly breakdown)."""
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
+    # An explicit period in the query string means the user navigated to (or
+    # paged through) the monthly breakdown; keep that tab active on render.
+    monthly_view = year is not None or month is not None
 
     stats = session_service.get_stats_for_period(year, month)
     overview = stats_service.get_global_stats()
@@ -33,6 +36,7 @@ def get_stats():
     return render_template(
         "stats.j2",
         overview=overview,
+        monthly_view=monthly_view,
         base_day=base_day.strftime("%B %Y"),
         last_day=last_day.strftime("%a %d/%m"),
         num_os=stats["num_os"],

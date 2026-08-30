@@ -13,7 +13,7 @@ keyboard-operable and accessible (role=tab / role=tabpanel). #}
 <div role="tablist" class="tabs tabs-border justify-center mb-2">
 
   {# ====================== Tab 1 — app-wide overview ====================== #}
-  <input type="radio" name="stats_tabs" role="tab" class="tab" aria-label="Vue d'ensemble" checked>
+  <input type="radio" name="stats_tabs" role="tab" class="tab" aria-label="Vue d'ensemble" {{ '' if monthly_view else 'checked' }}>
   <section role="tabpanel" data-stats-root class="tab-content pt-6">
     <p class="text-center text-sm text-base-content/60 mb-4">Sur l'ensemble des annonces, depuis le début</p>
 
@@ -129,7 +129,7 @@ keyboard-operable and accessible (role=tab / role=tabpanel). #}
   </section>
 
   {# ====================== Tab 2 — monthly breakdown ====================== #}
-  <input type="radio" name="stats_tabs" role="tab" class="tab" aria-label="Détail mensuel">
+  <input type="radio" name="stats_tabs" role="tab" class="tab" aria-label="Détail mensuel" {{ 'checked' if monthly_view else '' }}>
   <section role="tabpanel" class="tab-content pt-6">
     <h2 class="font-bold text-lg mb-4 text-center">{{ month }}/{{ year }}</h2>
 
