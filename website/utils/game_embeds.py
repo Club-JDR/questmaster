@@ -220,8 +220,12 @@ def build_annonce_details_embed(game, **_) -> tuple[dict, str]:
             f"Quelques petits rappels :\n"
             f"- La partie doit être **organisée et jouée sur le serveur du Club JDR** (Cf. règlement).\n"
             f"- Notifie tes joueur·euses avec le bouton **Notifier** sur QuestMaster, et non pas avec `@everyone`, `@here` ou `@Joueur·euses`.\n"
+            f"- N'hésite pas à programmer tes sessions **à l'avance**, avec le bouton **Ajouter une session** "
+            f"sur l'annonce ou directement depuis ce salon avec `/ajouter-session` "
+            f"(exemple : `/ajouter-session debut:10/09/2026 20:00`).\n"
             f"- Toutes les sessions **jouées** doivent être ajoutées dans QuestMaster au fur et à mesure.\n"
-            f"- Le bouton **Signaler** sur QuestMaster te permet de contacter les admins en cas de problème concernant la partie."
+            f"- Le bouton **Signaler** sur QuestMaster ou la commande `/signaler` te permettent de contacter "
+            f"les admins en cas de problème concernant la partie."
         ),
     }
     return embed, game.channel
