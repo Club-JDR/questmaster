@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/Club-JDR/questmaster/compare/v1.8.1...v1.8.2) (2026-09-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency psycopg to v3.3.5 ([#236](https://github.com/Club-JDR/questmaster/issues/236)) ([09d4d76](https://github.com/Club-JDR/questmaster/commit/09d4d760377cb3bbdf250f2ffc6e7c5bb75b971b))
+
 ## [1.8.1](https://github.com/Club-JDR/questmaster/compare/v1.8.0...v1.8.1) (2026-08-30)
 
 
