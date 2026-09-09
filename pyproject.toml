@@ -24,7 +24,7 @@ dependencies = [
     "wtforms==3.2.2",
     "python-dateutil==2.9.0.post0",
     "unidecode==1.4.0",
-    "python-slugify==8.0.4",
+    "python-slugify==9.0.0",
     "apscheduler==3.11.3",
     "PyJWT==2.13.0",
     "marshmallow==4.3.1",
