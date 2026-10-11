@@ -17,6 +17,7 @@ from config.constants import (
     EMBED_COLOR_RED,
     EMBED_COLOR_YELLOW,
     HUMAN_TIMEFORMAT,
+    SESSION_REMINDER_HORIZON_HOURS,
     SITE_BASE_URL,
 )
 from website.models import Game
@@ -248,6 +249,31 @@ def build_add_session_embed(game, start=None, end=None, **_) -> tuple[dict, str]
             f"Pour ne pas l'oublier, pensez à l'ajouter à votre calendrier depuis "
             f"[l'annonce sur QuestMaster]({game_url}).\n"
             f"Si vous avez un empêchement, prévenez votre MJ en avance."
+        ),
+    }
+    return embed, game.channel
+
+
+def build_session_reminder_embed(game, start=None, end=None, **_) -> tuple[dict, str]:
+    """Build embed reminding players of an imminent session.
+
+    Args:
+        game: Game instance.
+        start: Session start datetime or formatted string.
+        end: Session end datetime or formatted string.
+
+    Returns:
+        Tuple of (embed dict, game channel ID).
+    """
+    game_url = f"{SITE_BASE_URL}/annonces/{game.slug}"
+
+    embed = {
+        "title": "Rappel de session",
+        "color": EMBED_COLOR_YELLOW,
+        "description": (
+            f"{player_mentions(game)}\nVotre prochaine session commence dans moins de "
+            f"{SESSION_REMINDER_HORIZON_HOURS}h : du **{start}** au **{end}**.\n\n"
+            f"Retrouvez tous les détails sur [l'annonce QuestMaster]({game_url})."
         ),
     }
     return embed, game.channel

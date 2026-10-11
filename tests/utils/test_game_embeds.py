@@ -14,6 +14,7 @@ from config.constants import (
     EMBED_COLOR_GREEN,
     EMBED_COLOR_RED,
     EMBED_COLOR_YELLOW,
+    SESSION_REMINDER_HORIZON_HOURS,
     SITE_BASE_URL,
 )
 from website.utils.game_embeds import (
@@ -31,6 +32,7 @@ from website.utils.game_embeds import (
     build_edit_session_embed,
     build_notify_content,
     build_register_embed,
+    build_session_reminder_embed,
     player_mentions,
 )
 
@@ -502,6 +504,39 @@ class TestBuildAddSessionEmbed:
         game = _make_game(role="role_x")
         embed, _ = build_add_session_embed(game, start="s", end="e")
         assert "<@&role_x>" in embed["description"]
+
+
+# ---------------------------------------------------------------------------
+# build_session_reminder_embed
+# ---------------------------------------------------------------------------
+
+
+class TestBuildSessionReminderEmbed:
+    def test_returns_game_channel(self):
+        game = _make_game(channel="ch_reminder")
+        _, channel_id = build_session_reminder_embed(game, start="lun 01/01", end="lun 01/01")
+        assert channel_id == "ch_reminder"
+
+    def test_embed_color_is_yellow(self):
+        game = _make_game()
+        embed, _ = build_session_reminder_embed(game, start="start", end="end")
+        assert embed["color"] == EMBED_COLOR_YELLOW
+
+    def test_description_contains_dates(self):
+        game = _make_game()
+        embed, _ = build_session_reminder_embed(game, start="lun 01/01", end="mar 02/01")
+        assert "lun 01/01" in embed["description"]
+        assert "mar 02/01" in embed["description"]
+
+    def test_description_contains_role_mention(self):
+        game = _make_game(role="role_x")
+        embed, _ = build_session_reminder_embed(game, start="s", end="e")
+        assert "<@&role_x>" in embed["description"]
+
+    def test_description_mentions_horizon_hours(self):
+        game = _make_game()
+        embed, _ = build_session_reminder_embed(game, start="s", end="e")
+        assert str(SESSION_REMINDER_HORIZON_HOURS) in embed["description"]
 
 
 # ---------------------------------------------------------------------------

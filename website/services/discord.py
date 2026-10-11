@@ -607,7 +607,7 @@ class DiscordService:
         Args:
             game: Game model instance.
             embed_type: Type of embed ('annonce', 'annonce_details', 'add-session',
-                'edit-session', 'del-session', 'register', 'alert').
+                'edit-session', 'del-session', 'register', 'alert', 'session-reminder').
             start: Session start datetime (for session embeds).
             end: Session end datetime (for session embeds).
             player: Player user ID (for register/alert embeds).
@@ -631,6 +631,7 @@ class DiscordService:
             build_delete_session_embed,
             build_edit_session_embed,
             build_register_embed,
+            build_session_reminder_embed,
         )
 
         embed_builders = {
@@ -641,6 +642,7 @@ class DiscordService:
             "del-session": build_delete_session_embed,
             "register": build_register_embed,
             "alert": build_alert_embed,
+            "session-reminder": build_session_reminder_embed,
         }
 
         if embed_type not in embed_builders:

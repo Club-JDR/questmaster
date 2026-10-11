@@ -34,6 +34,19 @@ def test_from_dict_creates_game_session():
     assert session.game_id == 99
     assert session.start == start
     assert session.end == end
+    assert session.reminder_sent is False
+
+
+def test_from_dict_reminder_sent_true():
+    data = {
+        "id": 3,
+        "game_id": 100,
+        "start": datetime(2025, 2, 2, 19, 0),
+        "end": datetime(2025, 2, 2, 22, 0),
+        "reminder_sent": True,
+    }
+    session = GameSession.from_dict(data)
+    assert session.reminder_sent is True
 
 
 def test_update_from_dict(sample_game_session):

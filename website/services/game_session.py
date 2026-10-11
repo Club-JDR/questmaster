@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import calendar
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from config.constants import GAME_STATUS_DRAFT, MAX_SESSION_DURATION_HOURS
+from config.constants import (
+    GAME_STATUS_DRAFT,
+    MAX_SESSION_DURATION_HOURS,
+    SESSION_REMINDER_HORIZON_HOURS,
+)
 from website.exceptions import SessionConflictError, ValidationError
 from website.extensions import cache, db
 from website.models import GameSession
 from website.repositories.game_session import GameSessionRepository
 from website.utils.scheduling import intervals_overlap
-from website.utils.timezone import APP_TIMEZONE
+from website.utils.timezone import APP_TIMEZONE, now_utc
 
 if TYPE_CHECKING:
     from website.models import Game
@@ -81,6 +85,10 @@ class GameSessionService:
     def update(self, session: GameSession, new_start: datetime, new_end: datetime) -> GameSession:
         """Update a session's start/end times.
 
+        Resets ``reminder_sent`` to False: a rescheduled session may move back
+        into (or out of, then later back into) the reminder window, so the
+        prior reminder decision is no longer valid.
+
         Args:
             session: Existing GameSession instance.
             new_start: New start datetime.
@@ -103,10 +111,34 @@ class GameSessionService:
 
         session.start = new_start
         session.end = new_end
+        session.reminder_sent = False
         db.session.commit()
         logger.info(f"Session {session.id} updated to {new_start} - {new_end}")
         self._invalidate_stats(game)
         return session
+
+    def get_sessions_needing_reminder(
+        self, horizon_hours: int = SESSION_REMINDER_HORIZON_HOURS
+    ) -> list[GameSession]:
+        """Return sessions starting within the reminder horizon, not yet reminded.
+
+        Args:
+            horizon_hours: How far ahead of "now" to look for upcoming sessions.
+
+        Returns:
+            List of GameSession instances due a Discord reminder.
+        """
+        now = now_utc()
+        return self.repo.find_due_for_reminder(now, now + timedelta(hours=horizon_hours))
+
+    def mark_reminder_sent(self, session: GameSession) -> None:
+        """Persist that a session's reminder was sent, so it is never sent twice.
+
+        Args:
+            session: GameSession instance whose reminder was just sent.
+        """
+        session.reminder_sent = True
+        db.session.commit()
 
     def get_by_id_or_404(self, session_id: int) -> GameSession:
         """Get session by ID or abort with 404.

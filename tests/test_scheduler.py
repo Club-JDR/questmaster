@@ -1,5 +1,7 @@
 """Tests for the background scheduler functions."""
 
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from config.constants import DEFAULT_AVATAR
@@ -8,6 +10,7 @@ from website.scheduler import (
     monitor_category_capacity,
     monitor_role_count,
     refresh_user_profiles,
+    send_session_reminders,
 )
 
 USER_ID = "11111111111111111"
@@ -229,3 +232,73 @@ class TestMonitorCategoryCapacity:
         monitor_category_capacity(test_app)
 
         channels.auto_provision_if_full.assert_not_called()
+
+
+def _make_due_session(session_id=1, game_id=42):
+    """Return a SimpleNamespace mimicking a GameSession due for a reminder."""
+    return SimpleNamespace(
+        id=session_id,
+        start=datetime(2026, 1, 1, 20, 0, tzinfo=timezone.utc),
+        end=datetime(2026, 1, 1, 23, 0, tzinfo=timezone.utc),
+        game=SimpleNamespace(id=game_id),
+    )
+
+
+class TestSendSessionReminders:
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.game_session.GameSessionService")
+    def test_sends_reminder_and_marks_each_due_session(
+        self, mock_service_cls, mock_discord_cls, test_app
+    ):
+        service = mock_service_cls.return_value
+        session = _make_due_session()
+        service.get_sessions_needing_reminder.return_value = [session]
+
+        send_session_reminders(test_app)
+
+        mock_discord_cls.return_value.send_game_embed.assert_called_once()
+        args, kwargs = mock_discord_cls.return_value.send_game_embed.call_args
+        assert args[0] is session.game
+        assert kwargs["embed_type"] == "session-reminder"
+        service.mark_reminder_sent.assert_called_once_with(session)
+
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.game_session.GameSessionService")
+    def test_no_op_when_no_sessions_due(self, mock_service_cls, mock_discord_cls, test_app):
+        service = mock_service_cls.return_value
+        service.get_sessions_needing_reminder.return_value = []
+
+        send_session_reminders(test_app)
+
+        mock_discord_cls.return_value.send_game_embed.assert_not_called()
+        service.mark_reminder_sent.assert_not_called()
+
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.game_session.GameSessionService")
+    def test_discord_failure_does_not_mark_sent_and_does_not_raise(
+        self, mock_service_cls, mock_discord_cls, test_app
+    ):
+        service = mock_service_cls.return_value
+        session = _make_due_session()
+        service.get_sessions_needing_reminder.return_value = [session]
+        mock_discord_cls.return_value.send_game_embed.side_effect = Exception("boom")
+
+        # Should not raise.
+        send_session_reminders(test_app)
+
+        service.mark_reminder_sent.assert_not_called()
+
+    @patch("website.services.discord.DiscordService")
+    @patch("website.services.game_session.GameSessionService")
+    def test_one_failure_does_not_stop_the_rest(
+        self, mock_service_cls, mock_discord_cls, test_app
+    ):
+        service = mock_service_cls.return_value
+        failing = _make_due_session(session_id=1, game_id=1)
+        succeeding = _make_due_session(session_id=2, game_id=2)
+        service.get_sessions_needing_reminder.return_value = [failing, succeeding]
+        mock_discord_cls.return_value.send_game_embed.side_effect = [Exception("boom"), "msg_id"]
+
+        send_session_reminders(test_app)
+
+        service.mark_reminder_sent.assert_called_once_with(succeeding)
