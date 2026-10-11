@@ -191,6 +191,30 @@ class SystemService:
         self.get_by_id(system_id)
         return self.repo.get_gm_history(system_id)
 
+    def get_gm_stats(self, system_id: int, gm_id: str) -> dict:
+        """Return a GM's experience with a system: games run and sessions held.
+
+        Args:
+            system_id: System ID.
+            gm_id: GM user ID.
+
+        Returns:
+            Dict with "oneshots", "campaigns" and "sessions" counts.
+        """
+        return self.repo.get_gm_stats(gm_id, system_id)
+
+    def get_player_stats(self, system_id: int, player_id: str) -> dict:
+        """Return a player's experience with a system: games played and sessions held.
+
+        Args:
+            system_id: System ID.
+            player_id: Player user ID.
+
+        Returns:
+            Dict with "oneshots", "campaigns" and "sessions" counts.
+        """
+        return self.repo.get_player_stats(player_id, system_id)
+
     def get_interested(self, system_id: int, role: str) -> list[UserSystemInterest]:
         """Get users who declared interest in a system for a given role.
 

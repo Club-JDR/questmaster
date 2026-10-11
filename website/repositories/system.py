@@ -1,6 +1,13 @@
 """System repository for game system data access."""
 
-from config.constants import GAME_STATUS_DRAFT, USER_PLACEHOLDER_NAME
+from sqlalchemy.orm import subqueryload
+
+from config.constants import (
+    GAME_STATUS_DRAFT,
+    GAME_TYPE_CAMPAIGN,
+    GAME_TYPE_ONESHOT,
+    USER_PLACEHOLDER_NAME,
+)
 from website.models import Game, System, User
 from website.repositories.base import BaseRepository
 
@@ -60,3 +67,57 @@ class SystemRepository(BaseRepository[System]):
             .order_by(User.name)
             .all()
         )
+
+    def get_gm_stats(self, gm_id: str, system_id: int) -> dict:
+        """Return a GM's non-draft game/session tally for a system.
+
+        Args:
+            gm_id: GM user ID.
+            system_id: System ID.
+
+        Returns:
+            Dict with "oneshots", "campaigns" and "sessions" counts.
+        """
+        games = (
+            self.session.query(Game)
+            .options(subqueryload(Game.sessions))
+            .filter(
+                Game.gm_id == gm_id,
+                Game.system_id == system_id,
+                Game.status != GAME_STATUS_DRAFT,
+            )
+            .all()
+        )
+        return self._summarize_games(games)
+
+    def get_player_stats(self, player_id: str, system_id: int) -> dict:
+        """Return a player's non-draft game/session tally for a system.
+
+        Args:
+            player_id: Player user ID.
+            system_id: System ID.
+
+        Returns:
+            Dict with "oneshots", "campaigns" and "sessions" counts.
+        """
+        games = (
+            self.session.query(Game)
+            .join(Game.players)
+            .options(subqueryload(Game.sessions))
+            .filter(
+                User.id == player_id,
+                Game.system_id == system_id,
+                Game.status != GAME_STATUS_DRAFT,
+            )
+            .all()
+        )
+        return self._summarize_games(games)
+
+    @staticmethod
+    def _summarize_games(games: list[Game]) -> dict:
+        """Tally a list of games into oneshot/campaign/session counts."""
+        return {
+            "oneshots": sum(1 for g in games if g.type == GAME_TYPE_ONESHOT),
+            "campaigns": sum(1 for g in games if g.type == GAME_TYPE_CAMPAIGN),
+            "sessions": sum(len(g.sessions) for g in games),
+        }

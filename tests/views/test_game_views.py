@@ -393,6 +393,24 @@ class TestGameDetails:
         body = response.data.decode()
         assert "Ouverte aux spectateur·ices" not in body
 
+    def test_gm_avatar_tooltip_shows_system_stats(
+        self, client, mock_discord_lookups, db_session, open_game
+    ):
+        """The GM avatar's tooltip/aria-label surfaces their tally for this system."""
+        response = client.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "1 OS · 0 campagne(s) · 0 session(s)" in body
+
+    def test_player_avatar_tooltip_shows_system_stats(
+        self, client, mock_discord_lookups, db_session, open_game, regular_user
+    ):
+        """A registered player's avatar tooltip surfaces their tally for this system."""
+        open_game.players.append(regular_user)
+        db_session.flush()
+        response = client.get(f"/annonces/{open_game.slug}/")
+        body = response.data.decode()
+        assert "1 OS · 0 campagne(s) · 0 session(s)" in body
+
     def test_follow_button_shown_to_non_participant(
         self, logged_in_user, mock_discord_lookups, db_session, open_game
     ):
