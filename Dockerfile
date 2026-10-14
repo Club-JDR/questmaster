@@ -8,8 +8,8 @@ COPY website/templates/ ./website/templates/
 RUN npm run build
 
 
-FROM python:3.14-alpine3.23 AS builder
-COPY --from=ghcr.io/astral-sh/uv:0.12.7 /uv /bin/uv
+FROM python:3.15-alpine3.23 AS builder
+COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /bin/uv
 WORKDIR /app
 RUN apk add --no-cache \
   bash \
@@ -27,7 +27,7 @@ RUN uv export --frozen --no-emit-project -o /tmp/requirements.txt \
   && pip install --require-hashes --only-binary :all: --no-cache-dir --prefix=/install -r /tmp/requirements.txt
 
 
-FROM python:3.14-alpine3.23 AS base
+FROM python:3.15-alpine3.23 AS base
 WORKDIR /questmaster
 RUN apk add --no-cache \
   curl \
@@ -57,7 +57,7 @@ COPY --chmod=555 scheduler_entrypoint.py ./
 COPY --from=frontend-builder --chmod=555 /app/website/static/dist/ ./website/static/dist/
 
 FROM base AS app-test
-COPY --from=ghcr.io/astral-sh/uv:0.12.7 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /bin/uv
 COPY pyproject.toml uv.lock ./
 RUN uv export --frozen --no-emit-project --extra test --extra lint -o /tmp/requirements-test.txt \
   && pip install --require-hashes --only-binary :all: --no-cache-dir -r /tmp/requirements-test.txt
